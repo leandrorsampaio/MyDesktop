@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Last Updated:** 2026-01-25
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 1.3.0   | 2026-01-25 | Responsive design for MacBook Pro 14" (1512px) and external monitor (2304px), sidebar width increased to 560px, textarea min-width 500px |
 | 1.2.0   | 2026-01-25 | Added welcome header with date/week info, hamburger menu, notes save timestamp, archived tasks modal |
 | 1.1.0   | 2026-01-25 | Notes changed from checkbox list to free-form textarea with debounced auto-save |
 | 1.0.0   | 2026-01-25 | Initial implementation complete                              |
@@ -401,9 +402,15 @@ The interface should follow the design philosophy of the Clear todo list app:
 - Strike-through animation for checked items
 
 ### Responsive Behavior
-- Optimized for desktop (primary use case)
-- Sidebar fixed or collapsible on smaller screens
-- Columns stack vertically on mobile if needed
+- **Primary Use Case:** Desktop only (single user)
+- **Target Viewports:**
+  - MacBook Pro 14": 1512 × 982 px
+  - External Monitor: 2304 × 1296 px
+- **Sidebar:** Fixed width of 560px to accommodate 500px minimum textarea width
+- **Kanban Board:** 4 columns at both viewports
+  - External monitor (≥2000px): Full spacing with 20px gaps
+  - MacBook Pro 14" (1400-1999px): Compact layout with 12px gaps and smaller fonts
+- **Fallback:** For screens below 1400px, sidebar stacks above kanban board
 
 ## CSS Requirements
 
@@ -426,6 +433,8 @@ The interface should follow the design philosophy of the Clear todo list app:
 
 ### Layout
 - CSS Grid for main layout (sidebar + kanban board)
+- **Sidebar width:** 560px (fixed) to accommodate 500px min-width textarea
+- **Kanban board:** Remaining viewport width with 4 equal columns
 - Flexbox for columns and task cards
 - Consistent spacing and padding
 

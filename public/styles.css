@@ -245,7 +245,7 @@ body {
 /* App Container */
 .app-container {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 560px 1fr;
     min-height: calc(100vh - 73px);
 }
 
@@ -349,6 +349,8 @@ body {
 #notes-textarea {
     flex: 1;
     min-height: 150px;
+    min-width: 500px;
+    width: 100%;
     padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -1068,14 +1070,64 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
+/* Responsive - Optimized for MacBook Pro 14" (1512px) and External Monitor (2304px) */
+
+/* External monitor (2304px and above) - Full 4 columns with extra space */
+@media (min-width: 2000px) {
+    .app-container {
+        grid-template-columns: 560px 1fr;
+    }
+
     .kanban-board {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        padding: 24px;
+    }
+
+    .column {
+        min-height: calc(100vh - 130px);
     }
 }
 
-@media (max-width: 900px) {
+/* MacBook Pro 14" (1512px) and similar screens - 4 compact columns */
+@media (min-width: 1400px) and (max-width: 1999px) {
+    .app-container {
+        grid-template-columns: 560px 1fr;
+    }
+
+    .kanban-board {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .column {
+        min-height: calc(100vh - 110px);
+    }
+
+    .column-header {
+        padding: 12px;
+    }
+
+    .column-header h2 {
+        font-size: 14px;
+    }
+
+    .task-card {
+        padding: 10px;
+    }
+
+    .task-title {
+        font-size: 13px;
+    }
+
+    .task-description {
+        font-size: 11px;
+    }
+}
+
+/* Fallback for smaller screens (below MacBook Pro 14") */
+@media (max-width: 1399px) {
     .app-container {
         grid-template-columns: 1fr;
     }
@@ -1086,11 +1138,22 @@ body {
         border-bottom: 1px solid var(--border-color);
     }
 
+    #notes-textarea {
+        min-width: auto;
+        width: 100%;
+    }
+
     .kanban-board {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .column {
         min-height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
     }
 }
