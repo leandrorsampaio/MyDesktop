@@ -177,7 +177,7 @@
     "description": "",
     "priority": false,
     "status": "todo",
-    "position": 3,
+    "position": 0,
     "log": [],
     "createdDate": "2026-01-25T09:23:42.845Z"
   },
@@ -240,7 +240,7 @@
     "description": "",
     "priority": false,
     "status": "todo",
-    "position": 6,
+    "position": 1,
     "log": [],
     "createdDate": "2026-01-25T09:23:51.563Z"
   }

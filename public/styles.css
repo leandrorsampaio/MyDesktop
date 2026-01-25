@@ -287,7 +287,6 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    cursor: pointer;
     transition: opacity 0.2s;
 }
 
@@ -295,7 +294,7 @@ body {
     border-bottom: none;
 }
 
-.recurrent-tasks li.checked {
+.recurrent-tasks li.checked .task-text {
     text-decoration: line-through;
     opacity: 0.5;
 }
@@ -305,6 +304,31 @@ body {
     height: 18px;
     cursor: pointer;
     accent-color: var(--accent-color);
+    flex-shrink: 0;
+}
+
+.recurrent-tasks .task-text {
+    flex: 1;
+    cursor: pointer;
+}
+
+.recurrent-tasks .external-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: var(--accent-color);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.recurrent-tasks .external-link:hover {
+    opacity: 1;
 }
 
 /* Notes Section */
@@ -1156,4 +1180,103 @@ body {
     .kanban-board {
         grid-template-columns: 1fr;
     }
+}
+
+/* Checklist Editor Modal */
+.checklist-editor {
+    padding: 20px 24px;
+}
+
+.checklist-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+#checklist-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.checklist-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.checklist-item-row input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.checklist-item-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.checklist-item-row input[type="text"]::placeholder {
+    color: var(--text-muted);
+}
+
+.checklist-item-row .url-input {
+    width: 200px;
+    flex: none;
+}
+
+.checklist-item-row .btn-remove-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(231, 76, 60, 0.1);
+    border: none;
+    border-radius: 6px;
+    color: var(--danger-color);
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+}
+
+.checklist-item-row .btn-remove-item:hover {
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.btn-add-checklist-item {
+    padding: 10px 16px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.btn-add-checklist-item:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.checklist-editor .modal-actions {
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+    margin-top: 0;
 }

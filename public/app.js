@@ -5,13 +5,15 @@
     // ==========================================
     // Configuration
     // ==========================================
-    const RECURRENT_TASKS = [
-        'Check email',
-        'Review calendar',
-        'Water plants',
-        'Take vitamins',
-        'Exercise',
-        'Read for 30 minutes'
+
+    // Default recurrent tasks (used if no saved checklist exists)
+    const DEFAULT_RECURRENT_TASKS = [
+        { text: 'Check email', url: '' },
+        { text: 'Review calendar', url: '' },
+        { text: 'Water plants', url: '' },
+        { text: 'Take vitamins', url: '' },
+        { text: 'Exercise', url: '' },
+        { text: 'Read for 30 minutes', url: '' }
     ];
 
     const STATUS_COLUMNS = {
@@ -29,6 +31,7 @@
     let editingTaskId = null;
     let draggedTask = null;
     let saveNotesTimeout = null;
+    let recurrentTasks = []; // Will be loaded from localStorage or default
 
     // ==========================================
     // DOM Elements
@@ -66,6 +69,15 @@
         archivedContainer: document.getElementById('archived-container'),
         archivedModalClose: document.getElementById('archived-modal-close'),
         viewArchivedBtn: document.getElementById('view-archived-btn'),
+
+        // Checklist Modal
+        checklistModal: document.getElementById('checklist-modal'),
+        checklistModalClose: document.getElementById('checklist-modal-close'),
+        checklistItemsContainer: document.getElementById('checklist-items-container'),
+        addChecklistItemBtn: document.getElementById('add-checklist-item-btn'),
+        checklistCancelBtn: document.getElementById('checklist-cancel-btn'),
+        checklistSaveBtn: document.getElementById('checklist-save-btn'),
+        editChecklistBtn: document.getElementById('edit-checklist-btn'),
 
         // Confirm Modal
         confirmModal: document.getElementById('confirm-modal'),
@@ -423,13 +435,17 @@
 
         const checkedItems = getRecurrentTasksState();
 
-        RECURRENT_TASKS.forEach((task, index) => {
+        recurrentTasks.forEach((task, index) => {
             const li = document.createElement('li');
             const isChecked = checkedItems[index];
             li.className = isChecked ? 'checked' : '';
+
+            const hasUrl = task.url && task.url.trim() !== '';
+
             li.innerHTML = `
                 <input type="checkbox" ${isChecked ? 'checked' : ''} />
-                <span>${escapeHtml(task)}</span>
+                <span class="task-text">${escapeHtml(task.text)}</span>
+                ${hasUrl ? `<a href="${escapeHtml(task.url)}" target="_blank" class="external-link" title="Open link">↗</a>` : ''}
             `;
 
             li.querySelector('input').addEventListener('change', (e) => {
@@ -437,15 +453,40 @@
                 li.classList.toggle('checked', e.target.checked);
             });
 
+            // Make task text clickable for checkbox
+            li.querySelector('.task-text').addEventListener('click', () => {
+                const checkbox = li.querySelector('input');
+                checkbox.checked = !checkbox.checked;
+                toggleRecurrentTask(index, checkbox.checked);
+                li.classList.toggle('checked', checkbox.checked);
+            });
+
             list.appendChild(li);
         });
     }
 
     // ==========================================
-    // Recurrent Tasks - Daily Reset
+    // Recurrent Tasks - Daily Reset & Storage
     // ==========================================
+    function loadRecurrentTasks() {
+        const stored = localStorage.getItem('checklistConfig');
+        if (stored) {
+            try {
+                recurrentTasks = JSON.parse(stored);
+            } catch {
+                recurrentTasks = [...DEFAULT_RECURRENT_TASKS];
+            }
+        } else {
+            recurrentTasks = [...DEFAULT_RECURRENT_TASKS];
+        }
+    }
+
+    function saveRecurrentTasks() {
+        localStorage.setItem('checklistConfig', JSON.stringify(recurrentTasks));
+    }
+
     function getRecurrentTasksState() {
-        const stored = localStorage.getItem('recurrentTasks');
+        const stored = localStorage.getItem('recurrentTasksChecked');
         if (!stored) return {};
 
         try {
@@ -458,7 +499,7 @@
     function toggleRecurrentTask(index, checked) {
         const state = getRecurrentTasksState();
         state[index] = checked;
-        localStorage.setItem('recurrentTasks', JSON.stringify(state));
+        localStorage.setItem('recurrentTasksChecked', JSON.stringify(state));
     }
 
     function checkDailyReset() {
@@ -486,9 +527,71 @@
         }
 
         if (shouldReset) {
-            localStorage.removeItem('recurrentTasks');
+            localStorage.removeItem('recurrentTasksChecked');
             localStorage.setItem('lastRecurrentReset', now.toISOString());
         }
+    }
+
+    // ==========================================
+    // Checklist Editor Functions
+    // ==========================================
+    function openChecklistModal() {
+        closeMenu();
+        renderChecklistEditor();
+        openModal(elements.checklistModal);
+    }
+
+    function renderChecklistEditor() {
+        const container = elements.checklistItemsContainer;
+        container.innerHTML = '';
+
+        recurrentTasks.forEach((task, index) => {
+            const row = createChecklistItemRow(task.text, task.url, index);
+            container.appendChild(row);
+        });
+    }
+
+    function createChecklistItemRow(text = '', url = '', index = -1) {
+        const row = document.createElement('div');
+        row.className = 'checklist-item-row';
+        row.dataset.index = index;
+
+        row.innerHTML = `
+            <input type="text" class="text-input" placeholder="Task name" value="${escapeHtml(text)}" />
+            <input type="text" class="url-input" placeholder="URL (optional)" value="${escapeHtml(url)}" />
+            <button type="button" class="btn-remove-item" title="Remove item">&times;</button>
+        `;
+
+        row.querySelector('.btn-remove-item').addEventListener('click', () => {
+            row.remove();
+        });
+
+        return row;
+    }
+
+    function addChecklistItem() {
+        const row = createChecklistItemRow();
+        elements.checklistItemsContainer.appendChild(row);
+        row.querySelector('.text-input').focus();
+    }
+
+    function saveChecklistFromEditor() {
+        const rows = elements.checklistItemsContainer.querySelectorAll('.checklist-item-row');
+        const newTasks = [];
+
+        rows.forEach(row => {
+            const text = row.querySelector('.text-input').value.trim();
+            const url = row.querySelector('.url-input').value.trim();
+
+            if (text) {
+                newTasks.push({ text, url });
+            }
+        });
+
+        recurrentTasks = newTasks;
+        saveRecurrentTasks();
+        renderRecurrentTasks();
+        closeModal(elements.checklistModal);
     }
 
     // ==========================================
@@ -882,11 +985,18 @@
         elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
         elements.archivedModalClose.addEventListener('click', () => closeModal(elements.archivedModal));
 
+        // Checklist Editor
+        elements.editChecklistBtn.addEventListener('click', openChecklistModal);
+        elements.checklistModalClose.addEventListener('click', () => closeModal(elements.checklistModal));
+        elements.checklistCancelBtn.addEventListener('click', () => closeModal(elements.checklistModal));
+        elements.checklistSaveBtn.addEventListener('click', saveChecklistFromEditor);
+        elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
+
         // Notes - debounced auto-save
         elements.notesTextarea.addEventListener('input', debouncedSaveNotes);
 
         // Close modals on outside click
-        [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(modal => {
+        [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     closeModal(modal);
@@ -897,7 +1007,7 @@
         // Close modals on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(closeModal);
+                [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(closeModal);
                 closeMenu();
             }
         });
@@ -909,6 +1019,9 @@
     async function init() {
         // Initialize header date
         initHeaderDate();
+
+        // Load recurrent tasks configuration
+        loadRecurrentTasks();
 
         // Check for daily reset of recurrent tasks
         checkDailyReset();

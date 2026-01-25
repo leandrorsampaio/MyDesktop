@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Tracker</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -31,6 +32,9 @@
                 </button>
                 <button id="view-archived-btn" class="menu-item">
                     <span class="menu-icon">📦</span> All Completed Tasks
+                </button>
+                <button id="edit-checklist-btn" class="menu-item">
+                    <span class="menu-icon">✏️</span> Edit Daily Checklist
                 </button>
             </nav>
         </div>
@@ -181,6 +185,29 @@
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" id="confirm-cancel">Cancel</button>
                 <button type="button" class="btn-delete" id="confirm-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Checklist Modal -->
+    <div id="checklist-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Edit Daily Checklist</h2>
+                <button class="modal-close" id="checklist-modal-close">&times;</button>
+            </div>
+            <div class="checklist-editor">
+                <p class="checklist-hint">Add tasks to your daily checklist. Optionally add a URL to open when clicking the link icon.</p>
+                <div id="checklist-items-container">
+                    <!-- Checklist items will be rendered here -->
+                </div>
+                <button type="button" class="btn-add-checklist-item" id="add-checklist-item-btn">+ Add Item</button>
+                <div class="modal-actions">
+                    <div class="modal-actions-right">
+                        <button type="button" class="btn-cancel" id="checklist-cancel-btn">Cancel</button>
+                        <button type="button" class="btn-save" id="checklist-save-btn">Save Checklist</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

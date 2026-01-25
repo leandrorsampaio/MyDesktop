@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Last Updated:** 2026-01-25
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 1.4.0   | 2026-01-25 | Added editable daily checklist with external links, favicon |
 | 1.3.0   | 2026-01-25 | Responsive design for MacBook Pro 14" (1512px) and external monitor (2304px), sidebar width increased to 560px, textarea min-width 500px |
 | 1.2.0   | 2026-01-25 | Added welcome header with date/week info, hamburger menu, notes save timestamp, archived tasks modal |
 | 1.1.0   | 2026-01-25 | Notes changed from checkbox list to free-form textarea with debounced auto-save |
@@ -28,6 +29,7 @@ A local web-based task management tool that serves as a browser homepage. It fea
   - `archived-tasks.json` - Archived tasks
   - `reports.json` - Generated reports with metadata
   - `notes.json` - User notes (free-form text)
+- **Favicon:** `public/favicon.png` (star icon)
 - **No external CSS libraries** - all styling must be custom vanilla CSS
 
 ## Server Configuration
@@ -126,21 +128,28 @@ The interface should follow the design philosophy of the Clear todo list app:
 - Dropdown menu with options:
   - **View Reports:** Opens reports modal
   - **All Completed Tasks:** Opens archived tasks modal
+  - **Edit Daily Checklist:** Opens checklist configuration modal
 - Menu closes when clicking outside or pressing ESC
 
 ### Left Sidebar Components
 
 **1. Recurrent Tasks (Daily Checklist)**
-- Hardcoded list of daily tasks (editable in code)
+- User-configurable list of daily tasks (editable via hamburger menu)
+- Each item can have:
+  - Task text (required)
+  - External URL (optional) - shown as ↗ icon that opens in new tab
 - Simple checkbox interface
 - Visual feedback: strike-through text when checked
 - **Auto-reset at 6:00 AM daily**
-- No persistence needed (resets every day)
-- Example items:
-  - Check mailbox
-  - Water the plants
+- Checklist configuration stored in localStorage (`checklistConfig`)
+- Checked state stored separately and resets daily (`recurrentTasksChecked`)
+- Default items:
+  - Check email
   - Review calendar
-  - etc.
+  - Water plants
+  - Take vitamins
+  - Exercise
+  - Read for 30 minutes
 
 **2. Notes Section**
 - Free-form textarea for quick notes
