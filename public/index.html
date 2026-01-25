@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <!-- Recurrent Tasks Section -->
+            <section class="sidebar-section recurrent-tasks">
+                <h3>Daily Checklist</h3>
+                <ul id="recurrent-list">
+                    <!-- Recurrent tasks will be rendered here -->
+                </ul>
+            </section>
+
+            <!-- Notes Section -->
+            <section class="sidebar-section notes-section">
+                <h3>Notes</h3>
+                <div class="notes-container">
+                    <ul id="notes-list">
+                        <!-- Notes will be rendered here -->
+                    </ul>
+                    <div class="add-note-container">
+                        <input type="text" id="new-note-input" placeholder="Add a note..." />
+                        <button id="add-note-btn" class="btn-add-note">+</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View Reports Button -->
+            <button id="view-reports-btn" class="btn-view-reports">View Reports</button>
+        </aside>
+
+        <!-- Main Kanban Board -->
+        <main class="kanban-board">
+            <!-- To Do Column -->
+            <div class="column" data-status="todo">
+                <div class="column-header">
+                    <h2>To Do</h2>
+                    <button class="btn-add-task" id="add-task-btn">+ Add Task</button>
+                </div>
+                <div class="task-list" id="todo-list" data-status="todo">
+                    <!-- Tasks will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Wait Column -->
+            <div class="column" data-status="wait">
+                <div class="column-header">
+                    <h2>Wait</h2>
+                </div>
+                <div class="task-list" id="wait-list" data-status="wait">
+                    <!-- Tasks will be rendered here -->
+                </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="column" data-status="inprogress">
+                <div class="column-header">
+                    <h2>In Progress</h2>
+                </div>
+                <div class="task-list" id="inprogress-list" data-status="inprogress">
+                    <!-- Tasks will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Done Column -->
+            <div class="column" data-status="done">
+                <div class="column-header">
+                    <h2>Done</h2>
+                    <button class="btn-archive" id="archive-btn">Archive & Report</button>
+                </div>
+                <div class="task-list" id="done-list" data-status="done">
+                    <!-- Tasks will be rendered here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Task</h2>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Title *</label>
+                    <input type="text" id="task-title" required placeholder="Enter task title" />
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Description</label>
+                    <textarea id="task-description" placeholder="Enter task description" rows="4"></textarea>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="task-priority" />
+                        <span class="priority-label">Priority Task</span>
+                    </label>
+                </div>
+
+                <!-- Task Log (only shown in edit mode) -->
+                <div id="task-log-section" class="form-group task-log-section" style="display: none;">
+                    <label>Activity Log</label>
+                    <ul id="task-log-list" class="task-log-list">
+                        <!-- Log entries will be rendered here -->
+                    </ul>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="delete-task-btn" class="btn-delete" style="display: none;">Delete Task</button>
+                    <div class="modal-actions-right">
+                        <button type="button" class="btn-cancel" id="cancel-btn">Cancel</button>
+                        <button type="submit" class="btn-save">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reports Modal -->
+    <div id="reports-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Reports</h2>
+                <button class="modal-close" id="reports-modal-close">&times;</button>
+            </div>
+            <div id="reports-container" class="reports-container">
+                <!-- Reports list or single report view will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+            </div>
+            <p>Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="confirm-cancel">Cancel</button>
+                <button type="button" class="btn-delete" id="confirm-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
