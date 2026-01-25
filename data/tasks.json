@@ -42,8 +42,8 @@
     "title": "dqwdqwqw",
     "description": "dqwqdqw",
     "priority": true,
-    "status": "wait",
-    "position": 1,
+    "status": "archived",
+    "position": 3,
     "log": [
       {
         "date": "2026-01-25",
@@ -56,6 +56,10 @@
       {
         "date": "2026-01-25",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-01-25",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-25T02:33:11.042Z"
@@ -134,8 +138,8 @@
     "title": "hqw9uhd9q8woughdqw",
     "description": "qwdwqdqdwqwq",
     "priority": false,
-    "status": "wait",
-    "position": 0,
+    "status": "archived",
+    "position": 2,
     "log": [
       {
         "date": "2026-01-25",
@@ -148,6 +152,10 @@
       {
         "date": "2026-01-25",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-01-25",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-25T09:23:34.992Z"
@@ -176,9 +184,14 @@
     "title": "uqwgd97qwgd97qwt d",
     "description": "",
     "priority": false,
-    "status": "todo",
-    "position": 0,
-    "log": [],
+    "status": "archived",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-01-25",
+        "action": "Moved from To Do to Done"
+      }
+    ],
     "createdDate": "2026-01-25T09:23:42.845Z"
   },
   {
@@ -186,7 +199,7 @@
     "title": "wqudgqwudgqw",
     "description": "",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -205,7 +218,7 @@
     "title": "dowuqdiuqwbgd",
     "description": "",
     "priority": false,
-    "status": "inprogress",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -215,6 +228,10 @@
       {
         "date": "2026-01-25",
         "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-01-25",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-25T09:23:47.465Z"
@@ -239,9 +256,14 @@
     "title": "qwudgqw9gdqiwugd",
     "description": "",
     "priority": false,
-    "status": "todo",
-    "position": 1,
-    "log": [],
+    "status": "archived",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-01-25",
+        "action": "Moved from To Do to Done"
+      }
+    ],
     "createdDate": "2026-01-25T09:23:51.563Z"
   }
 ]
