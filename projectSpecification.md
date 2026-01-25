@@ -1,0 +1,459 @@
+# Task Tracker - Project Specification Document
+
+## Project Overview
+A local web-based task management tool that serves as a browser homepage. It features a kanban-style board with drag-and-drop functionality to track tasks across different stages of completion, along with note-taking and daily recurring task checklist.
+
+## Technical Stack
+- **Frontend:** HTML5, Vanilla CSS, Vanilla JavaScript
+- **Backend:** Node.js + Express
+- **Server Port:** 3001
+- **Data Storage:** JSON files on local filesystem
+  - `tasks.json` - Active tasks
+  - `archived-tasks.json` - Archived tasks
+  - `reports.json` - Generated reports with metadata
+  - `notes.json` - User notes (checkbox items)
+- **No external CSS libraries** - all styling must be custom vanilla CSS
+
+## Server Configuration
+
+### Port Assignment
+- **Task Tracker:** `http://localhost:3001`
+- Note: Port 3000 is already in use by another application
+
+### Backend Structure
+- Express.js server
+- REST API endpoints for task operations
+- Static file serving for HTML/CSS/JS
+- JSON file read/write operations
+
+### API Endpoints (to be implemented)
+```
+GET    /api/tasks              - Retrieve all active tasks
+POST   /api/tasks              - Create new task
+PUT    /api/tasks/:id          - Update existing task
+DELETE /api/tasks/:id          - Delete a task
+POST   /api/tasks/:id/move     - Move task between columns or reorder within column
+POST   /api/archive            - Archive completed tasks and generate report
+GET    /api/reports            - Get list of all reports
+GET    /api/reports/:id        - Get specific report
+PUT    /api/reports/:id        - Update report title
+GET    /api/notes              - Get notes
+POST   /api/notes              - Save notes
+```
+
+## Design Inspiration
+
+### Visual Style: Clear App-Inspired
+The interface should follow the design philosophy of the Clear todo list app:
+
+**Color System:**
+- Each task card position has a distinct gradient background color
+- Colors should progress through a spectrum within each column (gradient from dark to light)
+- **Maximum 20 color gradients per column** (system should adapt if fewer tasks)
+- Color is tied to POSITION, not to the task itself
+- When tasks are reordered, colors update based on new positions
+
+**Column Color Themes:**
+- **To Do:** Warm colors gradient (dark red → light red/orange)
+- **Wait:** Cool/muted colors gradient (dark gray/blue → light gray/blue)
+- **In Progress:** Energetic colors gradient (dark green/teal → light green/teal)
+- **Done:** Calming colors gradient (dark purple/blue → light purple/blue)
+
+**Visual Characteristics:**
+- Gradient backgrounds on task cards (not flat colors)
+- Smooth color transitions when tasks are reordered
+- Clean typography with good contrast against colored backgrounds
+- Minimal borders/shadows - let the colors define the spaces
+- White/light text on darker gradients, darker text on lighter gradients
+- Smooth animations for all interactions
+
+## Layout Structure
+
+### Main Screen Layout
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Left Sidebar          │        Main Kanban Board               │
+│  ┌──────────────────┐ │  ┌──────┬──────┬──────┬──────┐        │
+│  │ Recurrent Tasks  │ │  │ TODO │ WAIT │ PROG │ DONE │        │
+│  │ (Daily Checklist)│ │  │ [+]  │      │      │[Arc] │        │
+│  │                  │ │  │      │      │      │      │        │
+│  │ ☐ Check email    │ │  │ Card │ Card │ Card │ Card │        │
+│  │ ☐ Water plants   │ │  │ Card │ Card │ Card │ Card │        │
+│  └──────────────────┘ │  │ Card │      │      │      │        │
+│                        │  └──────┴──────┴──────┴──────┘        │
+│  ┌──────────────────┐ │                                        │
+│  │ Notes            │ │                                        │
+│  │                  │ │                                        │
+│  │ ☐ Note item 1    │ │                                        │
+│  │ ☐ Note item 2    │ │                                        │
+│  │ ☐ Note item 3    │ │                                        │
+│  │                  │ │                                        │
+│  └──────────────────┘ │                                        │
+│                        │                                        │
+│  [View Reports]        │                                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Left Sidebar Components
+
+**1. Recurrent Tasks (Daily Checklist)**
+- Hardcoded list of daily tasks (editable in code)
+- Simple checkbox interface
+- Visual feedback: strike-through text when checked
+- **Auto-reset at 6:00 AM daily**
+- No persistence needed (resets every day)
+- Example items:
+  - Check mailbox
+  - Water the plants
+  - Review calendar
+  - etc.
+
+**2. Notes Section**
+- Checkbox-based note items
+- Plain text only (no formatting)
+- Persistent storage in `notes.json`
+- No date association needed
+- Notes are saved when generating reports but NOT cleared after report generation
+- Can add/remove note items
+- Check/uncheck functionality
+
+**3. View Reports Button**
+- Opens modal/page showing list of all generated reports
+- Displays report date/title
+- Click to view full report
+
+### Main Kanban Board
+
+**Four Columns:**
+1. **To Do** - Tasks that need to be started
+   - **[+ Add Task] button** at top of column
+2. **Wait** - Tasks that are blocked or waiting on dependencies
+3. **In Progress** - Tasks currently being worked on
+4. **Done** - Completed tasks
+   - **[Archive & Generate Report] button** at top of column
+
+### Task Card Design
+
+```
+┌─────────────────────────────────┐
+│ ⋮⋮  ★ Task Title          [Edit]│  ← Gradient background
+│     Short description...        │     based on position
+│                                 │
+└─────────────────────────────────┘
+```
+
+**Task Card Components:**
+- **Drag handle (⋮⋮):** Left side icon for reordering within column
+- **Star icon (★):** Displays only if priority is enabled (toggle on/off)
+- **Title:** Bold, prominent text
+- **Description:** Smaller text below title (first line or truncated)
+- **Edit button:** Top-right corner to open edit modal
+- **Gradient background:** Color based on position in column
+
+## Data Model
+
+### Task Object Structure
+```javascript
+{
+  id: string,                  // Unique identifier (UUID or timestamp-based)
+  title: string,               // Task title (required)
+  description: string,         // Detailed description (optional, default: "")
+  priority: boolean,           // Priority toggle (true = show star, false = no star)
+  status: string,              // "todo" | "wait" | "inprogress" | "done" | "archived"
+  position: number,            // Position within the column (0-based index)
+  log: array,                  // Activity log entries
+  createdDate: string,         // ISO date when task was created
+}
+```
+
+### Log Entry Structure
+```javascript
+{
+  date: string,               // Date only (YYYY-MM-DD format)
+  action: string             // e.g., "Moved from To Do to In Progress"
+}
+```
+
+**Log Rules:**
+- Logs are added ONLY when tasks are moved between columns
+- Format: "Moved from [Old Column] to [New Column] on [Date]"
+- Date format: "2025-01-25" (no time)
+- Manual edits (title, description, priority) are NOT logged
+
+### Notes Data Structure
+```javascript
+{
+  items: [
+    {
+      id: string,
+      text: string,
+      checked: boolean
+    }
+  ]
+}
+```
+
+### Report Data Structure
+```javascript
+{
+  id: string,                    // Unique identifier
+  title: string,                 // Default: "Week [N] (Jan 20-25)" - editable
+  generatedDate: string,         // ISO datetime
+  weekNumber: number,            // Week of the year (e.g., 3)
+  dateRange: string,             // "Jan 20-25"
+  content: {
+    archived: [],                // Tasks that were archived (from Done column)
+    inProgress: [],              // Snapshot of In Progress tasks
+    waiting: [],                 // Snapshot of Wait tasks
+    todo: []                     // Snapshot of To Do tasks
+  },
+  notes: []                      // Copy of notes at time of report generation
+}
+```
+
+**Report Content - Each Task Shows:**
+- ID
+- Title
+- Description
+
+## Core Functionality Requirements
+
+### 1. Add New Task
+- **Trigger:** Click [+ Add Task] button above To Do column
+- **Action:** Open modal with form
+- **Form Fields:**
+  - Title (required, text input)
+  - Description (optional, textarea)
+  - Priority (checkbox/toggle - default: false)
+- **Save:** Creates new task with `status: "todo"` and `position` set to end of To Do column
+- **Cancel:** Close modal without saving (click outside, close button, or ESC key)
+
+### 2. Edit Task
+- **Trigger:** Click [Edit] button on task card
+- **Action:** Open modal with pre-filled form
+- **Form Fields:**
+  - Title (editable)
+  - Description (editable)
+  - Priority (toggle)
+  - **Task Log:** Read-only list showing movement history
+  - **Delete Button:** Remove task (with confirmation)
+- **Save:** Updates task data
+- **Cancel:** Close modal without saving (click outside, close button, or ESC key)
+
+### 3. Move Tasks Between Columns
+- **Method:** Drag and drop task card to different column
+- **Action:**
+  - Update task `status` to new column
+  - Update task `position` to end of destination column (or dropped position)
+  - Add log entry: "Moved from [Old Column] to [New Column] on [Date]"
+  - Recalculate colors for both source and destination columns
+
+### 4. Reorder Tasks Within Column
+- **Method:** Drag the **⋮⋮ handle** on left side of task card
+- **Action:**
+  - Update `position` values for affected tasks
+  - Recalculate colors based on new positions
+  - **No log entry** for reordering within same column
+
+### 5. Priority Toggle
+- **Visual:** Star icon (★) appears on task card when priority is `true`
+- **Behavior:** Toggle on/off in task creation/edit modal
+- **Purpose:** Visual indicator only - does not affect sorting or color
+
+### 6. Archive & Generate Report
+- **Trigger:** Click [Archive & Generate Report] button above Done column
+- **Action:**
+  1. Collect all tasks with `status: "done"`
+  2. Collect current snapshots of all other columns (To Do, Wait, In Progress)
+  3. Collect current notes
+  4. Generate report with:
+     - Week number (e.g., "Week 3")
+     - Date range (e.g., "Jan 20-25")
+     - Default title: "Week [N] (Jan 20-25)"
+  5. Move all Done tasks to archived status (`status: "archived"`)
+  6. Save archived tasks to `archived-tasks.json`
+  7. Remove archived tasks from Done column
+  8. Save report to `reports.json`
+  9. Display success message or show generated report
+
+**Notes Behavior:**
+- Notes are included in report
+- Notes are **NOT** cleared after report generation
+- Notes persist for next report
+
+### 7. View Reports
+- **Trigger:** Click [View Reports] button in left sidebar
+- **Action:** Open modal/page showing list of all reports
+- **Display:** List of reports with titles and dates
+- **Actions:**
+  - Click report to view full content
+  - Edit report title (inline or in view mode)
+- **Report Display Format:**
+  ```
+  Week 3 (Jan 20-25)
+  
+  === Completed Tasks (Archived) ===
+  [ID-001] Task Title
+  Description: Task description here
+  
+  [ID-002] Another Task
+  Description: Description here
+  
+  === In Progress ===
+  [ID-010] Current Task
+  Description: Working on this
+  
+  === Waiting/Blocked ===
+  [ID-020] Blocked Task
+  Description: Waiting for X
+  
+  === To Do ===
+  [ID-030] Upcoming Task
+  Description: Need to start
+  
+  === Notes ===
+  ☐ Note item 1
+  ☑ Note item 2 (checked at time of report)
+  ```
+
+### 8. Notes Management
+- **Add Note:** Button or input to add new checkbox item
+- **Edit Note:** Click text to edit inline
+- **Delete Note:** Delete/remove button per item
+- **Toggle Checkbox:** Click checkbox to check/uncheck
+- **Persistence:** Auto-save to `notes.json` on any change
+
+### 9. Daily Recurrent Tasks
+- **Hardcoded List:** Defined in code (can be modified by editing source)
+- **Reset Time:** 6:00 AM daily
+- **Visual Feedback:** Strike-through text when checked
+- **No Persistence:** State resets every day
+- **Implementation:** Check local time on app load/refresh, reset if past 6 AM and new day
+
+### 10. Color Management
+- **Color Assignment:** Based on position index (0-19)
+- **Per Column:** Each column has own color gradient scheme (20 shades)
+- **Dynamic Update:** When tasks are moved or reordered, recalculate position-based colors
+- **Adaptation:** If column has fewer than 20 tasks, distribute colors evenly
+
+## UI/UX Considerations
+
+### Modals
+- **Add Task Modal:** Clean form with title, description, priority toggle
+- **Edit Task Modal:** Same form + task log display + delete button
+- **Reports List Modal:** Scrollable list of reports with edit title functionality
+- **Report View:** Full report display (could be same modal or separate view)
+
+### Drag and Drop
+- **Visual Feedback:**
+  - Highlight drop zones when dragging
+  - Show placeholder where task will land
+  - Smooth animations during drag
+- **Drag Handles:**
+  - ⋮⋮ icon on left side for reordering within column
+  - Entire card draggable for moving between columns
+
+### Buttons & Actions
+- **[+ Add Task]:** Prominent button above To Do column
+- **[Archive & Generate Report]:** Clear button above Done column
+- **[Edit]:** Small button on each task card (top-right)
+- **[View Reports]:** Button in left sidebar
+- **Delete Task:** Inside edit modal with confirmation dialog
+
+### Animations
+- Smooth color transitions when positions change
+- Fade in/out for modals
+- Slide/fade animations for task movements
+- Strike-through animation for checked items
+
+### Responsive Behavior
+- Optimized for desktop (primary use case)
+- Sidebar fixed or collapsible on smaller screens
+- Columns stack vertically on mobile if needed
+
+## CSS Requirements
+
+### Color Gradients
+- Define 20 gradient steps per column (80 total gradients)
+- CSS custom properties for easy management
+- Example structure:
+  ```css
+  --todo-gradient-0: linear-gradient(135deg, #8B0000, #A52A2A);
+  --todo-gradient-1: linear-gradient(135deg, #A52A2A, #CD5C5C);
+  ...
+  --todo-gradient-19: linear-gradient(135deg, #FFA07A, #FFB6C1);
+  ```
+
+### Typography
+- High contrast text on gradient backgrounds
+- Title: Bold, 16-18px
+- Description: Regular, 13-14px
+- Logs: Smaller, muted text
+
+### Layout
+- CSS Grid for main layout (sidebar + kanban board)
+- Flexbox for columns and task cards
+- Consistent spacing and padding
+
+## Technical Implementation Notes
+
+### Position Management
+- Each column maintains array of task IDs in order
+- When task is moved/reordered, update position values
+- Use `position` field to sort tasks within columns
+
+### Color Calculation
+- Function to map position (0-19) to gradient CSS variable
+- Example: `getTaskColor(columnName, position)`
+- Returns: `var(--todo-gradient-5)`
+
+### Daily Reset Logic (Recurrent Tasks)
+```javascript
+// Pseudocode
+const lastResetTime = localStorage.getItem('lastReset');
+const now = new Date();
+const todayAt6AM = new Date(now.setHours(6, 0, 0, 0));
+
+if (!lastResetTime || new Date(lastResetTime) < todayAt6AM) {
+  // Reset all recurrent task checkboxes
+  localStorage.setItem('lastReset', todayAt6AM.toISOString());
+}
+```
+
+### Report Generation
+- Calculate week number from date
+- Format date range (start of week to end of week)
+- Deep copy task snapshots (don't reference active tasks)
+- Generate HTML or plain text report for display/export
+
+## Data Persistence Strategy
+
+### Files
+1. **tasks.json:** Active tasks only
+2. **archived-tasks.json:** All archived tasks (append-only)
+3. **reports.json:** Array of report objects
+4. **notes.json:** Current notes state
+
+### Auto-Save
+- Save tasks.json on any task modification
+- Save notes.json on any note change
+- Save reports.json when new report is generated
+- Append to archived-tasks.json when archiving
+
+## Future Considerations (Out of Scope for Initial Version)
+- Export reports to PDF or formatted HTML file
+- Search/filter tasks
+- Due dates
+- Tags/labels
+- Custom color themes
+- Dark mode
+- Keyboard shortcuts for power users
+- Undo/redo functionality
+- Multiple boards/projects
+
+---
+
+**Server Start Command:** `node server.js` (runs on port 3001)
+
+**Browser Homepage:** Set to `http://localhost:3001`
