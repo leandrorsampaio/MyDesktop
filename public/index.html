@@ -7,6 +7,35 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome, Leandro</h1>
+            <div class="date-info">
+                <span id="current-date"></span>
+                <span class="separator">•</span>
+                <span id="current-weekday"></span>
+                <span class="separator">•</span>
+                <span id="current-week"></span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button id="menu-btn" class="btn-menu" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav id="dropdown-menu" class="dropdown-menu">
+                <button id="view-reports-btn" class="menu-item">
+                    <span class="menu-icon">📊</span> View Reports
+                </button>
+                <button id="view-archived-btn" class="menu-item">
+                    <span class="menu-icon">📦</span> All Completed Tasks
+                </button>
+            </nav>
+        </div>
+    </header>
+
     <div class="app-container">
         <!-- Left Sidebar -->
         <aside class="sidebar">
@@ -20,20 +49,12 @@
 
             <!-- Notes Section -->
             <section class="sidebar-section notes-section">
-                <h3>Notes</h3>
-                <div class="notes-container">
-                    <ul id="notes-list">
-                        <!-- Notes will be rendered here -->
-                    </ul>
-                    <div class="add-note-container">
-                        <input type="text" id="new-note-input" placeholder="Add a note..." />
-                        <button id="add-note-btn" class="btn-add-note">+</button>
-                    </div>
+                <div class="notes-header">
+                    <h3>Notes</h3>
+                    <span id="notes-save-status"></span>
                 </div>
+                <textarea id="notes-textarea" placeholder="Type your notes here..."></textarea>
             </section>
-
-            <!-- View Reports Button -->
-            <button id="view-reports-btn" class="btn-view-reports">View Reports</button>
         </aside>
 
         <!-- Main Kanban Board -->
@@ -133,6 +154,19 @@
             </div>
             <div id="reports-container" class="reports-container">
                 <!-- Reports list or single report view will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Archived Tasks Modal -->
+    <div id="archived-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>All Completed Tasks</h2>
+                <button class="modal-close" id="archived-modal-close">&times;</button>
+            </div>
+            <div id="archived-container" class="archived-container">
+                <!-- Archived tasks list will be rendered here -->
             </div>
         </div>
     </div>

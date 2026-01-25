@@ -43,7 +43,7 @@
     "description": "dqwqdqw",
     "priority": true,
     "status": "wait",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-01-25",
@@ -135,7 +135,7 @@
     "description": "qwdwqdqdwqwq",
     "priority": false,
     "status": "wait",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-01-25",

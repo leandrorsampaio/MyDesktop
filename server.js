@@ -224,7 +224,7 @@ app.post('/api/archive', async (req, res) => {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
         const reports = await readJsonFile(REPORTS_FILE, []);
-        const notes = await readJsonFile(NOTES_FILE, { items: [] });
+        const notes = await readJsonFile(NOTES_FILE, { content: '' });
 
         const doneTasks = tasks.filter(t => t.status === 'done');
         const inProgressTasks = tasks.filter(t => t.status === 'inprogress');
@@ -252,7 +252,7 @@ app.post('/api/archive', async (req, res) => {
                 waiting: waitTasks.map(t => ({ id: t.id, title: t.title, description: t.description })),
                 todo: todoTasks.map(t => ({ id: t.id, title: t.title, description: t.description }))
             },
-            notes: notes.items ? [...notes.items] : []
+            notes: notes.content || ''
         };
 
         // Archive done tasks
@@ -274,6 +274,16 @@ app.post('/api/archive', async (req, res) => {
     } catch (error) {
         console.error('Archive error:', error);
         res.status(500).json({ error: 'Failed to archive tasks' });
+    }
+});
+
+// GET all archived tasks
+app.get('/api/archived', async (req, res) => {
+    try {
+        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
+        res.json(archivedTasks);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read archived tasks' });
     }
 });
 
@@ -328,7 +338,7 @@ app.put('/api/reports/:id', async (req, res) => {
 // GET notes
 app.get('/api/notes', async (req, res) => {
     try {
-        const notes = await readJsonFile(NOTES_FILE, { items: [] });
+        const notes = await readJsonFile(NOTES_FILE, { content: '' });
         res.json(notes);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read notes' });
@@ -338,8 +348,8 @@ app.get('/api/notes', async (req, res) => {
 // POST save notes
 app.post('/api/notes', async (req, res) => {
     try {
-        const { items } = req.body;
-        const notes = { items: items || [] };
+        const { content } = req.body;
+        const notes = { content: content || '' };
         await writeJsonFile(NOTES_FILE, notes);
         res.json(notes);
     } catch (error) {

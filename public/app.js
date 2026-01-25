@@ -25,14 +25,22 @@
     // State
     // ==========================================
     let tasks = [];
-    let notes = { items: [] };
+    let notes = { content: '' };
     let editingTaskId = null;
     let draggedTask = null;
+    let saveNotesTimeout = null;
 
     // ==========================================
     // DOM Elements
     // ==========================================
     const elements = {
+        // Header
+        currentDate: document.getElementById('current-date'),
+        currentWeekday: document.getElementById('current-weekday'),
+        currentWeek: document.getElementById('current-week'),
+        menuBtn: document.getElementById('menu-btn'),
+        dropdownMenu: document.getElementById('dropdown-menu'),
+
         // Task Modal
         taskModal: document.getElementById('task-modal'),
         taskForm: document.getElementById('task-form'),
@@ -53,6 +61,12 @@
         reportsModalClose: document.getElementById('reports-modal-close'),
         viewReportsBtn: document.getElementById('view-reports-btn'),
 
+        // Archived Tasks Modal
+        archivedModal: document.getElementById('archived-modal'),
+        archivedContainer: document.getElementById('archived-container'),
+        archivedModalClose: document.getElementById('archived-modal-close'),
+        viewArchivedBtn: document.getElementById('view-archived-btn'),
+
         // Confirm Modal
         confirmModal: document.getElementById('confirm-modal'),
         confirmCancel: document.getElementById('confirm-cancel'),
@@ -62,13 +76,52 @@
         archiveBtn: document.getElementById('archive-btn'),
 
         // Notes
-        notesList: document.getElementById('notes-list'),
-        newNoteInput: document.getElementById('new-note-input'),
-        addNoteBtn: document.getElementById('add-note-btn'),
+        notesTextarea: document.getElementById('notes-textarea'),
+        notesSaveStatus: document.getElementById('notes-save-status'),
 
         // Recurrent Tasks
         recurrentList: document.getElementById('recurrent-list')
     };
+
+    // ==========================================
+    // Header Date Functions
+    // ==========================================
+    function initHeaderDate() {
+        const now = new Date();
+
+        // Format date: "January 25, 2026"
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        elements.currentDate.textContent = now.toLocaleDateString('en-US', dateOptions);
+
+        // Weekday: "Saturday"
+        const weekdayOptions = { weekday: 'long' };
+        elements.currentWeekday.textContent = now.toLocaleDateString('en-US', weekdayOptions);
+
+        // Week number
+        const weekNumber = getWeekNumber(now);
+        elements.currentWeek.textContent = `Week ${weekNumber}`;
+    }
+
+    function getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    // ==========================================
+    // Hamburger Menu
+    // ==========================================
+    function toggleMenu() {
+        elements.menuBtn.classList.toggle('active');
+        elements.dropdownMenu.classList.toggle('active');
+    }
+
+    function closeMenu() {
+        elements.menuBtn.classList.remove('active');
+        elements.dropdownMenu.classList.remove('active');
+    }
 
     // ==========================================
     // Color Management
@@ -199,11 +252,30 @@
         }
     }
 
+    async function fetchArchivedTasks() {
+        try {
+            const response = await fetch('/api/archived');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching archived tasks:', error);
+            return [];
+        }
+    }
+
     async function fetchNotes() {
         try {
             const response = await fetch('/api/notes');
-            notes = await response.json();
-            renderNotes();
+            const data = await response.json();
+            // Handle both old format (items array) and new format (content string)
+            if (data.content !== undefined) {
+                notes = data;
+            } else if (data.items && Array.isArray(data.items)) {
+                // Convert old format to new format
+                notes = { content: data.items.map(item => item.text).join('\n') };
+            } else {
+                notes = { content: '' };
+            }
+            elements.notesTextarea.value = notes.content;
         } catch (error) {
             console.error('Error fetching notes:', error);
         }
@@ -211,14 +283,47 @@
 
     async function saveNotes() {
         try {
+            showNotesSaveStatus('saving');
             await fetch('/api/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(notes)
             });
+            showNotesSaveStatus('saved');
         } catch (error) {
             console.error('Error saving notes:', error);
         }
+    }
+
+    function showNotesSaveStatus(status) {
+        const el = elements.notesSaveStatus;
+        el.className = '';
+        el.style.opacity = '1';
+
+        if (status === 'saving') {
+            el.textContent = 'Saving...';
+            el.classList.add('saving');
+        } else if (status === 'saved') {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            el.textContent = `Saved at ${timeStr}`;
+            el.classList.add('saved');
+        }
+    }
+
+    function debouncedSaveNotes() {
+        // Clear any pending save
+        if (saveNotesTimeout) {
+            clearTimeout(saveNotesTimeout);
+        }
+        // Schedule save after 500ms of no typing
+        saveNotesTimeout = setTimeout(() => {
+            notes.content = elements.notesTextarea.value;
+            saveNotes();
+        }, 500);
     }
 
     async function fetchReports() {
@@ -311,38 +416,6 @@
         return card;
     }
 
-    function renderNotes() {
-        const notesList = elements.notesList;
-        notesList.innerHTML = '';
-
-        if (!notes.items || notes.items.length === 0) {
-            return;
-        }
-
-        notes.items.forEach(note => {
-            const li = document.createElement('li');
-            li.className = note.checked ? 'checked' : '';
-            li.innerHTML = `
-                <input type="checkbox" ${note.checked ? 'checked' : ''} onchange="window.toggleNote('${note.id}')" />
-                <span class="note-text" contenteditable="true" data-note-id="${note.id}">${escapeHtml(note.text)}</span>
-                <button class="delete-note" onclick="window.deleteNote('${note.id}')">&times;</button>
-            `;
-
-            // Handle note text editing
-            const noteText = li.querySelector('.note-text');
-            noteText.addEventListener('blur', () => {
-                updateNoteText(note.id, noteText.textContent);
-            });
-            noteText.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    noteText.blur();
-                }
-            });
-
-            notesList.appendChild(li);
-        });
-    }
 
     function renderRecurrentTasks() {
         const list = elements.recurrentList;
@@ -580,6 +653,7 @@
     // Reports Functions
     // ==========================================
     async function openReportsModal() {
+        closeMenu();
         const reports = await fetchReports();
         renderReportsList(reports);
         openModal(elements.reportsModal);
@@ -637,12 +711,15 @@
 
                 <div class="report-section">
                     <h4>Notes</h4>
-                    ${report.notes && report.notes.length > 0 ?
-                        report.notes.map(note => `
-                            <div class="report-notes-item ${note.checked ? 'checked' : ''}">
-                                ${note.checked ? '☑' : '☐'} ${escapeHtml(note.text)}
-                            </div>
-                        `).join('') :
+                    ${report.notes && (typeof report.notes === 'string' ? report.notes.trim() : report.notes.length > 0) ?
+                        (typeof report.notes === 'string' ?
+                            `<pre class="report-notes-text">${escapeHtml(report.notes)}</pre>` :
+                            report.notes.map(note => `
+                                <div class="report-notes-item ${note.checked ? 'checked' : ''}">
+                                    ${note.checked ? '☑' : '☐'} ${escapeHtml(note.text)}
+                                </div>
+                            `).join('')
+                        ) :
                         '<div class="empty-state">No notes</div>'
                     }
                 </div>
@@ -696,53 +773,53 @@
     }
 
     // ==========================================
-    // Notes Functions
+    // Archived Tasks Functions
     // ==========================================
-    function generateNoteId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    async function openArchivedModal() {
+        closeMenu();
+        const archivedTasks = await fetchArchivedTasks();
+        renderArchivedTasks(archivedTasks);
+        openModal(elements.archivedModal);
     }
 
-    function addNote() {
-        const text = elements.newNoteInput.value.trim();
-        if (!text) return;
+    function renderArchivedTasks(archivedTasks) {
+        if (archivedTasks.length === 0) {
+            elements.archivedContainer.innerHTML = '<div class="empty-state">No completed tasks yet</div>';
+            return;
+        }
 
-        if (!notes.items) notes.items = [];
-
-        notes.items.push({
-            id: generateNoteId(),
-            text,
-            checked: false
+        // Sort by createdDate descending (newest completed first)
+        // We use the last log entry date if available, otherwise createdDate
+        archivedTasks.sort((a, b) => {
+            const aDate = a.log && a.log.length > 0
+                ? new Date(a.log[a.log.length - 1].date)
+                : new Date(a.createdDate);
+            const bDate = b.log && b.log.length > 0
+                ? new Date(b.log[b.log.length - 1].date)
+                : new Date(b.createdDate);
+            return bDate - aDate;
         });
 
-        elements.newNoteInput.value = '';
-        renderNotes();
-        saveNotes();
-    }
-
-    window.toggleNote = function(noteId) {
-        const note = notes.items.find(n => n.id === noteId);
-        if (note) {
-            note.checked = !note.checked;
-            renderNotes();
-            saveNotes();
-        }
-    };
-
-    window.deleteNote = function(noteId) {
-        notes.items = notes.items.filter(n => n.id !== noteId);
-        renderNotes();
-        saveNotes();
-    };
-
-    function updateNoteText(noteId, newText) {
-        const note = notes.items.find(n => n.id === noteId);
-        if (note && newText.trim()) {
-            note.text = newText.trim();
-            saveNotes();
-        } else if (note && !newText.trim()) {
-            // Delete empty notes
-            window.deleteNote(noteId);
-        }
+        elements.archivedContainer.innerHTML = `
+            <div class="archived-count">${archivedTasks.length} completed task${archivedTasks.length !== 1 ? 's' : ''}</div>
+            <ul class="archived-list">
+                ${archivedTasks.map(task => {
+                    const completedDate = task.log && task.log.length > 0
+                        ? task.log[task.log.length - 1].date
+                        : task.createdDate.split('T')[0];
+                    return `
+                        <li class="archived-task-item">
+                            <div class="archived-task-header">
+                                ${task.priority ? '<span class="archived-task-priority">★</span>' : ''}
+                                <span class="archived-task-title">${escapeHtml(task.title)}</span>
+                            </div>
+                            ${task.description ? `<div class="archived-task-desc">${escapeHtml(task.description)}</div>` : ''}
+                            <div class="archived-task-date">Completed: ${completedDate}</div>
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        `;
     }
 
     // ==========================================
@@ -769,6 +846,16 @@
     // Event Listeners
     // ==========================================
     function initEventListeners() {
+        // Hamburger Menu
+        elements.menuBtn.addEventListener('click', toggleMenu);
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!elements.menuBtn.contains(e.target) && !elements.dropdownMenu.contains(e.target)) {
+                closeMenu();
+            }
+        });
+
         // Add Task
         elements.addTaskBtn.addEventListener('click', openAddTaskModal);
 
@@ -791,17 +878,15 @@
         elements.viewReportsBtn.addEventListener('click', openReportsModal);
         elements.reportsModalClose.addEventListener('click', () => closeModal(elements.reportsModal));
 
-        // Notes
-        elements.addNoteBtn.addEventListener('click', addNote);
-        elements.newNoteInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addNote();
-            }
-        });
+        // Archived Tasks
+        elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
+        elements.archivedModalClose.addEventListener('click', () => closeModal(elements.archivedModal));
+
+        // Notes - debounced auto-save
+        elements.notesTextarea.addEventListener('input', debouncedSaveNotes);
 
         // Close modals on outside click
-        [elements.taskModal, elements.reportsModal, elements.confirmModal].forEach(modal => {
+        [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     closeModal(modal);
@@ -812,7 +897,8 @@
         // Close modals on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                [elements.taskModal, elements.reportsModal, elements.confirmModal].forEach(closeModal);
+                [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(closeModal);
+                closeMenu();
             }
         });
     }
@@ -821,6 +907,9 @@
     // Initialize
     // ==========================================
     async function init() {
+        // Initialize header date
+        initHeaderDate();
+
         // Check for daily reset of recurrent tasks
         checkDailyReset();
 

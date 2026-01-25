@@ -116,11 +116,137 @@ body {
     overflow-x: hidden;
 }
 
+/* App Header */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.welcome-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.welcome-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.date-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-info .separator {
+    opacity: 0.5;
+}
+
+/* Header Actions & Hamburger Menu */
+.header-actions {
+    position: relative;
+}
+
+.btn-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-menu:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-menu span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background-color: var(--text-light);
+    border-radius: 1px;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn-menu.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.btn-menu.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.btn-menu.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background-color: #1e1e2e;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    min-width: 200px;
+    padding: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-light);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.menu-icon {
+    font-size: 16px;
+}
+
 /* App Container */
 .app-container {
     display: grid;
     grid-template-columns: 280px 1fr;
-    min-height: 100vh;
+    min-height: calc(100vh - 73px);
 }
 
 /* Sidebar Styles */
@@ -132,7 +258,7 @@ body {
     gap: 20px;
     border-right: 1px solid var(--border-color);
     overflow-y: auto;
-    max-height: 100vh;
+    max-height: calc(100vh - 73px);
 }
 
 .sidebar-section {
@@ -189,137 +315,61 @@ body {
     min-height: 200px;
 }
 
-.notes-container {
-    flex: 1;
+.notes-header {
     display: flex;
-    flex-direction: column;
-}
-
-#notes-list {
-    list-style: none;
-    flex: 1;
-    overflow-y: auto;
-    max-height: 300px;
-}
-
-#notes-list li {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    margin-bottom: 12px;
 }
 
-#notes-list li:last-child {
-    border-bottom: none;
+.notes-header h3 {
+    margin-bottom: 0;
 }
 
-#notes-list input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--accent-color);
-    flex-shrink: 0;
-}
-
-#notes-list .note-text {
-    flex: 1;
-    font-size: 14px;
-    cursor: text;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-#notes-list .note-text:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-#notes-list .note-text:focus {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-#notes-list li.checked .note-text {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
-
-#notes-list .delete-note {
-    background: none;
-    border: none;
-    color: var(--danger-color);
-    cursor: pointer;
+#notes-save-status {
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
     opacity: 0;
-    transition: opacity 0.2s;
-    font-size: 18px;
-    padding: 0 4px;
+    transition: opacity 0.3s;
+    white-space: nowrap;
 }
 
-#notes-list li:hover .delete-note {
+#notes-save-status.saving {
+    color: var(--accent-color);
     opacity: 1;
 }
 
-.add-note-container {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
+#notes-save-status.saved {
+    color: var(--success-color);
+    opacity: 1;
 }
 
-#new-note-input {
+#notes-textarea {
     flex: 1;
-    padding: 10px 12px;
+    min-height: 150px;
+    padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.05);
     color: var(--text-light);
     font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.2s;
 }
 
-#new-note-input:focus {
+#notes-textarea:focus {
     outline: none;
     border-color: var(--accent-color);
 }
 
-#new-note-input::placeholder {
+#notes-textarea::placeholder {
     color: var(--text-muted);
 }
 
-.btn-add-note {
-    width: 38px;
-    height: 38px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--accent-color);
-    color: var(--text-light);
-    font-size: 20px;
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-.btn-add-note:hover {
-    background-color: #3a8aef;
-    transform: scale(1.05);
-}
-
-/* View Reports Button */
-.btn-view-reports {
-    padding: 14px 20px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: var(--text-light);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    margin-top: auto;
-}
-
-.btn-view-reports:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
 
 /* Kanban Board */
 .kanban-board {
@@ -336,7 +386,7 @@ body {
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 40px);
+    min-height: calc(100vh - 120px);
 }
 
 .column-header {
@@ -899,6 +949,19 @@ body {
     opacity: 0.6;
 }
 
+.report-notes-text {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    padding: 12px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    color: var(--text-light);
+}
+
 /* Confirm Modal */
 #confirm-modal p {
     padding: 20px 24px 0;
@@ -919,6 +982,70 @@ body {
     padding: 40px 20px;
     color: var(--text-muted);
     font-size: 14px;
+}
+
+/* Archived Tasks Container */
+.archived-container {
+    padding: 16px 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.archived-list {
+    list-style: none;
+}
+
+.archived-task-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.archived-task-item:last-child {
+    border-bottom: none;
+}
+
+.archived-task-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.archived-task-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+.archived-task-priority {
+    color: #FFD700;
+    font-size: 12px;
+}
+
+.archived-task-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.archived-task-date {
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.archived-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 /* Scrollbar Styling */

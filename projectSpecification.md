@@ -1,5 +1,20 @@
 # Task Tracker - Project Specification Document
 
+**Version:** 1.2.0
+**Last Updated:** 2026-01-25
+
+---
+
+## Changelog
+
+| Version | Date       | Changes                                                      |
+|---------|------------|--------------------------------------------------------------|
+| 1.2.0   | 2026-01-25 | Added welcome header with date/week info, hamburger menu, notes save timestamp, archived tasks modal |
+| 1.1.0   | 2026-01-25 | Notes changed from checkbox list to free-form textarea with debounced auto-save |
+| 1.0.0   | 2026-01-25 | Initial implementation complete                              |
+
+---
+
 ## Project Overview
 A local web-based task management tool that serves as a browser homepage. It features a kanban-style board with drag-and-drop functionality to track tasks across different stages of completion, along with note-taking and daily recurring task checklist.
 
@@ -11,7 +26,7 @@ A local web-based task management tool that serves as a browser homepage. It fea
   - `tasks.json` - Active tasks
   - `archived-tasks.json` - Archived tasks
   - `reports.json` - Generated reports with metadata
-  - `notes.json` - User notes (checkbox items)
+  - `notes.json` - User notes (free-form text)
 - **No external CSS libraries** - all styling must be custom vanilla CSS
 
 ## Server Configuration
@@ -26,7 +41,7 @@ A local web-based task management tool that serves as a browser homepage. It fea
 - Static file serving for HTML/CSS/JS
 - JSON file read/write operations
 
-### API Endpoints (to be implemented)
+### API Endpoints
 ```
 GET    /api/tasks              - Retrieve all active tasks
 POST   /api/tasks              - Create new task
@@ -34,6 +49,7 @@ PUT    /api/tasks/:id          - Update existing task
 DELETE /api/tasks/:id          - Delete a task
 POST   /api/tasks/:id/move     - Move task between columns or reorder within column
 POST   /api/archive            - Archive completed tasks and generate report
+GET    /api/archived           - Get all archived/completed tasks
 GET    /api/reports            - Get list of all reports
 GET    /api/reports/:id        - Get specific report
 PUT    /api/reports/:id        - Update report title
@@ -73,6 +89,9 @@ The interface should follow the design philosophy of the Clear todo list app:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
+│ Welcome, Leandro                                          [≡]  │
+│ January 25, 2026 • Saturday • Week 4                            │
+├─────────────────────────────────────────────────────────────────┤
 │  Left Sidebar          │        Main Kanban Board               │
 │  ┌──────────────────┐ │  ┌──────┬──────┬──────┬──────┐        │
 │  │ Recurrent Tasks  │ │  │ TODO │ WAIT │ PROG │ DONE │        │
@@ -83,17 +102,30 @@ The interface should follow the design philosophy of the Clear todo list app:
 │  └──────────────────┘ │  │ Card │      │      │      │        │
 │                        │  └──────┴──────┴──────┴──────┘        │
 │  ┌──────────────────┐ │                                        │
-│  │ Notes            │ │                                        │
-│  │                  │ │                                        │
-│  │ ☐ Note item 1    │ │                                        │
-│  │ ☐ Note item 2    │ │                                        │
-│  │ ☐ Note item 3    │ │                                        │
-│  │                  │ │                                        │
+│  │ Notes    [Saved] │ │  Hamburger Menu [≡]:                   │
+│  │          at 2:30 │ │   - View Reports                       │
+│  │ ┌──────────────┐ │ │   - All Completed Tasks                │
+│  │ │ Free-form    │ │ │                                        │
+│  │ │ textarea...  │ │ │                                        │
+│  │ └──────────────┘ │ │                                        │
 │  └──────────────────┘ │                                        │
-│                        │                                        │
-│  [View Reports]        │                                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Header Bar
+
+**Welcome Section:**
+- Displays "Welcome, Leandro" as the main greeting
+- Shows current date in format: "January 25, 2026"
+- Shows weekday: "Saturday"
+- Shows week number: "Week 4"
+
+**Hamburger Menu (≡):**
+- Located in top-right corner of header
+- Dropdown menu with options:
+  - **View Reports:** Opens reports modal
+  - **All Completed Tasks:** Opens archived tasks modal
+- Menu closes when clicking outside or pressing ESC
 
 ### Left Sidebar Components
 
@@ -110,18 +142,14 @@ The interface should follow the design philosophy of the Clear todo list app:
   - etc.
 
 **2. Notes Section**
-- Checkbox-based note items
+- Free-form textarea for quick notes
 - Plain text only (no formatting)
+- **Debounced auto-save:** saves 500ms after user stops typing
+- Visual save status indicator with timestamp ("Saved at 2:30 PM")
+- Save status displayed next to "Notes" title in header
 - Persistent storage in `notes.json`
 - No date association needed
-- Notes are saved when generating reports but NOT cleared after report generation
-- Can add/remove note items
-- Check/uncheck functionality
-
-**3. View Reports Button**
-- Opens modal/page showing list of all generated reports
-- Displays report date/title
-- Click to view full report
+- Notes are included in reports but NOT cleared after report generation
 
 ### Main Kanban Board
 
@@ -184,13 +212,7 @@ The interface should follow the design philosophy of the Clear todo list app:
 ### Notes Data Structure
 ```javascript
 {
-  items: [
-    {
-      id: string,
-      text: string,
-      checked: boolean
-    }
-  ]
+  content: string              // Free-form text content
 }
 ```
 
@@ -208,7 +230,7 @@ The interface should follow the design philosophy of the Clear todo list app:
     waiting: [],                 // Snapshot of Wait tasks
     todo: []                     // Snapshot of To Do tasks
   },
-  notes: []                      // Copy of notes at time of report generation
+  notes: string                  // Copy of notes content at time of report generation
 }
 ```
 
@@ -266,7 +288,7 @@ The interface should follow the design philosophy of the Clear todo list app:
 - **Action:**
   1. Collect all tasks with `status: "done"`
   2. Collect current snapshots of all other columns (To Do, Wait, In Progress)
-  3. Collect current notes
+  3. Collect current notes content
   4. Generate report with:
      - Week number (e.g., "Week 3")
      - Date range (e.g., "Jan 20-25")
@@ -278,7 +300,7 @@ The interface should follow the design philosophy of the Clear todo list app:
   9. Display success message or show generated report
 
 **Notes Behavior:**
-- Notes are included in report
+- Notes are included in report as plain text
 - Notes are **NOT** cleared after report generation
 - Notes persist for next report
 
@@ -292,46 +314,56 @@ The interface should follow the design philosophy of the Clear todo list app:
 - **Report Display Format:**
   ```
   Week 3 (Jan 20-25)
-  
+
   === Completed Tasks (Archived) ===
   [ID-001] Task Title
   Description: Task description here
-  
+
   [ID-002] Another Task
   Description: Description here
-  
+
   === In Progress ===
   [ID-010] Current Task
   Description: Working on this
-  
+
   === Waiting/Blocked ===
   [ID-020] Blocked Task
   Description: Waiting for X
-  
+
   === To Do ===
   [ID-030] Upcoming Task
   Description: Need to start
-  
+
   === Notes ===
-  ☐ Note item 1
-  ☑ Note item 2 (checked at time of report)
+  [Plain text notes content displayed here]
   ```
 
 ### 8. Notes Management
-- **Add Note:** Button or input to add new checkbox item
-- **Edit Note:** Click text to edit inline
-- **Delete Note:** Delete/remove button per item
-- **Toggle Checkbox:** Click checkbox to check/uncheck
-- **Persistence:** Auto-save to `notes.json` on any change
+- **Input:** Free-form textarea
+- **Auto-save:** Debounced save (500ms after last keystroke)
+- **Visual Feedback:** "Saving..." then "Saved at [time]" status with timestamp
+- **Persistence:** Stored in `notes.json` as plain text
 
-### 9. Daily Recurrent Tasks
+### 9. All Completed Tasks (via Hamburger Menu)
+- **Trigger:** Click hamburger menu → "All Completed Tasks"
+- **Display:** Modal showing all archived tasks
+- **Sorting:** Newest completed first (by last log entry date)
+- **Task Info Shown:**
+  - Priority star (if applicable)
+  - Task title
+  - Description (truncated to 1 line)
+  - Completion date
+- **Count:** Total number of completed tasks shown at top
+- **Purpose:** Quick reference for all historical completed work
+
+### 10. Daily Recurrent Tasks
 - **Hardcoded List:** Defined in code (can be modified by editing source)
 - **Reset Time:** 6:00 AM daily
 - **Visual Feedback:** Strike-through text when checked
 - **No Persistence:** State resets every day
 - **Implementation:** Check local time on app load/refresh, reset if past 6 AM and new day
 
-### 10. Color Management
+### 11. Color Management
 - **Color Assignment:** Based on position index (0-19)
 - **Per Column:** Each column has own color gradient scheme (20 shades)
 - **Dynamic Update:** When tasks are moved or reordered, recalculate position-based colors
@@ -344,6 +376,7 @@ The interface should follow the design philosophy of the Clear todo list app:
 - **Edit Task Modal:** Same form + task log display + delete button
 - **Reports List Modal:** Scrollable list of reports with edit title functionality
 - **Report View:** Full report display (could be same modal or separate view)
+- **All Completed Tasks Modal:** Scrollable list of archived tasks (newest first), compact display with small fonts
 
 ### Drag and Drop
 - **Visual Feedback:**
@@ -421,6 +454,20 @@ if (!lastResetTime || new Date(lastResetTime) < todayAt6AM) {
 }
 ```
 
+### Debounced Auto-Save (Notes)
+```javascript
+let saveTimeout = null;
+
+function debouncedSave() {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveNotes();  // API call to POST /api/notes
+  }, 500);  // Wait 500ms after last keystroke
+}
+
+textarea.addEventListener('input', debouncedSave);
+```
+
 ### Report Generation
 - Calculate week number from date
 - Format date range (start of week to end of week)
@@ -433,11 +480,11 @@ if (!lastResetTime || new Date(lastResetTime) < todayAt6AM) {
 1. **tasks.json:** Active tasks only
 2. **archived-tasks.json:** All archived tasks (append-only)
 3. **reports.json:** Array of report objects
-4. **notes.json:** Current notes state
+4. **notes.json:** Current notes content (plain text)
 
 ### Auto-Save
 - Save tasks.json on any task modification
-- Save notes.json on any note change
+- Save notes.json with debounce (500ms after last keystroke)
 - Save reports.json when new report is generated
 - Append to archived-tasks.json when archiving
 
