@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.4.0
-**Last Updated:** 2026-01-25
+**Version:** 1.5.0
+**Last Updated:** 2026-01-26
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 1.5.0   | 2026-01-26 | Complete UI redesign with zen theme: light beige background, Montserrat font, generous spacing, soft shadows |
 | 1.4.0   | 2026-01-25 | Added editable daily checklist with external links, favicon |
 | 1.3.0   | 2026-01-25 | Responsive design for MacBook Pro 14" (1512px) and external monitor (2304px), sidebar width increased to 560px, textarea min-width 500px |
 | 1.2.0   | 2026-01-25 | Added welcome header with date/week info, hamburger menu, notes save timestamp, archived tasks modal |
@@ -62,13 +63,21 @@ POST   /api/notes              - Save notes
 
 ## Design Inspiration
 
-### Visual Style: Clear App-Inspired
-The interface should follow the design philosophy of the Clear todo list app:
+### Visual Style: Zen / Minimalist
+The interface follows a zen, clean aesthetic with light colors and generous whitespace:
 
-**Color System:**
+**Overall Theme:**
+- **Background:** Light beige/sand (#F5F1EB) - unified throughout
+- **Typography:** Montserrat (geometric sans-serif from Google Fonts)
+- **Spacing:** Generous whitespace, elements feel airy and separated
+- **Borders:** No hard borders - soft shadows only for depth
+- **Accent Color:** Warm terracotta (#C4A484)
+- **Text:** Soft black (#2D2D2D) - not pure black for softer appearance
+
+**Task Card Color System (Clear App-Inspired):**
 - Each task card position has a distinct gradient background color
-- Colors should progress through a spectrum within each column (gradient from dark to light)
-- **Maximum 20 color gradients per column** (system should adapt if fewer tasks)
+- Colors progress through a spectrum within each column (gradient from dark to light)
+- **Maximum 20 color gradients per column** (system adapts if fewer tasks)
 - Color is tied to POSITION, not to the task itself
 - When tasks are reordered, colors update based on new positions
 
@@ -81,10 +90,11 @@ The interface should follow the design philosophy of the Clear todo list app:
 **Visual Characteristics:**
 - Gradient backgrounds on task cards (not flat colors)
 - Smooth color transitions when tasks are reordered
-- Clean typography with good contrast against colored backgrounds
-- Minimal borders/shadows - let the colors define the spaces
+- Clean Montserrat typography with good contrast
+- Soft shadows (box-shadow) instead of borders
 - White/light text on darker gradients, darker text on lighter gradients
-- Smooth animations for all interactions
+- Smooth animations (0.3s ease) for all interactions
+- Rounded corners (12-24px) throughout
 
 ## Layout Structure
 
