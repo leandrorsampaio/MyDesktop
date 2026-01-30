@@ -46,6 +46,16 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
+// Category labels mapping (numeric ID → display label)
+const CATEGORY_LABELS = {
+    1: 'Non categorized',
+    2: 'Development',
+    3: 'Communication',
+    4: 'To Remember',
+    5: 'Planning',
+    6: 'Generic Task'
+};
+
 function getWeekNumber(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -100,11 +110,14 @@ app.post('/api/tasks', async (req, res) => {
             ? Math.max(...todoTasks.map(t => t.position)) + 1
             : 0;
 
+        const category = req.body.category !== undefined ? Number(req.body.category) : 1;
+
         const newTask = {
             id: generateId(),
             title: title.trim(),
             description: description.trim(),
             priority,
+            category,
             status: 'todo',
             position: maxPosition,
             log: [],
@@ -129,11 +142,28 @@ app.put('/api/tasks/:id', async (req, res) => {
             return res.status(404).json({ error: 'Task not found' });
         }
 
-        const { title, description, priority } = req.body;
+        const { title, description, priority, category } = req.body;
 
         if (title !== undefined) tasks[taskIndex].title = title.trim();
         if (description !== undefined) tasks[taskIndex].description = description.trim();
         if (priority !== undefined) tasks[taskIndex].priority = priority;
+
+        // Handle category change with logging
+        if (category !== undefined) {
+            const newCategory = Number(category);
+            const oldCategory = tasks[taskIndex].category || 1;
+            if (newCategory !== oldCategory) {
+                const today = new Date().toISOString().split('T')[0];
+                const oldLabel = CATEGORY_LABELS[oldCategory] || 'Non categorized';
+                const newLabel = CATEGORY_LABELS[newCategory] || 'Non categorized';
+                if (!tasks[taskIndex].log) tasks[taskIndex].log = [];
+                tasks[taskIndex].log.push({
+                    date: today,
+                    action: `Category changed from ${oldLabel} to ${newLabel}`
+                });
+            }
+            tasks[taskIndex].category = newCategory;
+        }
 
         await writeJsonFile(TASKS_FILE, tasks);
         res.json(tasks[taskIndex]);
@@ -247,10 +277,10 @@ app.post('/api/archive', async (req, res) => {
             weekNumber,
             dateRange,
             content: {
-                archived: doneTasks.map(t => ({ id: t.id, title: t.title, description: t.description })),
-                inProgress: inProgressTasks.map(t => ({ id: t.id, title: t.title, description: t.description })),
-                waiting: waitTasks.map(t => ({ id: t.id, title: t.title, description: t.description })),
-                todo: todoTasks.map(t => ({ id: t.id, title: t.title, description: t.description }))
+                archived: doneTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 })),
+                inProgress: inProgressTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 })),
+                waiting: waitTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 })),
+                todo: todoTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 }))
             },
             notes: notes.content || ''
         };

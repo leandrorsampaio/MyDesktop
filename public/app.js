@@ -23,6 +23,15 @@
         'done': 'done-list'
     };
 
+    const CATEGORIES = {
+        1: 'Non categorized',
+        2: 'Development',
+        3: 'Communication',
+        4: 'To Remember',
+        5: 'Planning',
+        6: 'Generic Task'
+    };
+
     // ==========================================
     // State
     // ==========================================
@@ -417,6 +426,7 @@
                     <span class="task-title">${escapeHtml(task.title)}</span>
                 </div>
                 ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                ${(task.category && task.category !== 1) ? `<span class="category-badge">${escapeHtml(CATEGORIES[task.category] || 'Unknown')}</span>` : ''}
             </div>
             <button class="btn-edit" onclick="window.openEditModal('${task.id}')">Edit</button>
         `;
@@ -687,6 +697,7 @@
         elements.taskTitle.value = '';
         elements.taskDescription.value = '';
         elements.taskPriority.checked = false;
+        setCategorySelection(1);
         elements.taskLogSection.style.display = 'none';
         elements.deleteTaskBtn.style.display = 'none';
         openModal(elements.taskModal);
@@ -702,6 +713,7 @@
         elements.taskTitle.value = task.title;
         elements.taskDescription.value = task.description || '';
         elements.taskPriority.checked = task.priority || false;
+        setCategorySelection(task.category || 1);
 
         // Render task log
         if (task.log && task.log.length > 0) {
@@ -724,6 +736,7 @@
         const title = elements.taskTitle.value.trim();
         const description = elements.taskDescription.value.trim();
         const priority = elements.taskPriority.checked;
+        const category = getSelectedCategory();
 
         if (!title) {
             alert('Title is required');
@@ -731,12 +744,22 @@
         }
 
         if (editingTaskId) {
-            await updateTask(editingTaskId, { title, description, priority });
+            await updateTask(editingTaskId, { title, description, priority, category });
         } else {
-            await createTask({ title, description, priority });
+            await createTask({ title, description, priority, category });
         }
 
         closeModal(elements.taskModal);
+    }
+
+    function setCategorySelection(value) {
+        const radio = document.querySelector(`input[name="task-category"][value="${value}"]`);
+        if (radio) radio.checked = true;
+    }
+
+    function getSelectedCategory() {
+        const selected = document.querySelector('input[name="task-category"]:checked');
+        return selected ? Number(selected.value) : 1;
     }
 
     function openDeleteConfirmation() {
@@ -844,16 +867,38 @@
             `;
         }
 
+        // Group tasks by category
+        const grouped = {};
+        taskList.forEach(task => {
+            const cat = task.category || 1;
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(task);
+        });
+
+        // Sort category keys numerically
+        const sortedKeys = Object.keys(grouped).map(Number).sort((a, b) => a - b);
+
+        const taskHtml = sortedKeys.map(catKey => {
+            const catLabel = CATEGORIES[catKey] || 'Non categorized';
+            const catTasks = grouped[catKey];
+            return `
+                <div class="report-category-group">
+                    <div class="report-category-label">${escapeHtml(catLabel)}</div>
+                    ${catTasks.map(task => `
+                        <div class="report-task">
+                            <div class="report-task-id">[${task.id.substring(0, 8)}]</div>
+                            <div class="report-task-title">${escapeHtml(task.title)}</div>
+                            ${task.description ? `<div class="report-task-desc">Description: ${escapeHtml(task.description)}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }).join('');
+
         return `
             <div class="report-section">
                 <h4>${title}</h4>
-                ${taskList.map(task => `
-                    <div class="report-task">
-                        <div class="report-task-id">[${task.id.substring(0, 8)}]</div>
-                        <div class="report-task-title">${escapeHtml(task.title)}</div>
-                        ${task.description ? `<div class="report-task-desc">Description: ${escapeHtml(task.description)}</div>` : ''}
-                    </div>
-                `).join('')}
+                ${taskHtml}
             </div>
         `;
     }

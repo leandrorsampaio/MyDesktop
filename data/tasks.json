@@ -445,9 +445,14 @@
       {
         "date": "2026-01-26",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to Communication"
       }
     ],
-    "createdDate": "2026-01-26T18:31:18.563Z"
+    "createdDate": "2026-01-26T18:31:18.563Z",
+    "category": 3
   },
   {
     "id": "mkvil7bq998kqwi3l",
@@ -521,9 +526,14 @@
       {
         "date": "2026-01-27",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to Development"
       }
     ],
-    "createdDate": "2026-01-27T11:46:47.005Z"
+    "createdDate": "2026-01-27T11:46:47.005Z",
+    "category": 2
   },
   {
     "id": "mkwr68mf0xtpl2jpz",
@@ -612,9 +622,14 @@
       {
         "date": "2026-01-28",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to Generic Task"
       }
     ],
-    "createdDate": "2026-01-28T16:19:10.065Z"
+    "createdDate": "2026-01-28T16:19:10.065Z",
+    "category": 6
   },
   {
     "id": "ml05aspy7ajjalnl2",
@@ -642,9 +657,14 @@
       {
         "date": "2026-01-30",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to Planning"
       }
     ],
-    "createdDate": "2026-01-30T00:29:25.911Z"
+    "createdDate": "2026-01-30T00:29:25.911Z",
+    "category": 5
   },
   {
     "id": "ml05burztfr68xzy1",
@@ -676,9 +696,14 @@
       {
         "date": "2026-01-30",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to To Remember"
       }
     ],
-    "createdDate": "2026-01-30T00:30:49.494Z"
+    "createdDate": "2026-01-30T00:30:49.494Z",
+    "category": 4
   },
   {
     "id": "ml1ilve3ml21t1tfx",
@@ -691,8 +716,41 @@
       {
         "date": "2026-01-30",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to Communication"
       }
     ],
-    "createdDate": "2026-01-30T23:29:18.891Z"
+    "createdDate": "2026-01-30T23:29:18.891Z",
+    "category": 3
+  },
+  {
+    "id": "ml1jho32dtq4wrz6p",
+    "title": "TEST",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "status": "inprogress",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-01-30",
+        "action": "Category changed from Development to Generic Task"
+      }
+    ],
+    "createdDate": "2026-01-30T23:54:02.414Z"
   }
 ]

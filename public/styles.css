@@ -613,6 +613,18 @@ body {
     font-weight: 400;
 }
 
+.category-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.22);
+    opacity: 0.85;
+}
+
 .btn-edit {
     position: absolute;
     top: 12px;
@@ -797,6 +809,52 @@ body {
     font-size: 15px;
     color: var(--text-primary);
     font-weight: 500;
+}
+
+/* Category Selector */
+.category-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.category-pill {
+    display: inline-flex !important;
+    margin-bottom: 0 !important;
+    cursor: pointer;
+}
+
+.category-pill input[type="radio"] {
+    display: none;
+}
+
+.category-pill span {
+    display: inline-block;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--text-secondary);
+    background: var(--bg-color);
+    border-radius: 10px;
+    transition: all 0.25s ease;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+}
+
+.category-pill input[type="radio"]:checked + span {
+    background: var(--accent-color);
+    color: var(--text-light);
+    box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
+}
+
+.category-pill span:hover {
+    background: #EDE9E3;
+}
+
+.category-pill input[type="radio"]:checked + span:hover {
+    background: var(--accent-hover);
 }
 
 /* Task Log */
@@ -1023,6 +1081,20 @@ body {
 .report-task-desc {
     font-size: 13px;
     color: var(--text-secondary);
+}
+
+.report-category-group {
+    margin-bottom: 16px;
+    padding-left: 8px;
+}
+
+.report-category-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    padding: 4px 0;
+    font-style: italic;
 }
 
 .report-notes-item {

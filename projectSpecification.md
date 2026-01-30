@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.5.0
-**Last Updated:** 2026-01-26
+**Version:** 1.6.0
+**Last Updated:** 2026-01-31
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 1.6.0   | 2026-01-31 | Added task categories (1-6): selectable via pill buttons in modal, badge on cards, logged on change, reports grouped by category |
 | 1.5.0   | 2026-01-26 | Complete UI redesign with zen theme: light beige background, Montserrat font, generous spacing, soft shadows |
 | 1.4.0   | 2026-01-25 | Added editable daily checklist with external links, favicon |
 | 1.3.0   | 2026-01-25 | Responsive design for MacBook Pro 14" (1512px) and external monitor (2304px), sidebar width increased to 560px, textarea min-width 500px |
@@ -208,6 +209,7 @@ The interface follows a zen, clean aesthetic with light colors and generous whit
   title: string,               // Task title (required)
   description: string,         // Detailed description (optional, default: "")
   priority: boolean,           // Priority toggle (true = show star, false = no star)
+  category: number,            // Category ID (1-6, default: 1). See Category Definitions below.
   status: string,              // "todo" | "wait" | "inprogress" | "done" | "archived"
   position: number,            // Position within the column (0-based index)
   log: array,                  // Activity log entries
@@ -223,9 +225,24 @@ The interface follows a zen, clean aesthetic with light colors and generous whit
 }
 ```
 
+### Category Definitions
+| ID | Label |
+|----|-------|
+| 1  | Non categorized (default) |
+| 2  | Development |
+| 3  | Communication |
+| 4  | To Remember |
+| 5  | Planning |
+| 6  | Generic Task |
+
+- Categories are stored as numeric IDs for extensibility
+- Category labels are defined in both `server.js` (`CATEGORY_LABELS`) and `app.js` (`CATEGORIES`)
+- Existing tasks without a `category` field default to `1` (Non categorized)
+
 **Log Rules:**
-- Logs are added ONLY when tasks are moved between columns
-- Format: "Moved from [Old Column] to [New Column] on [Date]"
+- Logs are added when tasks are moved between columns OR when category is changed
+- Format for moves: "Moved from [Old Column] to [New Column] on [Date]"
+- Format for category changes: "Category changed from [Old Label] to [New Label]"
 - Date format: "2025-01-25" (no time)
 - Manual edits (title, description, priority) are NOT logged
 
