@@ -6,7 +6,9 @@
       "Bash(ssh:*)",
       "Bash(npm install:*)",
       "Bash(node server.js:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)"
     ]
   }
 }
