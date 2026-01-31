@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.9.0
+**Version:** 2.0.0
 **Last Updated:** 2026-01-31
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.0.0   | 2026-01-31 | Added priority filter button in toolbar, Crisis Mode (hamburger menu): shows only priority tasks, red border, hides toolbar/done column/checklist via visibility, red favicon, title "!!!" |
 | 1.9.0   | 2026-01-31 | Added category filter buttons in header toolbar: one toggle button per category, filters cards across all columns via CSS class (no DOM removal), multiple filters can be active simultaneously |
 | 1.8.0   | 2026-01-31 | Added header toolbar card: a right-aligned container (left of hamburger menu) that groups action buttons inline; Hide button moved into toolbar; expandable for future buttons |
 | 1.7.0   | 2026-01-31 | Added sidebar privacy toggle (blur overlay), separated Archive and Report into independent functions with separate buttons and API endpoints |
@@ -199,6 +200,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 │  │ Notes   Saved at │  │   - View Reports                      │
 │  │         2:30 PM  │  │   - All Completed Tasks               │
 │  │ ┌──────────────┐ │  │   - Edit Daily Checklist              │
+│  │ │              │ │  │   - Crisis Mode                       │
 │  │ │ Free-form    │ │  │                                       │
 │  │ │ textarea...  │ │  │                                       │
 │  │ └──────────────┘ │  │                                       │
@@ -324,18 +326,49 @@ The category selector uses styled radio buttons that look like selectable pills.
 
 ### 11. Category Filters (v1.9.0)
 
-- **Location:** Inside `.header-toolbar`, to the left of the Hide button (separated by a vertical divider)
+- **Location:** Inside `.header-toolbar`, to the left of the Priority filter button
 - **Buttons:** One `btn-category-filter` per category (1-6), rendered dynamically from `CATEGORIES` constant
 - **Behavior:** Each button is an independent toggle. Clicking activates/deactivates that category filter.
   - When **no filters active**: all cards visible
   - When **one or more filters active**: only cards matching ANY active category are visible; non-matching cards are hidden
   - Multiple filters can be active simultaneously (additive/OR logic)
-- **Implementation:** Purely DOM-based — toggling adds/removes `category-filtered` CSS class on `.task-card` elements (`display: none`). No tasks are removed from the DOM, no API calls, no re-fetching.
+- **Implementation:** Purely DOM-based — toggling adds/removes `card-filtered` CSS class on `.task-card` elements (`display: none`). No tasks are removed from the DOM, no API calls, no re-fetching. Uses shared `applyAllFilters()` function.
 - **Card attribute:** Each `.task-card` has `data-category` attribute set during render
 - **Persistence:** Filters are re-applied after every column render (cards are rebuilt by `renderColumn`). Filter state lives in `activeCategoryFilters` Set (in-memory, resets on page reload).
 - **Active button style:** Accent color background, white text (same as other active toggle buttons)
 
-### 12. Sidebar Privacy Toggle (v1.7.0)
+### 12. Priority Filter (v2.0.0)
+
+- **Location:** Inside `.header-toolbar`, between category filter buttons and the divider/Hide button
+- **Button:** `btn-priority-filter` with text "★ Priority"
+- **Behavior:** Toggle button — when active, only cards with `priority: true` are shown; non-priority cards are hidden
+- **Implementation:** Reuses the same `applyAllFilters()` function as category filters. Cards have `data-priority` attribute (`"true"` or `"false"`). Non-matching cards get `card-filtered` CSS class.
+- **Interaction with category filters:** Both filters apply simultaneously (AND logic — card must pass both filters to be visible)
+- **Active button style:** Same accent color as category filter buttons
+
+### 13. Crisis Mode (v2.0.0)
+
+- **Trigger:** Hamburger menu → "Crisis Mode" button (🚨 icon)
+- **Purpose:** Emergency focus mode — strips the UI down to only priority tasks with urgent visual cues
+- **Behavior (on activate):**
+  1. Activates the priority filter (reuses `applyAllFilters()`, no duplicated code)
+  2. Adds `crisis-mode` class to `<body>`
+  3. 5px solid red border (`#C0392B`) around the entire page
+  4. Hides the header toolbar via `visibility: hidden` (layout preserved)
+  5. Hides the Done column via `visibility: hidden` (layout preserved)
+  6. Hides the Daily Checklist section via `visibility: hidden` (layout preserved)
+  7. Changes the page title to `"!!!"`
+  8. Replaces favicon with a dynamically generated red star (canvas-drawn PNG)
+  9. Menu button text changes to "Exit Crisis Mode"
+- **Behavior (on deactivate):** Reverses all of the above — deactivates priority filter, removes red border, restores visibility, restores original title and favicon
+- **No persistence, no server calls** — purely client-side state toggle
+- **Key CSS rules:**
+  - `body.crisis-mode` — red border
+  - `body.crisis-mode .header-toolbar` — `visibility: hidden`
+  - `body.crisis-mode .column[data-status="done"]` — `visibility: hidden`
+  - `body.crisis-mode .recurrent-tasks` — `visibility: hidden`
+
+### 14. Sidebar Privacy Toggle (v1.7.0)
 
 - **Button:** "Hide" / "Show" toggle at top-right of sidebar
 - **Behavior:** Toggles CSS class `privacy-mode` on the sidebar element
@@ -345,7 +378,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 - Default state: unblurred (Hide button shown)
 - When active: button shows "Show" with accent color background
 
-### 13. Color System
+### 15. Color System
 
 **Position-based gradients** — color is tied to card position, not the task itself.
 
@@ -426,7 +459,11 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `getSelectedCategory()`     | Reads selected category from modal radios        |
 | `renderCategoryFilters()`   | Renders filter buttons in header toolbar from CATEGORIES |
 | `toggleCategoryFilter(id)`  | Toggles a category filter on/off, updates button state and cards |
-| `applyCategoryFilters()`    | Applies active filters by toggling `category-filtered` class on cards |
+| `togglePriorityFilter()`    | Toggles priority-only filter on/off                      |
+| `applyAllFilters()`         | Applies all active filters (category + priority) via `card-filtered` class |
+| `toggleCrisisMode()`        | Toggles crisis mode on/off (priority filter, red border, hide elements, favicon, title) |
+| `generateRedStarFavicon()`  | Creates a red star favicon dynamically via canvas         |
+| `setFavicon(url)`           | Updates the page favicon link element                     |
 | `openAddTaskModal()`        | Resets and opens modal for new task              |
 | `openEditModal(taskId)`     | Populates and opens modal for editing            |
 | `handleTaskFormSubmit(e)`   | Form submit handler (create or update)           |

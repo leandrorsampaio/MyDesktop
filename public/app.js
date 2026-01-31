@@ -42,6 +42,9 @@
     let saveNotesTimeout = null;
     let recurrentTasks = []; // Will be loaded from localStorage or default
     let activeCategoryFilters = new Set(); // Active category filter IDs
+    let priorityFilterActive = false;
+    let crisisModeActive = false;
+    let originalTitle = '';
 
     // ==========================================
     // DOM Elements
@@ -100,6 +103,11 @@
 
         // Category Filters
         categoryFilters: document.getElementById('category-filters'),
+        priorityFilterBtn: document.getElementById('priority-filter-btn'),
+
+        // Crisis Mode
+        crisisModeBtn: document.getElementById('crisis-mode-btn'),
+        headerToolbar: document.querySelector('.header-toolbar'),
 
         // Archive & Report
         archiveBtn: document.getElementById('archive-btn'),
@@ -404,7 +412,7 @@
     // ==========================================
     function renderAllColumns() {
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
-        applyCategoryFilters();
+        applyAllFilters();
     }
 
     function renderColumn(status) {
@@ -425,8 +433,8 @@
             columnEl.appendChild(card);
         });
 
-        if (activeCategoryFilters.size > 0) {
-            applyCategoryFilters();
+        if (activeCategoryFilters.size > 0 || priorityFilterActive) {
+            applyAllFilters();
         }
     }
 
@@ -436,6 +444,7 @@
         card.dataset.taskId = task.id;
         card.dataset.status = task.status;
         card.dataset.category = String(task.category || 1);
+        card.dataset.priority = task.priority ? 'true' : 'false';
         card.draggable = true;
 
         // Apply gradient background
@@ -672,21 +681,111 @@
             btn.classList.toggle('active', activeCategoryFilters.has(Number(btn.dataset.category)));
         });
 
-        applyCategoryFilters();
+        applyAllFilters();
     }
 
-    function applyCategoryFilters() {
+    function togglePriorityFilter() {
+        priorityFilterActive = !priorityFilterActive;
+        elements.priorityFilterBtn.classList.toggle('active', priorityFilterActive);
+        applyAllFilters();
+    }
+
+    function applyAllFilters() {
         const cards = document.querySelectorAll('.task-card');
-        const hasActiveFilters = activeCategoryFilters.size > 0;
+        const hasCategoryFilters = activeCategoryFilters.size > 0;
 
         cards.forEach(card => {
-            if (!hasActiveFilters) {
-                card.classList.remove('category-filtered');
-            } else {
+            let hidden = false;
+
+            // Category filter
+            if (hasCategoryFilters) {
                 const cardCategory = Number(card.dataset.category);
-                card.classList.toggle('category-filtered', !activeCategoryFilters.has(cardCategory));
+                if (!activeCategoryFilters.has(cardCategory)) {
+                    hidden = true;
+                }
             }
+
+            // Priority filter
+            if (priorityFilterActive && card.dataset.priority !== 'true') {
+                hidden = true;
+            }
+
+            card.classList.toggle('card-filtered', hidden);
         });
+    }
+
+    // ==========================================
+    // Crisis Mode
+    // ==========================================
+    function generateRedStarFavicon() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        // Draw a red star
+        ctx.fillStyle = '#C0392B';
+        ctx.beginPath();
+        const cx = 32, cy = 32, outerR = 30, innerR = 12, points = 5;
+        for (let i = 0; i < points * 2; i++) {
+            const r = i % 2 === 0 ? outerR : innerR;
+            const angle = (Math.PI / 2 * 3) + (Math.PI / points) * i;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        return canvas.toDataURL('image/png');
+    }
+
+    function setFavicon(url) {
+        let link = document.querySelector('link[rel="icon"]');
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+        }
+        link.type = 'image/png';
+        link.href = url;
+    }
+
+    function toggleCrisisMode() {
+        closeMenu();
+        crisisModeActive = !crisisModeActive;
+
+        if (crisisModeActive) {
+            // Save original state
+            originalTitle = document.title;
+
+            // Activate priority filter
+            priorityFilterActive = true;
+            elements.priorityFilterBtn.classList.add('active');
+            applyAllFilters();
+
+            // Visual changes
+            document.body.classList.add('crisis-mode');
+            document.title = '!!!';
+            setFavicon(generateRedStarFavicon());
+
+            // Update menu button text
+            elements.crisisModeBtn.innerHTML = '<span class="menu-icon">🚨</span> Exit Crisis Mode';
+        } else {
+            // Deactivate priority filter
+            priorityFilterActive = false;
+            elements.priorityFilterBtn.classList.remove('active');
+            applyAllFilters();
+
+            // Restore visuals
+            document.body.classList.remove('crisis-mode');
+            document.title = originalTitle;
+            setFavicon('favicon.png');
+
+            // Restore menu button text
+            elements.crisisModeBtn.innerHTML = '<span class="menu-icon">🚨</span> Crisis Mode';
+        }
     }
 
     // ==========================================
@@ -1099,6 +1198,12 @@
                 closeMenu();
             }
         });
+
+        // Priority Filter
+        elements.priorityFilterBtn.addEventListener('click', togglePriorityFilter);
+
+        // Crisis Mode
+        elements.crisisModeBtn.addEventListener('click', toggleCrisisMode);
 
         // Privacy Toggle
         elements.privacyToggleBtn.addEventListener('click', () => {

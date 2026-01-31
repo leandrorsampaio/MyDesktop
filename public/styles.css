@@ -331,9 +331,56 @@ body {
     flex-shrink: 0;
 }
 
-/* Card hidden by category filter */
-.task-card.category-filtered {
+/* Priority Filter Button */
+.btn-priority-filter {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-priority-filter:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+}
+
+.btn-priority-filter.active {
+    background: var(--accent-color);
+    color: var(--text-light);
+}
+
+.btn-priority-filter.active:hover {
+    background: var(--accent-hover);
+}
+
+/* Card hidden by filters (category or priority) */
+.task-card.card-filtered {
     display: none;
+}
+
+/* Crisis Mode */
+body.crisis-mode {
+    border: 5px solid #C0392B;
+}
+
+body.crisis-mode .header-toolbar {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.crisis-mode .column[data-status="done"] {
+    visibility: hidden;
+}
+
+body.crisis-mode .recurrent-tasks {
+    visibility: hidden;
 }
 
 .btn-privacy-toggle {
