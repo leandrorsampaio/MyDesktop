@@ -288,6 +288,54 @@ body {
     max-height: calc(100vh - 160px);
 }
 
+/* Category Filter Buttons */
+.category-filters {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-category-filter {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-category-filter:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+}
+
+.btn-category-filter.active {
+    background: var(--accent-color);
+    color: var(--text-light);
+}
+
+.btn-category-filter.active:hover {
+    background: var(--accent-hover);
+}
+
+/* Toolbar divider between filter buttons and other actions */
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+/* Card hidden by category filter */
+.task-card.category-filtered {
+    display: none;
+}
+
 .btn-privacy-toggle {
     padding: 8px 18px;
     border: none;

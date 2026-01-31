@@ -41,6 +41,7 @@
     let draggedTask = null;
     let saveNotesTimeout = null;
     let recurrentTasks = []; // Will be loaded from localStorage or default
+    let activeCategoryFilters = new Set(); // Active category filter IDs
 
     // ==========================================
     // DOM Elements
@@ -96,6 +97,9 @@
         // Privacy
         appContainer: document.getElementById('app-container'),
         privacyToggleBtn: document.getElementById('privacy-toggle-btn'),
+
+        // Category Filters
+        categoryFilters: document.getElementById('category-filters'),
 
         // Archive & Report
         archiveBtn: document.getElementById('archive-btn'),
@@ -400,6 +404,7 @@
     // ==========================================
     function renderAllColumns() {
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
+        applyCategoryFilters();
     }
 
     function renderColumn(status) {
@@ -419,6 +424,10 @@
             const card = createTaskCard(task, index, columnTasks.length);
             columnEl.appendChild(card);
         });
+
+        if (activeCategoryFilters.size > 0) {
+            applyCategoryFilters();
+        }
     }
 
     function createTaskCard(task, position, totalInColumn) {
@@ -426,6 +435,7 @@
         card.className = 'task-card';
         card.dataset.taskId = task.id;
         card.dataset.status = task.status;
+        card.dataset.category = String(task.category || 1);
         card.draggable = true;
 
         // Apply gradient background
@@ -628,6 +638,55 @@
         saveRecurrentTasks();
         renderRecurrentTasks();
         closeModal(elements.checklistModal);
+    }
+
+    // ==========================================
+    // Category Filters
+    // ==========================================
+    function renderCategoryFilters() {
+        const container = elements.categoryFilters;
+        container.innerHTML = '';
+
+        Object.entries(CATEGORIES).forEach(([id, label]) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-category-filter';
+            btn.dataset.category = id;
+            btn.textContent = label;
+            if (activeCategoryFilters.has(Number(id))) {
+                btn.classList.add('active');
+            }
+            btn.addEventListener('click', () => toggleCategoryFilter(Number(id)));
+            container.appendChild(btn);
+        });
+    }
+
+    function toggleCategoryFilter(categoryId) {
+        if (activeCategoryFilters.has(categoryId)) {
+            activeCategoryFilters.delete(categoryId);
+        } else {
+            activeCategoryFilters.add(categoryId);
+        }
+
+        // Update button states
+        elements.categoryFilters.querySelectorAll('.btn-category-filter').forEach(btn => {
+            btn.classList.toggle('active', activeCategoryFilters.has(Number(btn.dataset.category)));
+        });
+
+        applyCategoryFilters();
+    }
+
+    function applyCategoryFilters() {
+        const cards = document.querySelectorAll('.task-card');
+        const hasActiveFilters = activeCategoryFilters.size > 0;
+
+        cards.forEach(card => {
+            if (!hasActiveFilters) {
+                card.classList.remove('category-filtered');
+            } else {
+                const cardCategory = Number(card.dataset.category);
+                card.classList.toggle('category-filtered', !activeCategoryFilters.has(cardCategory));
+            }
+        });
     }
 
     // ==========================================
@@ -1118,6 +1177,7 @@
         checkDailyReset();
 
         // Initialize UI
+        renderCategoryFilters();
         renderRecurrentTasks();
         initEventListeners();
         initDragAndDrop();
