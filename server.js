@@ -378,6 +378,24 @@ app.put('/api/reports/:id', async (req, res) => {
     }
 });
 
+// DELETE report
+app.delete('/api/reports/:id', async (req, res) => {
+    try {
+        const reports = await readJsonFile(REPORTS_FILE, []);
+        const reportIndex = reports.findIndex(r => r.id === req.params.id);
+
+        if (reportIndex === -1) {
+            return res.status(404).json({ error: 'Report not found' });
+        }
+
+        reports.splice(reportIndex, 1);
+        await writeJsonFile(REPORTS_FILE, reports);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete report' });
+    }
+});
+
 // GET notes
 app.get('/api/notes', async (req, res) => {
     try {

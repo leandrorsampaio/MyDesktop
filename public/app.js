@@ -407,6 +407,16 @@
         }
     }
 
+    async function deleteReport(id) {
+        try {
+            await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+            const reports = await fetchReports();
+            renderReportsList(reports);
+        } catch (error) {
+            console.error('Error deleting report:', error);
+        }
+    }
+
     // ==========================================
     // Render Functions
     // ==========================================
@@ -983,9 +993,12 @@
             <ul class="reportsList">
                 ${reports.map(report => `
                     <li class="reportsList__item" data-report-id="${report.id}">
-                        <input type="text" class="reportsList__titleEdit js-reportTitleEdit" value="${escapeHtml(report.title)}"
-                            onblur="window.updateReportTitle('${report.id}', this.value)"
-                            onclick="event.stopPropagation()" />
+                        <div class="reportsList__row">
+                            <input type="text" class="reportsList__titleEdit js-reportTitleEdit" value="${escapeHtml(report.title)}"
+                                onblur="window.updateReportTitle('${report.id}', this.value)"
+                                onclick="event.stopPropagation()" />
+                            <button class="reportsList__deleteBtn" onclick="event.stopPropagation(); if (confirm('Delete this report?')) window.deleteReport('${report.id}')" title="Delete report">delete</button>
+                        </div>
                         <div class="reportsList__date">${formatDate(report.generatedDate)}</div>
                     </li>
                 `).join('')}
@@ -995,7 +1008,7 @@
         // Add click listeners to view reports
         elements.reportsContainer.querySelectorAll('.reportsList__item').forEach(li => {
             li.addEventListener('click', (e) => {
-                if (e.target.classList.contains('reportsList__titleEdit')) return;
+                if (e.target.classList.contains('reportsList__titleEdit') || e.target.classList.contains('reportsList__deleteBtn')) return;
                 const reportId = li.dataset.reportId;
                 const report = reports.find(r => r.id === reportId);
                 if (report) renderReportView(report, reports);
@@ -1005,6 +1018,10 @@
 
     window.updateReportTitle = async function(id, title) {
         await updateReportTitle(id, title);
+    };
+
+    window.deleteReport = async function(id) {
+        await deleteReport(id);
     };
 
     function renderReportView(report, allReports) {

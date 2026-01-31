@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.1.0
+**Version:** 2.2.0
 **Last Updated:** 2026-01-31
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.2.0   | 2026-01-31 | Added delete report: × button on each report in View Reports modal, `DELETE /api/reports/:id` endpoint |
 | 2.1.0   | 2026-01-31 | Complete BEM refactoring: camelCase BEM class names (`.blockName__elementName`), modifier classes as separate `.--modifierName`, JS hooks via `.js-camelCase` classes, all IDs removed and replaced with `js-` class selectors, `getElementById` replaced with `querySelector` throughout |
 | 2.0.0   | 2026-01-31 | Added priority filter button in toolbar, Crisis Mode (hamburger menu): shows only priority tasks, red border, hides toolbar/done column/checklist via visibility, red favicon, title "!!!" |
 | 1.9.0   | 2026-01-31 | Added category filter buttons in header toolbar: one toggle button per category, filters cards across all columns via CSS class (no DOM removal), multiple filters can be active simultaneously |
@@ -94,6 +95,7 @@ GET    /api/archived            - Get all archived/completed tasks
 GET    /api/reports             - Get list of all reports
 GET    /api/reports/:id         - Get specific report by ID
 PUT    /api/reports/:id         - Update report title (body: { title })
+DELETE /api/reports/:id         - Delete a report permanently
 GET    /api/notes               - Get notes object ({ content: string })
 POST   /api/notes               - Save notes (body: { content })
 ```
@@ -290,6 +292,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 
 - Opens a modal with all reports sorted newest first
 - Each report title is inline-editable (blur saves via `PUT /api/reports/:id`)
+- Each report row has a × delete button (right side) — deletes via `DELETE /api/reports/:id` and re-renders list
 - Click a report row to view its full content
 - Report view shows: Completed Tasks, In Progress, Waiting/Blocked, To Do, Notes
 - Within each section, tasks are **sub-grouped by category** with a label header
@@ -454,6 +457,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `createTask(data)`          | POST /api/tasks                                  |
 | `updateTask(id, data)`      | PUT /api/tasks/:id (includes category log logic) |
 | `deleteTask(id)`            | DELETE /api/tasks/:id                            |
+| `deleteReport(id)`          | DELETE /api/reports/:id, re-renders report list   |
 | `moveTask(id, status, pos)` | POST /api/tasks/:id/move                         |
 | `generateReport()`          | POST /api/reports/generate                       |
 | `archiveTasks()`            | POST /api/tasks/archive                          |
