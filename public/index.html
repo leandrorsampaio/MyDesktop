@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Tracker</title>
+    <title>My Desktop</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,112 +12,112 @@
 </head>
 <body>
     <!-- Header -->
-    <header class="app-header">
-        <div class="welcome-section">
-            <h1 class="welcome-title">Welcome, Leandro</h1>
-            <div class="date-info">
-                <span id="current-date"></span>
-                <span class="separator">•</span>
-                <span id="current-weekday"></span>
-                <span class="separator">•</span>
-                <span id="current-week"></span>
+    <header class="appHeader">
+        <div class="appHeader__welcome">
+            <h1 class="appHeader__title">Welcome, Leandro</h1>
+            <div class="appHeader__dateInfo">
+                <span class="js-currentDate"></span>
+                <span class="appHeader__separator">•</span>
+                <span class="js-currentWeekday"></span>
+                <span class="appHeader__separator">•</span>
+                <span class="js-currentWeek"></span>
             </div>
         </div>
-        <div class="header-actions">
-            <div class="header-toolbar">
-                <div id="category-filters" class="category-filters">
+        <div class="appHeader__actions">
+            <div class="toolbar js-toolbar">
+                <div class="toolbar__filters js-categoryFilters">
                     <!-- Filter buttons rendered by JS from CATEGORIES -->
                 </div>
-                <button id="priority-filter-btn" class="btn-priority-filter">★ Priority</button>
-                <div class="toolbar-divider"></div>
-                <button id="privacy-toggle-btn" class="btn-privacy-toggle">Hide</button>
+                <button class="toolbar__priorityBtn js-priorityFilterBtn">★ Priority</button>
+                <div class="toolbar__divider"></div>
+                <button class="toolbar__privacyBtn js-privacyToggleBtn">Hide</button>
             </div>
-            <button id="menu-btn" class="btn-menu" aria-label="Menu">
+            <button class="navMenu__trigger js-menuBtn" aria-label="Menu">
                 <span></span>
                 <span></span>
                 <span></span>
             </button>
-            <nav id="dropdown-menu" class="dropdown-menu">
-                <button id="view-reports-btn" class="menu-item">
-                    <span class="menu-icon">📊</span> View Reports
+            <nav class="navMenu__dropdown js-dropdownMenu">
+                <button class="navMenu__item js-viewReportsBtn">
+                    <span class="navMenu__icon">📊</span> View Reports
                 </button>
-                <button id="view-archived-btn" class="menu-item">
-                    <span class="menu-icon">📦</span> All Completed Tasks
+                <button class="navMenu__item js-viewArchivedBtn">
+                    <span class="navMenu__icon">📦</span> All Completed Tasks
                 </button>
-                <button id="edit-checklist-btn" class="menu-item">
-                    <span class="menu-icon">✏️</span> Edit Daily Checklist
+                <button class="navMenu__item js-editChecklistBtn">
+                    <span class="navMenu__icon">✏️</span> Edit Daily Checklist
                 </button>
-                <button id="crisis-mode-btn" class="menu-item">
-                    <span class="menu-icon">🚨</span> Crisis Mode
+                <button class="navMenu__item js-crisisModeBtn">
+                    <span class="navMenu__icon">🚨</span> Crisis Mode
                 </button>
             </nav>
         </div>
     </header>
 
-    <div class="app-container" id="app-container">
+    <div class="appContainer js-appContainer">
         <!-- Left Sidebar -->
         <aside class="sidebar">
             <!-- Recurrent Tasks Section -->
-            <section class="sidebar-section recurrent-tasks">
+            <section class="sidebar__section dailyChecklist">
                 <h3>Daily Checklist</h3>
-                <ul id="recurrent-list">
+                <ul class="js-recurrentList">
                     <!-- Recurrent tasks will be rendered here -->
                 </ul>
             </section>
 
             <!-- Notes Section -->
-            <section class="sidebar-section notes-section">
-                <div class="notes-header">
+            <section class="sidebar__section notes">
+                <div class="notes__header">
                     <h3>Notes</h3>
-                    <span id="notes-save-status"></span>
+                    <span class="notes__status js-notesSaveStatus"></span>
                 </div>
-                <textarea id="notes-textarea" placeholder="Type your notes here..."></textarea>
+                <textarea class="notes__textarea js-notesTextarea" placeholder="Type your notes here..."></textarea>
             </section>
         </aside>
 
         <!-- Main Kanban Board -->
-        <main class="kanban-board">
+        <main class="kanban">
             <!-- To Do Column -->
             <div class="column" data-status="todo">
-                <div class="column-header">
-                    <h2>To Do</h2>
-                    <button class="btn-add-task" id="add-task-btn">+ Add Task</button>
+                <div class="column__header">
+                    <h2 class="column__title">To Do</h2>
+                    <button class="column__addBtn js-addTaskBtn">+ Add Task</button>
                 </div>
-                <div class="task-list" id="todo-list" data-status="todo">
+                <div class="column__list js-todoList" data-status="todo">
                     <!-- Tasks will be rendered here -->
                 </div>
             </div>
 
             <!-- Wait Column -->
             <div class="column" data-status="wait">
-                <div class="column-header">
-                    <h2>Wait</h2>
+                <div class="column__header">
+                    <h2 class="column__title">Wait</h2>
                 </div>
-                <div class="task-list" id="wait-list" data-status="wait">
+                <div class="column__list js-waitList" data-status="wait">
                     <!-- Tasks will be rendered here -->
                 </div>
             </div>
 
             <!-- In Progress Column -->
             <div class="column" data-status="inprogress">
-                <div class="column-header">
-                    <h2>In Progress</h2>
+                <div class="column__header">
+                    <h2 class="column__title">In Progress</h2>
                 </div>
-                <div class="task-list" id="inprogress-list" data-status="inprogress">
+                <div class="column__list js-inprogressList" data-status="inprogress">
                     <!-- Tasks will be rendered here -->
                 </div>
             </div>
 
             <!-- Done Column -->
             <div class="column" data-status="done">
-                <div class="column-header">
-                    <h2>Done</h2>
-                    <div class="column-header-actions">
-                        <button class="btn-report" id="report-btn">Report</button>
-                        <button class="btn-archive" id="archive-btn">Archive</button>
+                <div class="column__header">
+                    <h2 class="column__title">Done</h2>
+                    <div class="column__actions">
+                        <button class="column__reportBtn js-reportBtn">Report</button>
+                        <button class="column__archiveBtn js-archiveBtn">Archive</button>
                     </div>
                 </div>
-                <div class="task-list" id="done-list" data-status="done">
+                <div class="column__list js-doneList" data-status="done">
                     <!-- Tasks will be rendered here -->
                 </div>
             </div>
@@ -125,53 +125,53 @@
     </div>
 
     <!-- Add/Edit Task Modal -->
-    <div id="task-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modal-title">Add Task</h2>
-                <button class="modal-close" id="modal-close">&times;</button>
+    <div class="modal js-taskModal">
+        <div class="modal__content">
+            <div class="modal__header">
+                <h2 class="js-modalTitle">Add Task</h2>
+                <button class="modal__closeBtn js-modalClose">&times;</button>
             </div>
-            <form id="task-form">
-                <div class="form-group">
-                    <label for="task-title">Title *</label>
-                    <input type="text" id="task-title" required placeholder="Enter task title" />
+            <form class="taskForm js-taskForm">
+                <div class="taskForm__group">
+                    <label>Title *</label>
+                    <input type="text" class="js-taskTitle" required placeholder="Enter task title" />
                 </div>
-                <div class="form-group">
-                    <label for="task-description">Description</label>
-                    <textarea id="task-description" placeholder="Enter task description" rows="4"></textarea>
+                <div class="taskForm__group">
+                    <label>Description</label>
+                    <textarea class="js-taskDescription" placeholder="Enter task description" rows="4"></textarea>
                 </div>
-                <div class="form-group checkbox-group">
+                <div class="taskForm__group taskForm__checkboxGroup">
                     <label>
-                        <input type="checkbox" id="task-priority" />
-                        <span class="priority-label">Priority Task</span>
+                        <input type="checkbox" class="js-taskPriority" />
+                        <span class="taskForm__priorityLabel">Priority Task</span>
                     </label>
                 </div>
 
-                <div class="form-group">
+                <div class="taskForm__group">
                     <label>Category</label>
-                    <div class="category-selector" id="category-selector">
-                        <label class="category-pill"><input type="radio" name="task-category" value="1" checked /><span>Non categorized</span></label>
-                        <label class="category-pill"><input type="radio" name="task-category" value="2" /><span>Development</span></label>
-                        <label class="category-pill"><input type="radio" name="task-category" value="3" /><span>Communication</span></label>
-                        <label class="category-pill"><input type="radio" name="task-category" value="4" /><span>To Remember</span></label>
-                        <label class="category-pill"><input type="radio" name="task-category" value="5" /><span>Planning</span></label>
-                        <label class="category-pill"><input type="radio" name="task-category" value="6" /><span>Generic Task</span></label>
+                    <div class="taskForm__categorySelector">
+                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="1" checked /><span>Non categorized</span></label>
+                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="2" /><span>Development</span></label>
+                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="3" /><span>Communication</span></label>
+                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="4" /><span>To Remember</span></label>
+                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="5" /><span>Planning</span></label>
+                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="6" /><span>Generic Task</span></label>
                     </div>
                 </div>
 
                 <!-- Task Log (only shown in edit mode) -->
-                <div id="task-log-section" class="form-group task-log-section" style="display: none;">
+                <div class="taskForm__group taskForm__log js-taskLogSection" style="display: none;">
                     <label>Activity Log</label>
-                    <ul id="task-log-list" class="task-log-list">
+                    <ul class="taskForm__logList js-taskLogList">
                         <!-- Log entries will be rendered here -->
                     </ul>
                 </div>
 
-                <div class="modal-actions">
-                    <button type="button" id="delete-task-btn" class="btn-delete" style="display: none;">Delete Task</button>
-                    <div class="modal-actions-right">
-                        <button type="button" class="btn-cancel" id="cancel-btn">Cancel</button>
-                        <button type="submit" class="btn-save">Save</button>
+                <div class="modal__actions">
+                    <button type="button" class="btn --delete js-deleteTaskBtn" style="display: none;">Delete Task</button>
+                    <div class="modal__actionsRight">
+                        <button type="button" class="btn --cancel js-cancelBtn">Cancel</button>
+                        <button type="submit" class="btn --save">Save</button>
                     </div>
                 </div>
             </form>
@@ -179,62 +179,62 @@
     </div>
 
     <!-- Reports Modal -->
-    <div id="reports-modal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
+    <div class="modal js-reportsModal">
+        <div class="modal__content --large">
+            <div class="modal__header">
                 <h2>Reports</h2>
-                <button class="modal-close" id="reports-modal-close">&times;</button>
+                <button class="modal__closeBtn js-reportsModalClose">&times;</button>
             </div>
-            <div id="reports-container" class="reports-container">
+            <div class="reportsView js-reportsContainer">
                 <!-- Reports list or single report view will be rendered here -->
             </div>
         </div>
     </div>
 
     <!-- Archived Tasks Modal -->
-    <div id="archived-modal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
+    <div class="modal js-archivedModal">
+        <div class="modal__content --large">
+            <div class="modal__header">
                 <h2>All Completed Tasks</h2>
-                <button class="modal-close" id="archived-modal-close">&times;</button>
+                <button class="modal__closeBtn js-archivedModalClose">&times;</button>
             </div>
-            <div id="archived-container" class="archived-container">
+            <div class="archivedView js-archivedContainer">
                 <!-- Archived tasks list will be rendered here -->
             </div>
         </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="confirm-modal" class="modal">
-        <div class="modal-content modal-small">
-            <div class="modal-header">
+    <div class="modal js-confirmModal">
+        <div class="modal__content --small">
+            <div class="modal__header">
                 <h2>Confirm Delete</h2>
             </div>
             <p>Are you sure you want to delete this task? This action cannot be undone.</p>
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" id="confirm-cancel">Cancel</button>
-                <button type="button" class="btn-delete" id="confirm-delete">Delete</button>
+            <div class="modal__actions">
+                <button type="button" class="btn --cancel js-confirmCancel">Cancel</button>
+                <button type="button" class="btn --delete js-confirmDelete">Delete</button>
             </div>
         </div>
     </div>
 
     <!-- Edit Checklist Modal -->
-    <div id="checklist-modal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
+    <div class="modal js-checklistModal">
+        <div class="modal__content --large">
+            <div class="modal__header">
                 <h2>Edit Daily Checklist</h2>
-                <button class="modal-close" id="checklist-modal-close">&times;</button>
+                <button class="modal__closeBtn js-checklistModalClose">&times;</button>
             </div>
-            <div class="checklist-editor">
-                <p class="checklist-hint">Add tasks to your daily checklist. Optionally add a URL to open when clicking the link icon.</p>
-                <div id="checklist-items-container">
+            <div class="checklistEditor">
+                <p class="checklistEditor__hint">Add tasks to your daily checklist. Optionally add a URL to open when clicking the link icon.</p>
+                <div class="checklistEditor__items js-checklistItemsContainer">
                     <!-- Checklist items will be rendered here -->
                 </div>
-                <button type="button" class="btn-add-checklist-item" id="add-checklist-item-btn">+ Add Item</button>
-                <div class="modal-actions">
-                    <div class="modal-actions-right">
-                        <button type="button" class="btn-cancel" id="checklist-cancel-btn">Cancel</button>
-                        <button type="button" class="btn-save" id="checklist-save-btn">Save Checklist</button>
+                <button type="button" class="checklistEditor__addBtn js-addChecklistItemBtn">+ Add Item</button>
+                <div class="modal__actions">
+                    <div class="modal__actionsRight">
+                        <button type="button" class="btn --cancel js-checklistCancelBtn">Cancel</button>
+                        <button type="button" class="btn --save js-checklistSaveBtn">Save Checklist</button>
                     </div>
                 </div>
             </div>

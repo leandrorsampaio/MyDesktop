@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.0.0
+**Version:** 2.1.0
 **Last Updated:** 2026-01-31
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.1.0   | 2026-01-31 | Complete BEM refactoring: camelCase BEM class names (`.blockName__elementName`), modifier classes as separate `.--modifierName`, JS hooks via `.js-camelCase` classes, all IDs removed and replaced with `js-` class selectors, `getElementById` replaced with `querySelector` throughout |
 | 2.0.0   | 2026-01-31 | Added priority filter button in toolbar, Crisis Mode (hamburger menu): shows only priority tasks, red border, hides toolbar/done column/checklist via visibility, red favicon, title "!!!" |
 | 1.9.0   | 2026-01-31 | Added category filter buttons in header toolbar: one toggle button per category, filters cards across all columns via CSS class (no DOM removal), multiple filters can be active simultaneously |
 | 1.8.0   | 2026-01-31 | Added header toolbar card: a right-aligned container (left of hamburger menu) that groups action buttons inline; Hide button moved into toolbar; expandable for future buttons |
@@ -45,6 +46,11 @@ A local web-based task management tool that serves as a browser homepage. It fea
 - **Favicon:** `public/favicon.png` (star icon)
 - **Font:** Montserrat via Google Fonts CDN
 - **No external CSS/JS libraries** — all styling and logic is custom vanilla code
+- **CSS Naming Convention:** Custom BEM (v2.1.0):
+  - **Blocks/Elements:** camelCase — `.blockName__elementName`
+  - **Modifiers:** Separate class with `--` prefix — `.--modifierName`
+  - **JS hooks:** Separate class with `js-` prefix — `.js-camelCase` (alongside BEM class)
+  - **No IDs** — all JS targeting uses `querySelector('.js-xxx')` instead of `getElementById`
 
 ### File Structure
 
@@ -316,7 +322,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 
 ### 10. Header Toolbar (v1.8.0)
 
-- **Element:** `div.header-toolbar` inside `.header-actions`, positioned to the left of the hamburger menu
+- **Element:** `div.toolbar` inside `.appHeader__actions`, positioned to the left of the hamburger menu
 - **Purpose:** Card-style container that groups action buttons inline in the header area
 - **Layout:** Flexbox row with `gap: 8px`, right-aligned (grows leftward as buttons are added)
 - **Styling:** Semi-transparent white background (`rgba(255,255,255, 0.6)`), `border-radius: 14px`, soft shadow, `padding: 6px 10px`
@@ -326,23 +332,23 @@ The category selector uses styled radio buttons that look like selectable pills.
 
 ### 11. Category Filters (v1.9.0)
 
-- **Location:** Inside `.header-toolbar`, to the left of the Priority filter button
-- **Buttons:** One `btn-category-filter` per category (1-6), rendered dynamically from `CATEGORIES` constant
+- **Location:** Inside `.toolbar`, to the left of the Priority filter button
+- **Buttons:** One `toolbar__categoryBtn` per category (1-6), rendered dynamically from `CATEGORIES` constant
 - **Behavior:** Each button is an independent toggle. Clicking activates/deactivates that category filter.
   - When **no filters active**: all cards visible
   - When **one or more filters active**: only cards matching ANY active category are visible; non-matching cards are hidden
   - Multiple filters can be active simultaneously (additive/OR logic)
-- **Implementation:** Purely DOM-based — toggling adds/removes `card-filtered` CSS class on `.task-card` elements (`display: none`). No tasks are removed from the DOM, no API calls, no re-fetching. Uses shared `applyAllFilters()` function.
-- **Card attribute:** Each `.task-card` has `data-category` attribute set during render
+- **Implementation:** Purely DOM-based — toggling adds/removes `--filtered` CSS class on `.taskCard` elements (`display: none`). No tasks are removed from the DOM, no API calls, no re-fetching. Uses shared `applyAllFilters()` function.
+- **Card attribute:** Each `.taskCard` has `data-category` attribute set during render
 - **Persistence:** Filters are re-applied after every column render (cards are rebuilt by `renderColumn`). Filter state lives in `activeCategoryFilters` Set (in-memory, resets on page reload).
 - **Active button style:** Accent color background, white text (same as other active toggle buttons)
 
 ### 12. Priority Filter (v2.0.0)
 
-- **Location:** Inside `.header-toolbar`, between category filter buttons and the divider/Hide button
-- **Button:** `btn-priority-filter` with text "★ Priority"
+- **Location:** Inside `.toolbar`, between category filter buttons and the divider/Hide button
+- **Button:** `toolbar__priorityBtn` with text "★ Priority"
 - **Behavior:** Toggle button — when active, only cards with `priority: true` are shown; non-priority cards are hidden
-- **Implementation:** Reuses the same `applyAllFilters()` function as category filters. Cards have `data-priority` attribute (`"true"` or `"false"`). Non-matching cards get `card-filtered` CSS class.
+- **Implementation:** Reuses the same `applyAllFilters()` function as category filters. Cards have `data-priority` attribute (`"true"` or `"false"`). Non-matching cards get `--filtered` CSS class.
 - **Interaction with category filters:** Both filters apply simultaneously (AND logic — card must pass both filters to be visible)
 - **Active button style:** Same accent color as category filter buttons
 
@@ -352,7 +358,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 - **Purpose:** Emergency focus mode — strips the UI down to only priority tasks with urgent visual cues
 - **Behavior (on activate):**
   1. Activates the priority filter (reuses `applyAllFilters()`, no duplicated code)
-  2. Adds `crisis-mode` class to `<body>`
+  2. Adds `--crisisMode` class to `<body>`
   3. 5px solid red border (`#C0392B`) around the entire page
   4. Hides the header toolbar via `visibility: hidden` (layout preserved)
   5. Hides the Done column via `visibility: hidden` (layout preserved)
@@ -363,16 +369,16 @@ The category selector uses styled radio buttons that look like selectable pills.
 - **Behavior (on deactivate):** Reverses all of the above — deactivates priority filter, removes red border, restores visibility, restores original title and favicon
 - **No persistence, no server calls** — purely client-side state toggle
 - **Key CSS rules:**
-  - `body.crisis-mode` — red border
-  - `body.crisis-mode .header-toolbar` — `visibility: hidden`
-  - `body.crisis-mode .column[data-status="done"]` — `visibility: hidden`
-  - `body.crisis-mode .recurrent-tasks` — `visibility: hidden`
+  - `body.--crisisMode` — red border
+  - `body.--crisisMode .toolbar` — `visibility: hidden`
+  - `body.--crisisMode .column[data-status="done"]` — `visibility: hidden`
+  - `body.--crisisMode .dailyChecklist` — `visibility: hidden`
 
 ### 14. Sidebar Privacy Toggle (v1.7.0)
 
 - **Button:** "Hide" / "Show" toggle at top-right of sidebar
-- **Behavior:** Toggles CSS class `privacy-mode` on the sidebar element
-- **Effect:** All `.sidebar-section` elements get `filter: blur(8px)`, `pointer-events: none`, `user-select: none`
+- **Behavior:** Toggles CSS class `--privacyMode` on the `.appContainer` element
+- **Effect:** All `.sidebar__section` elements get `filter: blur(8px)`, `pointer-events: none`, `user-select: none`
 - **Purpose:** Quick privacy screen when someone walks by — blurs notes and checklist
 - **No persistence, no logs, no server calls** — purely client-side CSS toggle
 - Default state: unblurred (Hide button shown)
@@ -388,7 +394,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 - `--inprogress-gradient-0` through `--inprogress-gradient-19` (teal/green spectrum)
 - `--done-gradient-0` through `--done-gradient-19` (purple spectrum)
 
-**Text color:** Gradients 0-11 (darker) use light/white text. Gradients 12-19 (lighter) use dark text. Controlled by `shouldUseLightText()` function and `.light-text` / `.dark-text` CSS classes.
+**Text color:** Gradients 0-11 (darker) use light/white text. Gradients 12-19 (lighter) use dark text. Controlled by `shouldUseLightText()` function and `.--lightText` / `.--darkText` CSS classes.
 
 **Gradient assignment:** `getTaskGradient(status, position, totalInColumn)` — if column has ≤20 tasks, gradient index = position. If >20, distributes evenly across the 20 levels.
 
@@ -460,7 +466,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `renderCategoryFilters()`   | Renders filter buttons in header toolbar from CATEGORIES |
 | `toggleCategoryFilter(id)`  | Toggles a category filter on/off, updates button state and cards |
 | `togglePriorityFilter()`    | Toggles priority-only filter on/off                      |
-| `applyAllFilters()`         | Applies all active filters (category + priority) via `card-filtered` class |
+| `applyAllFilters()`         | Applies all active filters (category + priority) via `--filtered` class |
 | `toggleCrisisMode()`        | Toggles crisis mode on/off (priority filter, red border, hide elements, favicon, title) |
 | `generateRedStarFavicon()`  | Creates a red star favicon dynamically via canvas         |
 | `setFavicon(url)`           | Updates the page favicon link element                     |
@@ -473,7 +479,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 ### Key Constants in `app.js`
 
 ```javascript
-const STATUS_COLUMNS = { 'todo': 'todo-list', 'wait': 'wait-list', 'inprogress': 'inprogress-list', 'done': 'done-list' };
+const STATUS_COLUMNS = { 'todo': '.js-todoList', 'wait': '.js-waitList', 'inprogress': '.js-inprogressList', 'done': '.js-doneList' };
 const CATEGORIES = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
 ```
 
@@ -521,13 +527,13 @@ All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()
 
 ## Modals Reference
 
-| Modal ID            | Purpose                      | Trigger                              |
-|---------------------|------------------------------|--------------------------------------|
-| `task-modal`        | Add/Edit task                | [+ Add Task] button / [Edit] on card |
-| `reports-modal`     | View reports list & detail   | Hamburger menu → View Reports        |
-| `archived-modal`    | View all archived tasks      | Hamburger menu → All Completed Tasks |
-| `confirm-modal`     | Delete confirmation          | Delete button inside edit modal      |
-| `checklist-modal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist |
+| Modal JS hook          | Purpose                      | Trigger                              |
+|------------------------|------------------------------|--------------------------------------|
+| `.js-taskModal`        | Add/Edit task                | [+ Add Task] button / [Edit] on card |
+| `.js-reportsModal`     | View reports list & detail   | Hamburger menu → View Reports        |
+| `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks |
+| `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      |
+| `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist |
 
 All modals close on: close button (×), Cancel button, clicking backdrop, pressing ESC.
 

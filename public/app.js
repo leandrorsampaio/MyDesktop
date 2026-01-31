@@ -17,10 +17,10 @@
     ];
 
     const STATUS_COLUMNS = {
-        'todo': 'todo-list',
-        'wait': 'wait-list',
-        'inprogress': 'inprogress-list',
-        'done': 'done-list'
+        'todo': '.js-todoList',
+        'wait': '.js-waitList',
+        'inprogress': '.js-inprogressList',
+        'done': '.js-doneList'
     };
 
     const CATEGORIES = {
@@ -51,74 +51,74 @@
     // ==========================================
     const elements = {
         // Header
-        currentDate: document.getElementById('current-date'),
-        currentWeekday: document.getElementById('current-weekday'),
-        currentWeek: document.getElementById('current-week'),
-        menuBtn: document.getElementById('menu-btn'),
-        dropdownMenu: document.getElementById('dropdown-menu'),
+        currentDate: document.querySelector('.js-currentDate'),
+        currentWeekday: document.querySelector('.js-currentWeekday'),
+        currentWeek: document.querySelector('.js-currentWeek'),
+        menuBtn: document.querySelector('.js-menuBtn'),
+        dropdownMenu: document.querySelector('.js-dropdownMenu'),
 
         // Task Modal
-        taskModal: document.getElementById('task-modal'),
-        taskForm: document.getElementById('task-form'),
-        modalTitle: document.getElementById('modal-title'),
-        taskTitle: document.getElementById('task-title'),
-        taskDescription: document.getElementById('task-description'),
-        taskPriority: document.getElementById('task-priority'),
-        taskLogSection: document.getElementById('task-log-section'),
-        taskLogList: document.getElementById('task-log-list'),
-        deleteTaskBtn: document.getElementById('delete-task-btn'),
-        modalClose: document.getElementById('modal-close'),
-        cancelBtn: document.getElementById('cancel-btn'),
-        addTaskBtn: document.getElementById('add-task-btn'),
+        taskModal: document.querySelector('.js-taskModal'),
+        taskForm: document.querySelector('.js-taskForm'),
+        modalTitle: document.querySelector('.js-modalTitle'),
+        taskTitle: document.querySelector('.js-taskTitle'),
+        taskDescription: document.querySelector('.js-taskDescription'),
+        taskPriority: document.querySelector('.js-taskPriority'),
+        taskLogSection: document.querySelector('.js-taskLogSection'),
+        taskLogList: document.querySelector('.js-taskLogList'),
+        deleteTaskBtn: document.querySelector('.js-deleteTaskBtn'),
+        modalClose: document.querySelector('.js-modalClose'),
+        cancelBtn: document.querySelector('.js-cancelBtn'),
+        addTaskBtn: document.querySelector('.js-addTaskBtn'),
 
         // Reports Modal
-        reportsModal: document.getElementById('reports-modal'),
-        reportsContainer: document.getElementById('reports-container'),
-        reportsModalClose: document.getElementById('reports-modal-close'),
-        viewReportsBtn: document.getElementById('view-reports-btn'),
+        reportsModal: document.querySelector('.js-reportsModal'),
+        reportsContainer: document.querySelector('.js-reportsContainer'),
+        reportsModalClose: document.querySelector('.js-reportsModalClose'),
+        viewReportsBtn: document.querySelector('.js-viewReportsBtn'),
 
         // Archived Tasks Modal
-        archivedModal: document.getElementById('archived-modal'),
-        archivedContainer: document.getElementById('archived-container'),
-        archivedModalClose: document.getElementById('archived-modal-close'),
-        viewArchivedBtn: document.getElementById('view-archived-btn'),
+        archivedModal: document.querySelector('.js-archivedModal'),
+        archivedContainer: document.querySelector('.js-archivedContainer'),
+        archivedModalClose: document.querySelector('.js-archivedModalClose'),
+        viewArchivedBtn: document.querySelector('.js-viewArchivedBtn'),
 
         // Checklist Modal
-        checklistModal: document.getElementById('checklist-modal'),
-        checklistModalClose: document.getElementById('checklist-modal-close'),
-        checklistItemsContainer: document.getElementById('checklist-items-container'),
-        addChecklistItemBtn: document.getElementById('add-checklist-item-btn'),
-        checklistCancelBtn: document.getElementById('checklist-cancel-btn'),
-        checklistSaveBtn: document.getElementById('checklist-save-btn'),
-        editChecklistBtn: document.getElementById('edit-checklist-btn'),
+        checklistModal: document.querySelector('.js-checklistModal'),
+        checklistModalClose: document.querySelector('.js-checklistModalClose'),
+        checklistItemsContainer: document.querySelector('.js-checklistItemsContainer'),
+        addChecklistItemBtn: document.querySelector('.js-addChecklistItemBtn'),
+        checklistCancelBtn: document.querySelector('.js-checklistCancelBtn'),
+        checklistSaveBtn: document.querySelector('.js-checklistSaveBtn'),
+        editChecklistBtn: document.querySelector('.js-editChecklistBtn'),
 
         // Confirm Modal
-        confirmModal: document.getElementById('confirm-modal'),
-        confirmCancel: document.getElementById('confirm-cancel'),
-        confirmDelete: document.getElementById('confirm-delete'),
+        confirmModal: document.querySelector('.js-confirmModal'),
+        confirmCancel: document.querySelector('.js-confirmCancel'),
+        confirmDelete: document.querySelector('.js-confirmDelete'),
 
         // Privacy
-        appContainer: document.getElementById('app-container'),
-        privacyToggleBtn: document.getElementById('privacy-toggle-btn'),
+        appContainer: document.querySelector('.js-appContainer'),
+        privacyToggleBtn: document.querySelector('.js-privacyToggleBtn'),
 
         // Category Filters
-        categoryFilters: document.getElementById('category-filters'),
-        priorityFilterBtn: document.getElementById('priority-filter-btn'),
+        categoryFilters: document.querySelector('.js-categoryFilters'),
+        priorityFilterBtn: document.querySelector('.js-priorityFilterBtn'),
 
         // Crisis Mode
-        crisisModeBtn: document.getElementById('crisis-mode-btn'),
-        headerToolbar: document.querySelector('.header-toolbar'),
+        crisisModeBtn: document.querySelector('.js-crisisModeBtn'),
+        headerToolbar: document.querySelector('.toolbar'),
 
         // Archive & Report
-        archiveBtn: document.getElementById('archive-btn'),
-        reportBtn: document.getElementById('report-btn'),
+        archiveBtn: document.querySelector('.js-archiveBtn'),
+        reportBtn: document.querySelector('.js-reportBtn'),
 
         // Notes
-        notesTextarea: document.getElementById('notes-textarea'),
-        notesSaveStatus: document.getElementById('notes-save-status'),
+        notesTextarea: document.querySelector('.js-notesTextarea'),
+        notesSaveStatus: document.querySelector('.js-notesSaveStatus'),
 
         // Recurrent Tasks
-        recurrentList: document.getElementById('recurrent-list')
+        recurrentList: document.querySelector('.js-recurrentList')
     };
 
     // ==========================================
@@ -152,13 +152,13 @@
     // Hamburger Menu
     // ==========================================
     function toggleMenu() {
-        elements.menuBtn.classList.toggle('active');
-        elements.dropdownMenu.classList.toggle('active');
+        elements.menuBtn.classList.toggle('--active');
+        elements.dropdownMenu.classList.toggle('--active');
     }
 
     function closeMenu() {
-        elements.menuBtn.classList.remove('active');
-        elements.dropdownMenu.classList.remove('active');
+        elements.menuBtn.classList.remove('--active');
+        elements.dropdownMenu.classList.remove('--active');
     }
 
     // ==========================================
@@ -356,12 +356,12 @@
 
     function showNotesSaveStatus(status) {
         const el = elements.notesSaveStatus;
-        el.className = '';
+        el.className = 'notes__status js-notesSaveStatus';
         el.style.opacity = '1';
 
         if (status === 'saving') {
             el.textContent = 'Saving...';
-            el.classList.add('saving');
+            el.classList.add('--saving');
         } else if (status === 'saved') {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', {
@@ -369,7 +369,7 @@
                 minute: '2-digit'
             });
             el.textContent = `Saved at ${timeStr}`;
-            el.classList.add('saved');
+            el.classList.add('--saved');
         }
     }
 
@@ -416,7 +416,7 @@
     }
 
     function renderColumn(status) {
-        const columnEl = document.getElementById(STATUS_COLUMNS[status]);
+        const columnEl = document.querySelector(STATUS_COLUMNS[status]);
         const columnTasks = tasks
             .filter(t => t.status === status)
             .sort((a, b) => a.position - b.position);
@@ -424,7 +424,7 @@
         columnEl.innerHTML = '';
 
         if (columnTasks.length === 0) {
-            columnEl.innerHTML = '<div class="empty-state">No tasks</div>';
+            columnEl.innerHTML = '<div class="emptyState">No tasks</div>';
             return;
         }
 
@@ -440,7 +440,7 @@
 
     function createTaskCard(task, position, totalInColumn) {
         const card = document.createElement('div');
-        card.className = 'task-card';
+        card.className = 'taskCard js-taskCard';
         card.dataset.taskId = task.id;
         card.dataset.status = task.status;
         card.dataset.category = String(task.category || 1);
@@ -452,28 +452,28 @@
 
         // Apply text color
         if (shouldUseLightText(task.status, position, totalInColumn)) {
-            card.classList.add('light-text');
+            card.classList.add('--lightText');
         } else {
-            card.classList.add('dark-text');
+            card.classList.add('--darkText');
         }
 
         card.innerHTML = `
-            <div class="drag-handle">
-                <div class="drag-handle-dots">
+            <div class="taskCard__handle">
+                <div class="taskCard__handleDots">
                     <span></span><span></span>
                     <span></span><span></span>
                     <span></span><span></span>
                 </div>
             </div>
-            <div class="task-card-content">
-                <div class="task-card-header">
-                    ${task.priority ? '<span class="priority-star">★</span>' : ''}
-                    <span class="task-title">${escapeHtml(task.title)}</span>
+            <div class="taskCard__content">
+                <div class="taskCard__header">
+                    ${task.priority ? '<span class="taskCard__star">★</span>' : ''}
+                    <span class="taskCard__title">${escapeHtml(task.title)}</span>
                 </div>
-                ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
-                ${(task.category && task.category !== 1) ? `<span class="category-badge">${escapeHtml(CATEGORIES[task.category] || 'Unknown')}</span>` : ''}
+                ${task.description ? `<div class="taskCard__desc">${escapeHtml(task.description)}</div>` : ''}
+                ${(task.category && task.category !== 1) ? `<span class="taskCard__badge">${escapeHtml(CATEGORIES[task.category] || 'Unknown')}</span>` : ''}
             </div>
-            <button class="btn-edit" onclick="window.openEditModal('${task.id}')">Edit</button>
+            <button class="taskCard__editBtn" onclick="window.openEditModal('${task.id}')">Edit</button>
         `;
 
         // Drag events
@@ -492,28 +492,29 @@
 
         recurrentTasks.forEach((task, index) => {
             const li = document.createElement('li');
+            li.className = 'dailyChecklist__item';
             const isChecked = checkedItems[index];
-            li.className = isChecked ? 'checked' : '';
+            if (isChecked) li.classList.add('--checked');
 
             const hasUrl = task.url && task.url.trim() !== '';
 
             li.innerHTML = `
                 <input type="checkbox" ${isChecked ? 'checked' : ''} />
-                <span class="task-text">${escapeHtml(task.text)}</span>
-                ${hasUrl ? `<a href="${escapeHtml(task.url)}" target="_blank" class="external-link" title="Open link">↗</a>` : ''}
+                <span class="dailyChecklist__text">${escapeHtml(task.text)}</span>
+                ${hasUrl ? `<a href="${escapeHtml(task.url)}" target="_blank" class="dailyChecklist__link" title="Open link">↗</a>` : ''}
             `;
 
             li.querySelector('input').addEventListener('change', (e) => {
                 toggleRecurrentTask(index, e.target.checked);
-                li.classList.toggle('checked', e.target.checked);
+                li.classList.toggle('--checked', e.target.checked);
             });
 
             // Make task text clickable for checkbox
-            li.querySelector('.task-text').addEventListener('click', () => {
+            li.querySelector('.dailyChecklist__text').addEventListener('click', () => {
                 const checkbox = li.querySelector('input');
                 checkbox.checked = !checkbox.checked;
                 toggleRecurrentTask(index, checkbox.checked);
-                li.classList.toggle('checked', checkbox.checked);
+                li.classList.toggle('--checked', checkbox.checked);
             });
 
             list.appendChild(li);
@@ -608,16 +609,16 @@
 
     function createChecklistItemRow(text = '', url = '', index = -1) {
         const row = document.createElement('div');
-        row.className = 'checklist-item-row';
+        row.className = 'checklistEditor__row';
         row.dataset.index = index;
 
         row.innerHTML = `
-            <input type="text" class="text-input" placeholder="Task name" value="${escapeHtml(text)}" />
-            <input type="text" class="url-input" placeholder="URL (optional)" value="${escapeHtml(url)}" />
-            <button type="button" class="btn-remove-item" title="Remove item">&times;</button>
+            <input type="text" class="checklistEditor__textInput" placeholder="Task name" value="${escapeHtml(text)}" />
+            <input type="text" class="checklistEditor__urlInput" placeholder="URL (optional)" value="${escapeHtml(url)}" />
+            <button type="button" class="checklistEditor__removeBtn" title="Remove item">&times;</button>
         `;
 
-        row.querySelector('.btn-remove-item').addEventListener('click', () => {
+        row.querySelector('.checklistEditor__removeBtn').addEventListener('click', () => {
             row.remove();
         });
 
@@ -627,16 +628,16 @@
     function addChecklistItem() {
         const row = createChecklistItemRow();
         elements.checklistItemsContainer.appendChild(row);
-        row.querySelector('.text-input').focus();
+        row.querySelector('.checklistEditor__textInput').focus();
     }
 
     function saveChecklistFromEditor() {
-        const rows = elements.checklistItemsContainer.querySelectorAll('.checklist-item-row');
+        const rows = elements.checklistItemsContainer.querySelectorAll('.checklistEditor__row');
         const newTasks = [];
 
         rows.forEach(row => {
-            const text = row.querySelector('.text-input').value.trim();
-            const url = row.querySelector('.url-input').value.trim();
+            const text = row.querySelector('.checklistEditor__textInput').value.trim();
+            const url = row.querySelector('.checklistEditor__urlInput').value.trim();
 
             if (text) {
                 newTasks.push({ text, url });
@@ -658,11 +659,11 @@
 
         Object.entries(CATEGORIES).forEach(([id, label]) => {
             const btn = document.createElement('button');
-            btn.className = 'btn-category-filter';
+            btn.className = 'toolbar__categoryBtn js-categoryFilterBtn';
             btn.dataset.category = id;
             btn.textContent = label;
             if (activeCategoryFilters.has(Number(id))) {
-                btn.classList.add('active');
+                btn.classList.add('--active');
             }
             btn.addEventListener('click', () => toggleCategoryFilter(Number(id)));
             container.appendChild(btn);
@@ -677,8 +678,8 @@
         }
 
         // Update button states
-        elements.categoryFilters.querySelectorAll('.btn-category-filter').forEach(btn => {
-            btn.classList.toggle('active', activeCategoryFilters.has(Number(btn.dataset.category)));
+        elements.categoryFilters.querySelectorAll('.toolbar__categoryBtn').forEach(btn => {
+            btn.classList.toggle('--active', activeCategoryFilters.has(Number(btn.dataset.category)));
         });
 
         applyAllFilters();
@@ -686,12 +687,12 @@
 
     function togglePriorityFilter() {
         priorityFilterActive = !priorityFilterActive;
-        elements.priorityFilterBtn.classList.toggle('active', priorityFilterActive);
+        elements.priorityFilterBtn.classList.toggle('--active', priorityFilterActive);
         applyAllFilters();
     }
 
     function applyAllFilters() {
-        const cards = document.querySelectorAll('.task-card');
+        const cards = document.querySelectorAll('.taskCard');
         const hasCategoryFilters = activeCategoryFilters.size > 0;
 
         cards.forEach(card => {
@@ -710,7 +711,7 @@
                 hidden = true;
             }
 
-            card.classList.toggle('card-filtered', hidden);
+            card.classList.toggle('--filtered', hidden);
         });
     }
 
@@ -762,29 +763,29 @@
 
             // Activate priority filter
             priorityFilterActive = true;
-            elements.priorityFilterBtn.classList.add('active');
+            elements.priorityFilterBtn.classList.add('--active');
             applyAllFilters();
 
             // Visual changes
-            document.body.classList.add('crisis-mode');
+            document.body.classList.add('--crisisMode');
             document.title = '!!!';
             setFavicon(generateRedStarFavicon());
 
             // Update menu button text
-            elements.crisisModeBtn.innerHTML = '<span class="menu-icon">🚨</span> Exit Crisis Mode';
+            elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Exit Crisis Mode';
         } else {
             // Deactivate priority filter
             priorityFilterActive = false;
-            elements.priorityFilterBtn.classList.remove('active');
+            elements.priorityFilterBtn.classList.remove('--active');
             applyAllFilters();
 
             // Restore visuals
-            document.body.classList.remove('crisis-mode');
+            document.body.classList.remove('--crisisMode');
             document.title = originalTitle;
             setFavicon('favicon.png');
 
             // Restore menu button text
-            elements.crisisModeBtn.innerHTML = '<span class="menu-icon">🚨</span> Crisis Mode';
+            elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Crisis Mode';
         }
     }
 
@@ -793,16 +794,16 @@
     // ==========================================
     function handleDragStart(e) {
         draggedTask = e.target;
-        e.target.classList.add('dragging');
+        e.target.classList.add('--dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
     }
 
     function handleDragEnd(e) {
-        e.target.classList.remove('dragging');
+        e.target.classList.remove('--dragging');
         draggedTask = null;
-        document.querySelectorAll('.task-list').forEach(list => {
-            list.classList.remove('drag-over');
+        document.querySelectorAll('.column__list').forEach(list => {
+            list.classList.remove('--dragOver');
         });
     }
 
@@ -813,25 +814,25 @@
 
     function handleDragEnter(e) {
         e.preventDefault();
-        const taskList = e.target.closest('.task-list');
+        const taskList = e.target.closest('.column__list');
         if (taskList) {
-            taskList.classList.add('drag-over');
+            taskList.classList.add('--dragOver');
         }
     }
 
     function handleDragLeave(e) {
-        const taskList = e.target.closest('.task-list');
+        const taskList = e.target.closest('.column__list');
         if (taskList && !taskList.contains(e.relatedTarget)) {
-            taskList.classList.remove('drag-over');
+            taskList.classList.remove('--dragOver');
         }
     }
 
     async function handleDrop(e) {
         e.preventDefault();
-        const taskList = e.target.closest('.task-list');
+        const taskList = e.target.closest('.column__list');
         if (!taskList || !draggedTask) return;
 
-        taskList.classList.remove('drag-over');
+        taskList.classList.remove('--dragOver');
 
         const taskId = e.dataTransfer.getData('text/plain');
         const newStatus = taskList.dataset.status;
@@ -840,7 +841,7 @@
         if (!task) return;
 
         // Calculate new position based on drop location
-        const cards = Array.from(taskList.querySelectorAll('.task-card:not(.dragging)'));
+        const cards = Array.from(taskList.querySelectorAll('.taskCard:not(.--dragging)'));
         let newPosition = cards.length; // Default to end
 
         for (let i = 0; i < cards.length; i++) {
@@ -856,7 +857,7 @@
     }
 
     function initDragAndDrop() {
-        document.querySelectorAll('.task-list').forEach(list => {
+        document.querySelectorAll('.column__list').forEach(list => {
             list.addEventListener('dragover', handleDragOver);
             list.addEventListener('dragenter', handleDragEnter);
             list.addEventListener('dragleave', handleDragLeave);
@@ -868,11 +869,11 @@
     // Modal Functions
     // ==========================================
     function openModal(modal) {
-        modal.classList.add('active');
+        modal.classList.add('--active');
     }
 
     function closeModal(modal) {
-        modal.classList.remove('active');
+        modal.classList.remove('--active');
     }
 
     function openAddTaskModal() {
@@ -903,7 +904,7 @@
         if (task.log && task.log.length > 0) {
             elements.taskLogSection.style.display = 'block';
             elements.taskLogList.innerHTML = task.log.map(entry => `
-                <li><span class="log-date">${entry.date}</span>: ${escapeHtml(entry.action)}</li>
+                <li><span class="taskForm__logDate">${entry.date}</span>: ${escapeHtml(entry.action)}</li>
             `).join('');
         } else {
             elements.taskLogSection.style.display = 'none';
@@ -971,7 +972,7 @@
 
     function renderReportsList(reports) {
         if (reports.length === 0) {
-            elements.reportsContainer.innerHTML = '<div class="empty-state">No reports generated yet</div>';
+            elements.reportsContainer.innerHTML = '<div class="emptyState">No reports generated yet</div>';
             return;
         }
 
@@ -979,22 +980,22 @@
         reports.sort((a, b) => new Date(b.generatedDate) - new Date(a.generatedDate));
 
         elements.reportsContainer.innerHTML = `
-            <ul class="reports-list">
+            <ul class="reportsList">
                 ${reports.map(report => `
-                    <li data-report-id="${report.id}">
-                        <input type="text" class="report-title-edit" value="${escapeHtml(report.title)}"
+                    <li class="reportsList__item" data-report-id="${report.id}">
+                        <input type="text" class="reportsList__titleEdit js-reportTitleEdit" value="${escapeHtml(report.title)}"
                             onblur="window.updateReportTitle('${report.id}', this.value)"
                             onclick="event.stopPropagation()" />
-                        <div class="report-date">${formatDate(report.generatedDate)}</div>
+                        <div class="reportsList__date">${formatDate(report.generatedDate)}</div>
                     </li>
                 `).join('')}
             </ul>
         `;
 
         // Add click listeners to view reports
-        elements.reportsContainer.querySelectorAll('.reports-list li').forEach(li => {
+        elements.reportsContainer.querySelectorAll('.reportsList__item').forEach(li => {
             li.addEventListener('click', (e) => {
-                if (e.target.classList.contains('report-title-edit')) return;
+                if (e.target.classList.contains('reportsList__titleEdit')) return;
                 const reportId = li.dataset.reportId;
                 const report = reports.find(r => r.id === reportId);
                 if (report) renderReportView(report, reports);
@@ -1008,9 +1009,9 @@
 
     function renderReportView(report, allReports) {
         elements.reportsContainer.innerHTML = `
-            <div class="report-view">
-                <div class="report-view-header">
-                    <button class="btn-back" onclick="window.backToReportsList()">← Back to Reports</button>
+            <div class="reportDetail">
+                <div class="reportDetail__header">
+                    <button class="reportDetail__backBtn" onclick="window.backToReportsList()">← Back to Reports</button>
                     <h3>${escapeHtml(report.title)}</h3>
                 </div>
 
@@ -1019,18 +1020,18 @@
                 ${renderReportSection('Waiting/Blocked', report.content.waiting)}
                 ${renderReportSection('To Do', report.content.todo)}
 
-                <div class="report-section">
+                <div class="reportDetail__section">
                     <h4>Notes</h4>
                     ${report.notes && (typeof report.notes === 'string' ? report.notes.trim() : report.notes.length > 0) ?
                         (typeof report.notes === 'string' ?
-                            `<pre class="report-notes-text">${escapeHtml(report.notes)}</pre>` :
+                            `<pre class="reportDetail__notesText">${escapeHtml(report.notes)}</pre>` :
                             report.notes.map(note => `
-                                <div class="report-notes-item ${note.checked ? 'checked' : ''}">
+                                <div class="reportDetail__notesItem ${note.checked ? '--checked' : ''}">
                                     ${note.checked ? '☑' : '☐'} ${escapeHtml(note.text)}
                                 </div>
                             `).join('')
                         ) :
-                        '<div class="empty-state">No notes</div>'
+                        '<div class="emptyState">No notes</div>'
                     }
                 </div>
             </div>
@@ -1044,9 +1045,9 @@
     function renderReportSection(title, taskList) {
         if (!taskList || taskList.length === 0) {
             return `
-                <div class="report-section">
+                <div class="reportDetail__section">
                     <h4>${title}</h4>
-                    <div class="empty-state">No tasks</div>
+                    <div class="emptyState">No tasks</div>
                 </div>
             `;
         }
@@ -1066,13 +1067,13 @@
             const catLabel = CATEGORIES[catKey] || 'Non categorized';
             const catTasks = grouped[catKey];
             return `
-                <div class="report-category-group">
-                    <div class="report-category-label">${escapeHtml(catLabel)}</div>
+                <div class="reportDetail__categoryGroup">
+                    <div class="reportDetail__categoryLabel">${escapeHtml(catLabel)}</div>
                     ${catTasks.map(task => `
-                        <div class="report-task">
-                            <div class="report-task-id">[${task.id.substring(0, 8)}]</div>
-                            <div class="report-task-title">${escapeHtml(task.title)}</div>
-                            ${task.description ? `<div class="report-task-desc">Description: ${escapeHtml(task.description)}</div>` : ''}
+                        <div class="reportDetail__task">
+                            <div class="reportDetail__taskId">[${task.id.substring(0, 8)}]</div>
+                            <div class="reportDetail__taskTitle">${escapeHtml(task.title)}</div>
+                            ${task.description ? `<div class="reportDetail__taskDesc">Description: ${escapeHtml(task.description)}</div>` : ''}
                         </div>
                     `).join('')}
                 </div>
@@ -1080,7 +1081,7 @@
         }).join('');
 
         return `
-            <div class="report-section">
+            <div class="reportDetail__section">
                 <h4>${title}</h4>
                 ${taskHtml}
             </div>
@@ -1127,7 +1128,7 @@
 
     function renderArchivedTasks(archivedTasks) {
         if (archivedTasks.length === 0) {
-            elements.archivedContainer.innerHTML = '<div class="empty-state">No completed tasks yet</div>';
+            elements.archivedContainer.innerHTML = '<div class="emptyState">No completed tasks yet</div>';
             return;
         }
 
@@ -1144,20 +1145,20 @@
         });
 
         elements.archivedContainer.innerHTML = `
-            <div class="archived-count">${archivedTasks.length} completed task${archivedTasks.length !== 1 ? 's' : ''}</div>
-            <ul class="archived-list">
+            <div class="archivedView__count">${archivedTasks.length} completed task${archivedTasks.length !== 1 ? 's' : ''}</div>
+            <ul class="archivedView__list">
                 ${archivedTasks.map(task => {
                     const completedDate = task.log && task.log.length > 0
                         ? task.log[task.log.length - 1].date
                         : task.createdDate.split('T')[0];
                     return `
-                        <li class="archived-task-item">
-                            <div class="archived-task-header">
-                                ${task.priority ? '<span class="archived-task-priority">★</span>' : ''}
-                                <span class="archived-task-title">${escapeHtml(task.title)}</span>
+                        <li class="archivedView__item">
+                            <div class="archivedView__itemHeader">
+                                ${task.priority ? '<span class="archivedView__itemStar">★</span>' : ''}
+                                <span class="archivedView__itemTitle">${escapeHtml(task.title)}</span>
                             </div>
-                            ${task.description ? `<div class="archived-task-desc">${escapeHtml(task.description)}</div>` : ''}
-                            <div class="archived-task-date">Completed: ${completedDate}</div>
+                            ${task.description ? `<div class="archivedView__itemDesc">${escapeHtml(task.description)}</div>` : ''}
+                            <div class="archivedView__itemDate">Completed: ${completedDate}</div>
                         </li>
                     `;
                 }).join('')}
@@ -1207,10 +1208,10 @@
 
         // Privacy Toggle
         elements.privacyToggleBtn.addEventListener('click', () => {
-            elements.appContainer.classList.toggle('privacy-mode');
-            const isHidden = elements.appContainer.classList.contains('privacy-mode');
+            elements.appContainer.classList.toggle('--privacyMode');
+            const isHidden = elements.appContainer.classList.contains('--privacyMode');
             elements.privacyToggleBtn.textContent = isHidden ? 'Show' : 'Hide';
-            elements.privacyToggleBtn.classList.toggle('active', isHidden);
+            elements.privacyToggleBtn.classList.toggle('--active', isHidden);
         });
 
         // Add Task
