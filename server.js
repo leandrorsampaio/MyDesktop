@@ -248,11 +248,10 @@ app.post('/api/tasks/:id/move', async (req, res) => {
     }
 });
 
-// POST archive completed tasks and generate report
-app.post('/api/archive', async (req, res) => {
+// POST generate report (snapshot only, no archiving)
+app.post('/api/reports/generate', async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
-        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
         const reports = await readJsonFile(REPORTS_FILE, []);
         const notes = await readJsonFile(NOTES_FILE, { content: '' });
 
@@ -261,15 +260,12 @@ app.post('/api/archive', async (req, res) => {
         const waitTasks = tasks.filter(t => t.status === 'wait');
         const todoTasks = tasks.filter(t => t.status === 'todo');
 
-        if (doneTasks.length === 0) {
-            return res.status(400).json({ error: 'No completed tasks to archive' });
-        }
-
         const now = new Date();
         const weekNumber = getWeekNumber(now);
         const dateRange = formatDateRange(now);
 
-        // Create report
+        const mapTask = t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 });
+
         const report = {
             id: generateId(),
             title: `Week ${weekNumber} (${dateRange})`,
@@ -277,30 +273,47 @@ app.post('/api/archive', async (req, res) => {
             weekNumber,
             dateRange,
             content: {
-                archived: doneTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 })),
-                inProgress: inProgressTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 })),
-                waiting: waitTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 })),
-                todo: todoTasks.map(t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 }))
+                archived: doneTasks.map(mapTask),
+                inProgress: inProgressTasks.map(mapTask),
+                waiting: waitTasks.map(mapTask),
+                todo: todoTasks.map(mapTask)
             },
             notes: notes.content || ''
         };
 
-        // Archive done tasks
+        reports.push(report);
+        await writeJsonFile(REPORTS_FILE, reports);
+
+        res.json(report);
+    } catch (error) {
+        console.error('Report generation error:', error);
+        res.status(500).json({ error: 'Failed to generate report' });
+    }
+});
+
+// POST archive completed tasks (no report generation)
+app.post('/api/tasks/archive', async (req, res) => {
+    try {
+        const tasks = await readJsonFile(TASKS_FILE, []);
+        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
+
+        const doneTasks = tasks.filter(t => t.status === 'done');
+
+        if (doneTasks.length === 0) {
+            return res.status(400).json({ error: 'No completed tasks to archive' });
+        }
+
         for (const task of doneTasks) {
             task.status = 'archived';
             archivedTasks.push(task);
         }
 
-        // Remove done tasks from active tasks
         const activeTasks = tasks.filter(t => t.status !== 'done');
 
-        // Save files
-        reports.push(report);
         await writeJsonFile(TASKS_FILE, activeTasks);
         await writeJsonFile(ARCHIVED_FILE, archivedTasks);
-        await writeJsonFile(REPORTS_FILE, reports);
 
-        res.json(report);
+        res.json({ success: true, archivedCount: doneTasks.length });
     } catch (error) {
         console.error('Archive error:', error);
         res.status(500).json({ error: 'Failed to archive tasks' });

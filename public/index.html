@@ -24,6 +24,7 @@
             </div>
         </div>
         <div class="header-actions">
+            <button id="privacy-toggle-btn" class="btn-privacy-toggle">Hide</button>
             <button id="menu-btn" class="btn-menu" aria-label="Menu">
                 <span></span>
                 <span></span>
@@ -43,7 +44,7 @@
         </div>
     </header>
 
-    <div class="app-container">
+    <div class="app-container" id="app-container">
         <!-- Left Sidebar -->
         <aside class="sidebar">
             <!-- Recurrent Tasks Section -->
@@ -101,7 +102,10 @@
             <div class="column" data-status="done">
                 <div class="column-header">
                     <h2>Done</h2>
-                    <button class="btn-archive" id="archive-btn">Archive & Report</button>
+                    <div class="column-header-actions">
+                        <button class="btn-report" id="report-btn">Report</button>
+                        <button class="btn-archive" id="archive-btn">Archive</button>
+                    </div>
                 </div>
                 <div class="task-list" id="done-list" data-status="done">
                     <!-- Tasks will be rendered here -->

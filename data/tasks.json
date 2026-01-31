@@ -724,33 +724,5 @@
     ],
     "createdDate": "2026-01-30T23:29:18.891Z",
     "category": 3
-  },
-  {
-    "id": "ml1jho32dtq4wrz6p",
-    "title": "TEST",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "status": "inprogress",
-    "position": 7,
-    "log": [
-      {
-        "date": "2026-01-30",
-        "action": "Category changed from Non categorized to Development"
-      },
-      {
-        "date": "2026-01-30",
-        "action": "Moved from To Do to Wait"
-      },
-      {
-        "date": "2026-01-30",
-        "action": "Moved from Wait to In Progress"
-      },
-      {
-        "date": "2026-01-30",
-        "action": "Category changed from Development to Generic Task"
-      }
-    ],
-    "createdDate": "2026-01-30T23:54:02.414Z"
   }
 ]

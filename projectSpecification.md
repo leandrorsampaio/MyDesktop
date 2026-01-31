@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Last Updated:** 2026-01-31
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 1.7.0   | 2026-01-31 | Added sidebar privacy toggle (blur overlay), separated Archive and Report into independent functions with separate buttons and API endpoints |
 | 1.6.0   | 2026-01-31 | Added task categories (1-6): selectable via pill buttons in modal, badge on cards, logged on change, reports grouped by category |
 | 1.5.0   | 2026-01-26 | Complete UI redesign with zen theme: light beige background, Montserrat font, generous spacing, soft shadows |
 | 1.4.0   | 2026-01-25 | Added editable daily checklist with external links, favicon |
@@ -20,524 +21,459 @@
 ---
 
 ## Project Overview
-A local web-based task management tool that serves as a browser homepage. It features a kanban-style board with drag-and-drop functionality to track tasks across different stages of completion, along with note-taking and daily recurring task checklist.
+
+A local web-based task management tool that serves as a browser homepage. It features a kanban-style board with drag-and-drop functionality to track tasks across different stages of completion, along with note-taking, daily recurring task checklist, task categorization, report generation, and a sidebar privacy mode.
+
+**Single user, local only.** No authentication, no multi-user support. Data stored as JSON files on the local filesystem.
+
+---
 
 ## Technical Stack
-- **Frontend:** HTML5, Vanilla CSS, Vanilla JavaScript
+
+- **Frontend:** HTML5, Vanilla CSS, Vanilla JavaScript (single-page, no framework)
 - **Backend:** Node.js + Express
-- **Server Port:** 3001
-- **Data Storage:** JSON files on local filesystem
-  - `tasks.json` - Active tasks
-  - `archived-tasks.json` - Archived tasks
-  - `reports.json` - Generated reports with metadata
-  - `notes.json` - User notes (free-form text)
+- **Server Port:** 3001 (port 3000 is used by another application)
+- **Data Storage:** JSON files in `./data/` directory
+  - `tasks.json` — Active tasks (all statuses except archived)
+  - `archived-tasks.json` — Archived tasks (append-only)
+  - `reports.json` — Generated report snapshots
+  - `notes.json` — User notes (free-form text, `{ content: string }`)
+- **Client-side Storage:** `localStorage` for recurrent tasks config and checked state
 - **Favicon:** `public/favicon.png` (star icon)
-- **No external CSS libraries** - all styling must be custom vanilla CSS
+- **Font:** Montserrat via Google Fonts CDN
+- **No external CSS/JS libraries** — all styling and logic is custom vanilla code
 
-## Server Configuration
+### File Structure
 
-### Port Assignment
-- **Task Tracker:** `http://localhost:3001`
-- Note: Port 3000 is already in use by another application
-
-### Backend Structure
-- Express.js server
-- REST API endpoints for task operations
-- Static file serving for HTML/CSS/JS
-- JSON file read/write operations
-
-### API Endpoints
 ```
-GET    /api/tasks              - Retrieve all active tasks
-POST   /api/tasks              - Create new task
-PUT    /api/tasks/:id          - Update existing task
-DELETE /api/tasks/:id          - Delete a task
-POST   /api/tasks/:id/move     - Move task between columns or reorder within column
-POST   /api/archive            - Archive completed tasks and generate report
-GET    /api/archived           - Get all archived/completed tasks
-GET    /api/reports            - Get list of all reports
-GET    /api/reports/:id        - Get specific report
-PUT    /api/reports/:id        - Update report title
-GET    /api/notes              - Get notes
-POST   /api/notes              - Save notes
+/
+├── server.js                  # Express backend (API + static serving)
+├── projectSpecification.md    # This file
+├── package.json
+├── data/
+│   ├── tasks.json
+│   ├── archived-tasks.json
+│   ├── reports.json
+│   └── notes.json
+└── public/
+    ├── index.html             # Single HTML page
+    ├── app.js                 # All frontend logic (IIFE, ~1050 lines)
+    ├── styles.css             # All styles (~1400 lines)
+    └── favicon.png
 ```
 
-## Design Inspiration
+### Server Start
 
-### Visual Style: Zen / Minimalist
-The interface follows a zen, clean aesthetic with light colors and generous whitespace:
+```bash
+node server.js
+# → http://localhost:3001
+```
 
-**Overall Theme:**
-- **Background:** Light beige/sand (#F5F1EB) - unified throughout
-- **Typography:** Montserrat (geometric sans-serif from Google Fonts)
-- **Spacing:** Generous whitespace, elements feel airy and separated
-- **Borders:** No hard borders - soft shadows only for depth
-- **Accent Color:** Warm terracotta (#C4A484)
-- **Text:** Soft black (#2D2D2D) - not pure black for softer appearance
+---
 
-**Task Card Color System (Clear App-Inspired):**
-- Each task card position has a distinct gradient background color
-- Colors progress through a spectrum within each column (gradient from dark to light)
-- **Maximum 20 color gradients per column** (system adapts if fewer tasks)
-- Color is tied to POSITION, not to the task itself
-- When tasks are reordered, colors update based on new positions
+## API Endpoints
 
-**Column Color Themes:**
-- **To Do:** Warm colors gradient (dark red → light red/orange)
-- **Wait:** Cool/muted colors gradient (dark gray/blue → light gray/blue)
-- **In Progress:** Energetic colors gradient (dark green/teal → light green/teal)
-- **Done:** Calming colors gradient (dark purple/blue → light purple/blue)
+```
+GET    /api/tasks               - Retrieve all active tasks
+POST   /api/tasks               - Create new task (body: { title, description, priority, category })
+PUT    /api/tasks/:id           - Update existing task (body: any subset of { title, description, priority, category })
+DELETE /api/tasks/:id           - Delete a task permanently
+POST   /api/tasks/:id/move      - Move task between columns or reorder (body: { newStatus, newPosition })
+POST   /api/tasks/archive       - Archive completed tasks only (moves done → archived-tasks.json, no report)
+POST   /api/reports/generate    - Generate report snapshot of all columns + notes (no archiving, tasks stay in place)
+GET    /api/archived            - Get all archived/completed tasks
+GET    /api/reports             - Get list of all reports
+GET    /api/reports/:id         - Get specific report by ID
+PUT    /api/reports/:id         - Update report title (body: { title })
+GET    /api/notes               - Get notes object ({ content: string })
+POST   /api/notes               - Save notes (body: { content })
+```
 
-**Visual Characteristics:**
-- Gradient backgrounds on task cards (not flat colors)
-- Smooth color transitions when tasks are reordered
-- Clean Montserrat typography with good contrast
-- Soft shadows (box-shadow) instead of borders
-- White/light text on darker gradients, darker text on lighter gradients
-- Smooth animations (0.3s ease) for all interactions
-- Rounded corners (12-24px) throughout
+**Key design decision (v1.7.0):** Report generation and archiving are **independent operations**. You can generate a report without archiving, and archive without generating a report. The old combined `/api/archive` endpoint was removed.
+
+---
+
+## Data Model
+
+### Task Object
+
+```javascript
+{
+  id: string,            // Unique ID (timestamp-based: Date.now().toString(36) + random)
+  title: string,         // Required
+  description: string,   // Optional, default: ""
+  priority: boolean,     // true = show ★ star icon, default: false
+  category: number,      // 1-6, default: 1. See Category Definitions.
+  status: string,        // "todo" | "wait" | "inprogress" | "done" | "archived"
+  position: number,      // 0-based index within column (used for ordering)
+  log: array,            // Activity log entries (see below)
+  createdDate: string    // ISO 8601 datetime string
+}
+```
+
+### Log Entry
+
+```javascript
+{
+  date: string,    // YYYY-MM-DD (date only, no time)
+  action: string   // Human-readable description of what changed
+}
+```
+
+**What gets logged:**
+- Moving between columns: `"Moved from To Do to In Progress"`
+- Category changes: `"Category changed from Development to Planning"`
+
+**What does NOT get logged:**
+- Title/description/priority edits
+- Reordering within the same column
+- Privacy toggle
+
+### Category Definitions
+
+| ID | Label              | Notes                    |
+|----|--------------------|--------------------------|
+| 1  | Non categorized    | Default if none selected |
+| 2  | Development        |                          |
+| 3  | Communication      |                          |
+| 4  | To Remember        |                          |
+| 5  | Planning           |                          |
+| 6  | Generic Task       |                          |
+
+- Stored as numeric IDs in the task object for extensibility (easy to add 7, 8, etc.)
+- Label mapping defined in both `server.js` (`CATEGORY_LABELS` object) and `app.js` (`CATEGORIES` object)
+- Existing tasks without a `category` field are treated as `1` (Non categorized) at read time — no migration needed
+- Category badge is **not shown** on the card when category is 1 (Non categorized)
+
+### Notes Data
+
+```javascript
+{ content: string }  // Plain text, stored in notes.json
+```
+
+### Report Data
+
+```javascript
+{
+  id: string,
+  title: string,            // Default: "Week [N] (Jan 20-25)", editable by user
+  generatedDate: string,    // ISO datetime
+  weekNumber: number,
+  dateRange: string,        // e.g., "Jan 20-25"
+  content: {
+    archived: [],           // Snapshot of Done tasks at time of report
+    inProgress: [],         // Snapshot of In Progress tasks
+    waiting: [],            // Snapshot of Wait tasks
+    todo: []                // Snapshot of To Do tasks
+  },
+  notes: string             // Copy of notes content at time of generation
+}
+```
+
+Each task in the report content arrays contains: `{ id, title, description, category }`.
+
+**Report display groups tasks by category** within each status section (e.g., all "Development" tasks together under "Completed Tasks").
+
+---
 
 ## Layout Structure
-
-### Main Screen Layout
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Welcome, Leandro                                          [≡]  │
-│ January 25, 2026 • Saturday • Week 4                            │
+│ January 31, 2026 • Friday • Week 5                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  Left Sidebar          │        Main Kanban Board               │
-│  ┌──────────────────┐ │  ┌──────┬──────┬──────┬──────┐        │
-│  │ Recurrent Tasks  │ │  │ TODO │ WAIT │ PROG │ DONE │        │
-│  │ (Daily Checklist)│ │  │ [+]  │      │      │[Arc] │        │
-│  │                  │ │  │      │      │      │      │        │
-│  │ ☐ Check email    │ │  │ Card │ Card │ Card │ Card │        │
-│  │ ☐ Water plants   │ │  │ Card │ Card │ Card │ Card │        │
-│  └──────────────────┘ │  │ Card │      │      │      │        │
-│                        │  └──────┴──────┴──────┴──────┘        │
-│  ┌──────────────────┐ │                                        │
-│  │ Notes    [Saved] │ │  Hamburger Menu [≡]:                   │
-│  │          at 2:30 │ │   - View Reports                       │
-│  │ ┌──────────────┐ │ │   - All Completed Tasks                │
-│  │ │ Free-form    │ │ │                                        │
-│  │ │ textarea...  │ │ │                                        │
-│  │ └──────────────┘ │ │                                        │
-│  └──────────────────┘ │                                        │
+│  Left Sidebar (560px)  │     Main Kanban Board (remaining)     │
+│                [Hide]  │                                        │
+│  ┌──────────────────┐  │  ┌──────┬──────┬──────┬──────────┐   │
+│  │ Daily Checklist   │  │  │ TODO │ WAIT │ PROG │   DONE   │   │
+│  │                   │  │  │ [+]  │      │      │[Rpt][Arc]│   │
+│  │ ☐ Check email     │  │  │      │      │      │          │   │
+│  │ ☐ Water plants    │  │  │ Card │ Card │ Card │ Card     │   │
+│  │ ☐ Exercise        │  │  │ Card │ Card │ Card │ Card     │   │
+│  └──────────────────┘  │  └──────┴──────┴──────┴──────────┘   │
+│                         │                                       │
+│  ┌──────────────────┐  │  Hamburger Menu [≡]:                  │
+│  │ Notes   Saved at │  │   - View Reports                      │
+│  │         2:30 PM  │  │   - All Completed Tasks               │
+│  │ ┌──────────────┐ │  │   - Edit Daily Checklist              │
+│  │ │ Free-form    │ │  │                                       │
+│  │ │ textarea...  │ │  │                                       │
+│  │ └──────────────┘ │  │                                       │
+│  └──────────────────┘  │                                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Header Bar
+---
 
-**Welcome Section:**
-- Displays "Welcome, Leandro" as the main greeting
-- Shows current date in format: "January 25, 2026"
-- Shows weekday: "Saturday"
-- Shows week number: "Week 4"
+## Feature Reference
 
-**Hamburger Menu (≡):**
-- Located in top-right corner of header
-- Dropdown menu with options:
-  - **View Reports:** Opens reports modal
-  - **All Completed Tasks:** Opens archived tasks modal
-  - **Edit Daily Checklist:** Opens checklist configuration modal
-- Menu closes when clicking outside or pressing ESC
+### 1. Kanban Board (4 Columns)
 
-### Left Sidebar Components
+| Column       | Status key     | Special buttons                |
+|--------------|----------------|--------------------------------|
+| To Do        | `todo`         | [+ Add Task] at top            |
+| Wait         | `wait`         | None                           |
+| In Progress  | `inprogress`   | None                           |
+| Done         | `done`         | [Report] and [Archive] at top  |
 
-**1. Recurrent Tasks (Daily Checklist)**
-- User-configurable list of daily tasks (editable via hamburger menu)
-- Each item can have:
-  - Task text (required)
-  - External URL (optional) - shown as ↗ icon that opens in new tab
-- Simple checkbox interface
-- Visual feedback: strike-through text when checked
-- **Auto-reset at 6:00 AM daily**
-- Checklist configuration stored in localStorage (`checklistConfig`)
-- Checked state stored separately and resets daily (`recurrentTasksChecked`)
-- Default items:
-  - Check email
-  - Review calendar
-  - Water plants
-  - Take vitamins
-  - Exercise
-  - Read for 30 minutes
+- Tasks are ordered by `position` field within each column
+- Drag-and-drop between columns changes `status` and adds a log entry
+- Drag-and-drop within a column reorders `position` values (no log entry)
+- Each card shows a gradient background based on its position (see Color System)
 
-**2. Notes Section**
-- Free-form textarea for quick notes
-- Plain text only (no formatting)
-- **Debounced auto-save:** saves 500ms after user stops typing
-- Visual save status indicator with timestamp ("Saved at 2:30 PM")
-- Save status displayed next to "Notes" title in header
-- Persistent storage in `notes.json`
-- No date association needed
-- Notes are included in reports but NOT cleared after report generation
-
-### Main Kanban Board
-
-**Four Columns:**
-1. **To Do** - Tasks that need to be started
-   - **[+ Add Task] button** at top of column
-2. **Wait** - Tasks that are blocked or waiting on dependencies
-3. **In Progress** - Tasks currently being worked on
-4. **Done** - Completed tasks
-   - **[Archive & Generate Report] button** at top of column
-
-### Task Card Design
+### 2. Task Card
 
 ```
 ┌─────────────────────────────────┐
 │ ⋮⋮  ★ Task Title          [Edit]│  ← Gradient background
 │     Short description...        │     based on position
-│                                 │
+│     [Development]               │  ← Category badge (if not "Non categorized")
 └─────────────────────────────────┘
 ```
 
-**Task Card Components:**
-- **Drag handle (⋮⋮):** Left side icon for reordering within column
-- **Star icon (★):** Displays only if priority is enabled (toggle on/off)
-- **Title:** Bold, prominent text
-- **Description:** Smaller text below title (first line or truncated)
-- **Edit button:** Top-right corner to open edit modal
-- **Gradient background:** Color based on position in column
+**Components:**
+- **Drag handle (⋮⋮):** 2x3 dot grid on left for reordering
+- **Priority star (★):** Gold (#E8B923), shown only when `priority: true`
+- **Title:** Font-weight 600, 14px (13px on compact)
+- **Description:** 12px (11px compact), max 2 lines with ellipsis
+- **Category badge:** Small rounded tag below description, semi-transparent background. Hidden when category is 1 (Non categorized)
+- **Edit button:** Appears on hover (opacity transition), top-right corner
+- **Entire card is draggable** for column moves
 
-## Data Model
+### 3. Task Modal (Add / Edit)
 
-### Task Object Structure
-```javascript
-{
-  id: string,                  // Unique identifier (UUID or timestamp-based)
-  title: string,               // Task title (required)
-  description: string,         // Detailed description (optional, default: "")
-  priority: boolean,           // Priority toggle (true = show star, false = no star)
-  category: number,            // Category ID (1-6, default: 1). See Category Definitions below.
-  status: string,              // "todo" | "wait" | "inprogress" | "done" | "archived"
-  position: number,            // Position within the column (0-based index)
-  log: array,                  // Activity log entries
-  createdDate: string,         // ISO date when task was created
-}
-```
+**Fields (top to bottom):**
+1. **Title** — text input (required)
+2. **Description** — textarea (optional)
+3. **Priority Task** — checkbox toggle
+4. **Category** — horizontal row of pill/radio buttons (1-6), default: 1 "Non categorized"
+5. **Activity Log** — read-only list (edit mode only, hidden if empty)
+6. **Actions:** Delete (edit mode only) | Cancel | Save
 
-### Log Entry Structure
-```javascript
-{
-  date: string,               // Date only (YYYY-MM-DD format)
-  action: string             // e.g., "Moved from To Do to In Progress"
-}
-```
+The category selector uses styled radio buttons that look like selectable pills. Selected pill has accent color (#C4A484) background.
 
-### Category Definitions
-| ID | Label |
-|----|-------|
-| 1  | Non categorized (default) |
-| 2  | Development |
-| 3  | Communication |
-| 4  | To Remember |
-| 5  | Planning |
-| 6  | Generic Task |
+### 4. Generate Report (v1.7.0)
 
-- Categories are stored as numeric IDs for extensibility
-- Category labels are defined in both `server.js` (`CATEGORY_LABELS`) and `app.js` (`CATEGORIES`)
-- Existing tasks without a `category` field default to `1` (Non categorized)
+- **Trigger:** Click [Report] button in Done column header
+- **API:** `POST /api/reports/generate`
+- **Behavior:**
+  1. Takes a snapshot of ALL columns (todo, wait, inprogress, done) + notes
+  2. Creates a report object with week number and date range
+  3. Saves to `reports.json`
+  4. **Does NOT move, delete, or archive any tasks**
+  5. Shows confirmation alert with report title
+- **Report view** groups tasks by category within each status section
 
-**Log Rules:**
-- Logs are added when tasks are moved between columns OR when category is changed
-- Format for moves: "Moved from [Old Column] to [New Column] on [Date]"
-- Format for category changes: "Category changed from [Old Label] to [New Label]"
-- Date format: "2025-01-25" (no time)
-- Manual edits (title, description, priority) are NOT logged
+### 5. Archive Tasks (v1.7.0)
 
-### Notes Data Structure
-```javascript
-{
-  content: string              // Free-form text content
-}
-```
+- **Trigger:** Click [Archive] button in Done column header
+- **API:** `POST /api/tasks/archive`
+- **Behavior:**
+  1. Moves all tasks with `status: "done"` to `archived-tasks.json` (sets status to `"archived"`)
+  2. Removes them from `tasks.json`
+  3. **Does NOT generate a report**
+  4. Shows confirmation alert with count of archived tasks
+  5. If no done tasks exist, shows an alert and does nothing
 
-### Report Data Structure
-```javascript
-{
-  id: string,                    // Unique identifier
-  title: string,                 // Default: "Week [N] (Jan 20-25)" - editable
-  generatedDate: string,         // ISO datetime
-  weekNumber: number,            // Week of the year (e.g., 3)
-  dateRange: string,             // "Jan 20-25"
-  content: {
-    archived: [],                // Tasks that were archived (from Done column)
-    inProgress: [],              // Snapshot of In Progress tasks
-    waiting: [],                 // Snapshot of Wait tasks
-    todo: []                     // Snapshot of To Do tasks
-  },
-  notes: string                  // Copy of notes content at time of report generation
-}
-```
+### 6. View Reports (via Hamburger Menu)
 
-**Report Content - Each Task Shows:**
-- ID
-- Title
-- Description
+- Opens a modal with all reports sorted newest first
+- Each report title is inline-editable (blur saves via `PUT /api/reports/:id`)
+- Click a report row to view its full content
+- Report view shows: Completed Tasks, In Progress, Waiting/Blocked, To Do, Notes
+- Within each section, tasks are **sub-grouped by category** with a label header
 
-## Core Functionality Requirements
+### 7. All Completed Tasks (via Hamburger Menu)
 
-### 1. Add New Task
-- **Trigger:** Click [+ Add Task] button above To Do column
-- **Action:** Open modal with form
-- **Form Fields:**
-  - Title (required, text input)
-  - Description (optional, textarea)
-  - Priority (checkbox/toggle - default: false)
-- **Save:** Creates new task with `status: "todo"` and `position` set to end of To Do column
-- **Cancel:** Close modal without saving (click outside, close button, or ESC key)
+- Modal showing all tasks from `archived-tasks.json`
+- Sorted by last log entry date (newest first), fallback to `createdDate`
+- Shows: priority star, title, description (1-line truncated), completion date
+- Total count displayed at top
 
-### 2. Edit Task
-- **Trigger:** Click [Edit] button on task card
-- **Action:** Open modal with pre-filled form
-- **Form Fields:**
-  - Title (editable)
-  - Description (editable)
-  - Priority (toggle)
-  - **Task Log:** Read-only list showing movement history
-  - **Delete Button:** Remove task (with confirmation)
-- **Save:** Updates task data
-- **Cancel:** Close modal without saving (click outside, close button, or ESC key)
+### 8. Notes
 
-### 3. Move Tasks Between Columns
-- **Method:** Drag and drop task card to different column
-- **Action:**
-  - Update task `status` to new column
-  - Update task `position` to end of destination column (or dropped position)
-  - Add log entry: "Moved from [Old Column] to [New Column] on [Date]"
-  - Recalculate colors for both source and destination columns
+- Free-form textarea in left sidebar
+- **Debounced auto-save:** 500ms after last keystroke → `POST /api/notes`
+- Visual status: "Saving..." then "Saved at [time]"
+- Stored in `notes.json` as `{ content: string }`
+- Included in reports but **never cleared** by report generation
 
-### 4. Reorder Tasks Within Column
-- **Method:** Drag the **⋮⋮ handle** on left side of task card
-- **Action:**
-  - Update `position` values for affected tasks
-  - Recalculate colors based on new positions
-  - **No log entry** for reordering within same column
+### 9. Daily Recurrent Tasks (Checklist)
 
-### 5. Priority Toggle
-- **Visual:** Star icon (★) appears on task card when priority is `true`
-- **Behavior:** Toggle on/off in task creation/edit modal
-- **Purpose:** Visual indicator only - does not affect sorting or color
+- Displayed at top of sidebar
+- User-configurable via hamburger menu → "Edit Daily Checklist"
+- Each item has: text (required) + URL (optional, shown as ↗ link icon)
+- Checkbox with strike-through on check
+- **Auto-reset at 6:00 AM daily** (compares `localStorage.lastRecurrentReset` to today's 6 AM)
+- Configuration stored in `localStorage.checklistConfig`
+- Checked state stored in `localStorage.recurrentTasksChecked` (reset daily)
+- Default items: Check email, Review calendar, Water plants, Take vitamins, Exercise, Read for 30 minutes
 
-### 6. Archive & Generate Report
-- **Trigger:** Click [Archive & Generate Report] button above Done column
-- **Action:**
-  1. Collect all tasks with `status: "done"`
-  2. Collect current snapshots of all other columns (To Do, Wait, In Progress)
-  3. Collect current notes content
-  4. Generate report with:
-     - Week number (e.g., "Week 3")
-     - Date range (e.g., "Jan 20-25")
-     - Default title: "Week [N] (Jan 20-25)"
-  5. Move all Done tasks to archived status (`status: "archived"`)
-  6. Save archived tasks to `archived-tasks.json`
-  7. Remove archived tasks from Done column
-  8. Save report to `reports.json`
-  9. Display success message or show generated report
+### 10. Sidebar Privacy Toggle (v1.7.0)
 
-**Notes Behavior:**
-- Notes are included in report as plain text
-- Notes are **NOT** cleared after report generation
-- Notes persist for next report
+- **Button:** "Hide" / "Show" toggle at top-right of sidebar
+- **Behavior:** Toggles CSS class `privacy-mode` on the sidebar element
+- **Effect:** All `.sidebar-section` elements get `filter: blur(8px)`, `pointer-events: none`, `user-select: none`
+- **Purpose:** Quick privacy screen when someone walks by — blurs notes and checklist
+- **No persistence, no logs, no server calls** — purely client-side CSS toggle
+- Default state: unblurred (Hide button shown)
+- When active: button shows "Show" with accent color background
 
-### 7. View Reports
-- **Trigger:** Click [View Reports] button in left sidebar
-- **Action:** Open modal/page showing list of all reports
-- **Display:** List of reports with titles and dates
-- **Actions:**
-  - Click report to view full content
-  - Edit report title (inline or in view mode)
-- **Report Display Format:**
-  ```
-  Week 3 (Jan 20-25)
+### 11. Color System
 
-  === Completed Tasks (Archived) ===
-  [ID-001] Task Title
-  Description: Task description here
+**Position-based gradients** — color is tied to card position, not the task itself.
 
-  [ID-002] Another Task
-  Description: Description here
+Each column has 20 gradient levels defined as CSS custom properties:
+- `--todo-gradient-0` through `--todo-gradient-19` (warm red spectrum)
+- `--wait-gradient-0` through `--wait-gradient-19` (cool blue-gray spectrum)
+- `--inprogress-gradient-0` through `--inprogress-gradient-19` (teal/green spectrum)
+- `--done-gradient-0` through `--done-gradient-19` (purple spectrum)
 
-  === In Progress ===
-  [ID-010] Current Task
-  Description: Working on this
+**Text color:** Gradients 0-11 (darker) use light/white text. Gradients 12-19 (lighter) use dark text. Controlled by `shouldUseLightText()` function and `.light-text` / `.dark-text` CSS classes.
 
-  === Waiting/Blocked ===
-  [ID-020] Blocked Task
-  Description: Waiting for X
+**Gradient assignment:** `getTaskGradient(status, position, totalInColumn)` — if column has ≤20 tasks, gradient index = position. If >20, distributes evenly across the 20 levels.
 
-  === To Do ===
-  [ID-030] Upcoming Task
-  Description: Need to start
+---
 
-  === Notes ===
-  [Plain text notes content displayed here]
-  ```
+## Design System
 
-### 8. Notes Management
-- **Input:** Free-form textarea
-- **Auto-save:** Debounced save (500ms after last keystroke)
-- **Visual Feedback:** "Saving..." then "Saved at [time]" status with timestamp
-- **Persistence:** Stored in `notes.json` as plain text
+### Colors (CSS Custom Properties)
 
-### 9. All Completed Tasks (via Hamburger Menu)
-- **Trigger:** Click hamburger menu → "All Completed Tasks"
-- **Display:** Modal showing all archived tasks
-- **Sorting:** Newest completed first (by last log entry date)
-- **Task Info Shown:**
-  - Priority star (if applicable)
-  - Task title
-  - Description (truncated to 1 line)
-  - Completion date
-- **Count:** Total number of completed tasks shown at top
-- **Purpose:** Quick reference for all historical completed work
-
-### 10. Daily Recurrent Tasks
-- **Hardcoded List:** Defined in code (can be modified by editing source)
-- **Reset Time:** 6:00 AM daily
-- **Visual Feedback:** Strike-through text when checked
-- **No Persistence:** State resets every day
-- **Implementation:** Check local time on app load/refresh, reset if past 6 AM and new day
-
-### 11. Color Management
-- **Color Assignment:** Based on position index (0-19)
-- **Per Column:** Each column has own color gradient scheme (20 shades)
-- **Dynamic Update:** When tasks are moved or reordered, recalculate position-based colors
-- **Adaptation:** If column has fewer than 20 tasks, distribute colors evenly
-
-## UI/UX Considerations
-
-### Modals
-- **Add Task Modal:** Clean form with title, description, priority toggle
-- **Edit Task Modal:** Same form + task log display + delete button
-- **Reports List Modal:** Scrollable list of reports with edit title functionality
-- **Report View:** Full report display (could be same modal or separate view)
-- **All Completed Tasks Modal:** Scrollable list of archived tasks (newest first), compact display with small fonts
-
-### Drag and Drop
-- **Visual Feedback:**
-  - Highlight drop zones when dragging
-  - Show placeholder where task will land
-  - Smooth animations during drag
-- **Drag Handles:**
-  - ⋮⋮ icon on left side for reordering within column
-  - Entire card draggable for moving between columns
-
-### Buttons & Actions
-- **[+ Add Task]:** Prominent button above To Do column
-- **[Archive & Generate Report]:** Clear button above Done column
-- **[Edit]:** Small button on each task card (top-right)
-- **[View Reports]:** Button in left sidebar
-- **Delete Task:** Inside edit modal with confirmation dialog
-
-### Animations
-- Smooth color transitions when positions change
-- Fade in/out for modals
-- Slide/fade animations for task movements
-- Strike-through animation for checked items
-
-### Responsive Behavior
-- **Primary Use Case:** Desktop only (single user)
-- **Target Viewports:**
-  - MacBook Pro 14": 1512 × 982 px
-  - External Monitor: 2304 × 1296 px
-- **Sidebar:** Fixed width of 560px to accommodate 500px minimum textarea width
-- **Kanban Board:** 4 columns at both viewports
-  - External monitor (≥2000px): Full spacing with 20px gaps
-  - MacBook Pro 14" (1400-1999px): Compact layout with 12px gaps and smaller fonts
-- **Fallback:** For screens below 1400px, sidebar stacks above kanban board
-
-## CSS Requirements
-
-### Color Gradients
-- Define 20 gradient steps per column (80 total gradients)
-- CSS custom properties for easy management
-- Example structure:
-  ```css
-  --todo-gradient-0: linear-gradient(135deg, #8B0000, #A52A2A);
-  --todo-gradient-1: linear-gradient(135deg, #A52A2A, #CD5C5C);
-  ...
-  --todo-gradient-19: linear-gradient(135deg, #FFA07A, #FFB6C1);
-  ```
+| Variable           | Value                        | Usage                      |
+|--------------------|------------------------------|----------------------------|
+| `--bg-color`       | `#F5F1EB`                    | Page background            |
+| `--text-primary`   | `#2D2D2D`                    | Main text                  |
+| `--text-secondary` | `#5A5A5A`                    | Secondary text             |
+| `--text-muted`     | `#8A8A8A`                    | Labels, hints              |
+| `--text-light`     | `#FFFFFF`                    | Text on dark backgrounds   |
+| `--text-dark`      | `#2D2D2D`                    | Text on light backgrounds  |
+| `--accent-color`   | `#C4A484`                    | Buttons, highlights        |
+| `--accent-hover`   | `#B8956F`                    | Button hover states        |
+| `--danger-color`   | `#C97065`                    | Delete buttons             |
+| `--success-color`  | `#7BA37B`                    | Save confirmations         |
 
 ### Typography
-- High contrast text on gradient backgrounds
-- Title: Bold, 16-18px
-- Description: Regular, 13-14px
-- Logs: Smaller, muted text
 
-### Layout
-- CSS Grid for main layout (sidebar + kanban board)
-- **Sidebar width:** 560px (fixed) to accommodate 500px min-width textarea
-- **Kanban board:** Remaining viewport width with 4 equal columns
-- Flexbox for columns and task cards
-- Consistent spacing and padding
+- **Font:** Montserrat (weights: 300, 400, 500, 600, 700)
+- **Welcome title:** 28px, weight 300
+- **Section headers:** 12px uppercase, letter-spacing 2px, weight 600
+- **Task title:** 14px (13px compact), weight 600
+- **Task description:** 12px (11px compact), weight 400
+- **Body text:** 14-15px, weight 400
+
+### Spacing & Borders
+
+- **Border radius:** 10-24px throughout (no sharp corners)
+- **No hard borders** — depth conveyed through soft shadows
+- **Shadows:** `--shadow-soft` (2px 12px), `--shadow-medium` (4px 20px), `--shadow-card` (2px 8px)
+- **Animations:** 0.3s ease for all transitions
+
+### Responsive Breakpoints
+
+| Viewport                | Behavior                                    |
+|-------------------------|---------------------------------------------|
+| ≥2000px (external)      | Full layout, 560px sidebar, 28px column gaps |
+| 1400-1999px (MacBook)   | Compact layout, 560px sidebar, 16px gaps, smaller fonts |
+| <1400px                 | Sidebar stacks above kanban, 2-column grid   |
+| <768px                  | Single column kanban                         |
+
+---
 
 ## Technical Implementation Notes
 
+### Key Functions in `app.js`
+
+| Function                    | Purpose                                          |
+|-----------------------------|--------------------------------------------------|
+| `fetchTasks()`              | GET /api/tasks → renders all columns             |
+| `createTask(data)`          | POST /api/tasks                                  |
+| `updateTask(id, data)`      | PUT /api/tasks/:id (includes category log logic) |
+| `deleteTask(id)`            | DELETE /api/tasks/:id                            |
+| `moveTask(id, status, pos)` | POST /api/tasks/:id/move                         |
+| `generateReport()`          | POST /api/reports/generate                       |
+| `archiveTasks()`            | POST /api/tasks/archive                          |
+| `createTaskCard(task, pos, total)` | Creates DOM element for a task card        |
+| `getTaskGradient(status, pos, total)` | Returns CSS gradient variable           |
+| `shouldUseLightText(status, pos, total)` | Returns boolean for text color        |
+| `renderReportSection(title, taskList)` | Renders report section grouped by category |
+| `setCategorySelection(value)` | Sets radio button for category in modal       |
+| `getSelectedCategory()`     | Reads selected category from modal radios        |
+| `openAddTaskModal()`        | Resets and opens modal for new task              |
+| `openEditModal(taskId)`     | Populates and opens modal for editing            |
+| `handleTaskFormSubmit(e)`   | Form submit handler (create or update)           |
+| `debouncedSaveNotes()`      | 500ms debounce for notes auto-save               |
+| `checkDailyReset()`         | Resets recurrent task checkboxes after 6 AM      |
+
+### Key Constants in `app.js`
+
+```javascript
+const STATUS_COLUMNS = { 'todo': 'todo-list', 'wait': 'wait-list', 'inprogress': 'inprogress-list', 'done': 'done-list' };
+const CATEGORIES = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
+```
+
+### Key Constants in `server.js`
+
+```javascript
+const CATEGORY_LABELS = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
+```
+
+### Category Change Logging (server.js)
+
+When `PUT /api/tasks/:id` receives a `category` field that differs from the current value, the server automatically appends a log entry:
+```javascript
+{ date: "2026-01-31", action: "Category changed from Development to Planning" }
+```
+This happens server-side in the PUT handler — the frontend does not need to construct the log entry.
+
+### Status Name Mapping (server.js)
+
+Used for log entries when tasks move between columns:
+```javascript
+const statusNames = { 'todo': 'To Do', 'wait': 'Wait', 'inprogress': 'In Progress', 'done': 'Done' };
+```
+
 ### Position Management
-- Each column maintains array of task IDs in order
-- When task is moved/reordered, update position values
-- Use `position` field to sort tasks within columns
 
-### Color Calculation
-- Function to map position (0-19) to gradient CSS variable
-- Example: `getTaskColor(columnName, position)`
-- Returns: `var(--todo-gradient-5)`
+- Each task has a `position` field (0-based index within its column)
+- When a task is moved or reordered, the server recalculates positions for all tasks in the target column
+- Frontend sorts by `position` when rendering: `.sort((a, b) => a.position - b.position)`
 
-### Daily Reset Logic (Recurrent Tasks)
-```javascript
-// Pseudocode
-const lastResetTime = localStorage.getItem('lastReset');
-const now = new Date();
-const todayAt6AM = new Date(now.setHours(6, 0, 0, 0));
-
-if (!lastResetTime || new Date(lastResetTime) < todayAt6AM) {
-  // Reset all recurrent task checkboxes
-  localStorage.setItem('lastReset', todayAt6AM.toISOString());
-}
-```
-
-### Debounced Auto-Save (Notes)
-```javascript
-let saveTimeout = null;
-
-function debouncedSave() {
-  if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => {
-    saveNotes();  // API call to POST /api/notes
-  }, 500);  // Wait 500ms after last keystroke
-}
-
-textarea.addEventListener('input', debouncedSave);
-```
-
-### Report Generation
-- Calculate week number from date
-- Format date range (start of week to end of week)
-- Deep copy task snapshots (don't reference active tasks)
-- Generate HTML or plain text report for display/export
+---
 
 ## Data Persistence Strategy
 
-### Files
-1. **tasks.json:** Active tasks only
-2. **archived-tasks.json:** All archived tasks (append-only)
-3. **reports.json:** Array of report objects
-4. **notes.json:** Current notes content (plain text)
+| File                  | Written when                                     | Format         |
+|-----------------------|--------------------------------------------------|----------------|
+| `tasks.json`          | Any task create/update/delete/move/archive       | Array of tasks |
+| `archived-tasks.json` | Archive operation                                | Array of tasks |
+| `reports.json`        | Report generation                                | Array of reports |
+| `notes.json`          | Notes auto-save (debounced 500ms)                | `{ content }` |
 
-### Auto-Save
-- Save tasks.json on any task modification
-- Save notes.json with debounce (500ms after last keystroke)
-- Save reports.json when new report is generated
-- Append to archived-tasks.json when archiving
+All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()` helper functions in server.js.
 
-## Future Considerations (Out of Scope for Initial Version)
+---
+
+## Modals Reference
+
+| Modal ID            | Purpose                      | Trigger                              |
+|---------------------|------------------------------|--------------------------------------|
+| `task-modal`        | Add/Edit task                | [+ Add Task] button / [Edit] on card |
+| `reports-modal`     | View reports list & detail   | Hamburger menu → View Reports        |
+| `archived-modal`    | View all archived tasks      | Hamburger menu → All Completed Tasks |
+| `confirm-modal`     | Delete confirmation          | Delete button inside edit modal      |
+| `checklist-modal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist |
+
+All modals close on: close button (×), Cancel button, clicking backdrop, pressing ESC.
+
+---
+
+## Future Considerations (Out of Scope)
+
 - Export reports to PDF or formatted HTML file
 - Search/filter tasks
 - Due dates
-- Tags/labels
+- Tags/labels (beyond categories)
 - Custom color themes
 - Dark mode
 - Keyboard shortcuts for power users

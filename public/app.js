@@ -93,8 +93,13 @@
         confirmCancel: document.getElementById('confirm-cancel'),
         confirmDelete: document.getElementById('confirm-delete'),
 
-        // Archive
+        // Privacy
+        appContainer: document.getElementById('app-container'),
+        privacyToggleBtn: document.getElementById('privacy-toggle-btn'),
+
+        // Archive & Report
         archiveBtn: document.getElementById('archive-btn'),
+        reportBtn: document.getElementById('report-btn'),
 
         // Notes
         notesTextarea: document.getElementById('notes-textarea'),
@@ -250,9 +255,30 @@
         }
     }
 
+    async function generateReport() {
+        try {
+            const response = await fetch('/api/reports/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                alert(error.error || 'Failed to generate report');
+                return null;
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error generating report:', error);
+            alert('Failed to generate report');
+            return null;
+        }
+    }
+
     async function archiveTasks() {
         try {
-            const response = await fetch('/api/archive', {
+            const response = await fetch('/api/tasks/archive', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -263,9 +289,9 @@
                 return null;
             }
 
-            const report = await response.json();
+            const result = await response.json();
             await fetchTasks();
-            return report;
+            return result;
         } catch (error) {
             console.error('Error archiving tasks:', error);
             alert('Failed to archive tasks');
@@ -903,6 +929,17 @@
         `;
     }
 
+    async function handleGenerateReport() {
+        if (!confirm('Generate a report snapshot of all current tasks?')) {
+            return;
+        }
+
+        const report = await generateReport();
+        if (report) {
+            alert(`Report generated: ${report.title}`);
+        }
+    }
+
     async function handleArchive() {
         const doneTasks = tasks.filter(t => t.status === 'done');
         if (doneTasks.length === 0) {
@@ -910,13 +947,13 @@
             return;
         }
 
-        if (!confirm('Archive all completed tasks and generate a report?')) {
+        if (!confirm(`Archive ${doneTasks.length} completed task${doneTasks.length !== 1 ? 's' : ''}?`)) {
             return;
         }
 
-        const report = await archiveTasks();
-        if (report) {
-            alert(`Report generated: ${report.title}`);
+        const result = await archiveTasks();
+        if (result) {
+            alert(`${result.archivedCount} task${result.archivedCount !== 1 ? 's' : ''} archived`);
         }
     }
 
@@ -1004,6 +1041,14 @@
             }
         });
 
+        // Privacy Toggle
+        elements.privacyToggleBtn.addEventListener('click', () => {
+            elements.appContainer.classList.toggle('privacy-mode');
+            const isHidden = elements.appContainer.classList.contains('privacy-mode');
+            elements.privacyToggleBtn.textContent = isHidden ? 'Show' : 'Hide';
+            elements.privacyToggleBtn.classList.toggle('active', isHidden);
+        });
+
         // Add Task
         elements.addTaskBtn.addEventListener('click', openAddTaskModal);
 
@@ -1019,7 +1064,8 @@
         elements.confirmDelete.addEventListener('click', confirmDeleteTask);
         elements.confirmCancel.addEventListener('click', () => closeModal(elements.confirmModal));
 
-        // Archive
+        // Report & Archive
+        elements.reportBtn.addEventListener('click', handleGenerateReport);
         elements.archiveBtn.addEventListener('click', handleArchive);
 
         // Reports

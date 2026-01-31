@@ -274,6 +274,47 @@ body {
     max-height: calc(100vh - 160px);
 }
 
+.btn-privacy-toggle {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-privacy-toggle:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-secondary);
+}
+
+.btn-privacy-toggle.active {
+    background: var(--accent-color);
+    color: var(--text-light);
+}
+
+.btn-privacy-toggle.active:hover {
+    background: var(--accent-hover);
+}
+
+/* Privacy mode - blur entire app content */
+.app-container {
+    transition: filter 0.4s ease;
+}
+
+.app-container.privacy-mode {
+    filter: blur(8px);
+    pointer-events: none;
+    user-select: none;
+}
+
 .sidebar-section {
     background: rgba(255, 255, 255, 0.6);
     border-radius: 20px;
@@ -455,6 +496,31 @@ body {
     text-transform: uppercase;
     letter-spacing: 2px;
     color: var(--text-muted);
+}
+
+.column-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-report {
+    padding: 10px 16px;
+    border: 1px solid var(--accent-color);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--accent-color);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-report:hover {
+    background: var(--accent-color);
+    color: var(--text-light);
+    box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
+    transform: translateY(-1px);
 }
 
 .btn-add-task {
