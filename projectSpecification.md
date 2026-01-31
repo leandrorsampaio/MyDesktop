@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 **Last Updated:** 2026-01-31
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 1.8.0   | 2026-01-31 | Added header toolbar card: a right-aligned container (left of hamburger menu) that groups action buttons inline; Hide button moved into toolbar; expandable for future buttons |
 | 1.7.0   | 2026-01-31 | Added sidebar privacy toggle (blur overlay), separated Archive and Report into independent functions with separate buttons and API endpoints |
 | 1.6.0   | 2026-01-31 | Added task categories (1-6): selectable via pill buttons in modal, badge on cards, logged on change, reports grouped by category |
 | 1.5.0   | 2026-01-26 | Complete UI redesign with zen theme: light beige background, Montserrat font, generous spacing, soft shadows |
@@ -180,7 +181,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Welcome, Leandro                                          [≡]  │
+│ Welcome, Leandro                              [Hide] [≡]  │
 │ January 31, 2026 • Friday • Week 5                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  Left Sidebar (560px)  │     Main Kanban Board (remaining)     │
@@ -310,7 +311,17 @@ The category selector uses styled radio buttons that look like selectable pills.
 - Checked state stored in `localStorage.recurrentTasksChecked` (reset daily)
 - Default items: Check email, Review calendar, Water plants, Take vitamins, Exercise, Read for 30 minutes
 
-### 10. Sidebar Privacy Toggle (v1.7.0)
+### 10. Header Toolbar (v1.8.0)
+
+- **Element:** `div.header-toolbar` inside `.header-actions`, positioned to the left of the hamburger menu
+- **Purpose:** Card-style container that groups action buttons inline in the header area
+- **Layout:** Flexbox row with `gap: 8px`, right-aligned (grows leftward as buttons are added)
+- **Styling:** Semi-transparent white background (`rgba(255,255,255, 0.6)`), `border-radius: 14px`, soft shadow, `padding: 6px 10px`
+- **Current contents:** Hide (privacy toggle) button
+- **Expandable:** New buttons can be added inside this container as needed; they will align inline and the card expands to the left
+- Buttons inside the toolbar have transparent backgrounds (the card itself provides the visual grouping)
+
+### 11. Sidebar Privacy Toggle (v1.7.0)
 
 - **Button:** "Hide" / "Show" toggle at top-right of sidebar
 - **Behavior:** Toggles CSS class `privacy-mode` on the sidebar element
@@ -320,7 +331,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 - Default state: unblurred (Hide button shown)
 - When active: button shows "Show" with accent color background
 
-### 11. Color System
+### 12. Color System
 
 **Position-based gradients** — color is tied to card position, not the task itself.
 

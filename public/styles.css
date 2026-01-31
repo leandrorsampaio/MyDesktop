@@ -161,6 +161,20 @@ body {
 /* Header Actions & Hamburger Menu */
 .header-actions {
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Header Toolbar - card container for action buttons */
+.header-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 14px;
+    box-shadow: var(--shadow-soft);
 }
 
 .btn-menu {
@@ -278,7 +292,7 @@ body {
     padding: 8px 18px;
     border: none;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.6);
+    background: transparent;
     color: var(--text-muted);
     font-size: 12px;
     font-weight: 600;
@@ -287,11 +301,11 @@ body {
     transition: all 0.3s ease;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    box-shadow: var(--shadow-soft);
+    white-space: nowrap;
 }
 
 .btn-privacy-toggle:hover {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.05);
     color: var(--text-secondary);
 }
 
