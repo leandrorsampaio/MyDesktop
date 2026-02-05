@@ -59,13 +59,11 @@
         // Reports Modal
         reportsModal: document.querySelector('.js-reportsModal'),
         reportsContainer: document.querySelector('.js-reportsContainer'),
-        reportsModalClose: document.querySelector('.js-reportsModalClose'),
         viewReportsBtn: document.querySelector('.js-viewReportsBtn'),
 
         // Archived Tasks Modal
         archivedModal: document.querySelector('.js-archivedModal'),
         archivedContainer: document.querySelector('.js-archivedContainer'),
-        archivedModalClose: document.querySelector('.js-archivedModalClose'),
         viewArchivedBtn: document.querySelector('.js-viewArchivedBtn'),
 
         // Confirm Modal
@@ -662,7 +660,7 @@
         closeMenu();
         const reports = await fetchReports();
         renderReportsList(reports);
-        openModal(elements.reportsModal);
+        elements.reportsModal.open();
     }
 
     function renderReportsList(reports) {
@@ -825,7 +823,7 @@
         closeMenu();
         const archivedTasks = await fetchArchivedTasks();
         renderArchivedTasks(archivedTasks);
-        openModal(elements.archivedModal);
+        elements.archivedModal.open();
     }
 
     function renderArchivedTasks(archivedTasks) {
@@ -928,11 +926,9 @@
 
         // Reports
         elements.viewReportsBtn.addEventListener('click', openReportsModal);
-        elements.reportsModalClose.addEventListener('click', () => elements.reportsModal.classList.remove('--active'));
 
         // Archived Tasks
         elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
-        elements.archivedModalClose.addEventListener('click', () => elements.archivedModal.classList.remove('--active'));
 
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
@@ -944,23 +940,19 @@
             moveTask(taskId, newStatus, newPosition);
         });
 
-        // Close modals on outside click - (Note: taskModal is now a component and handles this itself)
-        [elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(modal => {
-            if (modal) { // Check if modal exists before adding listener
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.remove('--active');
-                    }
-                });
-            }
-        });
+        // Close confirmModal on outside click (other modals are now components that handle this internally)
+        if (elements.confirmModal) {
+            elements.confirmModal.addEventListener('click', (e) => {
+                if (e.target === elements.confirmModal) {
+                    elements.confirmModal.classList.remove('--active');
+                }
+            });
+        }
 
-        // Close modals on ESC key - (Note: taskModal is now a component and handles this itself)
+        // Close confirmModal on ESC key (other modals are now components that handle this internally)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                [elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(modal => {
-                    if (modal) modal.classList.remove('--active');
-                });
+                if (elements.confirmModal) elements.confirmModal.classList.remove('--active');
                 closeMenu();
             }
         });

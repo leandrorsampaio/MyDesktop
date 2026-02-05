@@ -130,30 +130,20 @@
     </modal-dialog>
 
     <!-- Reports Modal -->
-    <div class="modal js-reportsModal">
-        <div class="modal__content --large">
-            <div class="modal__header">
-                <h2>Reports</h2>
-                <button class="modal__closeBtn js-reportsModalClose">&times;</button>
-            </div>
-            <div class="reportsView js-reportsContainer">
-                <!-- Reports list or single report view will be rendered here -->
-            </div>
+    <modal-dialog class="js-reportsModal" size="large">
+        <span slot="title">Reports</span>
+        <div class="reportsView js-reportsContainer">
+            <!-- Reports list or single report view will be rendered here -->
         </div>
-    </div>
+    </modal-dialog>
 
     <!-- Archived Tasks Modal -->
-    <div class="modal js-archivedModal">
-        <div class="modal__content --large">
-            <div class="modal__header">
-                <h2>All Completed Tasks</h2>
-                <button class="modal__closeBtn js-archivedModalClose">&times;</button>
-            </div>
-            <div class="archivedView js-archivedContainer">
-                <!-- Archived tasks list will be rendered here -->
-            </div>
+    <modal-dialog class="js-archivedModal" size="large">
+        <span slot="title">All Completed Tasks</span>
+        <div class="archivedView js-archivedContainer">
+            <!-- Archived tasks list will be rendered here -->
         </div>
-    </div>
+    </modal-dialog>
 
     <!-- Delete Confirmation Modal -->
     <div class="modal js-confirmModal">
