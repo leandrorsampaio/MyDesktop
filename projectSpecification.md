@@ -74,10 +74,10 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
         │   ├── button.js
         │   ├── button.html
         │   └── button.css
-        └── task-card/
-            ├── task-card.js
-            ├── task-card.html
-            └── task-card.css
+        ├── task-card/
+        │   ├── task-card.js
+        │   ├── task-card.html
+        │   └── task-card.css
         ├── modal-dialog/
         │   ├── modal-dialog.js
         │   ├── modal-dialog.html
