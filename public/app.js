@@ -67,7 +67,6 @@
         taskLogSection: document.querySelector('.js-taskLogSection'),
         taskLogList: document.querySelector('.js-taskLogList'),
         taskModalActions: document.querySelector('.js-taskModalActions'),
-        modalClose: document.querySelector('.js-modalClose'),
         addTaskBtn: document.querySelector('.js-addTaskBtn'),
 
         // Reports Modal
@@ -864,14 +863,6 @@
     // ==========================================
     // Modal Functions
     // ==========================================
-    function openModal(modal) {
-        modal.classList.add('--active');
-    }
-
-    function closeModal(modal) {
-        modal.classList.remove('--active');
-    }
-
     function renderTaskModalActions(isEditing) {
         elements.taskModalActions.innerHTML = '';
 
@@ -880,7 +871,7 @@
 
         const cancelBtn = document.createElement('custom-button');
         cancelBtn.setAttribute('label', 'Cancel');
-        cancelBtn.addEventListener('click', () => closeModal(elements.taskModal));
+        cancelBtn.addEventListener('click', () => elements.taskModal.close());
 
         const saveBtn = document.createElement('custom-button');
         saveBtn.setAttribute('label', isEditing ? 'Update' : 'Save');
@@ -904,7 +895,6 @@
         elements.taskModalActions.appendChild(rightActions);
     }
 
-
     function openAddTaskModal() {
         editingTaskId = null;
         elements.modalTitle.textContent = 'Add Task';
@@ -914,7 +904,7 @@
 
         renderTaskModalActions(false);
 
-        openModal(elements.taskModal);
+        elements.taskModal.open();
         elements.taskTitle.focus();
     }
 
@@ -941,7 +931,7 @@
 
         renderTaskModalActions(true);
 
-        openModal(elements.taskModal);
+        elements.taskModal.open();
         elements.taskTitle.focus();
     };
 
@@ -964,7 +954,7 @@
             await createTask({ title, description, priority, category });
         }
 
-        closeModal(elements.taskModal);
+        elements.taskModal.close();
     }
 
     function setCategorySelection(value) {
@@ -978,14 +968,15 @@
     }
 
     function openDeleteConfirmation() {
-        openModal(elements.confirmModal);
+        // This will be updated when confirmModal is componentized
+        elements.confirmModal.classList.add('--active');
     }
 
     async function confirmDeleteTask() {
         if (editingTaskId) {
             await deleteTask(editingTaskId);
-            closeModal(elements.confirmModal);
-            closeModal(elements.taskModal);
+            elements.confirmModal.classList.remove('--active');
+            elements.taskModal.close();
             editingTaskId = null;
         }
     }
@@ -1257,25 +1248,22 @@
         // Task Form
         elements.taskForm.addEventListener('submit', handleTaskFormSubmit);
 
-        // Modal Close Buttons
-        elements.modalClose.addEventListener('click', () => closeModal(elements.taskModal));
-
         // Report & Archive
         elements.reportBtn.addEventListener('click', handleGenerateReport);
         elements.archiveBtn.addEventListener('click', handleArchive);
 
         // Reports
         elements.viewReportsBtn.addEventListener('click', openReportsModal);
-        elements.reportsModalClose.addEventListener('click', () => closeModal(elements.reportsModal));
+        elements.reportsModalClose.addEventListener('click', () => elements.reportsModal.classList.remove('--active'));
 
         // Archived Tasks
         elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
-        elements.archivedModalClose.addEventListener('click', () => closeModal(elements.archivedModal));
+        elements.archivedModalClose.addEventListener('click', () => elements.archivedModal.classList.remove('--active'));
 
         // Checklist Editor
         elements.editChecklistBtn.addEventListener('click', openChecklistModal);
-        elements.checklistModalClose.addEventListener('click', () => closeModal(elements.checklistModal));
-        elements.checklistCancelBtn.addEventListener('click', () => closeModal(elements.checklistModal));
+        elements.checklistModalClose.addEventListener('click', () => elements.checklistModal.classList.remove('--active'));
+        elements.checklistCancelBtn.addEventListener('click', () => elements.checklistModal.classList.remove('--active'));
         elements.checklistSaveBtn.addEventListener('click', saveChecklistFromEditor);
         elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
 
@@ -1287,19 +1275,19 @@
             openEditModal(e.detail.taskId);
         });
 
-        // Close modals on outside click
-        [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => {
+        // Close modals on outside click - (Note: taskModal is now a component and handles this itself)
+        [elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
-                    closeModal(modal);
+                    modal.classList.remove('--active');
                 }
             });
         });
 
-        // Close modals on ESC key
+        // Close modals on ESC key - (Note: taskModal is now a component and handles this itself)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(closeModal);
+                [elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => modal.classList.remove('--active'));
                 closeMenu();
             }
         });

@@ -78,6 +78,10 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
             ├── task-card.js
             ├── task-card.html
             └── task-card.css
+        └── modal-dialog/
+            ├── modal-dialog.js
+            ├── modal-dialog.html
+            └── modal-dialog.css
 ```
 
 **Component Architecture:**

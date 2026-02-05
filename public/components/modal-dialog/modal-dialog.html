@@ -1,0 +1,11 @@
+<div class="backdrop">
+    <div class="modal__content" part="content">
+        <div class="modal__header">
+            <h2><slot name="title">Modal Title</slot></h2>
+            <button class="modal__closeBtn" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal__body">
+            <slot></slot>
+        </div>
+    </div>
+</div>

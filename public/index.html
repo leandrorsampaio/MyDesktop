@@ -125,54 +125,49 @@
     </div>
 
     <!-- Add/Edit Task Modal -->
-    <div class="modal js-taskModal">
-        <div class="modal__content">
-            <div class="modal__header">
-                <h2 class="js-modalTitle">Add Task</h2>
-                <button class="modal__closeBtn js-modalClose">&times;</button>
+    <modal-dialog class="js-taskModal">
+        <h2 slot="title" class="js-modalTitle">Add Task</h2>
+        <form class="taskForm js-taskForm">
+            <div class="taskForm__group">
+                <label>Title *</label>
+                <input type="text" class="js-taskTitle" required placeholder="Enter task title" />
             </div>
-            <form class="taskForm js-taskForm">
-                <div class="taskForm__group">
-                    <label>Title *</label>
-                    <input type="text" class="js-taskTitle" required placeholder="Enter task title" />
-                </div>
-                <div class="taskForm__group">
-                    <label>Description</label>
-                    <textarea class="js-taskDescription" placeholder="Enter task description" rows="4"></textarea>
-                </div>
-                <div class="taskForm__group taskForm__checkboxGroup">
-                    <label>
-                        <input type="checkbox" class="js-taskPriority" />
-                        <span class="taskForm__priorityLabel">Priority Task</span>
-                    </label>
-                </div>
+            <div class="taskForm__group">
+                <label>Description</label>
+                <textarea class="js-taskDescription" placeholder="Enter task description" rows="4"></textarea>
+            </div>
+            <div class="taskForm__group taskForm__checkboxGroup">
+                <label>
+                    <input type="checkbox" class="js-taskPriority" />
+                    <span class="taskForm__priorityLabel">Priority Task</span>
+                </label>
+            </div>
 
-                <div class="taskForm__group">
-                    <label>Category</label>
-                    <div class="taskForm__categorySelector">
-                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="1" checked /><span>Non categorized</span></label>
-                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="2" /><span>Development</span></label>
-                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="3" /><span>Communication</span></label>
-                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="4" /><span>To Remember</span></label>
-                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="5" /><span>Planning</span></label>
-                        <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="6" /><span>Generic Task</span></label>
-                    </div>
+            <div class="taskForm__group">
+                <label>Category</label>
+                <div class="taskForm__categorySelector">
+                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="1" checked /><span>Non categorized</span></label>
+                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="2" /><span>Development</span></label>
+                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="3" /><span>Communication</span></label>
+                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="4" /><span>To Remember</span></label>
+                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="5" /><span>Planning</span></label>
+                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="6" /><span>Generic Task</span></label>
                 </div>
+            </div>
 
-                <!-- Task Log (only shown in edit mode) -->
-                <div class="taskForm__group taskForm__log js-taskLogSection" style="display: none;">
-                    <label>Activity Log</label>
-                    <ul class="taskForm__logList js-taskLogList">
-                        <!-- Log entries will be rendered here -->
-                    </ul>
-                </div>
+            <!-- Task Log (only shown in edit mode) -->
+            <div class="taskForm__group taskForm__log js-taskLogSection" style="display: none;">
+                <label>Activity Log</label>
+                <ul class="taskForm__logList js-taskLogList">
+                    <!-- Log entries will be rendered here -->
+                </ul>
+            </div>
 
-                <div class="modal__actions js-taskModalActions">
-                    <!-- Buttons are now dynamically inserted by app.js -->
-                </div>
-            </form>
-        </div>
-    </div>
+            <div class="modal__actions js-taskModalActions">
+                <!-- Buttons are now dynamically inserted by app.js -->
+            </div>
+        </form>
+    </modal-dialog>
 
     <!-- Reports Modal -->
     <div class="modal js-reportsModal">
@@ -239,6 +234,7 @@
 
     <script type="module" src="components/button/button.js"></script>
     <script type="module" src="components/task-card/task-card.js"></script>
+    <script type="module" src="components/modal-dialog/modal-dialog.js"></script>
     <script src="app.js" defer></script>
 </body>
 </html>
