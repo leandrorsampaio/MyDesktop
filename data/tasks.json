@@ -391,9 +391,14 @@
     "title": "LIT-LWC: Radio Button + Checkbox",
     "description": "SOL-183, 182, 121, 113, 73,41",
     "priority": false,
-    "status": "todo",
-    "position": 0,
-    "log": [],
+    "status": "inprogress",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-05",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
     "createdDate": "2026-01-26T17:24:21.606Z"
   },
   {
@@ -469,7 +474,7 @@
     "description": "https://solenis.atlassian.net/browse/ESB-559",
     "priority": false,
     "status": "todo",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-01-26",
@@ -918,7 +923,7 @@
     "priority": false,
     "category": 2,
     "status": "todo",
-    "position": 3,
+    "position": 1,
     "log": [
       {
         "date": "2026-02-02",

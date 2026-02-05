@@ -2,6 +2,7 @@ class KanbanColumn extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this._ready = new Promise(resolve => this._resolveReady = resolve);
     }
 
     async connectedCallback() {
@@ -21,6 +22,7 @@ class KanbanColumn extends HTMLElement {
         this.columnList.dataset.status = this.status;
 
         this.addDragAndDropListeners();
+        this._resolveReady(); // Signal that the component is ready
     }
 
     addDragAndDropListeners() {
@@ -30,7 +32,8 @@ class KanbanColumn extends HTMLElement {
         this.columnList.addEventListener('drop', this.handleDrop.bind(this));
     }
 
-    renderTasks(tasks, taskRenderer) {
+    async renderTasks(tasks, taskRenderer) {
+        await this._ready; // Wait until the component is initialized
         this.columnList.innerHTML = '';
 
         if (tasks.length === 0) {

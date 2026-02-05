@@ -371,8 +371,15 @@
         }
 
         // Drag events
-        card.addEventListener('dragstart', handleDragStart);
-        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragstart', (e) => {
+            e.target.classList.add('--dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', task.id);
+        });
+
+        card.addEventListener('dragend', (e) => {
+            e.target.classList.remove('--dragging');
+        });
 
         return card;
     }
@@ -917,24 +924,33 @@
         elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
         elements.archivedModalClose.addEventListener('click', () => elements.archivedModal.classList.remove('--active'));
 
+        // Listen for edit requests from task-card components
+        elements.kanban.addEventListener('request-edit', (e) => {
+            openEditModal(e.detail.taskId);
+        });
+
         elements.kanban.addEventListener('task-dropped', (e) => {
             const { taskId, newStatus, newPosition } = e.detail;
             moveTask(taskId, newStatus, newPosition);
         });
 
         // Close modals on outside click - (Note: taskModal is now a component and handles this itself)
-        [elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('--active');
-                }
-            });
+        [elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(modal => {
+            if (modal) { // Check if modal exists before adding listener
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('--active');
+                    }
+                });
+            }
         });
 
         // Close modals on ESC key - (Note: taskModal is now a component and handles this itself)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                [elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => modal.classList.remove('--active'));
+                [elements.reportsModal, elements.archivedModal, elements.confirmModal].forEach(modal => {
+                    if (modal) modal.classList.remove('--active');
+                });
                 closeMenu();
             }
         });

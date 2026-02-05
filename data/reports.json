@@ -463,5 +463,173 @@
       ]
     },
     "notes": ""
+  },
+  {
+    "id": "mla2scx86oo712l2b",
+    "title": "Week 6 (Feb 2-8)",
+    "generatedDate": "2026-02-05T23:16:23.276Z",
+    "weekNumber": 6,
+    "dateRange": "Feb 2-8",
+    "content": {
+      "archived": [
+        {
+          "id": "mkvfwdpgwihlgr2v1",
+          "title": "LIT-LWC List Item",
+          "description": "ask if exists. SOL-38. It does not exist.",
+          "category": 3
+        },
+        {
+          "id": "mkwu4iyz2e1utgu2b",
+          "title": "Email Santosh: new Sandobox",
+          "description": "Told Mikael is better keep it as it is. Gut feeling will make our life much more difficult",
+          "category": 3
+        },
+        {
+          "id": "mky8czu9mtpdexy2g",
+          "title": "Creating new tickets to Dillon",
+          "description": "Two tickets created: ESB-572 and ESB-571",
+          "category": 3
+        },
+        {
+          "id": "ml05aspy7ajjalnl2",
+          "title": "PLAN: PLP Brainstome with Balzac",
+          "description": "I shared my Miro. Balzac will find a for an intermediator. Nothing needed from my side.",
+          "category": 5
+        },
+        {
+          "id": "ml05bbx38li3jktyc",
+          "title": "EIPP Design Adjustments",
+          "description": "Beautification done. Email to Advic sent. Branch created. Email to Balzac about achievements done. CR for the LWC components done.",
+          "category": 2
+        },
+        {
+          "id": "ml1ilve3ml21t1tfx",
+          "title": "ESB-558 - Delivery page documents only showing a single document",
+          "description": "(merge + missing CR + Ticket update)\nTicket done Friday Night fro Mikael + Ravi (30.01)",
+          "category": 2
+        },
+        {
+          "id": "ml5byas0t9dm4zv1n",
+          "title": "Checking with Rob The list of Stakeholders",
+          "description": "Get a list of people and sectors involved in the E-shop. Final list documented on Miro. \n\n--- MS teams notes:\n\nHead of corporate communication\nCatherine Abernathy\n \nPlataform level \nMarketing (product Marketing)\nTechnology office \nIntutional\nFood and beverage\n \nPeople that report to Caetano\n \n \nSame logic for marketing and marketing and communication in are regional level (is different region to region)\n \n(difficult to map because each regional is different)\n \ncheck Business unit per region\n \n1st: Global level\nBusiness unit of a product point of view (global technology office reporting to Caetano). (intuitional, industrial clean, consumer, taski, heavy industry, paper industry, etc)\n \n \n2nd: Operational side\nMarketing and communication per business unit and then in each of them there are the regional teams (is matrix)\n Rob does know much about outside instutional",
+          "category": 3
+        },
+        {
+          "id": "ml5h3fka60uh8iayh",
+          "title": "EMAIL: Huron with the \"missing and question\"",
+          "description": "sent on 03.02 with excel file of pain points",
+          "category": 3
+        },
+        {
+          "id": "ml5h41tk1c4hqh4tb",
+          "title": "EMAIL: Ariel and Mikael about Huron",
+          "description": "Draft with Bart. email sent in 03.02",
+          "category": 3
+        },
+        {
+          "id": "ml5hc7kssjyfrw9mw",
+          "title": "ESB-545 New fallback Image",
+          "description": "Alex list the pages to be replaced. Checked if some are missing.\nDone! Updated the ticket to Advic and send back to Alex",
+          "category": 2
+        },
+        {
+          "id": "ml5hgnv8fnxyzir8h",
+          "title": "Check Estimations EPIC for bart",
+          "description": "Bart asked me to check my opinion about his estimations\n--------\nBartosz Suchocki\nMate, if you find time, could you check my estimations for adding DS to advic's EPIC components? https://docs.google.com/spreadsheets/d/1r1u0Z64ym0iUUhm6MKlEGEnhDBftUGLkuP_Xv4fVDxk/edit?pli=1&gid=…  And I'd need your gmail address to share\nHey Bro, was cheking this and seems very good analysis. Congratulations. quite well done\n \nAs a gut feeling, seems quite good. Im not sure what you mean by \"md\" in the component injection but seems a fair value. The only thing you should be aware is that advic thing usually has a lot of bugs. And they take forever to fix. \n \nBut then is not your problem, just that this might delay some of the process. \n \nBut if I were you I would add a new row \"communication\" and add some 20% ovr it. Just to be in the safe side. The you could have 40 hours for example, you would have 1 week to finish (or 2 in your new 50% contract)\n \nlet me know if I can help you in anything else.",
+          "category": 2
+        },
+        {
+          "id": "ml5l5gab7651jodgz",
+          "title": "Send Anna record meeting",
+          "description": "Not possible to share outside of the ORG. \n-----\nHey Anna, Bart told to send you the recording of our SOW meeting from last week. \nThe sharing option is disabled for people outside of our Solenis Org email. \nI also can't download it because I'm not the meeting organizer. \n \nCould you talk to Alejandro. Once he is the organizer he might be able to share the video with you. \n \nThanks!",
+          "category": 6
+        }
+      ],
+      "inProgress": [
+        {
+          "id": "mkvft4o6e43i4wy1x",
+          "title": "LIT-LWC: Radio Button + Checkbox",
+          "description": "SOL-183, 182, 121, 113, 73,41",
+          "category": 1
+        },
+        {
+          "id": "mkwj6usdjcrxt4i9g",
+          "title": "Course Security",
+          "description": "",
+          "category": 6
+        },
+        {
+          "id": "ml05d4eu43jqnwqhd",
+          "title": "Re-Check tasks from the 1:1 PPT with Mikael",
+          "description": "",
+          "category": 4
+        },
+        {
+          "id": "ml78dhdfn9co4cm69",
+          "title": "Product PDF Export",
+          "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs",
+          "category": 2
+        },
+        {
+          "id": "ml99zvzyvrg96be1v",
+          "title": "Org Emails and Desktop",
+          "description": "",
+          "category": 6
+        }
+      ],
+      "waiting": [
+        {
+          "id": "mkvegluwq6f7jqskk",
+          "title": "Check Prod: ESB-548 custom label certification table",
+          "description": "waiting deployment to prod",
+          "category": 2
+        },
+        {
+          "id": "mkvehdxyoigki3ybi",
+          "title": "@solenis emails to EUVIC",
+          "description": "Mikael requested with IT. Waiting Feedback",
+          "category": 6
+        },
+        {
+          "id": "mkvfx33rcb2griafj",
+          "title": "Solenis AI Account",
+          "description": "Waiting Mikael's feedback",
+          "category": 3
+        },
+        {
+          "id": "mkvil7bq998kqwi3l",
+          "title": "SDS HeroBanner with flag",
+          "description": "Waiting ticket from EUVIC to be done",
+          "category": 1
+        },
+        {
+          "id": "mkvilrcyp01cdgxf4",
+          "title": "<head> clean up",
+          "description": "Update first with Deelip",
+          "category": 2
+        },
+        {
+          "id": "mkvirz2nimqhq351q",
+          "title": "ESB-543: new image PLP + Hero Banner Flag",
+          "description": "Waiting Deployment to Production",
+          "category": 2
+        }
+      ],
+      "todo": [
+        {
+          "id": "mkvi786b4rlrr3zhs",
+          "title": "ESB-559 - OMS Component bug fixing",
+          "description": "https://solenis.atlassian.net/browse/ESB-559",
+          "category": 2
+        },
+        {
+          "id": "ml5hd7sxvn4aplch7",
+          "title": "ESB-544: Image not available link wrong in advic component",
+          "description": "",
+          "category": 2
+        }
+      ]
+    },
+    "notes": ""
   }
 ]

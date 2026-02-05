@@ -55,14 +55,13 @@ class TaskCard extends HTMLElement {
             category
         } = this.dataset;
 
-        const titleSlot = this.shadowRoot.querySelector('slot[name="title"]');
-        const descSlot = this.shadowRoot.querySelector('slot[name="description"]');
-        const catSlot = this.shadowRoot.querySelector('slot[name="category"]');
+        const titleEl = this.shadowRoot.querySelector('.js-title');
+        const descEl = this.shadowRoot.querySelector('.js-desc');
+        const badgeEl = this.shadowRoot.querySelector('.js-badge');
         const starEl = this.shadowRoot.querySelector('.taskCard__star');
-        const badgeEl = this.shadowRoot.querySelector('.taskCard__badge');
 
-        if (titleSlot) titleSlot.textContent = title;
-        if (descSlot) descSlot.textContent = description;
+        if (titleEl) titleEl.textContent = title;
+        if (descEl) descEl.textContent = description;
 
         if (priority === 'true') {
             starEl.style.display = 'inline';
@@ -73,7 +72,7 @@ class TaskCard extends HTMLElement {
         const categoryId = Number(category);
         if (category && categoryId !== 1) {
             badgeEl.style.display = 'inline-block';
-            if (catSlot) catSlot.textContent = CATEGORIES[categoryId] || 'Unknown';
+            if (badgeEl) badgeEl.textContent = CATEGORIES[categoryId] || 'Unknown';
         } else {
             badgeEl.style.display = 'none';
         }

@@ -8,13 +8,9 @@
 <div class="taskCard__content">
     <div class="taskCard__header">
         <span class="taskCard__star" style="display: none;">★</span>
-        <span class="taskCard__title"><slot name="title">Task Title</slot></span>
+        <span class="taskCard__title js-title"></span>
     </div>
-    <div class="taskCard__desc">
-        <slot name="description"></slot>
-    </div>
-    <span class="taskCard__badge" style="display: none;">
-        <slot name="category"></slot>
-    </span>
+    <div class="taskCard__desc js-desc"></div>
+    <span class="taskCard__badge js-badge" style="display: none;"></span>
 </div>
 <button class="taskCard__editBtn">Edit</button>
