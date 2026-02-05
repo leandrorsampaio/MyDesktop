@@ -34,6 +34,7 @@ class KanbanColumn extends HTMLElement {
 
     async renderTasks(tasks, taskRenderer) {
         await this._ready; // Wait until the component is initialized
+        console.log(`[kanban-column.js] renderTasks called for status: ${this.status} with ${tasks.length} tasks.`);
         this.columnList.innerHTML = '';
 
         if (tasks.length === 0) {
@@ -43,6 +44,7 @@ class KanbanColumn extends HTMLElement {
 
         tasks.forEach((task, index) => {
             const card = taskRenderer(task, index, tasks.length);
+            console.log('[kanban-column.js] Created card element:', card);
             this.columnList.appendChild(card);
         });
     }
