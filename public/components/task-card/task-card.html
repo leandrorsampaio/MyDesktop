@@ -1,0 +1,20 @@
+<div class="taskCard__handle">
+    <div class="taskCard__handleDots">
+        <span></span><span></span>
+        <span></span><span></span>
+        <span></span><span></span>
+    </div>
+</div>
+<div class="taskCard__content">
+    <div class="taskCard__header">
+        <span class="taskCard__star" style="display: none;">★</span>
+        <span class="taskCard__title"><slot name="title">Task Title</slot></span>
+    </div>
+    <div class="taskCard__desc">
+        <slot name="description"></slot>
+    </div>
+    <span class="taskCard__badge" style="display: none;">
+        <slot name="category"></slot>
+    </span>
+</div>
+<button class="taskCard__editBtn">Edit</button>

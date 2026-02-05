@@ -70,10 +70,14 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
     ├── styles.css             # Global styles
     ├── favicon.png
     └── components/
-        └── button/
-            ├── button.js      # Component logic (Custom Element class)
-            ├── button.html    # Component's encapsulated HTML
-            └── button.css     # Component's encapsulated styles
+        ├── button/
+        │   ├── button.js
+        │   ├── button.html
+        │   └── button.css
+        └── task-card/
+            ├── task-card.js
+            ├── task-card.html
+            └── task-card.css
 ```
 
 **Component Architecture:**

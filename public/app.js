@@ -117,7 +117,10 @@
         notesSaveStatus: document.querySelector('.js-notesSaveStatus'),
 
         // Recurrent Tasks
-        recurrentList: document.querySelector('.js-recurrentList')
+        recurrentList: document.querySelector('.js-recurrentList'),
+        
+        // Kanban container
+        kanban: document.querySelector('.kanban')
     };
 
     // ==========================================
@@ -448,12 +451,15 @@
     }
 
     function createTaskCard(task, position, totalInColumn) {
-        const card = document.createElement('div');
-        card.className = 'taskCard js-taskCard';
+        const card = document.createElement('task-card');
+        
         card.dataset.taskId = task.id;
         card.dataset.status = task.status;
         card.dataset.category = String(task.category || 1);
         card.dataset.priority = task.priority ? 'true' : 'false';
+        card.dataset.title = task.title;
+        card.dataset.description = task.description || '';
+
         card.draggable = true;
 
         // Apply gradient background
@@ -465,25 +471,6 @@
         } else {
             card.classList.add('--darkText');
         }
-
-        card.innerHTML = `
-            <div class="taskCard__handle">
-                <div class="taskCard__handleDots">
-                    <span></span><span></span>
-                    <span></span><span></span>
-                    <span></span><span></span>
-                </div>
-            </div>
-            <div class="taskCard__content">
-                <div class="taskCard__header">
-                    ${task.priority ? '<span class="taskCard__star">★</span>' : ''}
-                    <span class="taskCard__title">${escapeHtml(task.title)}</span>
-                </div>
-                ${task.description ? `<div class="taskCard__desc">${escapeHtml(task.description)}</div>` : ''}
-                ${(task.category && task.category !== 1) ? `<span class="taskCard__badge">${escapeHtml(CATEGORIES[task.category] || 'Unknown')}</span>` : ''}
-            </div>
-            <button class="taskCard__editBtn" onclick="window.openEditModal('${task.id}')">Edit</button>
-        `;
 
         // Drag events
         card.addEventListener('dragstart', handleDragStart);
@@ -1294,6 +1281,11 @@
 
         // Notes - debounced auto-save
         elements.notesTextarea.addEventListener('input', debouncedSaveNotes);
+
+        // Listen for edit requests from task-card components
+        elements.kanban.addEventListener('request-edit', (e) => {
+            openEditModal(e.detail.taskId);
+        });
 
         // Close modals on outside click
         [elements.taskModal, elements.reportsModal, elements.archivedModal, elements.confirmModal, elements.checklistModal].forEach(modal => {

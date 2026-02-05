@@ -1,0 +1,147 @@
+:host {
+    border-radius: 14px;
+    padding: 16px;
+    cursor: grab;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s;
+    position: relative;
+    display: flex;
+    gap: 12px;
+    animation: fadeIn 0.4s ease-out;
+    box-shadow: var(--shadow-card);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:host(:hover) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+:host(.--dragging) {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+:host(.--filtered) {
+    display: none;
+}
+
+:host(.--lightText) {
+    color: var(--text-light);
+}
+
+:host(.--darkText) {
+    color: var(--text-dark);
+}
+
+.taskCard__handle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    cursor: grab;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+    flex-shrink: 0;
+}
+
+:host(:hover) .taskCard__handle {
+    opacity: 0.7;
+}
+
+.taskCard__handleDots {
+    display: grid;
+    grid-template-columns: repeat(2, 4px);
+    gap: 3px;
+}
+
+.taskCard__handleDots span {
+    width: 4px;
+    height: 4px;
+    background-color: currentColor;
+    border-radius: 50%;
+}
+
+.taskCard__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.taskCard__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.taskCard__star {
+    color: #E8B923;
+    font-size: 14px;
+    flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.taskCard__title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    letter-spacing: -0.2px;
+}
+
+.taskCard__desc {
+    font-size: 12px;
+    opacity: 0.75;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 400;
+}
+
+.taskCard__badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.22);
+    opacity: 0.85;
+}
+
+.taskCard__editBtn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.25);
+    border: none;
+    border-radius: 6px;
+    color: inherit;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s, background-color 0.3s;
+}
+
+:host(:hover) .taskCard__editBtn {
+    opacity: 1;
+}
+
+.taskCard__editBtn:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
