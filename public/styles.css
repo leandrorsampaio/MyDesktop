@@ -561,7 +561,7 @@ body {
    ========================================== */
 .kanban {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px;
     padding: 0;
     overflow-x: auto;
@@ -694,6 +694,7 @@ body {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -766,7 +767,7 @@ body {
     color: #E8B923;
     font-size: 14px;
     flex-shrink: 0;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .taskCard__title {
@@ -842,8 +843,13 @@ body {
 }
 
 @keyframes modalFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal.--active {
@@ -868,6 +874,7 @@ body {
         transform: translateY(-20px) scale(0.98);
         opacity: 0;
     }
+
     to {
         transform: translateY(0) scale(1);
         opacity: 1;
@@ -1023,7 +1030,7 @@ body {
     cursor: pointer;
 }
 
-.taskForm__categoryPill input[type="radio"]:checked + span {
+.taskForm__categoryPill input[type="radio"]:checked+span {
     background: var(--accent-color);
     color: var(--text-light);
     box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
@@ -1033,7 +1040,7 @@ body {
     background: #EDE9E3;
 }
 
-.taskForm__categoryPill input[type="radio"]:checked + span:hover {
+.taskForm__categoryPill input[type="radio"]:checked+span:hover {
     background: var(--accent-hover);
 }
 
@@ -1572,7 +1579,7 @@ body.--crisisMode .dailyChecklist {
     }
 
     .kanban {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 28px;
     }
 

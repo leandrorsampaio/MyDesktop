@@ -271,7 +271,7 @@
     "title": "Meeting With Max",
     "description": "Check 1:1 about the Branch fixes. \n----\nMax will address with the team. A new release will be made on Thursday. He will use same branch.  I will work in a branch from the branch.",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -290,7 +290,7 @@
     "title": "PDF Print Rasvan",
     "description": "Fix page break",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -309,7 +309,7 @@
     "title": "Check Prod: Remove search field from category Search",
     "description": "",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 6,
     "log": [
       {
@@ -322,7 +322,7 @@
   {
     "id": "mkvegluwq6f7jqskk",
     "title": "Check Prod: ESB-548 custom label certification table",
-    "description": "",
+    "description": "waiting deployment to prod",
     "priority": false,
     "status": "wait",
     "position": 1,
@@ -334,14 +334,19 @@
       {
         "date": "2026-01-29",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Development"
       }
     ],
-    "createdDate": "2026-01-26T16:46:37.736Z"
+    "createdDate": "2026-01-26T16:46:37.736Z",
+    "category": 2
   },
   {
     "id": "mkvehdxyoigki3ybi",
     "title": "@solenis emails to EUVIC",
-    "description": "",
+    "description": "Mikael requested with IT. Waiting Feedback",
     "priority": false,
     "status": "wait",
     "position": 0,
@@ -349,16 +354,25 @@
       {
         "date": "2026-01-26",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Communication to Generic Task"
       }
     ],
-    "createdDate": "2026-01-26T16:47:14.134Z"
+    "createdDate": "2026-01-26T16:47:14.134Z",
+    "category": 6
   },
   {
     "id": "mkveixdsw4fy6yeje",
     "title": "Schedule Meeting frontend roadmap",
     "description": "Meeting between Ariel, Mikael and Balzac. \nAlejandro will arrange the meeting",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 4,
     "log": [
       {
@@ -378,7 +392,7 @@
     "description": "SOL-183, 182, 121, 113, 73,41",
     "priority": false,
     "status": "todo",
-    "position": 3,
+    "position": 0,
     "log": [],
     "createdDate": "2026-01-26T17:24:21.606Z"
   },
@@ -387,7 +401,7 @@
     "title": "Check Prod: Design System v1.2",
     "description": "Then send email with Release report",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 5,
     "log": [
       {
@@ -412,17 +426,27 @@
   {
     "id": "mkvfwdpgwihlgr2v1",
     "title": "LIT-LWC List Item",
-    "description": "ask if exists",
+    "description": "ask if exists. SOL-38. It does not exist.",
     "priority": false,
-    "status": "todo",
-    "position": 4,
-    "log": [],
-    "createdDate": "2026-01-26T17:26:53.284Z"
+    "status": "done",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-02-05",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-05",
+        "action": "Moved from To Do to Done"
+      }
+    ],
+    "createdDate": "2026-01-26T17:26:53.284Z",
+    "category": 3
   },
   {
     "id": "mkvfx33rcb2griafj",
     "title": "Solenis AI Account",
-    "description": "",
+    "description": "Waiting Mikael's feedback",
     "priority": false,
     "status": "wait",
     "position": 2,
@@ -430,16 +454,21 @@
       {
         "date": "2026-01-26",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Communication"
       }
     ],
-    "createdDate": "2026-01-26T17:27:26.199Z"
+    "createdDate": "2026-01-26T17:27:26.199Z",
+    "category": 3
   },
   {
     "id": "mkvi786b4rlrr3zhs",
     "title": "ESB-559 - OMS Component bug fixing",
     "description": "https://solenis.atlassian.net/browse/ESB-559",
     "priority": false,
-    "status": "inprogress",
+    "status": "todo",
     "position": 2,
     "log": [
       {
@@ -449,15 +478,23 @@
       {
         "date": "2026-01-30",
         "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Communication to Development"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from In Progress to To Do"
       }
     ],
     "createdDate": "2026-01-26T18:31:18.563Z",
-    "category": 3
+    "category": 2
   },
   {
     "id": "mkvil7bq998kqwi3l",
     "title": "SDS HeroBanner with flag",
-    "description": "",
+    "description": "Waiting ticket from EUVIC to be done",
     "priority": false,
     "status": "wait",
     "position": 6,
@@ -475,13 +512,38 @@
         "action": "Moved from Done to Wait"
       }
     ],
-    "createdDate": "2026-01-26T18:42:10.646Z"
+    "createdDate": "2026-01-26T18:42:10.646Z",
+    "category": 1
   },
   {
     "id": "mkvilrcyp01cdgxf4",
     "title": "<head> clean up",
-    "description": "",
+    "description": "Update first with Deelip",
     "priority": true,
+    "status": "wait",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-01-26",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-01-28",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Development"
+      }
+    ],
+    "createdDate": "2026-01-26T18:42:36.610Z",
+    "category": 2
+  },
+  {
+    "id": "mkvirz2nimqhq351q",
+    "title": "ESB-543: new image PLP + Hero Banner Flag",
+    "description": "Waiting Deployment to Production",
+    "priority": false,
     "status": "wait",
     "position": 4,
     "log": [
@@ -492,28 +554,14 @@
       {
         "date": "2026-01-28",
         "action": "Moved from In Progress to Wait"
-      }
-    ],
-    "createdDate": "2026-01-26T18:42:36.610Z"
-  },
-  {
-    "id": "mkvirz2nimqhq351q",
-    "title": "CR: new image PLP + Hero Banner Flag",
-    "description": "",
-    "priority": false,
-    "status": "wait",
-    "position": 5,
-    "log": [
-      {
-        "date": "2026-01-26",
-        "action": "Moved from To Do to In Progress"
       },
       {
-        "date": "2026-01-28",
-        "action": "Moved from In Progress to Wait"
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Development"
       }
     ],
-    "createdDate": "2026-01-26T18:47:26.543Z"
+    "createdDate": "2026-01-26T18:47:26.543Z",
+    "category": 2
   },
   {
     "id": "mkwj6usdjcrxt4i9g",
@@ -521,7 +569,7 @@
     "description": "",
     "priority": false,
     "status": "inprogress",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-01-27",
@@ -530,17 +578,21 @@
       {
         "date": "2026-01-30",
         "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Development to Generic Task"
       }
     ],
     "createdDate": "2026-01-27T11:46:47.005Z",
-    "category": 2
+    "category": 6
   },
   {
     "id": "mkwr68mf0xtpl2jpz",
     "title": "Helping shari with the DAM",
     "description": "Visual HTML section fixing",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 3,
     "log": [
       {
@@ -563,7 +615,7 @@
     "title": "Meeting with Huron",
     "description": "Updates and discussion about the overhead with this flosum pipeline. Not possible to PR SCSS file in Flosum.",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 7,
     "log": [
       {
@@ -580,24 +632,33 @@
   {
     "id": "mkwu4iyz2e1utgu2b",
     "title": "Email Santosh: new Sandobox",
-    "description": "",
+    "description": "Told Mikael is better keep it as it is. Gut feeling will make our life much more difficult",
     "priority": false,
-    "status": "wait",
-    "position": 3,
+    "status": "done",
+    "position": 8,
     "log": [
       {
         "date": "2026-01-27",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from Wait to Done"
       }
     ],
-    "createdDate": "2026-01-27T16:52:54.155Z"
+    "createdDate": "2026-01-27T16:52:54.155Z",
+    "category": 3
   },
   {
     "id": "mky0owip7kcrqe4je",
     "title": "Check EO's proposal (EPIC)",
     "description": "sent a message to Mikael wit my findings",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 8,
     "log": [
       {
@@ -613,11 +674,11 @@
   },
   {
     "id": "mky8czu9mtpdexy2g",
-    "title": "Dillon: OMS component bug (items per views)",
-    "description": "(alex Message)",
+    "title": "Creating new tickets to Dillon",
+    "description": "Two tickets created: ESB-572 and ESB-571",
     "priority": false,
-    "status": "inprogress",
-    "position": 5,
+    "status": "done",
+    "position": 3,
     "log": [
       {
         "date": "2026-01-28",
@@ -626,33 +687,50 @@
       {
         "date": "2026-01-30",
         "action": "Category changed from Non categorized to Generic Task"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Generic Task to Communication"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-28T16:19:10.065Z",
-    "category": 6
+    "category": 3
   },
   {
     "id": "ml05aspy7ajjalnl2",
-    "title": "Organize with Balzac Frontend Roadmap",
-    "description": "",
+    "title": "PLAN: PLP Brainstome with Balzac",
+    "description": "I shared my Miro. Balzac will find a for an intermediator. Nothing needed from my side.",
     "priority": true,
-    "status": "inprogress",
-    "position": 0,
+    "status": "done",
+    "position": 10,
     "log": [
       {
         "date": "2026-01-30",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Planning"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-01-30T00:29:01.030Z"
+    "createdDate": "2026-01-30T00:29:01.030Z",
+    "category": 5
   },
   {
     "id": "ml05bbx38li3jktyc",
     "title": "EIPP Design Adjustments",
-    "description": "",
+    "description": "Beautification done. Email to Advic sent. Branch created. Email to Balzac about achievements done. CR for the LWC components done.",
     "priority": true,
-    "status": "inprogress",
-    "position": 4,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-01-30",
@@ -661,17 +739,25 @@
       {
         "date": "2026-01-30",
         "action": "Category changed from Non categorized to Planning"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Planning to Development"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-30T00:29:25.911Z",
-    "category": 5
+    "category": 2
   },
   {
     "id": "ml05burztfr68xzy1",
     "title": "Message Mikael about Flosum (+Bart)",
     "description": "",
     "priority": false,
-    "status": "done",
+    "status": "archived",
     "position": 2,
     "log": [
       {
@@ -691,7 +777,7 @@
     "description": "",
     "priority": false,
     "status": "inprogress",
-    "position": 3,
+    "position": 1,
     "log": [
       {
         "date": "2026-01-30",
@@ -707,11 +793,11 @@
   },
   {
     "id": "ml1ilve3ml21t1tfx",
-    "title": "TICKET FRIDAY EVENING FOR MIKAEL",
-    "description": "",
+    "title": "ESB-558 - Delivery page documents only showing a single document",
+    "description": "(merge + missing CR + Ticket update)\nTicket done Friday Night fro Mikael + Ravi (30.01)",
     "priority": false,
-    "status": "inprogress",
-    "position": 6,
+    "status": "done",
+    "position": 7,
     "log": [
       {
         "date": "2026-01-30",
@@ -720,9 +806,205 @@
       {
         "date": "2026-01-30",
         "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Communication to Development"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-30T23:29:18.891Z",
-    "category": 3
+    "category": 2
+  },
+  {
+    "id": "ml5byas0t9dm4zv1n",
+    "title": "Checking with Rob The list of Stakeholders",
+    "description": "Get a list of people and sectors involved in the E-shop. Final list documented on Miro. \n\n--- MS teams notes:\n\nHead of corporate communication\nCatherine Abernathy\n \nPlataform level \nMarketing (product Marketing)\nTechnology office \nIntutional\nFood and beverage\n \nPeople that report to Caetano\n \n \nSame logic for marketing and marketing and communication in are regional level (is different region to region)\n \n(difficult to map because each regional is different)\n \ncheck Business unit per region\n \n1st: Global level\nBusiness unit of a product point of view (global technology office reporting to Caetano). (intuitional, industrial clean, consumer, taski, heavy industry, paper industry, etc)\n \n \n2nd: Operational side\nMarketing and communication per business unit and then in each of them there are the regional teams (is matrix)\n Rob does know much about outside instutional",
+    "priority": false,
+    "category": 3,
+    "status": "done",
+    "position": 11,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T15:34:06.096Z"
+  },
+  {
+    "id": "ml5h3fka60uh8iayh",
+    "title": "EMAIL: Huron with the \"missing and question\"",
+    "description": "sent on 03.02 with excel file of pain points",
+    "priority": false,
+    "category": 3,
+    "status": "done",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T17:58:03.658Z"
+  },
+  {
+    "id": "ml5h41tk1c4hqh4tb",
+    "title": "EMAIL: Ariel and Mikael about Huron",
+    "description": "Draft with Bart. email sent in 03.02",
+    "priority": false,
+    "category": 3,
+    "status": "done",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T17:58:32.504Z"
+  },
+  {
+    "id": "ml5hc7kssjyfrw9mw",
+    "title": "ESB-545 New fallback Image",
+    "description": "Alex list the pages to be replaced. Checked if some are missing.\nDone! Updated the ticket to Advic and send back to Alex",
+    "priority": false,
+    "category": 2,
+    "status": "done",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T18:04:53.212Z"
+  },
+  {
+    "id": "ml5hd7sxvn4aplch7",
+    "title": "ESB-544: Image not available link wrong in advic component",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "status": "todo",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from Wait to To Do"
+      }
+    ],
+    "createdDate": "2026-02-02T18:05:40.161Z"
+  },
+  {
+    "id": "ml5hgnv8fnxyzir8h",
+    "title": "Check Estimations EPIC for bart",
+    "description": "Bart asked me to check my opinion about his estimations\n--------\nBartosz Suchocki\nMate, if you find time, could you check my estimations for adding DS to advic's EPIC components? https://docs.google.com/spreadsheets/d/1r1u0Z64ym0iUUhm6MKlEGEnhDBftUGLkuP_Xv4fVDxk/edit?pli=1&gid=…  And I'd need your gmail address to share\nHey Bro, was cheking this and seems very good analysis. Congratulations. quite well done\n \nAs a gut feeling, seems quite good. Im not sure what you mean by \"md\" in the component injection but seems a fair value. The only thing you should be aware is that advic thing usually has a lot of bugs. And they take forever to fix. \n \nBut then is not your problem, just that this might delay some of the process. \n \nBut if I were you I would add a new row \"communication\" and add some 20% ovr it. Just to be in the safe side. The you could have 40 hours for example, you would have 1 week to finish (or 2 in your new 50% contract)\n \nlet me know if I can help you in anything else.",
+    "priority": false,
+    "category": 2,
+    "status": "done",
+    "position": 9,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-02",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T18:08:20.948Z"
+  },
+  {
+    "id": "ml5l5gab7651jodgz",
+    "title": "Send Anna record meeting",
+    "description": "Not possible to share outside of the ORG. \n-----\nHey Anna, Bart told to send you the recording of our SOW meeting from last week. \nThe sharing option is disabled for people outside of our Solenis Org email. \nI also can't download it because I'm not the meeting organizer. \n \nCould you talk to Alejandro. Once he is the organizer he might be able to share the video with you. \n \nThanks!",
+    "priority": false,
+    "category": 6,
+    "status": "done",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T19:51:36.371Z"
+  },
+  {
+    "id": "ml78dhdfn9co4cm69",
+    "title": "Product PDF Export",
+    "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs",
+    "priority": false,
+    "category": 2,
+    "status": "inprogress",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-02-03",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-03T23:29:28.371Z"
+  },
+  {
+    "id": "ml99zvzyvrg96be1v",
+    "title": "Org Emails and Desktop",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "status": "inprogress",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-02-05",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-05T09:50:25.726Z"
   }
 ]
