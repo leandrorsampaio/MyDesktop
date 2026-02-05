@@ -66,9 +66,8 @@
         taskPriority: document.querySelector('.js-taskPriority'),
         taskLogSection: document.querySelector('.js-taskLogSection'),
         taskLogList: document.querySelector('.js-taskLogList'),
-        deleteTaskBtn: document.querySelector('.js-deleteTaskBtn'),
+        taskModalActions: document.querySelector('.js-taskModalActions'),
         modalClose: document.querySelector('.js-modalClose'),
-        cancelBtn: document.querySelector('.js-cancelBtn'),
         addTaskBtn: document.querySelector('.js-addTaskBtn'),
 
         // Reports Modal
@@ -886,15 +885,48 @@
         modal.classList.remove('--active');
     }
 
+    function renderTaskModalActions(isEditing) {
+        elements.taskModalActions.innerHTML = '';
+
+        const rightActions = document.createElement('div');
+        rightActions.className = 'modal__actionsRight';
+
+        const cancelBtn = document.createElement('custom-button');
+        cancelBtn.setAttribute('label', 'Cancel');
+        cancelBtn.addEventListener('click', () => closeModal(elements.taskModal));
+
+        const saveBtn = document.createElement('custom-button');
+        saveBtn.setAttribute('label', isEditing ? 'Update' : 'Save');
+        saveBtn.setAttribute('modifier', 'save');
+        saveBtn.setAttribute('type', 'submit');
+        
+        // The form's submit event is already handled by handleTaskFormSubmit
+        elements.taskForm.onsubmit = handleTaskFormSubmit;
+
+        rightActions.appendChild(cancelBtn);
+        rightActions.appendChild(saveBtn);
+
+        if (isEditing) {
+            const deleteBtn = document.createElement('custom-button');
+            deleteBtn.setAttribute('label', 'Delete Task');
+            deleteBtn.setAttribute('modifier', 'delete');
+            deleteBtn.addEventListener('click', openDeleteConfirmation);
+            elements.taskModalActions.appendChild(deleteBtn);
+        }
+
+        elements.taskModalActions.appendChild(rightActions);
+    }
+
+
     function openAddTaskModal() {
         editingTaskId = null;
         elements.modalTitle.textContent = 'Add Task';
-        elements.taskTitle.value = '';
-        elements.taskDescription.value = '';
-        elements.taskPriority.checked = false;
+        elements.taskForm.reset();
         setCategorySelection(1);
         elements.taskLogSection.style.display = 'none';
-        elements.deleteTaskBtn.style.display = 'none';
+
+        renderTaskModalActions(false);
+
         openModal(elements.taskModal);
         elements.taskTitle.focus();
     }
@@ -920,7 +952,8 @@
             elements.taskLogSection.style.display = 'none';
         }
 
-        elements.deleteTaskBtn.style.display = 'block';
+        renderTaskModalActions(true);
+
         openModal(elements.taskModal);
         elements.taskTitle.focus();
     };
@@ -1239,12 +1272,6 @@
 
         // Modal Close Buttons
         elements.modalClose.addEventListener('click', () => closeModal(elements.taskModal));
-        elements.cancelBtn.addEventListener('click', () => closeModal(elements.taskModal));
-
-        // Delete Task
-        elements.deleteTaskBtn.addEventListener('click', openDeleteConfirmation);
-        elements.confirmDelete.addEventListener('click', confirmDeleteTask);
-        elements.confirmCancel.addEventListener('click', () => closeModal(elements.confirmModal));
 
         // Report & Archive
         elements.reportBtn.addEventListener('click', handleGenerateReport);

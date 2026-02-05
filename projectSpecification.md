@@ -67,10 +67,13 @@ A local web-based task management tool that serves as a browser homepage. It fea
 │   └── notes.json
 └── public/
     ├── index.html             # Single HTML page
+    ├── components.js          # Reusable component factory functions
     ├── app.js                 # All frontend logic (IIFE, ~1050 lines)
     ├── styles.css             # All styles (~1400 lines)
     └── favicon.png
 ```
+
+A new `components.js` file has been introduced to house reusable "component factory" functions. These are simple JavaScript functions that programmatically create and return DOM elements (like buttons or cards), centralizing their structure and styling logic. This approach enhances modularity without adding a framework.
 
 ### Server Start
 

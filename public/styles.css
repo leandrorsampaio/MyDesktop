@@ -1073,64 +1073,6 @@ body {
 }
 
 /* ==========================================
-   Block: btn (shared action buttons)
-   ========================================== */
-.btn.--cancel {
-    padding: 14px 24px;
-    border: none;
-    border-radius: 12px;
-    background: var(--bg-color);
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn.--cancel:hover {
-    background-color: #EDE9E3;
-}
-
-.btn.--save {
-    padding: 14px 28px;
-    border: none;
-    border-radius: 12px;
-    background-color: var(--accent-color);
-    color: var(--text-light);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
-}
-
-.btn.--save:hover {
-    background-color: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(196, 164, 132, 0.4);
-}
-
-.btn.--delete {
-    padding: 14px 20px;
-    border: none;
-    border-radius: 12px;
-    background-color: var(--danger-color);
-    color: var(--text-light);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn.--delete:hover {
-    background-color: #B85A50;
-    transform: translateY(-1px);
-}
-
-/* ==========================================
    Block: reportsView
    ========================================== */
 .reportsView {

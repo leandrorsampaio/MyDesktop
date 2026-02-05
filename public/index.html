@@ -167,12 +167,8 @@
                     </ul>
                 </div>
 
-                <div class="modal__actions">
-                    <button type="button" class="btn --delete js-deleteTaskBtn" style="display: none;">Delete Task</button>
-                    <div class="modal__actionsRight">
-                        <button type="button" class="btn --cancel js-cancelBtn">Cancel</button>
-                        <button type="submit" class="btn --save">Save</button>
-                    </div>
+                <div class="modal__actions js-taskModalActions">
+                    <!-- Buttons are now dynamically inserted by app.js -->
                 </div>
             </form>
         </div>
@@ -241,6 +237,7 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="components/button/button.js"></script>
+    <script src="app.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+:host {
+    display: inline-block;
+}
+
+.btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+/* Default/Cancel Style */
+.btn {
+    background: #F5F1EB; /* --bg-color */
+    color: #5A5A5A; /* --text-secondary */
+}
+
+.btn:hover {
+    background-color: #EDE9E3;
+}
+
+/* Save/Update Style */
+.btn[modifier="save"] {
+    background-color: #C4A484; /* --accent-color */
+    color: #FFFFFF; /* --text-light */
+    box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
+    padding: 14px 28px;
+}
+
+.btn[modifier="save"]:hover {
+    background-color: #B8956F; /* --accent-hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(196, 164, 132, 0.4);
+}
+
+/* Delete Style */
+.btn[modifier="delete"] {
+    background-color: #C97065; /* --danger-color */
+    color: #FFFFFF; /* --text-light */
+    padding: 14px 20px;
+}
+
+.btn[modifier="delete"]:hover {
+    background-color: #B85A50;
+    transform: translateY(-1px);
+}
