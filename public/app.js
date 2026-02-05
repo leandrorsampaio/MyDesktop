@@ -6,21 +6,11 @@
     // Configuration
     // ==========================================
 
-    // Default recurrent tasks (used if no saved checklist exists)
-    const DEFAULT_RECURRENT_TASKS = [
-        { text: 'Check email', url: '' },
-        { text: 'Review calendar', url: '' },
-        { text: 'Water plants', url: '' },
-        { text: 'Take vitamins', url: '' },
-        { text: 'Exercise', url: '' },
-        { text: 'Read for 30 minutes', url: '' }
-    ];
-
     const STATUS_COLUMNS = {
-        'todo': '.js-todoList',
-        'wait': '.js-waitList',
-        'inprogress': '.js-inprogressList',
-        'done': '.js-doneList'
+        'todo': 'kanban-column[data-status="todo"]',
+        'wait': 'kanban-column[data-status="wait"]',
+        'inprogress': 'kanban-column[data-status="inprogress"]',
+        'done': 'kanban-column[data-status="done"]'
     };
 
     const CATEGORIES = {
@@ -36,11 +26,8 @@
     // State
     // ==========================================
     let tasks = [];
-    let notes = { content: '' };
     let editingTaskId = null;
     let draggedTask = null;
-    let saveNotesTimeout = null;
-    let recurrentTasks = []; // Will be loaded from localStorage or default
     let activeCategoryFilters = new Set(); // Active category filter IDs
     let priorityFilterActive = false;
     let crisisModeActive = false;
@@ -81,15 +68,6 @@
         archivedModalClose: document.querySelector('.js-archivedModalClose'),
         viewArchivedBtn: document.querySelector('.js-viewArchivedBtn'),
 
-        // Checklist Modal
-        checklistModal: document.querySelector('.js-checklistModal'),
-        checklistModalClose: document.querySelector('.js-checklistModalClose'),
-        checklistItemsContainer: document.querySelector('.js-checklistItemsContainer'),
-        addChecklistItemBtn: document.querySelector('.js-addChecklistItemBtn'),
-        checklistCancelBtn: document.querySelector('.js-checklistCancelBtn'),
-        checklistSaveBtn: document.querySelector('.js-checklistSaveBtn'),
-        editChecklistBtn: document.querySelector('.js-editChecklistBtn'),
-
         // Confirm Modal
         confirmModal: document.querySelector('.js-confirmModal'),
         confirmCancel: document.querySelector('.js-confirmCancel'),
@@ -110,13 +88,6 @@
         // Archive & Report
         archiveBtn: document.querySelector('.js-archiveBtn'),
         reportBtn: document.querySelector('.js-reportBtn'),
-
-        // Notes
-        notesTextarea: document.querySelector('.js-notesTextarea'),
-        notesSaveStatus: document.querySelector('.js-notesSaveStatus'),
-
-        // Recurrent Tasks
-        recurrentList: document.querySelector('.js-recurrentList'),
         
         // Kanban container
         kanban: document.querySelector('.kanban')
@@ -322,70 +293,6 @@
         }
     }
 
-    async function fetchNotes() {
-        try {
-            const response = await fetch('/api/notes');
-            const data = await response.json();
-            // Handle both old format (items array) and new format (content string)
-            if (data.content !== undefined) {
-                notes = data;
-            } else if (data.items && Array.isArray(data.items)) {
-                // Convert old format to new format
-                notes = { content: data.items.map(item => item.text).join('\n') };
-            } else {
-                notes = { content: '' };
-            }
-            elements.notesTextarea.value = notes.content;
-        } catch (error) {
-            console.error('Error fetching notes:', error);
-        }
-    }
-
-    async function saveNotes() {
-        try {
-            showNotesSaveStatus('saving');
-            await fetch('/api/notes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(notes)
-            });
-            showNotesSaveStatus('saved');
-        } catch (error) {
-            console.error('Error saving notes:', error);
-        }
-    }
-
-    function showNotesSaveStatus(status) {
-        const el = elements.notesSaveStatus;
-        el.className = 'notes__status js-notesSaveStatus';
-        el.style.opacity = '1';
-
-        if (status === 'saving') {
-            el.textContent = 'Saving...';
-            el.classList.add('--saving');
-        } else if (status === 'saved') {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            el.textContent = `Saved at ${timeStr}`;
-            el.classList.add('--saved');
-        }
-    }
-
-    function debouncedSaveNotes() {
-        // Clear any pending save
-        if (saveNotesTimeout) {
-            clearTimeout(saveNotesTimeout);
-        }
-        // Schedule save after 500ms of no typing
-        saveNotesTimeout = setTimeout(() => {
-            notes.content = elements.notesTextarea.value;
-            saveNotes();
-        }, 500);
-    }
-
     async function fetchReports() {
         try {
             const response = await fetch('/api/reports');
@@ -432,17 +339,9 @@
             .filter(t => t.status === status)
             .sort((a, b) => a.position - b.position);
 
-        columnEl.innerHTML = '';
-
-        if (columnTasks.length === 0) {
-            columnEl.innerHTML = '<div class="emptyState">No tasks</div>';
-            return;
+        if (columnEl) {
+            columnEl.renderTasks(columnTasks, createTaskCard);
         }
-
-        columnTasks.forEach((task, index) => {
-            const card = createTaskCard(task, index, columnTasks.length);
-            columnEl.appendChild(card);
-        });
 
         if (activeCategoryFilters.size > 0 || priorityFilterActive) {
             applyAllFilters();
@@ -478,172 +377,6 @@
         return card;
     }
 
-
-    function renderRecurrentTasks() {
-        const list = elements.recurrentList;
-        list.innerHTML = '';
-
-        const checkedItems = getRecurrentTasksState();
-
-        recurrentTasks.forEach((task, index) => {
-            const li = document.createElement('li');
-            li.className = 'dailyChecklist__item';
-            const isChecked = checkedItems[index];
-            if (isChecked) li.classList.add('--checked');
-
-            const hasUrl = task.url && task.url.trim() !== '';
-
-            li.innerHTML = `
-                <input type="checkbox" ${isChecked ? 'checked' : ''} />
-                <span class="dailyChecklist__text">${escapeHtml(task.text)}</span>
-                ${hasUrl ? `<a href="${escapeHtml(task.url)}" target="_blank" class="dailyChecklist__link" title="Open link">↗</a>` : ''}
-            `;
-
-            li.querySelector('input').addEventListener('change', (e) => {
-                toggleRecurrentTask(index, e.target.checked);
-                li.classList.toggle('--checked', e.target.checked);
-            });
-
-            // Make task text clickable for checkbox
-            li.querySelector('.dailyChecklist__text').addEventListener('click', () => {
-                const checkbox = li.querySelector('input');
-                checkbox.checked = !checkbox.checked;
-                toggleRecurrentTask(index, checkbox.checked);
-                li.classList.toggle('--checked', checkbox.checked);
-            });
-
-            list.appendChild(li);
-        });
-    }
-
-    // ==========================================
-    // Recurrent Tasks - Daily Reset & Storage
-    // ==========================================
-    function loadRecurrentTasks() {
-        const stored = localStorage.getItem('checklistConfig');
-        if (stored) {
-            try {
-                recurrentTasks = JSON.parse(stored);
-            } catch {
-                recurrentTasks = [...DEFAULT_RECURRENT_TASKS];
-            }
-        } else {
-            recurrentTasks = [...DEFAULT_RECURRENT_TASKS];
-        }
-    }
-
-    function saveRecurrentTasks() {
-        localStorage.setItem('checklistConfig', JSON.stringify(recurrentTasks));
-    }
-
-    function getRecurrentTasksState() {
-        const stored = localStorage.getItem('recurrentTasksChecked');
-        if (!stored) return {};
-
-        try {
-            return JSON.parse(stored);
-        } catch {
-            return {};
-        }
-    }
-
-    function toggleRecurrentTask(index, checked) {
-        const state = getRecurrentTasksState();
-        state[index] = checked;
-        localStorage.setItem('recurrentTasksChecked', JSON.stringify(state));
-    }
-
-    function checkDailyReset() {
-        const lastResetStr = localStorage.getItem('lastRecurrentReset');
-        const now = new Date();
-
-        // Create today's 6 AM date
-        const todayAt6AM = new Date(now);
-        todayAt6AM.setHours(6, 0, 0, 0);
-
-        // If it's before 6 AM, use yesterday's 6 AM
-        if (now.getHours() < 6) {
-            todayAt6AM.setDate(todayAt6AM.getDate() - 1);
-        }
-
-        let shouldReset = false;
-
-        if (!lastResetStr) {
-            shouldReset = true;
-        } else {
-            const lastReset = new Date(lastResetStr);
-            if (lastReset < todayAt6AM) {
-                shouldReset = true;
-            }
-        }
-
-        if (shouldReset) {
-            localStorage.removeItem('recurrentTasksChecked');
-            localStorage.setItem('lastRecurrentReset', now.toISOString());
-        }
-    }
-
-    // ==========================================
-    // Checklist Editor Functions
-    // ==========================================
-    function openChecklistModal() {
-        closeMenu();
-        renderChecklistEditor();
-        openModal(elements.checklistModal);
-    }
-
-    function renderChecklistEditor() {
-        const container = elements.checklistItemsContainer;
-        container.innerHTML = '';
-
-        recurrentTasks.forEach((task, index) => {
-            const row = createChecklistItemRow(task.text, task.url, index);
-            container.appendChild(row);
-        });
-    }
-
-    function createChecklistItemRow(text = '', url = '', index = -1) {
-        const row = document.createElement('div');
-        row.className = 'checklistEditor__row';
-        row.dataset.index = index;
-
-        row.innerHTML = `
-            <input type="text" class="checklistEditor__textInput" placeholder="Task name" value="${escapeHtml(text)}" />
-            <input type="text" class="checklistEditor__urlInput" placeholder="URL (optional)" value="${escapeHtml(url)}" />
-            <button type="button" class="checklistEditor__removeBtn" title="Remove item">&times;</button>
-        `;
-
-        row.querySelector('.checklistEditor__removeBtn').addEventListener('click', () => {
-            row.remove();
-        });
-
-        return row;
-    }
-
-    function addChecklistItem() {
-        const row = createChecklistItemRow();
-        elements.checklistItemsContainer.appendChild(row);
-        row.querySelector('.checklistEditor__textInput').focus();
-    }
-
-    function saveChecklistFromEditor() {
-        const rows = elements.checklistItemsContainer.querySelectorAll('.checklistEditor__row');
-        const newTasks = [];
-
-        rows.forEach(row => {
-            const text = row.querySelector('.checklistEditor__textInput').value.trim();
-            const url = row.querySelector('.checklistEditor__urlInput').value.trim();
-
-            if (text) {
-                newTasks.push({ text, url });
-            }
-        });
-
-        recurrentTasks = newTasks;
-        saveRecurrentTasks();
-        renderRecurrentTasks();
-        closeModal(elements.checklistModal);
-    }
 
     // ==========================================
     // Category Filters
@@ -782,82 +515,6 @@
             // Restore menu button text
             elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Crisis Mode';
         }
-    }
-
-    // ==========================================
-    // Drag and Drop
-    // ==========================================
-    function handleDragStart(e) {
-        draggedTask = e.target;
-        e.target.classList.add('--dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', e.target.dataset.taskId);
-    }
-
-    function handleDragEnd(e) {
-        e.target.classList.remove('--dragging');
-        draggedTask = null;
-        document.querySelectorAll('.column__list').forEach(list => {
-            list.classList.remove('--dragOver');
-        });
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    }
-
-    function handleDragEnter(e) {
-        e.preventDefault();
-        const taskList = e.target.closest('.column__list');
-        if (taskList) {
-            taskList.classList.add('--dragOver');
-        }
-    }
-
-    function handleDragLeave(e) {
-        const taskList = e.target.closest('.column__list');
-        if (taskList && !taskList.contains(e.relatedTarget)) {
-            taskList.classList.remove('--dragOver');
-        }
-    }
-
-    async function handleDrop(e) {
-        e.preventDefault();
-        const taskList = e.target.closest('.column__list');
-        if (!taskList || !draggedTask) return;
-
-        taskList.classList.remove('--dragOver');
-
-        const taskId = e.dataTransfer.getData('text/plain');
-        const newStatus = taskList.dataset.status;
-        const task = tasks.find(t => t.id === taskId);
-
-        if (!task) return;
-
-        // Calculate new position based on drop location
-        const cards = Array.from(taskList.querySelectorAll('.taskCard:not(.--dragging)'));
-        let newPosition = cards.length; // Default to end
-
-        for (let i = 0; i < cards.length; i++) {
-            const rect = cards[i].getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-            if (e.clientY < midY) {
-                newPosition = i;
-                break;
-            }
-        }
-
-        await moveTask(taskId, newStatus, newPosition);
-    }
-
-    function initDragAndDrop() {
-        document.querySelectorAll('.column__list').forEach(list => {
-            list.addEventListener('dragover', handleDragOver);
-            list.addEventListener('dragenter', handleDragEnter);
-            list.addEventListener('dragleave', handleDragLeave);
-            list.addEventListener('drop', handleDrop);
-        });
     }
 
     // ==========================================
@@ -1260,19 +917,9 @@
         elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
         elements.archivedModalClose.addEventListener('click', () => elements.archivedModal.classList.remove('--active'));
 
-        // Checklist Editor
-        elements.editChecklistBtn.addEventListener('click', openChecklistModal);
-        elements.checklistModalClose.addEventListener('click', () => elements.checklistModal.classList.remove('--active'));
-        elements.checklistCancelBtn.addEventListener('click', () => elements.checklistModal.classList.remove('--active'));
-        elements.checklistSaveBtn.addEventListener('click', saveChecklistFromEditor);
-        elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
-
-        // Notes - debounced auto-save
-        elements.notesTextarea.addEventListener('input', debouncedSaveNotes);
-
-        // Listen for edit requests from task-card components
-        elements.kanban.addEventListener('request-edit', (e) => {
-            openEditModal(e.detail.taskId);
+        elements.kanban.addEventListener('task-dropped', (e) => {
+            const { taskId, newStatus, newPosition } = e.detail;
+            moveTask(taskId, newStatus, newPosition);
         });
 
         // Close modals on outside click - (Note: taskModal is now a component and handles this itself)
@@ -1300,20 +947,12 @@
         // Initialize header date
         initHeaderDate();
 
-        // Load recurrent tasks configuration
-        loadRecurrentTasks();
-
-        // Check for daily reset of recurrent tasks
-        checkDailyReset();
-
         // Initialize UI
         renderCategoryFilters();
-        renderRecurrentTasks();
         initEventListeners();
-        initDragAndDrop();
 
         // Fetch data
-        await Promise.all([fetchTasks(), fetchNotes()]);
+        await fetchTasks();
     }
 
     // Start the application

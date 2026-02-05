@@ -44,9 +44,6 @@
                 <button class="navMenu__item js-viewArchivedBtn">
                     <span class="navMenu__icon">📦</span> All Completed Tasks
                 </button>
-                <button class="navMenu__item js-editChecklistBtn">
-                    <span class="navMenu__icon">✏️</span> Edit Daily Checklist
-                </button>
                 <button class="navMenu__item js-crisisModeBtn">
                     <span class="navMenu__icon">🚨</span> Crisis Mode
                 </button>
@@ -58,69 +55,34 @@
         <!-- Left Sidebar -->
         <aside class="sidebar">
             <!-- Recurrent Tasks Section -->
-            <section class="sidebar__section dailyChecklist">
-                <h3>Daily Checklist</h3>
-                <ul class="js-recurrentList">
-                    <!-- Recurrent tasks will be rendered here -->
-                </ul>
-            </section>
+            <daily-checklist class="sidebar__section"></daily-checklist>
 
             <!-- Notes Section -->
-            <section class="sidebar__section notes">
-                <div class="notes__header">
-                    <h3>Notes</h3>
-                    <span class="notes__status js-notesSaveStatus"></span>
-                </div>
-                <textarea class="notes__textarea js-notesTextarea" placeholder="Type your notes here..."></textarea>
-            </section>
+            <notes-widget class="sidebar__section"></notes-widget>
         </aside>
 
         <!-- Main Kanban Board -->
         <main class="kanban">
-            <!-- To Do Column -->
-            <div class="column" data-status="todo">
-                <div class="column__header">
-                    <h2 class="column__title">To Do</h2>
-                    <button class="column__addBtn js-addTaskBtn">+ Add Task</button>
-                </div>
-                <div class="column__list js-todoList" data-status="todo">
-                    <!-- Tasks will be rendered here -->
-                </div>
-            </div>
+            <kanban-column data-status="todo" class="column js-todoList">
+                <span slot="title">To Do</span>
+                <button slot="actions" class="column__addBtn js-addTaskBtn">+ Add Task</button>
+            </kanban-column>
 
-            <!-- Wait Column -->
-            <div class="column" data-status="wait">
-                <div class="column__header">
-                    <h2 class="column__title">Wait</h2>
-                </div>
-                <div class="column__list js-waitList" data-status="wait">
-                    <!-- Tasks will be rendered here -->
-                </div>
-            </div>
+            <kanban-column data-status="wait" class="column js-waitList">
+                <span slot="title">Wait</span>
+            </kanban-column>
 
-            <!-- In Progress Column -->
-            <div class="column" data-status="inprogress">
-                <div class="column__header">
-                    <h2 class="column__title">In Progress</h2>
-                </div>
-                <div class="column__list js-inprogressList" data-status="inprogress">
-                    <!-- Tasks will be rendered here -->
-                </div>
-            </div>
+            <kanban-column data-status="inprogress" class="column js-inprogressList">
+                <span slot="title">In Progress</span>
+            </kanban-column>
 
-            <!-- Done Column -->
-            <div class="column" data-status="done">
-                <div class="column__header">
-                    <h2 class="column__title">Done</h2>
-                    <div class="column__actions">
-                        <button class="column__reportBtn js-reportBtn">Report</button>
-                        <button class="column__archiveBtn js-archiveBtn">Archive</button>
-                    </div>
+            <kanban-column data-status="done" class="column js-doneList">
+                <span slot="title">Done</span>
+                <div slot="actions" class="column__actions">
+                    <button class="column__reportBtn js-reportBtn">Report</button>
+                    <button class="column__archiveBtn js-archiveBtn">Archive</button>
                 </div>
-                <div class="column__list js-doneList" data-status="done">
-                    <!-- Tasks will be rendered here -->
-                </div>
-            </div>
+            </kanban-column>
         </main>
     </div>
 
@@ -235,6 +197,9 @@
     <script type="module" src="components/button/button.js"></script>
     <script type="module" src="components/task-card/task-card.js"></script>
     <script type="module" src="components/modal-dialog/modal-dialog.js"></script>
+    <script type="module" src="components/daily-checklist/daily-checklist.js"></script>
+    <script type="module" src="components/notes-widget/notes-widget.js"></script>
+    <script type="module" src="components/kanban-column/kanban-column.js"></script>
     <script src="app.js" defer></script>
 </body>
 </html>

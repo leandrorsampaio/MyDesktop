@@ -1,0 +1,78 @@
+:host {
+    /* This component doesn't have its own background, it inherits from the parent .sidebar__section */
+}
+
+h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dailyChecklist__item {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: opacity 0.3s;
+}
+
+.dailyChecklist__item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.dailyChecklist__item:first-child {
+    padding-top: 0;
+}
+
+.dailyChecklist__item.--checked .dailyChecklist__text {
+    text-decoration: line-through;
+    opacity: 0.4;
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--accent-color);
+    flex-shrink: 0;
+}
+
+.dailyChecklist__text {
+    flex: 1;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 400;
+}
+
+.dailyChecklist__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: var(--accent-color);
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    flex-shrink: 0;
+    font-size: 14px;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.dailyChecklist__link:hover {
+    opacity: 1;
+    background: rgba(196, 164, 132, 0.1);
+}

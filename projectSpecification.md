@@ -78,10 +78,22 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
             ├── task-card.js
             ├── task-card.html
             └── task-card.css
-        └── modal-dialog/
-            ├── modal-dialog.js
-            ├── modal-dialog.html
-            └── modal-dialog.css
+        ├── modal-dialog/
+        │   ├── modal-dialog.js
+        │   ├── modal-dialog.html
+        │   └── modal-dialog.css
+        ├── daily-checklist/
+        │   ├── daily-checklist.js
+        │   ├── daily-checklist.html
+        │   └── daily-checklist.css
+        ├── notes-widget/
+        │   ├── notes-widget.js
+        │   ├── notes-widget.html
+        │   └── notes-widget.css
+        └── kanban-column/
+            ├── kanban-column.js
+            ├── kanban-column.html
+            └── kanban-column.css
 ```
 
 **Component Architecture:**
