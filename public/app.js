@@ -86,9 +86,18 @@
         // Archive & Report
         archiveBtn: document.querySelector('.js-archiveBtn'),
         reportBtn: document.querySelector('.js-reportBtn'),
-        
+
         // Kanban container
-        kanban: document.querySelector('.kanban')
+        kanban: document.querySelector('.kanban'),
+
+        // Checklist Modal
+        editChecklistBtn: document.querySelector('.js-editChecklistBtn'),
+        checklistModal: document.querySelector('.js-checklistModal'),
+        checklistModalClose: document.querySelector('.js-checklistModalClose'),
+        checklistItemsContainer: document.querySelector('.js-checklistItemsContainer'),
+        addChecklistItemBtn: document.querySelector('.js-addChecklistItemBtn'),
+        checklistCancelBtn: document.querySelector('.js-checklistCancelBtn'),
+        checklistSaveBtn: document.querySelector('.js-checklistSaveBtn')
     };
 
     // ==========================================
@@ -867,6 +876,96 @@
     }
 
     // ==========================================
+    // Checklist Modal Functions
+    // ==========================================
+    let checklistItems = [];
+
+    function openChecklistModal() {
+        closeMenu();
+        // Load current config from localStorage
+        const stored = localStorage.getItem('checklistConfig');
+        if (stored) {
+            try {
+                checklistItems = JSON.parse(stored);
+            } catch {
+                checklistItems = getDefaultChecklistItems();
+            }
+        } else {
+            checklistItems = getDefaultChecklistItems();
+        }
+        renderChecklistEditor();
+        elements.checklistModal.classList.add('--active');
+    }
+
+    function getDefaultChecklistItems() {
+        return [
+            { text: 'Check email', url: '' },
+            { text: 'Review calendar', url: '' },
+            { text: 'Water plants', url: '' },
+            { text: 'Take vitamins', url: '' },
+            { text: 'Exercise', url: '' },
+            { text: 'Read for 30 minutes', url: '' }
+        ];
+    }
+
+    function renderChecklistEditor() {
+        elements.checklistItemsContainer.innerHTML = checklistItems.map((item, index) => `
+            <div class="checklistEditor__row" data-index="${index}">
+                <input type="text" class="checklistEditor__textInput" value="${escapeHtml(item.text)}" placeholder="Task text" />
+                <input type="text" class="checklistEditor__urlInput" value="${escapeHtml(item.url || '')}" placeholder="URL (optional)" />
+                <button type="button" class="checklistEditor__removeBtn" data-index="${index}">&times;</button>
+            </div>
+        `).join('');
+
+        // Add remove button listeners
+        elements.checklistItemsContainer.querySelectorAll('.checklistEditor__removeBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const index = parseInt(btn.dataset.index);
+                checklistItems.splice(index, 1);
+                renderChecklistEditor();
+            });
+        });
+    }
+
+    function addChecklistItem() {
+        checklistItems.push({ text: '', url: '' });
+        renderChecklistEditor();
+        // Focus the new text input
+        const inputs = elements.checklistItemsContainer.querySelectorAll('.checklistEditor__textInput');
+        if (inputs.length > 0) {
+            inputs[inputs.length - 1].focus();
+        }
+    }
+
+    function saveChecklist() {
+        // Read values from inputs
+        const items = [];
+        elements.checklistItemsContainer.querySelectorAll('.checklistEditor__row').forEach(itemEl => {
+            const text = itemEl.querySelector('.checklistEditor__textInput').value.trim();
+            const url = itemEl.querySelector('.checklistEditor__urlInput').value.trim();
+            if (text) {
+                items.push({ text, url });
+            }
+        });
+
+        // Save to localStorage
+        localStorage.setItem('checklistConfig', JSON.stringify(items));
+
+        // Refresh the daily-checklist component
+        const checklistComponent = document.querySelector('daily-checklist');
+        if (checklistComponent) {
+            checklistComponent.loadRecurrentTasks();
+            checklistComponent.render();
+        }
+
+        closeChecklistModal();
+    }
+
+    function closeChecklistModal() {
+        elements.checklistModal.classList.remove('--active');
+    }
+
+    // ==========================================
     // Utility Functions
     // ==========================================
     function escapeHtml(text) {
@@ -930,6 +1029,13 @@
         // Archived Tasks
         elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
 
+        // Checklist Modal
+        elements.editChecklistBtn.addEventListener('click', openChecklistModal);
+        elements.checklistModalClose.addEventListener('click', closeChecklistModal);
+        elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
+        elements.checklistCancelBtn.addEventListener('click', closeChecklistModal);
+        elements.checklistSaveBtn.addEventListener('click', saveChecklist);
+
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
             openEditModal(e.detail.taskId);
@@ -940,19 +1046,22 @@
             moveTask(taskId, newStatus, newPosition);
         });
 
-        // Close confirmModal on outside click (other modals are now components that handle this internally)
-        if (elements.confirmModal) {
-            elements.confirmModal.addEventListener('click', (e) => {
-                if (e.target === elements.confirmModal) {
-                    elements.confirmModal.classList.remove('--active');
-                }
-            });
-        }
+        // Close old-style modals on outside click (modal-dialog components handle this internally)
+        [elements.confirmModal, elements.checklistModal].forEach(modal => {
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('--active');
+                    }
+                });
+            }
+        });
 
-        // Close confirmModal on ESC key (other modals are now components that handle this internally)
+        // Close old-style modals on ESC key (modal-dialog components handle this internally)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (elements.confirmModal) elements.confirmModal.classList.remove('--active');
+                if (elements.checklistModal) elements.checklistModal.classList.remove('--active');
                 closeMenu();
             }
         });
