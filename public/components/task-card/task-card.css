@@ -31,10 +31,6 @@
     cursor: grabbing;
 }
 
-:host(.--filtered) {
-    display: none;
-}
-
 :host(.--lightText) {
     color: var(--text-light);
 }

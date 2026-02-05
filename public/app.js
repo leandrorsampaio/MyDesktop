@@ -433,7 +433,11 @@
     }
 
     function applyAllFilters() {
-        const cards = document.querySelectorAll('.taskCard');
+        // Task cards are inside kanban-column Shadow DOMs, so we need to query through them
+        const columns = document.querySelectorAll('kanban-column');
+        const cards = Array.from(columns).flatMap(col =>
+            Array.from(col.shadowRoot?.querySelectorAll('task-card') || [])
+        );
         const hasCategoryFilters = activeCategoryFilters.size > 0;
 
         cards.forEach(card => {
@@ -452,7 +456,7 @@
                 hidden = true;
             }
 
-            card.classList.toggle('--filtered', hidden);
+            card.hidden = hidden;
         });
     }
 

@@ -38,10 +38,15 @@ class TaskCard extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['data-task-id', 'data-status', 'data-category', 'data-priority', 'data-title', 'data-description'];
+        return ['data-task-id', 'data-status', 'data-category', 'data-priority', 'data-title', 'data-description', 'hidden'];
     }
 
-    attributeChangedCallback() {
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'hidden') {
+            this.style.display = newValue === '' ? 'none' : 'flex';
+            return;
+        }
+
         if (this.shadowRoot.childElementCount > 1) {
             this.render();
         }
