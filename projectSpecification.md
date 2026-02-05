@@ -53,7 +53,9 @@ A local web-based task management tool that serves as a browser homepage. It fea
   - **JS hooks:** Separate class with `js-` prefix — `.js-camelCase` (alongside BEM class)
   - **No IDs** — all JS targeting uses `querySelector('.js-xxx')` instead of `getElementById`
 
-### File Structure
+### File Structure & Component Model
+
+The project uses a file-based component model with vanilla JavaScript (Web Components) to promote encapsulation and organization, avoiding the need for a build step.
 
 ```
 /
@@ -61,19 +63,25 @@ A local web-based task management tool that serves as a browser homepage. It fea
 ├── projectSpecification.md    # This file
 ├── package.json
 ├── data/
-│   ├── tasks.json
-│   ├── archived-tasks.json
-│   ├── reports.json
-│   └── notes.json
+│   └── ... (data files)
 └── public/
-    ├── index.html             # Single HTML page
-    ├── components.js          # Reusable component factory functions
-    ├── app.js                 # All frontend logic (IIFE, ~1050 lines)
-    ├── styles.css             # All styles (~1400 lines)
-    └── favicon.png
+    ├── index.html             # Single HTML page, loads components
+    ├── app.js                 # Main application logic
+    ├── styles.css             # Global styles
+    ├── favicon.png
+    └── components/
+        └── button/
+            ├── button.js      # Component logic (Custom Element class)
+            ├── button.html    # Component's encapsulated HTML
+            └── button.css     # Component's encapsulated styles
 ```
 
-A new `components.js` file has been introduced to house reusable "component factory" functions. These are simple JavaScript functions that programmatically create and return DOM elements (like buttons or cards), centralizing their structure and styling logic. This approach enhances modularity without adding a framework.
+**Component Architecture:**
+-   **Structure:** Each component resides in its own directory (e.g., `public/components/button/`).
+-   **Encapsulation:** Components use the **Shadow DOM** for true HTML and CSS encapsulation.
+-   **Loading:** The component's `.js` file is its entry point. It uses the `fetch()` API at runtime to load its own `.html` and `.css` files as text. It then injects this content into its Shadow DOM.
+-   **Registration:** The `.js` file defines and registers a custom element (e.g., `<custom-button>`) using `customElements.define()`.
+-   **Usage:** Once a component's script is loaded in `index.html`, it can be used declaratively anywhere in the application's JavaScript via `document.createElement('custom-tag')`.
 
 ### Server Start
 
