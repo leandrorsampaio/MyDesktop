@@ -1016,8 +1016,7 @@
         // Add Task
         elements.addTaskBtn.addEventListener('click', openAddTaskModal);
 
-        // Task Form
-        elements.taskForm.addEventListener('submit', handleTaskFormSubmit);
+        // Task Form submit is handled via onsubmit in renderTaskModalActions
 
         // Report & Archive
         elements.reportBtn.addEventListener('click', handleGenerateReport);
@@ -1035,6 +1034,12 @@
         elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
         elements.checklistCancelBtn.addEventListener('click', closeChecklistModal);
         elements.checklistSaveBtn.addEventListener('click', saveChecklist);
+
+        // Confirm Delete Modal
+        elements.confirmCancel.addEventListener('click', () => {
+            elements.confirmModal.classList.remove('--active');
+        });
+        elements.confirmDelete.addEventListener('click', confirmDeleteTask);
 
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {

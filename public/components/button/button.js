@@ -19,9 +19,31 @@ class CustomButton extends HTMLElement {
 
         this.shadowRoot.innerHTML = html;
         this.shadowRoot.prepend(style);
-        
+
         this._button = this.shadowRoot.querySelector('button');
         this._slot = this.shadowRoot.querySelector('slot');
+
+        // Shadow DOM clicks need special handling:
+        // 1. Form submission doesn't work across Shadow DOM boundary
+        // 2. Click listeners on the host element don't fire from inner button clicks
+        this._button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent any bubbling issues
+
+            // Handle form submission for buttons with type="submit"
+            if (this.getAttribute('type') === 'submit') {
+                const form = this.closest('form');
+                if (form) {
+                    form.requestSubmit();
+                    return; // Don't dispatch click for submit buttons (form handles it)
+                }
+            }
+
+            // For non-submit buttons, dispatch click on host so external listeners work
+            this.dispatchEvent(new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true
+            }));
+        });
 
         this.updateAttributes();
     }
