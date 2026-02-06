@@ -324,8 +324,8 @@
     "title": "Check Prod: ESB-548 custom label certification table",
     "description": "waiting deployment to prod",
     "priority": false,
-    "status": "wait",
-    "position": 1,
+    "status": "archived",
+    "position": 2,
     "log": [
       {
         "date": "2026-01-27",
@@ -338,6 +338,10 @@
       {
         "date": "2026-02-02",
         "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-26T16:46:37.736Z",
@@ -437,8 +441,8 @@
     "title": "LIT-LWC List Item",
     "description": "ask if exists. SOL-38. It does not exist.",
     "priority": false,
-    "status": "done",
-    "position": 3,
+    "status": "archived",
+    "position": 7,
     "log": [
       {
         "date": "2026-02-05",
@@ -477,8 +481,8 @@
     "title": "ESB-559 - OMS Component bug fixing",
     "description": "https://solenis.atlassian.net/browse/ESB-559",
     "priority": false,
-    "status": "todo",
-    "position": 0,
+    "status": "inprogress",
+    "position": 6,
     "log": [
       {
         "date": "2026-01-26",
@@ -495,6 +499,10 @@
       {
         "date": "2026-02-02",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from To Do to In Progress"
       }
     ],
     "createdDate": "2026-01-26T18:31:18.563Z",
@@ -553,8 +561,8 @@
     "title": "ESB-543: new image PLP + Hero Banner Flag",
     "description": "Waiting Deployment to Production",
     "priority": false,
-    "status": "wait",
-    "position": 4,
+    "status": "archived",
+    "position": 5,
     "log": [
       {
         "date": "2026-01-26",
@@ -567,6 +575,10 @@
       {
         "date": "2026-02-02",
         "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-26T18:47:26.543Z",
@@ -575,10 +587,10 @@
   {
     "id": "mkwj6usdjcrxt4i9g",
     "title": "Course Security",
-    "description": "",
+    "description": "Done on 06.02",
     "priority": false,
-    "status": "inprogress",
-    "position": 2,
+    "status": "archived",
+    "position": 4,
     "log": [
       {
         "date": "2026-01-27",
@@ -591,6 +603,10 @@
       {
         "date": "2026-02-02",
         "action": "Category changed from Development to Generic Task"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-27T11:46:47.005Z",
@@ -643,8 +659,8 @@
     "title": "Email Santosh: new Sandobox",
     "description": "Told Mikael is better keep it as it is. Gut feeling will make our life much more difficult",
     "priority": false,
-    "status": "done",
-    "position": 9,
+    "status": "archived",
+    "position": 13,
     "log": [
       {
         "date": "2026-01-27",
@@ -686,8 +702,8 @@
     "title": "Creating new tickets to Dillon",
     "description": "Two tickets created: ESB-572 and ESB-571",
     "priority": false,
-    "status": "done",
-    "position": 4,
+    "status": "archived",
+    "position": 8,
     "log": [
       {
         "date": "2026-01-28",
@@ -714,8 +730,8 @@
     "title": "PLAN: PLP Brainstome with Balzac",
     "description": "I shared my Miro. Balzac will find a for an intermediator. Nothing needed from my side.",
     "priority": true,
-    "status": "done",
-    "position": 11,
+    "status": "archived",
+    "position": 15,
     "log": [
       {
         "date": "2026-01-30",
@@ -738,8 +754,8 @@
     "title": "EIPP Design Adjustments",
     "description": "Beautification done. Email to Advic sent. Branch created. Email to Balzac about achievements done. CR for the LWC components done.",
     "priority": true,
-    "status": "done",
-    "position": 1,
+    "status": "archived",
+    "position": 3,
     "log": [
       {
         "date": "2026-01-30",
@@ -785,7 +801,7 @@
     "title": "Re-Check tasks from the 1:1 PPT with Mikael",
     "description": "",
     "priority": false,
-    "status": "inprogress",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -795,6 +811,10 @@
       {
         "date": "2026-01-30",
         "action": "Category changed from Non categorized to To Remember"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-30T00:30:49.494Z",
@@ -805,8 +825,8 @@
     "title": "ESB-558 - Delivery page documents only showing a single document",
     "description": "(merge + missing CR + Ticket update)\nTicket done Friday Night fro Mikael + Ravi (30.01)",
     "priority": false,
-    "status": "done",
-    "position": 8,
+    "status": "archived",
+    "position": 12,
     "log": [
       {
         "date": "2026-01-30",
@@ -834,8 +854,8 @@
     "description": "Get a list of people and sectors involved in the E-shop. Final list documented on Miro. \n\n--- MS teams notes:\n\nHead of corporate communication\nCatherine Abernathy\n \nPlataform level \nMarketing (product Marketing)\nTechnology office \nIntutional\nFood and beverage\n \nPeople that report to Caetano\n \n \nSame logic for marketing and marketing and communication in are regional level (is different region to region)\n \n(difficult to map because each regional is different)\n \ncheck Business unit per region\n \n1st: Global level\nBusiness unit of a product point of view (global technology office reporting to Caetano). (intuitional, industrial clean, consumer, taski, heavy industry, paper industry, etc)\n \n \n2nd: Operational side\nMarketing and communication per business unit and then in each of them there are the regional teams (is matrix)\n Rob does know much about outside instutional",
     "priority": false,
     "category": 3,
-    "status": "done",
-    "position": 12,
+    "status": "archived",
+    "position": 16,
     "log": [
       {
         "date": "2026-02-02",
@@ -862,8 +882,8 @@
     "description": "sent on 03.02 with excel file of pain points",
     "priority": false,
     "category": 3,
-    "status": "done",
-    "position": 6,
+    "status": "archived",
+    "position": 10,
     "log": [
       {
         "date": "2026-02-02",
@@ -882,8 +902,8 @@
     "description": "Draft with Bart. email sent in 03.02",
     "priority": false,
     "category": 3,
-    "status": "done",
-    "position": 2,
+    "status": "archived",
+    "position": 6,
     "log": [
       {
         "date": "2026-02-02",
@@ -906,8 +926,8 @@
     "description": "Alex list the pages to be replaced. Checked if some are missing.\nDone! Updated the ticket to Advic and send back to Alex",
     "priority": false,
     "category": 2,
-    "status": "done",
-    "position": 5,
+    "status": "archived",
+    "position": 9,
     "log": [
       {
         "date": "2026-02-02",
@@ -950,8 +970,8 @@
     "description": "Bart asked me to check my opinion about his estimations\n--------\nBartosz Suchocki\nMate, if you find time, could you check my estimations for adding DS to advic's EPIC components? https://docs.google.com/spreadsheets/d/1r1u0Z64ym0iUUhm6MKlEGEnhDBftUGLkuP_Xv4fVDxk/edit?pli=1&gid=…  And I'd need your gmail address to share\nHey Bro, was cheking this and seems very good analysis. Congratulations. quite well done\n \nAs a gut feeling, seems quite good. Im not sure what you mean by \"md\" in the component injection but seems a fair value. The only thing you should be aware is that advic thing usually has a lot of bugs. And they take forever to fix. \n \nBut then is not your problem, just that this might delay some of the process. \n \nBut if I were you I would add a new row \"communication\" and add some 20% ovr it. Just to be in the safe side. The you could have 40 hours for example, you would have 1 week to finish (or 2 in your new 50% contract)\n \nlet me know if I can help you in anything else.",
     "priority": false,
     "category": 2,
-    "status": "done",
-    "position": 10,
+    "status": "archived",
+    "position": 14,
     "log": [
       {
         "date": "2026-02-02",
@@ -970,8 +990,8 @@
     "description": "Not possible to share outside of the ORG. \n-----\nHey Anna, Bart told to send you the recording of our SOW meeting from last week. \nThe sharing option is disabled for people outside of our Solenis Org email. \nI also can't download it because I'm not the meeting organizer. \n \nCould you talk to Alejandro. Once he is the organizer he might be able to share the video with you. \n \nThanks!",
     "priority": false,
     "category": 6,
-    "status": "done",
-    "position": 7,
+    "status": "archived",
+    "position": 11,
     "log": [
       {
         "date": "2026-02-02",
@@ -987,11 +1007,11 @@
   {
     "id": "ml78dhdfn9co4cm69",
     "title": "Product PDF Export",
-    "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs",
+    "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs. Necessary fix the Macros in the excell template. Need further investigation.",
     "priority": false,
     "category": 2,
     "status": "inprogress",
-    "position": 3,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-03",
@@ -1006,7 +1026,7 @@
     "description": "",
     "priority": false,
     "category": 6,
-    "status": "done",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -1019,5 +1039,85 @@
       }
     ],
     "createdDate": "2026-02-05T09:50:25.726Z"
+  },
+  {
+    "id": "mlb3o61op8xirc59u",
+    "title": "Check Branches on Production",
+    "description": "Branch B-0294\nFeature/ESB-558_Delivery_page_documents_only_showing_a_single_document\n\n\nBranch: B-0293\nBranch Name: feature/Product_Export_CSS_Changes_for_printing_PDF\n\n\nBranch: B-0295\nBranch Name: feature/Move_custom_css_and_js_from_the_builder_to_file\n\n\nBranch: B-0296\nBranch Name: feature/ESB-548_Add_custom_label_for_the_link_of_the_certification_component\n\n\nBranch: B-0297\nBranch Name: feature/ESB-543_Hero_banner_with_breadcrumbs_(v3)",
+    "priority": false,
+    "category": 2,
+    "status": "inprogress",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-02-06",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-06T16:28:53.532Z"
+  },
+  {
+    "id": "mlbj7px9771q1nybl",
+    "title": "Check with Ravi if we have Access to Marketing Cloud",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "status": "inprogress",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-02-06",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-06T23:43:59.997Z"
+  },
+  {
+    "id": "mlbjb4h46efpyylw5",
+    "title": "Check with EUVIC the list of what has been deployed",
+    "description": "I could not found all the items on the design system site. Please send a link of the new stuffs",
+    "priority": false,
+    "category": 6,
+    "status": "inprogress",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-02-06",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-06T23:46:38.824Z"
+  },
+  {
+    "id": "mlbjbytq84316f6wv",
+    "title": "Follow up with Christoph Champeu over meetigns",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "status": "inprogress",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-06",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-06T23:47:18.158Z"
+  },
+  {
+    "id": "mlbjg1q5r4oxfbb88",
+    "title": "EIPP - Product Details update",
+    "description": "create variable to make it in rows instead of columns",
+    "priority": false,
+    "category": 2,
+    "status": "inprogress",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-02-06",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-06T23:50:28.541Z"
   }
 ]

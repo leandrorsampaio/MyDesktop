@@ -141,263 +141,13 @@
     ]
   },
   {
-    "id": "ml4z7gg8nru75bmev",
+    "id": "mlbjl842dnxj2egqb",
     "title": "Week 6 (Feb 2-8)",
-    "generatedDate": "2026-02-02T09:37:18.343Z",
+    "generatedDate": "2026-02-06T23:54:30.098Z",
     "weekNumber": 6,
     "dateRange": "Feb 2-8",
     "content": {
       "archived": [
-        {
-          "id": "mkvee9am45ur1kawz",
-          "title": "Meeting With Max",
-          "description": "Check 1:1 about the Branch fixes. \n----\nMax will address with the team. A new release will be made on Thursday. He will use same branch.  I will work in a branch from the branch.",
-          "category": 1
-        },
-        {
-          "id": "mkveeqahnyss9hccb",
-          "title": "PDF Print Rasvan",
-          "description": "Fix page break",
-          "category": 1
-        },
-        {
-          "id": "mkvefn8mz3rzylhfg",
-          "title": "Check Prod: Remove search field from category Search",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkveixdsw4fy6yeje",
-          "title": "Schedule Meeting frontend roadmap",
-          "description": "Meeting between Ariel, Mikael and Balzac. \nAlejandro will arrange the meeting",
-          "category": 1
-        },
-        {
-          "id": "mkvfty0b5lagyp25b",
-          "title": "Check Prod: Design System v1.2",
-          "description": "Then send email with Release report",
-          "category": 1
-        },
-        {
-          "id": "mkwr68mf0xtpl2jpz",
-          "title": "Helping shari with the DAM",
-          "description": "Visual HTML section fixing",
-          "category": 1
-        },
-        {
-          "id": "mkwtjmuo87o2bu0yh",
-          "title": "Meeting with Huron",
-          "description": "Updates and discussion about the overhead with this flosum pipeline. Not possible to PR SCSS file in Flosum.",
-          "category": 1
-        },
-        {
-          "id": "mky0owip7kcrqe4je",
-          "title": "Check EO's proposal (EPIC)",
-          "description": "sent a message to Mikael wit my findings",
-          "category": 1
-        },
-        {
-          "id": "ml05burztfr68xzy1",
-          "title": "Message Mikael about Flosum (+Bart)",
-          "description": "",
-          "category": 1
-        }
-      ],
-      "inProgress": [
-        {
-          "id": "mkvi786b4rlrr3zhs",
-          "title": "ESB-559 - OMS Component bug fixing",
-          "description": "https://solenis.atlassian.net/browse/ESB-559",
-          "category": 3
-        },
-        {
-          "id": "mkwj6usdjcrxt4i9g",
-          "title": "Course Security",
-          "description": "",
-          "category": 2
-        },
-        {
-          "id": "mky8czu9mtpdexy2g",
-          "title": "Dillon: OMS component bug (items per views)",
-          "description": "(alex Message)",
-          "category": 6
-        },
-        {
-          "id": "ml05aspy7ajjalnl2",
-          "title": "Organize with Balzac Frontend Roadmap",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "ml05bbx38li3jktyc",
-          "title": "EIPP Design Adjustments",
-          "description": "",
-          "category": 5
-        },
-        {
-          "id": "ml05d4eu43jqnwqhd",
-          "title": "Re-Check tasks from the 1:1 PPT with Mikael",
-          "description": "",
-          "category": 4
-        },
-        {
-          "id": "ml1ilve3ml21t1tfx",
-          "title": "TICKET FRIDAY EVENING FOR MIKAEL",
-          "description": "",
-          "category": 3
-        }
-      ],
-      "waiting": [
-        {
-          "id": "mkvegluwq6f7jqskk",
-          "title": "Check Prod: ESB-548 custom label certification table",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkvehdxyoigki3ybi",
-          "title": "@solenis emails to EUVIC",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkvfx33rcb2griafj",
-          "title": "Solenis AI Account",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkvil7bq998kqwi3l",
-          "title": "SDS HeroBanner with flag",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkvilrcyp01cdgxf4",
-          "title": "<head> clean up",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkvirz2nimqhq351q",
-          "title": "CR: new image PLP + Hero Banner Flag",
-          "description": "",
-          "category": 1
-        },
-        {
-          "id": "mkwu4iyz2e1utgu2b",
-          "title": "Email Santosh: new Sandobox",
-          "description": "",
-          "category": 1
-        }
-      ],
-      "todo": [
-        {
-          "id": "mkvft4o6e43i4wy1x",
-          "title": "LIT-LWC: Radio Button + Checkbox",
-          "description": "SOL-183, 182, 121, 113, 73,41",
-          "category": 1
-        },
-        {
-          "id": "mkvfwdpgwihlgr2v1",
-          "title": "LIT-LWC List Item",
-          "description": "ask if exists",
-          "category": 1
-        }
-      ]
-    },
-    "notes": ""
-  },
-  {
-    "id": "ml6idzik58l17fmzr",
-    "title": "Week 6 (Feb 2-8)",
-    "generatedDate": "2026-02-03T11:22:01.868Z",
-    "weekNumber": 6,
-    "dateRange": "Feb 2-8",
-    "content": {
-      "archived": [
-        {
-          "id": "mkwu4iyz2e1utgu2b",
-          "title": "Email Santosh: new Sandobox",
-          "description": "Told Mikael is better keep it as it is. Gut feeling will make our life much more difficult",
-          "category": 3
-        },
-        {
-          "id": "mky8czu9mtpdexy2g",
-          "title": "Creating new tickets to Dillon",
-          "description": "Two tickets created: ESB-572 and ESB-571",
-          "category": 3
-        },
-        {
-          "id": "ml1ilve3ml21t1tfx",
-          "title": "ESB-558 - Delivery page documents only showing a single document",
-          "description": "(merge + missing CR + Ticket update)\nTicket done Friday Night fro Mikael + Ravi (30.01)",
-          "category": 2
-        },
-        {
-          "id": "ml5hgnv8fnxyzir8h",
-          "title": "Check Estimations EPIC for bart",
-          "description": "Bart asked me to check my opinion about his estimations\n--------\nBartosz Suchocki\nMate, if you find time, could you check my estimations for adding DS to advic's EPIC components? https://docs.google.com/spreadsheets/d/1r1u0Z64ym0iUUhm6MKlEGEnhDBftUGLkuP_Xv4fVDxk/edit?pli=1&gid=…  And I'd need your gmail address to share\nHey Bro, was cheking this and seems very good analysis. Congratulations. quite well done\n \nAs a gut feeling, seems quite good. Im not sure what you mean by \"md\" in the component injection but seems a fair value. The only thing you should be aware is that advic thing usually has a lot of bugs. And they take forever to fix. \n \nBut then is not your problem, just that this might delay some of the process. \n \nBut if I were you I would add a new row \"communication\" and add some 20% ovr it. Just to be in the safe side. The you could have 40 hours for example, you would have 1 week to finish (or 2 in your new 50% contract)\n \nlet me know if I can help you in anything else.",
-          "category": 2
-        }
-      ],
-      "inProgress": [
-        {
-          "id": "mkwj6usdjcrxt4i9g",
-          "title": "Course Security",
-          "description": "",
-          "category": 6
-        },
-        {
-          "id": "ml05aspy7ajjalnl2",
-          "title": "PLAN: PLP Brainstome with Balzac",
-          "description": "",
-          "category": 5
-        },
-        {
-          "id": "ml05bbx38li3jktyc",
-          "title": "EIPP Design Adjustments",
-          "description": "",
-          "category": 2
-        },
-        {
-          "id": "ml05d4eu43jqnwqhd",
-          "title": "Re-Check tasks from the 1:1 PPT with Mikael",
-          "description": "",
-          "category": 4
-        },
-        {
-          "id": "ml5byas0t9dm4zv1n",
-          "title": "Checking with Rob The list of Stakeholders",
-          "description": "Get a list of people and sectors involved in the E-shop",
-          "category": 3
-        },
-        {
-          "id": "ml5h3fka60uh8iayh",
-          "title": "EMAIL: Huron with the \"missing and question\"",
-          "description": "",
-          "category": 3
-        },
-        {
-          "id": "ml5h41tk1c4hqh4tb",
-          "title": "EMAIL: Ariel and Mikael about Huron",
-          "description": "Draft with Bart",
-          "category": 3
-        },
-        {
-          "id": "ml5hc7kssjyfrw9mw",
-          "title": "ESB-545 New fallback Image",
-          "description": "Alex list the pages to be replaced. Checked if some are missing.",
-          "category": 2
-        },
-        {
-          "id": "ml5l5gab7651jodgz",
-          "title": "Send Anna record meeting",
-          "description": "",
-          "category": 6
-        }
-      ],
-      "waiting": [
         {
           "id": "mkvegluwq6f7jqskk",
           "title": "Check Prod: ESB-548 custom label certification table",
@@ -405,78 +155,22 @@
           "category": 2
         },
         {
-          "id": "mkvehdxyoigki3ybi",
-          "title": "@solenis emails to EUVIC",
-          "description": "Mikael requested with IT. Waiting Feedback",
-          "category": 6
-        },
-        {
-          "id": "mkvfx33rcb2griafj",
-          "title": "Solenis AI Account",
-          "description": "Waiting Mikael's feedback",
+          "id": "mkvfwdpgwihlgr2v1",
+          "title": "LIT-LWC List Item",
+          "description": "ask if exists. SOL-38. It does not exist.",
           "category": 3
-        },
-        {
-          "id": "mkvil7bq998kqwi3l",
-          "title": "SDS HeroBanner with flag",
-          "description": "Waiting ticket from EUVIC to be done",
-          "category": 1
-        },
-        {
-          "id": "mkvilrcyp01cdgxf4",
-          "title": "<head> clean up",
-          "description": "Update first with Deelip",
-          "category": 2
         },
         {
           "id": "mkvirz2nimqhq351q",
           "title": "ESB-543: new image PLP + Hero Banner Flag",
           "description": "Waiting Deployment to Production",
           "category": 2
-        }
-      ],
-      "todo": [
-        {
-          "id": "mkvft4o6e43i4wy1x",
-          "title": "LIT-LWC: Radio Button + Checkbox",
-          "description": "SOL-183, 182, 121, 113, 73,41",
-          "category": 1
         },
         {
-          "id": "mkvfwdpgwihlgr2v1",
-          "title": "LIT-LWC List Item",
-          "description": "ask if exists",
-          "category": 1
-        },
-        {
-          "id": "mkvi786b4rlrr3zhs",
-          "title": "ESB-559 - OMS Component bug fixing",
-          "description": "https://solenis.atlassian.net/browse/ESB-559",
-          "category": 2
-        },
-        {
-          "id": "ml5hd7sxvn4aplch7",
-          "title": "ESB-544: Image not available link wrong in advic component",
-          "description": "",
-          "category": 2
-        }
-      ]
-    },
-    "notes": ""
-  },
-  {
-    "id": "mla2scx86oo712l2b",
-    "title": "Week 6 (Feb 2-8)",
-    "generatedDate": "2026-02-05T23:16:23.276Z",
-    "weekNumber": 6,
-    "dateRange": "Feb 2-8",
-    "content": {
-      "archived": [
-        {
-          "id": "mkvfwdpgwihlgr2v1",
-          "title": "LIT-LWC List Item",
-          "description": "ask if exists. SOL-38. It does not exist.",
-          "category": 3
+          "id": "mkwj6usdjcrxt4i9g",
+          "title": "Course Security",
+          "description": "Done on 06.02",
+          "category": 6
         },
         {
           "id": "mkwu4iyz2e1utgu2b",
@@ -501,6 +195,12 @@
           "title": "EIPP Design Adjustments",
           "description": "Beautification done. Email to Advic sent. Branch created. Email to Balzac about achievements done. CR for the LWC components done.",
           "category": 2
+        },
+        {
+          "id": "ml05d4eu43jqnwqhd",
+          "title": "Re-Check tasks from the 1:1 PPT with Mikael",
+          "description": "",
+          "category": 4
         },
         {
           "id": "ml1ilve3ml21t1tfx",
@@ -543,32 +243,6 @@
           "title": "Send Anna record meeting",
           "description": "Not possible to share outside of the ORG. \n-----\nHey Anna, Bart told to send you the recording of our SOW meeting from last week. \nThe sharing option is disabled for people outside of our Solenis Org email. \nI also can't download it because I'm not the meeting organizer. \n \nCould you talk to Alejandro. Once he is the organizer he might be able to share the video with you. \n \nThanks!",
           "category": 6
-        }
-      ],
-      "inProgress": [
-        {
-          "id": "mkvft4o6e43i4wy1x",
-          "title": "LIT-LWC: Radio Button + Checkbox",
-          "description": "SOL-183, 182, 121, 113, 73,41",
-          "category": 1
-        },
-        {
-          "id": "mkwj6usdjcrxt4i9g",
-          "title": "Course Security",
-          "description": "",
-          "category": 6
-        },
-        {
-          "id": "ml05d4eu43jqnwqhd",
-          "title": "Re-Check tasks from the 1:1 PPT with Mikael",
-          "description": "",
-          "category": 4
-        },
-        {
-          "id": "ml78dhdfn9co4cm69",
-          "title": "Product PDF Export",
-          "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs",
-          "category": 2
         },
         {
           "id": "ml99zvzyvrg96be1v",
@@ -577,13 +251,51 @@
           "category": 6
         }
       ],
-      "waiting": [
+      "inProgress": [
         {
-          "id": "mkvegluwq6f7jqskk",
-          "title": "Check Prod: ESB-548 custom label certification table",
-          "description": "waiting deployment to prod",
+          "id": "mkvi786b4rlrr3zhs",
+          "title": "ESB-559 - OMS Component bug fixing",
+          "description": "https://solenis.atlassian.net/browse/ESB-559",
           "category": 2
         },
+        {
+          "id": "ml78dhdfn9co4cm69",
+          "title": "Product PDF Export",
+          "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs. Necessary fix the Macros in the excell template. Need further investigation.",
+          "category": 2
+        },
+        {
+          "id": "mlb3o61op8xirc59u",
+          "title": "Check Branches on Production",
+          "description": "Branch B-0294\nFeature/ESB-558_Delivery_page_documents_only_showing_a_single_document\n\n\nBranch: B-0293\nBranch Name: feature/Product_Export_CSS_Changes_for_printing_PDF\n\n\nBranch: B-0295\nBranch Name: feature/Move_custom_css_and_js_from_the_builder_to_file\n\n\nBranch: B-0296\nBranch Name: feature/ESB-548_Add_custom_label_for_the_link_of_the_certification_component\n\n\nBranch: B-0297\nBranch Name: feature/ESB-543_Hero_banner_with_breadcrumbs_(v3)",
+          "category": 2
+        },
+        {
+          "id": "mlbj7px9771q1nybl",
+          "title": "Check with Ravi if we have Access to Marketing Cloud",
+          "description": "",
+          "category": 6
+        },
+        {
+          "id": "mlbjb4h46efpyylw5",
+          "title": "Check with EUVIC the list of what has been deployed",
+          "description": "I could not found all the items on the design system site. Please send a link of the new stuffs",
+          "category": 6
+        },
+        {
+          "id": "mlbjbytq84316f6wv",
+          "title": "Follow up with Christoph Champeu over meetigns",
+          "description": "",
+          "category": 6
+        },
+        {
+          "id": "mlbjg1q5r4oxfbb88",
+          "title": "EIPP - Product Details update",
+          "description": "create variable to make it in rows instead of columns",
+          "category": 2
+        }
+      ],
+      "waiting": [
         {
           "id": "mkvehdxyoigki3ybi",
           "title": "@solenis emails to EUVIC",
@@ -607,20 +319,14 @@
           "title": "<head> clean up",
           "description": "Update first with Deelip",
           "category": 2
-        },
-        {
-          "id": "mkvirz2nimqhq351q",
-          "title": "ESB-543: new image PLP + Hero Banner Flag",
-          "description": "Waiting Deployment to Production",
-          "category": 2
         }
       ],
       "todo": [
         {
-          "id": "mkvi786b4rlrr3zhs",
-          "title": "ESB-559 - OMS Component bug fixing",
-          "description": "https://solenis.atlassian.net/browse/ESB-559",
-          "category": 2
+          "id": "mkvft4o6e43i4wy1x",
+          "title": "LIT-LWC: Radio Button + Checkbox",
+          "description": "SOL-183, 182, 121, 113, 73,41",
+          "category": 1
         },
         {
           "id": "ml5hd7sxvn4aplch7",
@@ -630,6 +336,6 @@
         }
       ]
     },
-    "notes": ""
+    "notes": "time report for the week 6\nCICD - 20% (communication / Operations)\nDesign System: 20%\nECOM Team:  40%\nEIPP: 10%\n"
   }
 ]
