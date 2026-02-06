@@ -391,12 +391,16 @@
     "title": "LIT-LWC: Radio Button + Checkbox",
     "description": "SOL-183, 182, 121, 113, 73,41",
     "priority": false,
-    "status": "inprogress",
-    "position": 4,
+    "status": "todo",
+    "position": 2,
     "log": [
       {
         "date": "2026-02-05",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from In Progress to To Do"
       }
     ],
     "createdDate": "2026-01-26T17:24:21.606Z"
@@ -434,7 +438,7 @@
     "description": "ask if exists. SOL-38. It does not exist.",
     "priority": false,
     "status": "done",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-02-05",
@@ -640,7 +644,7 @@
     "description": "Told Mikael is better keep it as it is. Gut feeling will make our life much more difficult",
     "priority": false,
     "status": "done",
-    "position": 8,
+    "position": 9,
     "log": [
       {
         "date": "2026-01-27",
@@ -683,7 +687,7 @@
     "description": "Two tickets created: ESB-572 and ESB-571",
     "priority": false,
     "status": "done",
-    "position": 3,
+    "position": 4,
     "log": [
       {
         "date": "2026-01-28",
@@ -711,7 +715,7 @@
     "description": "I shared my Miro. Balzac will find a for an intermediator. Nothing needed from my side.",
     "priority": true,
     "status": "done",
-    "position": 10,
+    "position": 11,
     "log": [
       {
         "date": "2026-01-30",
@@ -735,7 +739,7 @@
     "description": "Beautification done. Email to Advic sent. Branch created. Email to Balzac about achievements done. CR for the LWC components done.",
     "priority": true,
     "status": "done",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-01-30",
@@ -802,7 +806,7 @@
     "description": "(merge + missing CR + Ticket update)\nTicket done Friday Night fro Mikael + Ravi (30.01)",
     "priority": false,
     "status": "done",
-    "position": 7,
+    "position": 8,
     "log": [
       {
         "date": "2026-01-30",
@@ -831,7 +835,7 @@
     "priority": false,
     "category": 3,
     "status": "done",
-    "position": 11,
+    "position": 12,
     "log": [
       {
         "date": "2026-02-02",
@@ -859,7 +863,7 @@
     "priority": false,
     "category": 3,
     "status": "done",
-    "position": 5,
+    "position": 6,
     "log": [
       {
         "date": "2026-02-02",
@@ -879,7 +883,7 @@
     "priority": false,
     "category": 3,
     "status": "done",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-02-02",
@@ -903,7 +907,7 @@
     "priority": false,
     "category": 2,
     "status": "done",
-    "position": 4,
+    "position": 5,
     "log": [
       {
         "date": "2026-02-02",
@@ -947,7 +951,7 @@
     "priority": false,
     "category": 2,
     "status": "done",
-    "position": 9,
+    "position": 10,
     "log": [
       {
         "date": "2026-02-02",
@@ -967,7 +971,7 @@
     "priority": false,
     "category": 6,
     "status": "done",
-    "position": 6,
+    "position": 7,
     "log": [
       {
         "date": "2026-02-02",
@@ -1002,12 +1006,16 @@
     "description": "",
     "priority": false,
     "category": 6,
-    "status": "inprogress",
+    "status": "done",
     "position": 0,
     "log": [
       {
         "date": "2026-02-05",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-06",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-02-05T09:50:25.726Z"

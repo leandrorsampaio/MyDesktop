@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.2.0
-**Last Updated:** 2026-01-31
+**Version:** 2.3.0
+**Last Updated:** 2026-02-06
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.3.0   | 2026-02-06 | Migrated Reports and Archived Tasks modals to `<modal-dialog>` component with `size="large"` attribute; fixed category/priority filters to query through Shadow DOM; added complete modal styling to styles.css |
 | 2.2.0   | 2026-01-31 | Added delete report: × button on each report in View Reports modal, `DELETE /api/reports/:id` endpoint |
 | 2.1.0   | 2026-01-31 | Complete BEM refactoring: camelCase BEM class names (`.blockName__elementName`), modifier classes as separate `.--modifierName`, JS hooks via `.js-camelCase` classes, all IDs removed and replaced with `js-` class selectors, `getElementById` replaced with `querySelector` throughout |
 | 2.0.0   | 2026-01-31 | Added priority filter button in toolbar, Crisis Mode (hamburger menu): shows only priority tasks, red border, hides toolbar/done column/checklist via visibility, red favicon, title "!!!" |
@@ -501,7 +502,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `renderCategoryFilters()`   | Renders filter buttons in header toolbar from CATEGORIES |
 | `toggleCategoryFilter(id)`  | Toggles a category filter on/off, updates button state and cards |
 | `togglePriorityFilter()`    | Toggles priority-only filter on/off                      |
-| `applyAllFilters()`         | Applies all active filters (category + priority) via `--filtered` class |
+| `applyAllFilters()`         | Applies all active filters (category + priority) via `hidden` attribute. Queries through kanban-column Shadow DOMs to find task-cards. |
 | `toggleCrisisMode()`        | Toggles crisis mode on/off (priority filter, red border, hide elements, favicon, title) |
 | `generateRedStarFavicon()`  | Creates a red star favicon dynamically via canvas         |
 | `setFavicon(url)`           | Updates the page favicon link element                     |
@@ -510,11 +511,14 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `handleTaskFormSubmit(e)`   | Form submit handler (create or update)           |
 | `debouncedSaveNotes()`      | 500ms debounce for notes auto-save               |
 | `checkDailyReset()`         | Resets recurrent task checkboxes after 6 AM      |
+| `openChecklistModal()`      | Opens the Edit Daily Checklist modal             |
+| `renderChecklistEditor()`   | Renders editable checklist items in modal        |
+| `saveChecklist()`           | Saves checklist config to localStorage and refreshes component |
 
 ### Key Constants in `app.js`
 
 ```javascript
-const STATUS_COLUMNS = { 'todo': '.js-todoList', 'wait': '.js-waitList', 'inprogress': '.js-inprogressList', 'done': '.js-doneList' };
+const STATUS_COLUMNS = { 'todo': 'kanban-column[data-status="todo"]', 'wait': 'kanban-column[data-status="wait"]', 'inprogress': 'kanban-column[data-status="inprogress"]', 'done': 'kanban-column[data-status="done"]' };
 const CATEGORIES = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
 ```
 
@@ -562,13 +566,17 @@ All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()
 
 ## Modals Reference
 
-| Modal JS hook          | Purpose                      | Trigger                              |
-|------------------------|------------------------------|--------------------------------------|
-| `.js-taskModal`        | Add/Edit task                | [+ Add Task] button / [Edit] on card |
-| `.js-reportsModal`     | View reports list & detail   | Hamburger menu → View Reports        |
-| `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks |
-| `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      |
-| `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist |
+| Modal JS hook          | Purpose                      | Trigger                              | Implementation |
+|------------------------|------------------------------|--------------------------------------|----------------|
+| `.js-taskModal`        | Add/Edit task                | [+ Add Task] button / [Edit] on card | `<modal-dialog>` component |
+| `.js-reportsModal`     | View reports list & detail   | Hamburger menu → View Reports        | `<modal-dialog size="large">` component |
+| `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks | `<modal-dialog size="large">` component |
+| `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      | `<div class="modal">` (legacy) |
+| `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist | `<div class="modal">` (legacy) |
+
+**Modal implementations:**
+- **`<modal-dialog>` component:** Uses Shadow DOM, handles its own close button, backdrop click, and ESC key. Supports `size` attribute (`"large"` or `"small"`). Uses `.open()` and `.close()` methods.
+- **Legacy `<div class="modal">`:** Uses `.--active` class toggle, requires manual event listeners in `app.js` for closing.
 
 All modals close on: close button (×), Cancel button, clicking backdrop, pressing ESC.
 
