@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.7.0
+**Version:** 2.8.0
 **Last Updated:** 2026-02-07
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.8.0   | 2026-02-07 | Code maintainability: extracted magic numbers to constants.js (CHECKLIST_RESET_HOUR, DEBOUNCE_DELAY_MS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_PORT); added JSDoc comments to key functions in app.js; server.js now uses PORT env variable with fallback |
 | 2.7.0   | 2026-02-07 | Added comprehensive "Code Guidelines" section documenting coding standards, patterns, and anti-patterns to prevent common issues |
 | 2.6.0   | 2026-02-07 | Code consistency: created `toast-notification` component for user feedback; migrated Confirm and Checklist modals to `<modal-dialog>` component; removed window object functions and inline HTML handlers in favor of event delegation; replaced all `alert()` calls with toaster notifications |
 | 2.5.0   | 2026-02-07 | Code cleanup: removed console.log statements from production code; fixed deprecated `substr()` to `substring()`; fixed crisis mode CSS selectors to target custom elements (`kanban-column`, `daily-checklist`); removed dead CSS rules targeting Shadow DOM internals |
@@ -114,7 +115,15 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 -   **Loading:** The component's `.js` file is its entry point. It uses the `fetch()` API at runtime to load its own `.html` and `.css` files as text. It then injects this content into its Shadow DOM.
 
 **Shared Modules:**
--   **`/public/js/constants.js`:** Single source of truth for CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS. Imported by app.js and components.
+-   **`/public/js/constants.js`:** Single source of truth for shared constants:
+    - `CATEGORIES` — Category ID to label mapping
+    - `STATUS_COLUMNS` — Column status to CSS selector mapping
+    - `DEFAULT_CHECKLIST_ITEMS` — Default daily checklist items
+    - `DEFAULT_PORT` — Server port (3001)
+    - `CHECKLIST_RESET_HOUR` — Hour of day when checklist resets (6)
+    - `DEBOUNCE_DELAY_MS` — Debounce delay for auto-save (500ms)
+    - `MAX_GRADIENT_STEPS` — Maximum gradient color steps (20)
+    - `LIGHT_TEXT_THRESHOLD` — Gradient index threshold for light text (12)
 -   **`/public/js/utils.js`:** Shared utility functions (escapeHtml, getWeekNumber, formatDate). Imported where needed.
 -   **Note:** `server.js` has its own copy of CATEGORIES and getWeekNumber (documented with comments) because Node.js cannot import ES modules from `/public` without additional setup.
 -   **Registration:** The `.js` file defines and registers a custom element (e.g., `<custom-button>`) using `customElements.define()`.
@@ -125,6 +134,10 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 ```bash
 node server.js
 # → http://localhost:3001
+
+# With custom port:
+PORT=4000 node server.js
+# → http://localhost:4000
 ```
 
 ---

@@ -391,7 +391,7 @@ if (title.length > MAX_TITLE_LENGTH) {
 
 ## 6. Maintainability
 
-### 6.1 Large app.js file (1090+ lines)
+### 6.1 Large app.js file (1090+ lines) - DEFERRED
 
 **Impact:** Hard to navigate, understand, and maintain.
 
@@ -411,7 +411,7 @@ Use ES modules to import/export.
 
 ---
 
-### 6.2 Magic numbers throughout codebase
+### 6.2 Magic numbers throughout codebase ✅ RESOLVED
 
 **Examples:**
 - `6` - checklist reset hour (`daily-checklist.js:71`)
@@ -420,47 +420,46 @@ Use ES modules to import/export.
 - `12` - light/dark text threshold (`app.js:173`)
 - `3001` - server port (`server.js:6`)
 
-**Solution:** Create a config object:
+**Solution:** Added named constants to `/public/js/constants.js`:
 ```javascript
-const CONFIG = {
-    CHECKLIST_RESET_HOUR: 6,
-    DEBOUNCE_DELAY_MS: 500,
-    MAX_GRADIENT_STEPS: 20,
-    LIGHT_TEXT_THRESHOLD: 12,
-    SERVER_PORT: process.env.PORT || 3001
-};
+export const DEFAULT_PORT = 3001;
+export const CHECKLIST_RESET_HOUR = 6;
+export const DEBOUNCE_DELAY_MS = 500;
+export const MAX_GRADIENT_STEPS = 20;
+export const LIGHT_TEXT_THRESHOLD = 12;
 ```
+
+Components now import and use these constants instead of magic numbers.
 
 ---
 
-### 6.3 No JSDoc comments
+### 6.3 No JSDoc comments ✅ RESOLVED
 
 **Impact:** New contributors won't understand function purposes, parameters, or return values.
 
-**Solution:** Add JSDoc to key functions:
-```javascript
-/**
- * Creates a task card element with proper styling and event handlers
- * @param {Object} task - The task data object
- * @param {number} position - Zero-based position in column
- * @param {number} totalInColumn - Total tasks in this column
- * @returns {HTMLElement} The configured task-card custom element
- */
-function createTaskCard(task, position, totalInColumn) { ... }
-```
+**Solution:** Added JSDoc comments to key functions in `app.js`:
+- `getTaskGradient()`, `shouldUseLightText()` - Color management
+- `fetchTasks()`, `createTask()`, `updateTask()`, `deleteTask()`, `moveTask()` - API functions
+- `generateReport()`, `archiveTasks()` - Report/archive operations
+- `createTaskCard()`, `renderAllColumns()`, `renderColumn()` - Render functions
+- `applyAllFilters()`, `toggleCategoryFilter()`, `togglePriorityFilter()` - Filter functions
+- `toggleCrisisMode()`, `generateRedStarFavicon()`, `setFavicon()` - Crisis mode
+- `renderReportSection()` - Report rendering
 
 ---
 
-### 6.4 Hardcoded server port
+### 6.4 Hardcoded server port ✅ RESOLVED
 
 **File:** `server.js:6`
 
-**Current:** `const PORT = 3001;`
+**Previous:** `const PORT = 3001;`
 
-**Solution:** Use environment variable with fallback:
+**Solution:** Now uses environment variable with fallback:
 ```javascript
 const PORT = process.env.PORT || 3001;
 ```
+
+Additionally, `DEFAULT_PORT` is exported from `/public/js/constants.js` for client-side reference.
 
 ---
 
@@ -530,22 +529,22 @@ app.use('/api/', rateLimit({ windowMs: 60000, max: 100 }));
 
 ## Quick Wins (Low Effort, High Impact)
 
-1. **Remove console.log statements** - 5 minutes
-2. **Fix deprecated substr()** - 1 minute
+1. ~~**Remove console.log statements** - 5 minutes~~ ✅ DONE (v2.5.0)
+2. ~~**Fix deprecated substr()** - 1 minute~~ ✅ DONE (v2.5.0)
 3. **Cache component templates** - 15 minutes per component
 4. **Remove double applyAllFilters() call** - 2 minutes
-5. **Fix crisis mode CSS selectors** - 5 minutes
-6. **Add environment variable for PORT** - 2 minutes
+5. ~~**Fix crisis mode CSS selectors** - 5 minutes~~ ✅ DONE (v2.5.0)
+6. ~~**Add environment variable for PORT** - 2 minutes~~ ✅ DONE (v2.8.0)
 7. **Combine getTaskGradient/shouldUseLightText** - 10 minutes
 
 ---
 
 ## Recommended Priority Order
 
-1. **High Priority (Bugs/Breaking):** Items 4.3 (crisis mode broken)
+1. ~~**High Priority (Bugs/Breaking):** Items 4.3 (crisis mode broken)~~ ✅ DONE
 2. **Medium Priority (Performance):** Items 3.1 (template caching), 3.2 (double filtering)
-3. **Medium Priority (Code Quality):** Items 1.1-1.4 (duplication), 2.1-2.4 (consistency)
-4. **Lower Priority (Polish):** Items 4.1, 4.2, 6.1-6.4
+3. ~~**Medium Priority (Code Quality):** Items 1.1-1.4 (duplication), 2.1-2.4 (consistency)~~ ✅ DONE
+4. **Lower Priority (Polish):** ~~Items 4.1, 4.2~~ ✅ DONE, 6.1 (deferred), ~~6.2-6.4~~ ✅ DONE
 
 ---
 

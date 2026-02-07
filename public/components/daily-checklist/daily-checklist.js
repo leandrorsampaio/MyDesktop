@@ -1,4 +1,4 @@
-import { DEFAULT_CHECKLIST_ITEMS } from '../../js/constants.js';
+import { DEFAULT_CHECKLIST_ITEMS, CHECKLIST_RESET_HOUR } from '../../js/constants.js';
 import { escapeHtml } from '../../js/utils.js';
 
 class DailyChecklist extends HTMLElement {
@@ -62,11 +62,11 @@ class DailyChecklist extends HTMLElement {
     checkDailyReset() {
         const lastResetStr = localStorage.getItem('lastRecurrentReset');
         const now = new Date();
-        const todayAt6AM = new Date(now);
-        todayAt6AM.setHours(6, 0, 0, 0);
+        const todayAtResetHour = new Date(now);
+        todayAtResetHour.setHours(CHECKLIST_RESET_HOUR, 0, 0, 0);
 
-        if (now.getHours() < 6) {
-            todayAt6AM.setDate(todayAt6AM.getDate() - 1);
+        if (now.getHours() < CHECKLIST_RESET_HOUR) {
+            todayAtResetHour.setDate(todayAtResetHour.getDate() - 1);
         }
 
         let shouldReset = false;
@@ -74,7 +74,7 @@ class DailyChecklist extends HTMLElement {
             shouldReset = true;
         } else {
             const lastReset = new Date(lastResetStr);
-            if (lastReset < todayAt6AM) {
+            if (lastReset < todayAtResetHour) {
                 shouldReset = true;
             }
         }

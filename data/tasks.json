@@ -396,7 +396,7 @@
     "description": "SOL-183, 182, 121, 113, 73,41",
     "priority": false,
     "status": "todo",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-02-05",
@@ -947,7 +947,7 @@
     "priority": false,
     "category": 2,
     "status": "todo",
-    "position": 1,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-02",

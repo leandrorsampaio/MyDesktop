@@ -1,5 +1,5 @@
 // Task Tracker Application
-import { CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS } from './js/constants.js';
+import { CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD } from './js/constants.js';
 import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
 (function() {
@@ -120,39 +120,59 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Color Management
     // ==========================================
+
+    /**
+     * Calculates the CSS gradient variable for a task card based on its position.
+     * @param {string} status - The task status (todo, wait, inprogress, done)
+     * @param {number} position - Zero-based position of the task in its column
+     * @param {number} totalInColumn - Total number of tasks in the column
+     * @returns {string} CSS variable reference (e.g., "var(--todo-gradient-5)")
+     */
     function getTaskGradient(status, position, totalInColumn) {
-        const maxGradients = 20;
         let gradientIndex;
 
-        if (totalInColumn <= maxGradients) {
+        if (totalInColumn <= MAX_GRADIENT_STEPS) {
             gradientIndex = position;
         } else {
-            // Distribute evenly across 20 gradients
-            gradientIndex = Math.floor((position / totalInColumn) * maxGradients);
+            // Distribute evenly across gradient steps
+            gradientIndex = Math.floor((position / totalInColumn) * MAX_GRADIENT_STEPS);
         }
 
-        gradientIndex = Math.min(gradientIndex, maxGradients - 1);
+        gradientIndex = Math.min(gradientIndex, MAX_GRADIENT_STEPS - 1);
 
         return `var(--${status}-gradient-${gradientIndex})`;
     }
 
+    /**
+     * Determines if light text should be used on a task card based on its gradient.
+     * Darker gradients (lower index) need light text for readability.
+     * @param {string} status - The task status (todo, wait, inprogress, done)
+     * @param {number} position - Zero-based position of the task in its column
+     * @param {number} totalInColumn - Total number of tasks in the column
+     * @returns {boolean} True if light text should be used, false for dark text
+     */
     function shouldUseLightText(status, position, totalInColumn) {
-        const maxGradients = 20;
         let gradientIndex;
 
-        if (totalInColumn <= maxGradients) {
+        if (totalInColumn <= MAX_GRADIENT_STEPS) {
             gradientIndex = position;
         } else {
-            gradientIndex = Math.floor((position / totalInColumn) * maxGradients);
+            gradientIndex = Math.floor((position / totalInColumn) * MAX_GRADIENT_STEPS);
         }
 
         // Use light text for darker gradients (lower index)
-        return gradientIndex < 12;
+        return gradientIndex < LIGHT_TEXT_THRESHOLD;
     }
 
     // ==========================================
     // API Functions
     // ==========================================
+
+    /**
+     * Fetches all active tasks from the server and re-renders all columns.
+     * Updates the global tasks array with the fetched data.
+     * @returns {Promise<void>}
+     */
     async function fetchTasks() {
         try {
             const response = await fetch('/api/tasks');
@@ -163,6 +183,15 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Creates a new task via the API and adds it to the todo column.
+     * @param {Object} taskData - The task data to create
+     * @param {string} taskData.title - Task title (required)
+     * @param {string} [taskData.description] - Task description
+     * @param {boolean} [taskData.priority] - Whether this is a priority task
+     * @param {number} [taskData.category] - Category ID (1-6)
+     * @returns {Promise<Object|undefined>} The created task object, or undefined on error
+     */
     async function createTask(taskData) {
         try {
             const response = await fetch('/api/tasks', {
@@ -179,6 +208,16 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Updates an existing task via the API.
+     * @param {string} id - The task ID to update
+     * @param {Object} taskData - The fields to update
+     * @param {string} [taskData.title] - New title
+     * @param {string} [taskData.description] - New description
+     * @param {boolean} [taskData.priority] - New priority status
+     * @param {number} [taskData.category] - New category ID (1-6)
+     * @returns {Promise<Object|undefined>} The updated task object, or undefined on error
+     */
     async function updateTask(id, taskData) {
         try {
             const response = await fetch(`/api/tasks/${id}`, {
@@ -198,6 +237,11 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Deletes a task permanently via the API.
+     * @param {string} id - The task ID to delete
+     * @returns {Promise<void>}
+     */
     async function deleteTask(id) {
         try {
             await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
@@ -208,6 +252,13 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Moves a task to a different column or reorders within the same column.
+     * @param {string} id - The task ID to move
+     * @param {string} newStatus - Target column status (todo, wait, inprogress, done)
+     * @param {number} newPosition - Zero-based position in the target column
+     * @returns {Promise<Object|undefined>} The moved task object, or undefined on error
+     */
     async function moveTask(id, newStatus, newPosition) {
         try {
             const response = await fetch(`/api/tasks/${id}/move`, {
@@ -223,6 +274,11 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Generates a report snapshot of all current tasks via the API.
+     * Does not modify or archive any tasks.
+     * @returns {Promise<Object|null>} The generated report object, or null on error
+     */
     async function generateReport() {
         try {
             const response = await fetch('/api/reports/generate', {
@@ -244,6 +300,11 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Archives all completed (done) tasks via the API.
+     * Moves tasks from tasks.json to archived-tasks.json.
+     * @returns {Promise<Object|null>} Result with archivedCount, or null on error
+     */
     async function archiveTasks() {
         try {
             const response = await fetch('/api/tasks/archive', {
@@ -312,11 +373,20 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Render Functions
     // ==========================================
+
+    /**
+     * Re-renders all kanban columns and applies active filters.
+     * Called after data changes that affect multiple columns.
+     */
     function renderAllColumns() {
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
         applyAllFilters();
     }
 
+    /**
+     * Renders a single kanban column with its tasks.
+     * @param {string} status - The column status to render (todo, wait, inprogress, done)
+     */
     function renderColumn(status) {
         const columnEl = document.querySelector(STATUS_COLUMNS[status]);
         const columnTasks = tasks
@@ -332,6 +402,19 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         }
     }
 
+    /**
+     * Creates a task-card custom element with proper styling and event handlers.
+     * @param {Object} task - The task data object
+     * @param {string} task.id - Unique task identifier
+     * @param {string} task.title - Task title
+     * @param {string} [task.description] - Task description
+     * @param {boolean} [task.priority] - Whether this is a priority task
+     * @param {number} [task.category] - Category ID (1-6)
+     * @param {string} task.status - Current status (todo, wait, inprogress, done)
+     * @param {number} position - Zero-based position in the column
+     * @param {number} totalInColumn - Total number of tasks in the column
+     * @returns {HTMLElement} The configured task-card custom element
+     */
     function createTaskCard(task, position, totalInColumn) {
         const card = document.createElement('task-card');
         
@@ -372,6 +455,10 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Category Filters
     // ==========================================
+
+    /**
+     * Renders category filter buttons in the toolbar from CATEGORIES constant.
+     */
     function renderCategoryFilters() {
         const container = elements.categoryFilters;
         container.innerHTML = '';
@@ -389,6 +476,11 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         });
     }
 
+    /**
+     * Toggles a category filter on or off.
+     * When active, only tasks with matching categories are shown.
+     * @param {number} categoryId - The category ID to toggle (1-6)
+     */
     function toggleCategoryFilter(categoryId) {
         if (activeCategoryFilters.has(categoryId)) {
             activeCategoryFilters.delete(categoryId);
@@ -404,12 +496,21 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         applyAllFilters();
     }
 
+    /**
+     * Toggles the priority filter on or off.
+     * When active, only tasks with priority=true are shown.
+     */
     function togglePriorityFilter() {
         priorityFilterActive = !priorityFilterActive;
         elements.priorityFilterBtn.classList.toggle('--active', priorityFilterActive);
         applyAllFilters();
     }
 
+    /**
+     * Applies all active filters (category and priority) to task cards.
+     * Queries through kanban-column Shadow DOMs to find task-card elements.
+     * Cards that don't match active filters are hidden via the hidden attribute.
+     */
     function applyAllFilters() {
         // Task cards are inside kanban-column Shadow DOMs, so we need to query through them
         const columns = document.querySelectorAll('kanban-column');
@@ -441,6 +542,12 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Crisis Mode
     // ==========================================
+
+    /**
+     * Generates a red star favicon as a data URL using canvas.
+     * Used as the favicon during crisis mode.
+     * @returns {string} Data URL of the red star PNG image
+     */
     function generateRedStarFavicon() {
         const canvas = document.createElement('canvas');
         canvas.width = 64;
@@ -465,6 +572,10 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         return canvas.toDataURL('image/png');
     }
 
+    /**
+     * Updates the page favicon to the specified URL.
+     * @param {string} url - The favicon URL (can be a path or data URL)
+     */
     function setFavicon(url) {
         let link = document.querySelector('link[rel="icon"]');
         if (!link) {
@@ -476,6 +587,11 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         link.href = url;
     }
 
+    /**
+     * Toggles crisis mode on or off.
+     * Crisis mode: activates priority filter, red border, hides toolbar/done column/checklist,
+     * changes title to "!!!", and shows red star favicon.
+     */
     function toggleCrisisMode() {
         closeMenu();
         crisisModeActive = !crisisModeActive;
@@ -733,6 +849,12 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         });
     }
 
+    /**
+     * Renders a section of a report with tasks grouped by category.
+     * @param {string} title - Section title (e.g., "Completed Tasks")
+     * @param {Array<Object>} taskList - Array of task objects to display
+     * @returns {string} HTML string for the report section
+     */
     function renderReportSection(title, taskList) {
         if (!taskList || taskList.length === 0) {
             return `

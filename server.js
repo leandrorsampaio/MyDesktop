@@ -3,7 +3,13 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const app = express();
-const PORT = 3001;
+
+/**
+ * Server port configuration.
+ * Uses PORT environment variable if set, otherwise defaults to 3001.
+ * Note: Default value (3001) is also defined in /public/js/constants.js as DEFAULT_PORT.
+ */
+const PORT = process.env.PORT || 3001;
 
 // Data file paths
 const DATA_DIR = path.join(__dirname, 'data');

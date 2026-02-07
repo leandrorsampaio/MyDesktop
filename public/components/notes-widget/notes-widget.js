@@ -1,3 +1,5 @@
+import { DEBOUNCE_DELAY_MS } from '../../js/constants.js';
+
 class NotesWidget extends HTMLElement {
     constructor() {
         super();
@@ -81,7 +83,7 @@ class NotesWidget extends HTMLElement {
         this.saveNotesTimeout = setTimeout(() => {
             this.notes.content = this.notesTextarea.value;
             this.saveNotes();
-        }, 500);
+        }, DEBOUNCE_DELAY_MS);
     }
 }
 
