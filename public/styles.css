@@ -1046,18 +1046,24 @@ body {
     color: var(--text-primary);
 }
 
-/* Confirm Modal overrides */
-.js-confirmModal p {
-    padding: 0 32px;
+/* ==========================================
+   Block: confirmDialog
+   ========================================== */
+.confirmDialog {
+    padding: 0 32px 32px 32px;
+}
+
+.confirmDialog__message {
     font-size: 15px;
     color: var(--text-secondary);
     line-height: 1.6;
+    margin-bottom: 24px;
 }
 
-.js-confirmModal .modal__actions {
-    padding: 24px 32px 32px 32px;
-    border-top: none;
+.confirmDialog__actions {
+    display: flex;
     justify-content: flex-end;
+    gap: 12px;
 }
 
 /* ==========================================

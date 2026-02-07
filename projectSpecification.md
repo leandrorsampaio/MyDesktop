@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.5.0
+**Version:** 2.6.0
 **Last Updated:** 2026-02-07
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.6.0   | 2026-02-07 | Code consistency: created `toast-notification` component for user feedback; migrated Confirm and Checklist modals to `<modal-dialog>` component; removed window object functions and inline HTML handlers in favor of event delegation; replaced all `alert()` calls with toaster notifications |
 | 2.5.0   | 2026-02-07 | Code cleanup: removed console.log statements from production code; fixed deprecated `substr()` to `substring()`; fixed crisis mode CSS selectors to target custom elements (`kanban-column`, `daily-checklist`); removed dead CSS rules targeting Shadow DOM internals |
 | 2.4.0   | 2026-02-07 | Refactored shared code: created `/public/js/constants.js` (CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS) and `/public/js/utils.js` (escapeHtml, getWeekNumber, formatDate); converted app.js to ES module; eliminated code duplication across components |
 | 2.3.0   | 2026-02-06 | Migrated Reports and Archived Tasks modals to `<modal-dialog>` component with `size="large"` attribute; fixed category/priority filters to query through Shadow DOM; added complete modal styling to styles.css |
@@ -96,10 +97,14 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
         │   ├── notes-widget.js
         │   ├── notes-widget.html
         │   └── notes-widget.css
-        └── kanban-column/
-            ├── kanban-column.js
-            ├── kanban-column.html
-            └── kanban-column.css
+        ├── kanban-column/
+        │   ├── kanban-column.js
+        │   ├── kanban-column.html
+        │   └── kanban-column.css
+        └── toast-notification/
+            ├── toast-notification.js
+            ├── toast-notification.html
+            └── toast-notification.css
 ```
 
 **Component Architecture:**
@@ -581,14 +586,33 @@ All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()
 | `.js-taskModal`        | Add/Edit task                | [+ Add Task] button / [Edit] on card | `<modal-dialog>` component |
 | `.js-reportsModal`     | View reports list & detail   | Hamburger menu → View Reports        | `<modal-dialog size="large">` component |
 | `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks | `<modal-dialog size="large">` component |
-| `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      | `<div class="modal">` (legacy) |
-| `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist | `<div class="modal">` (legacy) |
+| `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      | `<modal-dialog size="small">` component |
+| `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist | `<modal-dialog size="large">` component |
 
-**Modal implementations:**
-- **`<modal-dialog>` component:** Uses Shadow DOM, handles its own close button, backdrop click, and ESC key. Supports `size` attribute (`"large"` or `"small"`). Uses `.open()` and `.close()` methods.
-- **Legacy `<div class="modal">`:** Uses `.--active` class toggle, requires manual event listeners in `app.js` for closing.
+**Modal implementation:**
+All modals use the `<modal-dialog>` component which provides Shadow DOM encapsulation, handles its own close button, backdrop click, and ESC key. Supports `size` attribute (`"large"` or `"small"`). Uses `.open()` and `.close()` methods.
 
 All modals close on: close button (×), Cancel button, clicking backdrop, pressing ESC.
+
+## Toast Notifications
+
+The `<toast-notification>` component provides user feedback for operations. It's included in `index.html` as a single instance:
+
+```html
+<toast-notification class="js-toaster"></toast-notification>
+```
+
+**Usage in app.js:**
+```javascript
+elements.toaster.success('Task created successfully');
+elements.toaster.error('Failed to save changes');
+elements.toaster.warning('Title is required');
+elements.toaster.info('No completed tasks to archive');
+```
+
+**Toast types:** success (green), error (red), warning (yellow), info (beige)
+**Duration:** 4 seconds default (configurable per-call)
+**Features:** Stacking (multiple toasts can show at once), slide-in/out animations, close button, auto-dismiss
 
 ---
 

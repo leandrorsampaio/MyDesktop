@@ -76,11 +76,13 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         // Checklist Modal
         editChecklistBtn: document.querySelector('.js-editChecklistBtn'),
         checklistModal: document.querySelector('.js-checklistModal'),
-        checklistModalClose: document.querySelector('.js-checklistModalClose'),
         checklistItemsContainer: document.querySelector('.js-checklistItemsContainer'),
         addChecklistItemBtn: document.querySelector('.js-addChecklistItemBtn'),
         checklistCancelBtn: document.querySelector('.js-checklistCancelBtn'),
-        checklistSaveBtn: document.querySelector('.js-checklistSaveBtn')
+        checklistSaveBtn: document.querySelector('.js-checklistSaveBtn'),
+
+        // Toast Notifications
+        toaster: document.querySelector('.js-toaster')
     };
 
     // ==========================================
@@ -230,14 +232,14 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
             if (!response.ok) {
                 const error = await response.json();
-                alert(error.error || 'Failed to generate report');
+                elements.toaster.error(error.error || 'Failed to generate report');
                 return null;
             }
 
             return await response.json();
         } catch (error) {
             console.error('Error generating report:', error);
-            alert('Failed to generate report');
+            elements.toaster.error('Failed to generate report');
             return null;
         }
     }
@@ -251,7 +253,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
             if (!response.ok) {
                 const error = await response.json();
-                alert(error.error || 'Failed to archive tasks');
+                elements.toaster.error(error.error || 'Failed to archive tasks');
                 return null;
             }
 
@@ -260,7 +262,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             return result;
         } catch (error) {
             console.error('Error archiving tasks:', error);
-            alert('Failed to archive tasks');
+            elements.toaster.error('Failed to archive tasks');
             return null;
         }
     }
@@ -558,7 +560,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         elements.taskTitle.focus();
     }
 
-    window.openEditModal = function(taskId) {
+    function openEditModal(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
 
@@ -583,7 +585,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
         elements.taskModal.open();
         elements.taskTitle.focus();
-    };
+    }
 
     async function handleTaskFormSubmit(e) {
         e.preventDefault();
@@ -594,7 +596,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         const category = getSelectedCategory();
 
         if (!title) {
-            alert('Title is required');
+            elements.toaster.warning('Title is required');
             return;
         }
 
@@ -618,14 +620,13 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     }
 
     function openDeleteConfirmation() {
-        // This will be updated when confirmModal is componentized
-        elements.confirmModal.classList.add('--active');
+        elements.confirmModal.open();
     }
 
     async function confirmDeleteTask() {
         if (editingTaskId) {
             await deleteTask(editingTaskId);
-            elements.confirmModal.classList.remove('--active');
+            elements.confirmModal.close();
             elements.taskModal.close();
             editingTaskId = null;
         }
@@ -655,10 +656,10 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
                 ${reports.map(report => `
                     <li class="reportsList__item" data-report-id="${report.id}">
                         <div class="reportsList__row">
-                            <input type="text" class="reportsList__titleEdit js-reportTitleEdit" value="${escapeHtml(report.title)}"
-                                onblur="window.updateReportTitle('${report.id}', this.value)"
-                                onclick="event.stopPropagation()" />
-                            <button class="reportsList__deleteBtn" onclick="event.stopPropagation(); if (confirm('Delete this report?')) window.deleteReport('${report.id}')" title="Delete report">delete</button>
+                            <input type="text" class="reportsList__titleEdit js-reportTitleEdit"
+                                value="${escapeHtml(report.title)}" data-report-id="${report.id}" />
+                            <button class="reportsList__deleteBtn js-reportDeleteBtn"
+                                data-report-id="${report.id}" title="Delete report">delete</button>
                         </div>
                         <div class="reportsList__date">${formatDate(report.generatedDate)}</div>
                     </li>
@@ -666,10 +667,28 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             </ul>
         `;
 
+        // Event delegation for title edits
+        elements.reportsContainer.querySelectorAll('.js-reportTitleEdit').forEach(input => {
+            input.addEventListener('click', (e) => e.stopPropagation());
+            input.addEventListener('blur', async () => {
+                await updateReportTitle(input.dataset.reportId, input.value);
+            });
+        });
+
+        // Event delegation for delete buttons
+        elements.reportsContainer.querySelectorAll('.js-reportDeleteBtn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm('Delete this report?')) {
+                    await deleteReport(btn.dataset.reportId);
+                }
+            });
+        });
+
         // Add click listeners to view reports
         elements.reportsContainer.querySelectorAll('.reportsList__item').forEach(li => {
             li.addEventListener('click', (e) => {
-                if (e.target.classList.contains('reportsList__titleEdit') || e.target.classList.contains('reportsList__deleteBtn')) return;
+                if (e.target.classList.contains('js-reportTitleEdit') || e.target.classList.contains('js-reportDeleteBtn')) return;
                 const reportId = li.dataset.reportId;
                 const report = reports.find(r => r.id === reportId);
                 if (report) renderReportView(report, reports);
@@ -677,19 +696,12 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         });
     }
 
-    window.updateReportTitle = async function(id, title) {
-        await updateReportTitle(id, title);
-    };
-
-    window.deleteReport = async function(id) {
-        await deleteReport(id);
-    };
 
     function renderReportView(report, allReports) {
         elements.reportsContainer.innerHTML = `
             <div class="reportDetail">
                 <div class="reportDetail__header">
-                    <button class="reportDetail__backBtn" onclick="window.backToReportsList()">← Back to Reports</button>
+                    <button class="reportDetail__backBtn js-backToReportsBtn">← Back to Reports</button>
                     <h3>${escapeHtml(report.title)}</h3>
                 </div>
 
@@ -715,9 +727,10 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             </div>
         `;
 
-        window.backToReportsList = async () => {
+        // Event delegation for back button
+        elements.reportsContainer.querySelector('.js-backToReportsBtn').addEventListener('click', () => {
             renderReportsList(allReports);
-        };
+        });
     }
 
     function renderReportSection(title, taskList) {
@@ -773,14 +786,14 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
         const report = await generateReport();
         if (report) {
-            alert(`Report generated: ${report.title}`);
+            elements.toaster.success(`Report generated: ${report.title}`);
         }
     }
 
     async function handleArchive() {
         const doneTasks = tasks.filter(t => t.status === 'done');
         if (doneTasks.length === 0) {
-            alert('No completed tasks to archive');
+            elements.toaster.info('No completed tasks to archive');
             return;
         }
 
@@ -790,7 +803,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
         const result = await archiveTasks();
         if (result) {
-            alert(`${result.archivedCount} task${result.archivedCount !== 1 ? 's' : ''} archived`);
+            elements.toaster.success(`${result.archivedCount} task${result.archivedCount !== 1 ? 's' : ''} archived`);
         }
     }
 
@@ -863,7 +876,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             checklistItems = getDefaultChecklistItems();
         }
         renderChecklistEditor();
-        elements.checklistModal.classList.add('--active');
+        elements.checklistModal.open();
     }
 
     function getDefaultChecklistItems() {
@@ -924,7 +937,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     }
 
     function closeChecklistModal() {
-        elements.checklistModal.classList.remove('--active');
+        elements.checklistModal.close();
     }
 
     // ==========================================
@@ -972,14 +985,13 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
         // Checklist Modal
         elements.editChecklistBtn.addEventListener('click', openChecklistModal);
-        elements.checklistModalClose.addEventListener('click', closeChecklistModal);
         elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
         elements.checklistCancelBtn.addEventListener('click', closeChecklistModal);
         elements.checklistSaveBtn.addEventListener('click', saveChecklist);
 
         // Confirm Delete Modal
         elements.confirmCancel.addEventListener('click', () => {
-            elements.confirmModal.classList.remove('--active');
+            elements.confirmModal.close();
         });
         elements.confirmDelete.addEventListener('click', confirmDeleteTask);
 
@@ -993,22 +1005,9 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             moveTask(taskId, newStatus, newPosition);
         });
 
-        // Close old-style modals on outside click (modal-dialog components handle this internally)
-        [elements.confirmModal, elements.checklistModal].forEach(modal => {
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.remove('--active');
-                    }
-                });
-            }
-        });
-
-        // Close old-style modals on ESC key (modal-dialog components handle this internally)
+        // Close menu on ESC key (modal-dialog components handle their own ESC/backdrop close)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (elements.confirmModal) elements.confirmModal.classList.remove('--active');
-                if (elements.checklistModal) elements.checklistModal.classList.remove('--active');
                 closeMenu();
             }
         });
