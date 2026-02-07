@@ -316,19 +316,13 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     }
 
     function renderColumn(status) {
-        console.log(`[app.js] renderColumn for status: ${status}`);
         const columnEl = document.querySelector(STATUS_COLUMNS[status]);
         const columnTasks = tasks
             .filter(t => t.status === status)
             .sort((a, b) => a.position - b.position);
 
-        console.log(`[app.js] Found ${columnTasks.length} tasks for ${status}.`);
-
         if (columnEl) {
-            console.log(`[app.js] Found column element for ${status}. Calling renderTasks...`);
             columnEl.renderTasks(columnTasks, createTaskCard);
-        } else {
-            console.error(`[app.js] Could not find column element for status: ${status}`);
         }
 
         if (activeCategoryFilters.size > 0 || priorityFilterActive) {

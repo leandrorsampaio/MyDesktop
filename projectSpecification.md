@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.4.0
+**Version:** 2.5.0
 **Last Updated:** 2026-02-07
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.5.0   | 2026-02-07 | Code cleanup: removed console.log statements from production code; fixed deprecated `substr()` to `substring()`; fixed crisis mode CSS selectors to target custom elements (`kanban-column`, `daily-checklist`); removed dead CSS rules targeting Shadow DOM internals |
 | 2.4.0   | 2026-02-07 | Refactored shared code: created `/public/js/constants.js` (CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS) and `/public/js/utils.js` (escapeHtml, getWeekNumber, formatDate); converted app.js to ES module; eliminated code duplication across components |
 | 2.3.0   | 2026-02-06 | Migrated Reports and Archived Tasks modals to `<modal-dialog>` component with `size="large"` attribute; fixed category/priority filters to query through Shadow DOM; added complete modal styling to styles.css |
 | 2.2.0   | 2026-01-31 | Added delete report: × button on each report in View Reports modal, `DELETE /api/reports/:id` endpoint |

@@ -1257,11 +1257,11 @@ body.--crisisMode .toolbar {
     pointer-events: none;
 }
 
-body.--crisisMode .column[data-status="done"] {
+body.--crisisMode kanban-column[data-status="done"] {
     visibility: hidden;
 }
 
-body.--crisisMode .dailyChecklist {
+body.--crisisMode daily-checklist {
     visibility: hidden;
 }
 
@@ -1303,7 +1303,7 @@ body.--crisisMode .dailyChecklist {
         gap: 28px;
     }
 
-    .column {
+    kanban-column {
         min-height: calc(100vh - 200px);
     }
 }
@@ -1321,29 +1321,16 @@ body.--crisisMode .dailyChecklist {
         gap: 16px;
     }
 
-    .column {
+    kanban-column {
         min-height: calc(100vh - 180px);
     }
 
-    .column__header {
-        padding: 20px 20px 16px 20px;
-    }
-
-    .column__title {
-        font-size: 11px;
-    }
-
-    .taskCard {
-        padding: 14px;
-    }
-
-    .taskCard__title {
-        font-size: 13px;
-    }
-
-    .taskCard__desc {
-        font-size: 11px;
-    }
+    /*
+     * Note: Styles for .column__header, .column__title, .taskCard, etc.
+     * were removed because they are inside Shadow DOM and cannot be
+     * styled from global CSS. Add responsive styles to each component's
+     * CSS file if needed, or use CSS custom properties.
+     */
 }
 
 /* Fallback for smaller screens */
@@ -1361,16 +1348,11 @@ body.--crisisMode .dailyChecklist {
         max-height: none;
     }
 
-    .notes__textarea {
-        min-width: auto;
-        width: 100%;
-    }
-
     .kanban {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .column {
+    kanban-column {
         min-height: 300px;
     }
 }
