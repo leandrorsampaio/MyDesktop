@@ -393,7 +393,7 @@
   {
     "id": "mkvft4o6e43i4wy1x",
     "title": "LIT-LWC: Radio Button + Checkbox",
-    "description": "SOL-183, 182, 121, 113, 73,41",
+    "description": "SOL-183, 182, 121, 113, 73,41 -",
     "priority": false,
     "status": "todo",
     "position": 1,
@@ -407,7 +407,8 @@
         "action": "Moved from In Progress to To Do"
       }
     ],
-    "createdDate": "2026-01-26T17:24:21.606Z"
+    "createdDate": "2026-01-26T17:24:21.606Z",
+    "category": 1
   },
   {
     "id": "mkvfty0b5lagyp25b",

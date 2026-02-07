@@ -140,88 +140,55 @@ container.addEventListener('click', (e) => {
 
 ---
 
-## 3. Performance
+## 3. Performance ✅ RESOLVED
 
-### 3.1 Component templates are fetched on every instantiation
+### 3.1 Component templates are fetched on every instantiation ✅ RESOLVED
 
 **Files affected:** All component `.js` files
 
-**Current pattern:**
-```javascript
-async connectedCallback() {
-    const [html, css] = await Promise.all([
-        fetch('/components/button/button.html').then(r => r.text()),
-        fetch('/components/button/button.css').then(r => r.text())
-    ]);
-    // ...
-}
-```
+**Previous pattern:** Every component instance fetched its HTML/CSS templates, resulting in O(n) HTTP requests.
 
-**Impact:** Every task card, every button fetches its template. With 20+ task cards, that's 40+ HTTP requests for the same files.
+**Solution:** Added `static templateCache = null` to all 7 components. Templates are now cached at the class level:
+- `button.js` - CustomButton.templateCache
+- `task-card.js` - TaskCard.templateCache
+- `kanban-column.js` - KanbanColumn.templateCache
+- `modal-dialog.js` - ModalDialog.templateCache
+- `toast-notification.js` - ToastNotification.templateCache
+- `daily-checklist.js` - DailyChecklist.templateCache
+- `notes-widget.js` - NotesWidget.templateCache
 
-**Solution:** Cache templates at the class level:
-```javascript
-class TaskCard extends HTMLElement {
-    static templateCache = null;
-
-    async connectedCallback() {
-        if (!TaskCard.templateCache) {
-            TaskCard.templateCache = await Promise.all([
-                fetch('/components/task-card/task-card.html').then(r => r.text()),
-                fetch('/components/task-card/task-card.css').then(r => r.text())
-            ]);
-        }
-        const [html, css] = TaskCard.templateCache;
-        // ...
-    }
-}
-```
-
-This reduces HTTP requests from O(n) to O(1) per component type.
+**Result:** HTTP requests reduced from O(n) to O(1) per component type. With 20+ task cards, this eliminates 40+ redundant HTTP requests.
 
 ---
 
-### 3.2 Double filter application
+### 3.2 Double filter application ✅ RESOLVED
 
-**File:** `app.js:338-362`
+**Previous issue:** `renderAllColumns()` called `applyAllFilters()` at the end, but `renderColumn()` also called it conditionally, resulting in filters being applied multiple times.
 
-**Current flow:**
-1. `renderAllColumns()` calls `applyAllFilters()` at the end
-2. `renderColumn()` also calls `applyAllFilters()` if filters are active
-
-**Impact:** Filters are applied twice when rendering all columns.
-
-**Solution:** Remove the conditional `applyAllFilters()` call from `renderColumn()`. The call in `renderAllColumns()` handles it.
-
-```javascript
-// Remove lines 359-361 from renderColumn():
-// if (activeCategoryFilters.size > 0 || priorityFilterActive) {
-//     applyAllFilters();
-// }
-```
+**Solution:** Removed the conditional `applyAllFilters()` from `renderColumn()`. Created a `renderColumnWithFilters()` wrapper in `app.js` for cases where a single column render needs filter application (e.g., after creating a new task).
 
 ---
 
-### 3.3 getTaskGradient and shouldUseLightText have duplicated logic
+### 3.3 getTaskGradient and shouldUseLightText have duplicated logic ✅ RESOLVED
 
-**File:** `app.js:146-174`
+**Previous issue:** Both functions calculated `gradientIndex` identically.
 
-**Current state:** Both functions calculate `gradientIndex` identically.
-
-**Solution:** Combine into a single function that returns an object:
+**Solution:** Combined into a single `getTaskColorInfo()` function that returns an object:
 ```javascript
 function getTaskColorInfo(status, position, totalInColumn) {
-    const maxGradients = 20;
-    let gradientIndex = totalInColumn <= maxGradients
-        ? position
-        : Math.floor((position / totalInColumn) * maxGradients);
-    gradientIndex = Math.min(gradientIndex, maxGradients - 1);
-
+    // ... calculate gradientIndex once ...
     return {
         gradient: `var(--${status}-gradient-${gradientIndex})`,
-        useLightText: gradientIndex < 12
+        useLightText: gradientIndex < LIGHT_TEXT_THRESHOLD
     };
 }
+```
+
+Usage in `createTaskCard()`:
+```javascript
+const colorInfo = getTaskColorInfo(task.status, position, totalInColumn);
+card.style.background = colorInfo.gradient;
+card.classList.add(colorInfo.useLightText ? '--lightText' : '--darkText');
 ```
 
 ---
@@ -542,18 +509,18 @@ app.use('/api/', rateLimit({ windowMs: 60000, max: 100 }));
 
 1. ~~**Remove console.log statements** - 5 minutes~~ ✅ DONE (v2.5.0)
 2. ~~**Fix deprecated substr()** - 1 minute~~ ✅ DONE (v2.5.0)
-3. **Cache component templates** - 15 minutes per component
-4. **Remove double applyAllFilters() call** - 2 minutes
+3. ~~**Cache component templates** - 15 minutes per component~~ ✅ DONE (v2.10.0)
+4. ~~**Remove double applyAllFilters() call** - 2 minutes~~ ✅ DONE (v2.10.0)
 5. ~~**Fix crisis mode CSS selectors** - 5 minutes~~ ✅ DONE (v2.5.0)
 6. ~~**Add environment variable for PORT** - 2 minutes~~ ✅ DONE (v2.8.0)
-7. **Combine getTaskGradient/shouldUseLightText** - 10 minutes
+7. ~~**Combine getTaskGradient/shouldUseLightText** - 10 minutes~~ ✅ DONE (v2.10.0)
 
 ---
 
 ## Recommended Priority Order
 
 1. ~~**High Priority (Bugs/Breaking):** Items 4.3 (crisis mode broken)~~ ✅ DONE
-2. **Medium Priority (Performance):** Items 3.1 (template caching), 3.2 (double filtering)
+2. ~~**Medium Priority (Performance):** Items 3.1 (template caching), 3.2 (double filtering), 3.3 (combined gradient functions)~~ ✅ ALL DONE
 3. ~~**Medium Priority (Code Quality):** Items 1.1-1.4 (duplication), 2.1-2.4 (consistency)~~ ✅ DONE
 4. ~~**Lower Priority (Polish):** Items 4.1, 4.2, 6.1-6.4~~ ✅ ALL DONE
 

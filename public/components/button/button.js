@@ -1,4 +1,7 @@
 class CustomButton extends HTMLElement {
+    /** @type {[string, string]|null} Cached [html, css] templates */
+    static templateCache = null;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -9,10 +12,13 @@ class CustomButton extends HTMLElement {
     }
 
     async connectedCallback() {
-        const [html, css] = await Promise.all([
-            fetch('/components/button/button.html').then(response => response.text()),
-            fetch('/components/button/button.css').then(response => response.text())
-        ]);
+        if (!CustomButton.templateCache) {
+            CustomButton.templateCache = await Promise.all([
+                fetch('/components/button/button.html').then(response => response.text()),
+                fetch('/components/button/button.css').then(response => response.text())
+            ]);
+        }
+        const [html, css] = CustomButton.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

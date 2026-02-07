@@ -18,6 +18,9 @@
  *   toaster.show('Quick message', 'success', 2000);
  */
 class ToastNotification extends HTMLElement {
+    /** @type {[string, string]|null} Cached [html, css] templates */
+    static templateCache = null;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -25,10 +28,13 @@ class ToastNotification extends HTMLElement {
     }
 
     async connectedCallback() {
-        const [html, css] = await Promise.all([
-            fetch('/components/toast-notification/toast-notification.html').then(r => r.text()),
-            fetch('/components/toast-notification/toast-notification.css').then(r => r.text())
-        ]);
+        if (!ToastNotification.templateCache) {
+            ToastNotification.templateCache = await Promise.all([
+                fetch('/components/toast-notification/toast-notification.html').then(r => r.text()),
+                fetch('/components/toast-notification/toast-notification.css').then(r => r.text())
+            ]);
+        }
+        const [html, css] = ToastNotification.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

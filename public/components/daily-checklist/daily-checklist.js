@@ -2,6 +2,9 @@ import { DEFAULT_CHECKLIST_ITEMS, CHECKLIST_RESET_HOUR } from '../../js/constant
 import { escapeHtml } from '../../js/utils.js';
 
 class DailyChecklist extends HTMLElement {
+    /** @type {[string, string]|null} Cached [html, css] templates */
+    static templateCache = null;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -9,10 +12,13 @@ class DailyChecklist extends HTMLElement {
     }
 
     async connectedCallback() {
-        const [html, css] = await Promise.all([
-            fetch('/components/daily-checklist/daily-checklist.html').then(response => response.text()),
-            fetch('/components/daily-checklist/daily-checklist.css').then(response => response.text())
-        ]);
+        if (!DailyChecklist.templateCache) {
+            DailyChecklist.templateCache = await Promise.all([
+                fetch('/components/daily-checklist/daily-checklist.html').then(response => response.text()),
+                fetch('/components/daily-checklist/daily-checklist.css').then(response => response.text())
+            ]);
+        }
+        const [html, css] = DailyChecklist.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

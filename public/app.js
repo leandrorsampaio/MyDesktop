@@ -161,13 +161,14 @@ import {
     // ==========================================
 
     /**
-     * Calculates the CSS gradient variable for a task card based on its position.
+     * Calculates the color information for a task card based on its position.
+     * Returns both the CSS gradient variable and whether to use light text.
      * @param {string} status - The task status (todo, wait, inprogress, done)
      * @param {number} position - Zero-based position of the task in its column
      * @param {number} totalInColumn - Total number of tasks in the column
-     * @returns {string} CSS variable reference (e.g., "var(--todo-gradient-5)")
+     * @returns {{gradient: string, useLightText: boolean}} Color info object
      */
-    function getTaskGradient(status, position, totalInColumn) {
+    function getTaskColorInfo(status, position, totalInColumn) {
         let gradientIndex;
 
         if (totalInColumn <= MAX_GRADIENT_STEPS) {
@@ -179,28 +180,10 @@ import {
 
         gradientIndex = Math.min(gradientIndex, MAX_GRADIENT_STEPS - 1);
 
-        return `var(--${status}-gradient-${gradientIndex})`;
-    }
-
-    /**
-     * Determines if light text should be used on a task card based on its gradient.
-     * Darker gradients (lower index) need light text for readability.
-     * @param {string} status - The task status (todo, wait, inprogress, done)
-     * @param {number} position - Zero-based position of the task in its column
-     * @param {number} totalInColumn - Total number of tasks in the column
-     * @returns {boolean} True if light text should be used, false for dark text
-     */
-    function shouldUseLightText(status, position, totalInColumn) {
-        let gradientIndex;
-
-        if (totalInColumn <= MAX_GRADIENT_STEPS) {
-            gradientIndex = position;
-        } else {
-            gradientIndex = Math.floor((position / totalInColumn) * MAX_GRADIENT_STEPS);
-        }
-
-        // Use light text for darker gradients (lower index)
-        return gradientIndex < LIGHT_TEXT_THRESHOLD;
+        return {
+            gradient: `var(--${status}-gradient-${gradientIndex})`,
+            useLightText: gradientIndex < LIGHT_TEXT_THRESHOLD
+        };
     }
 
     // ==========================================
@@ -252,6 +235,7 @@ import {
 
     /**
      * Renders a single kanban column with its tasks.
+     * Note: Does not apply filters - caller should call applyAllFilters() if needed.
      * @param {string} status - The column status to render (todo, wait, inprogress, done)
      */
     function renderColumn(status) {
@@ -262,10 +246,6 @@ import {
 
         if (columnEl) {
             columnEl.renderTasks(columnTasks, createTaskCard);
-        }
-
-        if (activeCategoryFilters.size > 0 || priorityFilterActive) {
-            applyAllFilters();
         }
     }
 
@@ -288,15 +268,10 @@ import {
 
         card.draggable = true;
 
-        // Apply gradient background
-        card.style.background = getTaskGradient(task.status, position, totalInColumn);
-
-        // Apply text color
-        if (shouldUseLightText(task.status, position, totalInColumn)) {
-            card.classList.add('--lightText');
-        } else {
-            card.classList.add('--darkText');
-        }
+        // Apply gradient background and text color
+        const colorInfo = getTaskColorInfo(task.status, position, totalInColumn);
+        card.style.background = colorInfo.gradient;
+        card.classList.add(colorInfo.useLightText ? '--lightText' : '--darkText');
 
         // Drag events
         card.addEventListener('dragstart', (e) => {
@@ -373,10 +348,16 @@ import {
      * Initializes all event listeners.
      */
     function initEventListeners() {
+        // Wrapper that renders a column and applies filters
+        const renderColumnWithFilters = (status) => {
+            renderColumn(status);
+            applyAllFilters();
+        };
+
         // Create the task form submit handler
         const handleTaskFormSubmit = createTaskFormSubmitHandler(
             elements,
-            renderColumn,
+            renderColumnWithFilters,
             renderAllColumns,
             addTask,
             updateTaskInState

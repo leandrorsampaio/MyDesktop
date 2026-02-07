@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.9.0
+**Version:** 2.10.0
 **Last Updated:** 2026-02-07
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.10.0  | 2026-02-07 | Performance: added template caching to all 7 components (reduces HTTP requests from O(n) to O(1) per component type); removed double filter application; combined getTaskGradient/shouldUseLightText into single getTaskColorInfo function |
 | 2.9.0   | 2026-02-07 | Modular architecture: split app.js into 5 modules (state.js, api.js, filters.js, crisis-mode.js, modals.js) for better maintainability and separation of concerns |
 | 2.8.0   | 2026-02-07 | Code maintainability: extracted magic numbers to constants.js (CHECKLIST_RESET_HOUR, DEBOUNCE_DELAY_MS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_PORT); added JSDoc comments to key functions in app.js; server.js now uses PORT env variable with fallback |
 | 2.7.0   | 2026-02-07 | Added comprehensive "Code Guidelines" section documenting coding standards, patterns, and anti-patterns to prevent common issues |

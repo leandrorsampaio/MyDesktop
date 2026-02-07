@@ -1,16 +1,22 @@
 import { CATEGORIES } from '../../js/constants.js';
 
 class TaskCard extends HTMLElement {
+    /** @type {[string, string]|null} Cached [html, css] templates */
+    static templateCache = null;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
     }
 
     async connectedCallback() {
-        const [html, css] = await Promise.all([
-            fetch('/components/task-card/task-card.html').then(response => response.text()),
-            fetch('/components/task-card/task-card.css').then(response => response.text())
-        ]);
+        if (!TaskCard.templateCache) {
+            TaskCard.templateCache = await Promise.all([
+                fetch('/components/task-card/task-card.html').then(response => response.text()),
+                fetch('/components/task-card/task-card.css').then(response => response.text())
+            ]);
+        }
+        const [html, css] = TaskCard.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

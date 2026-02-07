@@ -1,4 +1,7 @@
 class KanbanColumn extends HTMLElement {
+    /** @type {[string, string]|null} Cached [html, css] templates */
+    static templateCache = null;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -6,10 +9,13 @@ class KanbanColumn extends HTMLElement {
     }
 
     async connectedCallback() {
-        const [html, css] = await Promise.all([
-            fetch('/components/kanban-column/kanban-column.html').then(response => response.text()),
-            fetch('/components/kanban-column/kanban-column.css').then(response => response.text())
-        ]);
+        if (!KanbanColumn.templateCache) {
+            KanbanColumn.templateCache = await Promise.all([
+                fetch('/components/kanban-column/kanban-column.html').then(response => response.text()),
+                fetch('/components/kanban-column/kanban-column.css').then(response => response.text())
+            ]);
+        }
+        const [html, css] = KanbanColumn.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;
