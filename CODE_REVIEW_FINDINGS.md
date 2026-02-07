@@ -263,28 +263,97 @@ The responsive media queries reference `.column`, `.taskCard`, `.taskCard__title
 
 ## 5. Reliability
 
+> **Junior Developer Note:** This section is about making the application more robust — meaning it handles errors gracefully, cleans up after itself, and doesn't break when users do unexpected things (like clicking buttons really fast). These issues won't cause visible bugs during normal use, but they can cause problems in edge cases.
+
+---
+
 ### 5.1 No error recovery for failed API calls
 
 **Current state:** If an API call fails, the operation silently fails or shows an alert.
 
 **Impact:** Users may think operations succeeded when they didn't. Data could be lost.
 
-**Solution:** Implement optimistic UI with rollback:
+#### What's happening now (the problem)
+
+When you delete a task, the code does this:
+1. Send DELETE request to server
+2. Wait for response
+3. If successful, refresh the task list
+4. If error, show an alert (or sometimes nothing at all)
+
+The problem? The user sees the task sitting there the whole time the request is happening. If it fails, they just see an error message and nothing changes. This is called **"pessimistic UI"** — we wait for the server to confirm before showing any change.
+
+#### The proposed solution: Optimistic UI with Rollback
+
+**Optimistic UI** means: "Assume the operation will succeed and update the UI immediately. If it fails, undo the change."
+
 ```javascript
 async function deleteTask(id) {
-    const previousTasks = [...tasks]; // Save state
-    tasks = tasks.filter(t => t.id !== id); // Optimistic update
-    renderAllColumns();
+    const previousTasks = [...tasks]; // Save state BEFORE we change anything
+    tasks = tasks.filter(t => t.id !== id); // Remove task from local array immediately
+    renderAllColumns(); // Update UI right away - user sees task disappear instantly!
 
     try {
         await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+        // Success! The UI already shows the correct state
     } catch (error) {
-        tasks = previousTasks; // Rollback
-        renderAllColumns();
+        tasks = previousTasks; // ROLLBACK: restore the old state
+        renderAllColumns(); // Re-render with the task back in place
         showError('Failed to delete task. Please try again.');
     }
 }
 ```
+
+#### Why this matters for user experience
+
+| Scenario | Pessimistic UI | Optimistic UI |
+|----------|----------------|---------------|
+| Fast network | User waits 200ms, then sees change | User sees change instantly |
+| Slow network | User waits 2+ seconds, UI feels sluggish | User sees change instantly |
+| Network error | User sees error, task never moved | User sees change, then it "undoes" with error message |
+
+#### Pros of Optimistic UI
+
+1. **Feels instant** — The app feels snappy and responsive
+2. **Better perceived performance** — Even on slow networks, the UI responds immediately
+3. **Modern UX pattern** — Apps like Trello, Gmail, and Slack all use this approach
+
+#### Cons of Optimistic UI
+
+1. **More complex code** — You need to save state before changes and handle rollbacks
+2. **Can confuse users if overused** — If errors happen frequently, users see things appearing/disappearing
+3. **Harder to debug** — The UI state temporarily doesn't match the server state
+
+#### Alternative approaches
+
+**Option A: Optimistic UI (proposed above)**
+- Best for: Apps where network is usually reliable, fast feedback is important
+- This project: Good fit because it's a local app (network is localhost = very fast/reliable)
+
+**Option B: Loading states**
+- Show a spinner or "deleting..." state while waiting
+- Less jarring than rollback, but still has a delay
+```javascript
+card.classList.add('--deleting'); // Show visual feedback
+await fetch(...);
+// Then remove from DOM
+```
+
+**Option C: Queue-based approach**
+- Queue all operations and process them in the background
+- Show a "syncing" indicator
+- Most complex, but most robust for offline-capable apps
+
+#### Recommendation for this project
+
+Since this is a **local-only app** (server runs on localhost), network failures are extremely rare. The current approach is actually fine for this use case. However, implementing optimistic UI would be a good learning exercise and would make the app feel more polished.
+
+**If you decide to implement this:**
+1. Start with just one function (like `deleteTask`)
+2. Test it by temporarily making the API fail
+3. Gradually apply to other functions
+
+---
 
 ---
 
@@ -294,16 +363,119 @@ async function deleteTask(id) {
 
 **Impact:** Event listeners and references aren't cleaned up when components are removed. Potential memory leaks.
 
-**Solution:** Add cleanup logic:
+#### What is disconnectedCallback?
+
+Web Components have **lifecycle callbacks** — special methods the browser calls automatically at certain times:
+
+| Callback | When it's called |
+|----------|------------------|
+| `constructor()` | When the element is created (before it's in the DOM) |
+| `connectedCallback()` | When the element is added to the DOM |
+| `disconnectedCallback()` | When the element is removed from the DOM |
+| `attributeChangedCallback()` | When an observed attribute changes |
+
+Think of it like this:
+- `connectedCallback` = "Hello, I'm here! Let me set things up."
+- `disconnectedCallback` = "Goodbye! Let me clean up after myself."
+
+#### What's the problem?
+
+Look at this simplified version of what `modal-dialog.js` does:
+
 ```javascript
-disconnectedCallback() {
-    // Remove any document-level event listeners
-    // Clear any timeouts/intervals
-    // Abort any pending fetch requests
+class ModalDialog extends HTMLElement {
+    connectedCallback() {
+        // When modal is added to page, listen for ESC key
+        document.addEventListener('keydown', this.handleKeyDown);
+    }
+
+    handleKeyDown = (e) => {
+        if (e.key === 'Escape') this.close();
+    }
+
+    // ❌ PROBLEM: No disconnectedCallback!
+    // When modal is removed, the event listener stays attached to document
 }
 ```
 
-Most critical for `modal-dialog.js` which adds document keydown listener.
+Every time you add and remove this component, a NEW event listener gets added to `document`, but the old ones are never removed. After opening/closing the modal 100 times, you'd have 100 event listeners all running!
+
+#### Why memory leaks matter
+
+**Memory leak** = Your program keeps using more and more memory without releasing it.
+
+In this project:
+- If components are created and destroyed frequently (like task cards when filtering), listeners pile up
+- Each listener holds a reference to the component, preventing garbage collection
+- Over time, the page uses more memory and gets slower
+
+For a local app that gets refreshed often, this is low-impact. But it's a bad habit to form.
+
+#### The solution
+
+```javascript
+class ModalDialog extends HTMLElement {
+    connectedCallback() {
+        // Save reference so we can remove the SAME listener later
+        this._boundKeyHandler = this.handleKeyDown.bind(this);
+        document.addEventListener('keydown', this._boundKeyHandler);
+    }
+
+    disconnectedCallback() {
+        // Clean up when removed from DOM
+        document.removeEventListener('keydown', this._boundKeyHandler);
+    }
+
+    handleKeyDown(e) {
+        if (e.key === 'Escape') this.close();
+    }
+}
+```
+
+#### Important: Why we use `bind(this)`
+
+This is a common gotcha for junior developers:
+
+```javascript
+// ❌ WRONG - These are different function references!
+document.addEventListener('keydown', this.handleKeyDown.bind(this));
+document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+// removeEventListener won't work because .bind() creates a NEW function each time
+
+// ✅ CORRECT - Save the bound function once, use same reference
+this._boundKeyHandler = this.handleKeyDown.bind(this);
+document.addEventListener('keydown', this._boundKeyHandler);
+document.removeEventListener('keydown', this._boundKeyHandler);
+```
+
+#### What needs cleanup in each component
+
+| Component | What to clean up |
+|-----------|------------------|
+| `modal-dialog.js` | Document keydown listener (ESC key) |
+| `task-card.js` | Any drag/drop listeners on document |
+| `notes-widget.js` | Debounce timeout (use `clearTimeout`) |
+| `daily-checklist.js` | LocalStorage event listeners (if any) |
+
+#### Pros of adding disconnectedCallback
+
+1. **Prevents memory leaks** — Proper resource management
+2. **Professional code quality** — Shows understanding of component lifecycle
+3. **Required for reusable components** — If these components were used in other projects
+
+#### Cons / Why you might skip it
+
+1. **Extra code to maintain** — More lines, more potential bugs
+2. **Low impact in this project** — Components aren't frequently destroyed
+3. **Page refresh resets everything** — Memory leaks reset on refresh anyway
+
+#### Recommendation for this project
+
+**Priority: Low but educational.** The modal-dialog is the most important one to fix since it adds a document-level listener. Task cards are created/destroyed during filtering, but they don't add document-level listeners.
+
+If you want to learn, start with `modal-dialog.js` — it's the clearest example of the pattern.
+
+---
 
 ---
 
@@ -320,19 +492,193 @@ async function moveTask(id, newStatus, newPosition) {
 
 **Impact:** If user moves multiple cards quickly, overlapping fetchTasks() calls could cause UI inconsistency.
 
-**Solution:** Add a simple lock or queue:
+#### What is a race condition?
+
+A **race condition** happens when the outcome of your code depends on the timing/order of events that you can't control.
+
+Imagine two people editing the same document:
+1. Person A opens document (sees "Hello")
+2. Person B opens document (sees "Hello")
+3. Person A adds "World" → saves "Hello World"
+4. Person B adds "Everyone" → saves "Hello Everyone"
+5. Person A's changes are lost! 😱
+
+#### How this applies to moveTask
+
+Here's what happens when you drag a card:
+
+```
+Timeline (normal case - one move):
+─────────────────────────────────────────────────
+0ms    User drags card A to "Done"
+10ms   moveTask() starts, sends request to server
+200ms  Server responds "OK"
+210ms  fetchTasks() starts, gets fresh data
+400ms  UI renders with new data
+```
+
+Now what happens if the user moves two cards quickly:
+
+```
+Timeline (race condition - two moves):
+─────────────────────────────────────────────────
+0ms    User drags card A to "Done"
+10ms   moveTask(A) starts → fetch #1 begins
+50ms   User drags card B to "In Progress"    ← Before first move finished!
+60ms   moveTask(B) starts → fetch #2 begins
+200ms  Server responds to move A
+210ms  fetchTasks() #1 starts (for move A)
+250ms  Server responds to move B
+260ms  fetchTasks() #2 starts (for move B)   ← Now TWO fetches running!
+400ms  fetchTasks() #1 completes → renders   ← This might show OLD data for B!
+410ms  fetchTasks() #2 completes → renders   ← This overwrites with correct data
+
+The 10ms gap between 400ms and 410ms could show incorrect UI state
+```
+
+#### Why this matters
+
+1. **UI flicker** — Cards might briefly appear in wrong positions
+2. **Confusing feedback** — User sees card jump around
+3. **Data inconsistency** — In rare cases, the older fetch could complete AFTER the newer one, overwriting correct state with stale data
+
+#### Solution 1: Simple Lock (proposed in the doc)
+
 ```javascript
 let isMoving = false;
+
 async function moveTask(id, newStatus, newPosition) {
-    if (isMoving) return;
+    if (isMoving) return; // Ignore if already moving something
     isMoving = true;
+
     try {
-        // ... existing code
+        await fetch(`/api/tasks/${id}/move`, { ... });
+        await fetchTasks();
     } finally {
-        isMoving = false;
+        isMoving = false; // Always unlock, even if error
     }
 }
 ```
+
+**How it works:** If user tries to move a second card while the first is still processing, we simply ignore it.
+
+**Pros:**
+- Very simple to implement (4 lines of code)
+- Easy to understand
+- Prevents the race condition entirely
+
+**Cons:**
+- User's second action is silently ignored (frustrating if network is slow)
+- Not ideal UX — user might think their drag didn't work
+
+#### Solution 2: Queue System
+
+```javascript
+const moveQueue = [];
+let isProcessing = false;
+
+async function moveTask(id, newStatus, newPosition) {
+    // Add to queue
+    moveQueue.push({ id, newStatus, newPosition });
+
+    // If already processing, this move will be handled later
+    if (isProcessing) return;
+
+    isProcessing = true;
+    while (moveQueue.length > 0) {
+        const move = moveQueue.shift(); // Take first item
+        await fetch(`/api/tasks/${move.id}/move`, { ... });
+    }
+    await fetchTasks(); // Only fetch once at the end!
+    isProcessing = false;
+}
+```
+
+**How it works:** All moves are queued and processed one by one. Only one fetchTasks() at the end.
+
+**Pros:**
+- No user actions are lost
+- More efficient (one fetch instead of many)
+- Handles rapid clicking gracefully
+
+**Cons:**
+- More complex code
+- User might see delayed feedback for later moves
+- Need to handle queue cancellation if user leaves page
+
+#### Solution 3: Debounce the fetch (not the moves)
+
+```javascript
+let fetchDebounceTimer = null;
+
+async function moveTask(id, newStatus, newPosition) {
+    await fetch(`/api/tasks/${id}/move`, { ... });
+
+    // Debounce: Only fetch tasks 300ms after the LAST move
+    clearTimeout(fetchDebounceTimer);
+    fetchDebounceTimer = setTimeout(() => {
+        fetchTasks();
+    }, 300);
+}
+```
+
+**How it works:** The actual move happens immediately, but we wait 300ms after the last move before refreshing the UI.
+
+**Pros:**
+- Moves are never ignored
+- Very efficient for burst operations
+- Simple concept
+
+**Cons:**
+- UI might be briefly out of sync
+- Magic number (300ms) needs tuning
+
+#### Solution 4: AbortController (advanced)
+
+```javascript
+let currentFetchController = null;
+
+async function moveTask(id, newStatus, newPosition) {
+    await fetch(`/api/tasks/${id}/move`, { ... });
+
+    // Cancel any previous fetch that's still running
+    if (currentFetchController) {
+        currentFetchController.abort();
+    }
+
+    currentFetchController = new AbortController();
+    try {
+        await fetchTasks({ signal: currentFetchController.signal });
+    } catch (e) {
+        if (e.name === 'AbortError') {
+            // Fetch was cancelled, that's OK
+        }
+    }
+}
+```
+
+**How it works:** If a new move starts while a fetch is happening, we cancel the old fetch and start a new one.
+
+**Pros:**
+- Always shows the latest state
+- No ignored user actions
+- Modern browser feature
+
+**Cons:**
+- Most complex solution
+- Need to modify fetchTasks to accept AbortController
+- Older code patterns might not expect aborted fetches
+
+#### Recommendation for this project
+
+**Use Solution 1 (Simple Lock)** for now because:
+1. This is a local app — network is fast, race conditions are rare
+2. It's easy to implement and understand
+3. You can always upgrade to a queue later if needed
+
+If you want to learn more advanced patterns, try Solution 3 (debounce) — it's a very common pattern in web development.
+
+---
 
 ---
 
@@ -344,15 +690,229 @@ async function moveTask(id, newStatus, newPosition) {
 
 **Impact:** Very long titles could cause display issues. Special characters could cause problems.
 
-**Solution:** Add basic validation:
+#### What is input sanitization/validation?
+
+**Validation** = Checking that data meets your requirements (right format, right length, right type)
+**Sanitization** = Cleaning data to remove or escape potentially harmful content
+
+Think of it like a nightclub bouncer:
+- **Validation**: "Do you have ID? Are you on the guest list?"
+- **Sanitization**: "Leave your weapons at the door."
+
+#### Why does the server need to validate?
+
+"But the frontend already checks the title isn't empty!" — True, but...
+
+```
+                    ┌──────────────┐
+                    │   Browser    │
+                    │  (your app)  │
+                    └──────┬───────┘
+                           │ Normal users go through UI
+                           ▼
+┌──────────────┐    ┌──────────────┐
+│   Attacker   │───▶│   Server     │
+│  (curl, etc) │    │  (your API)  │
+└──────────────┘    └──────────────┘
+      │
+      └── Attackers can skip the frontend entirely!
+```
+
+Anyone can open Terminal and type:
+```bash
+curl -X POST http://localhost:3001/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "A"}'  # Repeat "A" 10 million times
+```
+
+Or using browser DevTools:
 ```javascript
+fetch('/api/tasks', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({title: 'x'.repeat(10000000)})
+});
+```
+
+**The golden rule:** Never trust data from the client. Always validate on the server.
+
+#### What could go wrong without validation?
+
+| Attack | What happens | Impact |
+|--------|--------------|--------|
+| Very long title (10MB) | Server tries to save huge JSON file | Disk fills up, app crashes |
+| Very long title (10KB) | Card display breaks, CSS overflows | UI looks broken |
+| Special characters | Depends on how data is used | Could break JSON parsing |
+| Negative category number | Category badge shows "undefined" | UI confusion |
+| Non-integer position | Sort order breaks | Cards appear random |
+
+#### The proposed solution
+
+```javascript
+// Add these constants at the top of server.js
 const MAX_TITLE_LENGTH = 200;
 const MAX_DESCRIPTION_LENGTH = 2000;
 
-if (title.length > MAX_TITLE_LENGTH) {
-    return res.status(400).json({ error: 'Title too long' });
-}
+// In the POST /api/tasks handler:
+app.post('/api/tasks', (req, res) => {
+    const { title, description, priority, category } = req.body;
+
+    // Validate title
+    if (!title || typeof title !== 'string') {
+        return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const trimmedTitle = title.trim();
+    if (trimmedTitle.length === 0) {
+        return res.status(400).json({ error: 'Title cannot be empty' });
+    }
+
+    if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+        return res.status(400).json({
+            error: `Title must be ${MAX_TITLE_LENGTH} characters or less`
+        });
+    }
+
+    // Validate description (optional, but limit length)
+    let validDescription = '';
+    if (description) {
+        if (typeof description !== 'string') {
+            return res.status(400).json({ error: 'Description must be text' });
+        }
+        if (description.length > MAX_DESCRIPTION_LENGTH) {
+            return res.status(400).json({
+                error: `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`
+            });
+        }
+        validDescription = description;
+    }
+
+    // Validate category (must be 1-6)
+    let validCategory = 1; // Default
+    if (category !== undefined) {
+        const catNum = parseInt(category, 10);
+        if (isNaN(catNum) || catNum < 1 || catNum > 6) {
+            return res.status(400).json({ error: 'Category must be 1-6' });
+        }
+        validCategory = catNum;
+    }
+
+    // Validate priority (must be boolean)
+    const validPriority = priority === true;
+
+    // Now create the task with validated data
+    const task = {
+        id: generateId(),
+        title: trimmedTitle,
+        description: validDescription,
+        priority: validPriority,
+        category: validCategory,
+        // ... rest of task properties
+    };
+
+    // Save and respond...
+});
 ```
+
+#### Understanding HTTP status codes
+
+| Code | Meaning | When to use |
+|------|---------|-------------|
+| `200 OK` | Success | Everything worked |
+| `201 Created` | Created | New resource was created |
+| `400 Bad Request` | Client error | Invalid input data ← **Use this for validation errors** |
+| `404 Not Found` | Not found | Resource doesn't exist |
+| `500 Internal Server Error` | Server error | Something broke on server |
+
+Always return 400 for validation errors — it tells the client "your request was wrong, fix it and try again."
+
+#### Pros of server-side validation
+
+1. **Security** — Protects against malicious input
+2. **Data integrity** — Database only contains valid data
+3. **Clear error messages** — Users know exactly what's wrong
+4. **Defense in depth** — Even if frontend validation fails, server catches it
+
+#### Cons / Trade-offs
+
+1. **More code to write** — Validation logic for every field
+2. **Duplication** — Often need similar validation on frontend AND backend
+3. **Maintenance** — If rules change, update both places
+
+#### What about XSS (Cross-Site Scripting)?
+
+XSS is when an attacker injects JavaScript that runs in other users' browsers:
+
+```javascript
+// Attacker creates task with title:
+"<script>alert('hacked!')</script>"
+
+// If you display it without escaping:
+card.innerHTML = task.title; // ❌ Script executes!
+
+// Safe way:
+card.textContent = task.title; // ✅ Displayed as text
+// OR use escapeHtml():
+card.innerHTML = escapeHtml(task.title); // ✅ Displayed as text
+```
+
+This project already uses `escapeHtml()` in most places (good!), but server-side validation adds another layer of protection.
+
+#### Recommendation for this project
+
+**Priority: Medium.** Since this is a local-only app (only YOU use it), the security risk is low. But it's still good practice:
+
+1. **Start simple:** Add length limits first (easiest)
+2. **Add type checking:** Make sure numbers are numbers, booleans are booleans
+3. **Consider validation library later:** For more complex validation, libraries like `zod` or `joi` make this easier
+
+```javascript
+// Example with zod (if you want to learn)
+const taskSchema = z.object({
+    title: z.string().min(1).max(200),
+    description: z.string().max(2000).optional(),
+    category: z.number().int().min(1).max(6).optional(),
+    priority: z.boolean().optional()
+});
+
+// Then in your handler:
+const result = taskSchema.safeParse(req.body);
+if (!result.success) {
+    return res.status(400).json({ error: result.error.message });
+}
+const validData = result.data;
+```
+
+---
+
+---
+
+### Section 5 Summary: What Should a Junior Developer Do?
+
+Here's my recommendation for how to approach these items, considering this is a **local-only, single-user app**:
+
+| Item | Effort | Impact | Learn? | Recommendation |
+|------|--------|--------|--------|----------------|
+| 5.1 Error recovery | Medium | Low (local network is reliable) | ⭐⭐⭐ Great for learning | Optional, but try on one function |
+| 5.2 disconnectedCallback | Low | Low (page refreshes clean up) | ⭐⭐ Good concept | Fix modal-dialog.js as exercise |
+| 5.3 Race condition | Low | Low (local = fast) | ⭐⭐⭐ Very common issue | Add simple lock (4 lines of code) |
+| 5.4 Input validation | Medium | Medium (prevents weird bugs) | ⭐⭐⭐ Essential skill | Add length limits at minimum |
+
+#### Suggested order of implementation:
+
+1. **5.3 (Race condition)** — Quickest win, most likely to cause visible bugs
+2. **5.4 (Input validation)** — Important skill to learn, prevents data issues
+3. **5.2 (disconnectedCallback)** — Good learning exercise, start with modal-dialog.js
+4. **5.1 (Error recovery)** — Most complex, save for when you want a challenge
+
+#### Key takeaways for your career:
+
+- **Always validate on the server** — Never trust client-side validation alone
+- **Clean up after yourself** — Remove listeners, clear timers, abort fetches
+- **Think about concurrent operations** — What if the user clicks twice? Fast?
+- **Consider failure modes** — What if the network fails? What does the user see?
+
+These patterns apply to ALL web development, not just this project. Learning them now will make you a better developer.
 
 ---
 
