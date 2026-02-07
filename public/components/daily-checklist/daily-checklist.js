@@ -1,16 +1,11 @@
+import { DEFAULT_CHECKLIST_ITEMS } from '../../js/constants.js';
+import { escapeHtml } from '../../js/utils.js';
+
 class DailyChecklist extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
         this.recurrentTasks = [];
-        this.DEFAULT_RECURRENT_TASKS = [
-            { text: 'Check email', url: '' },
-            { text: 'Review calendar', url: '' },
-            { text: 'Water plants', url: '' },
-            { text: 'Take vitamins', url: '' },
-            { text: 'Exercise', url: '' },
-            { text: 'Read for 30 minutes', url: '' }
-        ];
     }
 
     async connectedCallback() {
@@ -41,10 +36,10 @@ class DailyChecklist extends HTMLElement {
             try {
                 this.recurrentTasks = JSON.parse(stored);
             } catch {
-                this.recurrentTasks = [...this.DEFAULT_RECURRENT_TASKS];
+                this.recurrentTasks = [...DEFAULT_CHECKLIST_ITEMS];
             }
         } else {
-            this.recurrentTasks = [...this.DEFAULT_RECURRENT_TASKS];
+            this.recurrentTasks = [...DEFAULT_CHECKLIST_ITEMS];
         }
     }
 
@@ -89,12 +84,6 @@ class DailyChecklist extends HTMLElement {
             localStorage.setItem('lastRecurrentReset', now.toISOString());
         }
     }
-    
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
 
     render() {
         this.listElement.innerHTML = '';
@@ -110,8 +99,8 @@ class DailyChecklist extends HTMLElement {
 
             li.innerHTML = `
                 <input type="checkbox" ${isChecked ? 'checked' : ''} />
-                <span class="dailyChecklist__text">${this.escapeHtml(task.text)}</span>
-                ${hasUrl ? `<a href="${this.escapeHtml(task.url)}" target="_blank" class="dailyChecklist__link" title="Open link">↗</a>` : ''}
+                <span class="dailyChecklist__text">${escapeHtml(task.text)}</span>
+                ${hasUrl ? `<a href="${escapeHtml(task.url)}" target="_blank" class="dailyChecklist__link" title="Open link">↗</a>` : ''}
             `;
 
             li.querySelector('input').addEventListener('change', (e) => {

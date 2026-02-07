@@ -396,7 +396,7 @@
     "description": "SOL-183, 182, 121, 113, 73,41",
     "priority": false,
     "status": "todo",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-05",
@@ -1075,7 +1075,7 @@
   {
     "id": "mlbjb4h46efpyylw5",
     "title": "Check with EUVIC the list of what has been deployed",
-    "description": "I could not found all the items on the design system site. Please send a link of the new stuffs",
+    "description": "I could not found all the items on the design system site. Please send a link of the new stuffs.",
     "priority": false,
     "category": 6,
     "status": "inprogress",

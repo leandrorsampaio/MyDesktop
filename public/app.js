@@ -1,26 +1,9 @@
 // Task Tracker Application
+import { CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS } from './js/constants.js';
+import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
+
 (function() {
     'use strict';
-
-    // ==========================================
-    // Configuration
-    // ==========================================
-
-    const STATUS_COLUMNS = {
-        'todo': 'kanban-column[data-status="todo"]',
-        'wait': 'kanban-column[data-status="wait"]',
-        'inprogress': 'kanban-column[data-status="inprogress"]',
-        'done': 'kanban-column[data-status="done"]'
-    };
-
-    const CATEGORIES = {
-        1: 'Non categorized',
-        2: 'Development',
-        3: 'Communication',
-        4: 'To Remember',
-        5: 'Planning',
-        6: 'Generic Task'
-    };
 
     // ==========================================
     // State
@@ -117,14 +100,6 @@
         // Week number
         const weekNumber = getWeekNumber(now);
         elements.currentWeek.textContent = `Week ${weekNumber}`;
-    }
-
-    function getWeekNumber(date) {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
 
     // ==========================================
@@ -898,14 +873,7 @@
     }
 
     function getDefaultChecklistItems() {
-        return [
-            { text: 'Check email', url: '' },
-            { text: 'Review calendar', url: '' },
-            { text: 'Water plants', url: '' },
-            { text: 'Take vitamins', url: '' },
-            { text: 'Exercise', url: '' },
-            { text: 'Read for 30 minutes', url: '' }
-        ];
+        return [...DEFAULT_CHECKLIST_ITEMS];
     }
 
     function renderChecklistEditor() {
@@ -963,26 +931,6 @@
 
     function closeChecklistModal() {
         elements.checklistModal.classList.remove('--active');
-    }
-
-    // ==========================================
-    // Utility Functions
-    // ==========================================
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function formatDate(isoString) {
-        const date = new Date(isoString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     }
 
     // ==========================================

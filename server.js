@@ -46,7 +46,16 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
-// Category labels mapping (numeric ID → display label)
+/**
+ * Category labels mapping (numeric ID → display label)
+ *
+ * NOTE: This is a copy of CATEGORIES from /public/js/constants.js.
+ * The source of truth is /public/js/constants.js. If you modify
+ * categories, update both files to keep them in sync.
+ *
+ * This duplication exists because Node.js cannot directly import
+ * ES modules from the /public directory without additional setup.
+ */
 const CATEGORY_LABELS = {
     1: 'Non categorized',
     2: 'Development',
@@ -56,6 +65,13 @@ const CATEGORY_LABELS = {
     6: 'Generic Task'
 };
 
+/**
+ * Calculates the ISO week number for a given date.
+ *
+ * NOTE: This is a copy of getWeekNumber from /public/js/utils.js.
+ * The source of truth is /public/js/utils.js. If you modify this
+ * function, update both files to keep them in sync.
+ */
 function getWeekNumber(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;

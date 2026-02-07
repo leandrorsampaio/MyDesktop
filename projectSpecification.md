@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.3.0
-**Last Updated:** 2026-02-06
+**Version:** 2.4.0
+**Last Updated:** 2026-02-07
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.4.0   | 2026-02-07 | Refactored shared code: created `/public/js/constants.js` (CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS) and `/public/js/utils.js` (escapeHtml, getWeekNumber, formatDate); converted app.js to ES module; eliminated code duplication across components |
 | 2.3.0   | 2026-02-06 | Migrated Reports and Archived Tasks modals to `<modal-dialog>` component with `size="large"` attribute; fixed category/priority filters to query through Shadow DOM; added complete modal styling to styles.css |
 | 2.2.0   | 2026-01-31 | Added delete report: × button on each report in View Reports modal, `DELETE /api/reports/:id` endpoint |
 | 2.1.0   | 2026-01-31 | Complete BEM refactoring: camelCase BEM class names (`.blockName__elementName`), modifier classes as separate `.--modifierName`, JS hooks via `.js-camelCase` classes, all IDs removed and replaced with `js-` class selectors, `getElementById` replaced with `querySelector` throughout |
@@ -67,9 +68,12 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 │   └── ... (data files)
 └── public/
     ├── index.html             # Single HTML page, loads components
-    ├── app.js                 # Main application logic
+    ├── app.js                 # Main application logic (ES module)
     ├── styles.css             # Global styles
     ├── favicon.png
+    ├── js/
+    │   ├── constants.js       # Shared constants (CATEGORIES, STATUS_COLUMNS, etc.)
+    │   └── utils.js           # Shared utilities (escapeHtml, getWeekNumber, etc.)
     └── components/
         ├── button/
         │   ├── button.js
@@ -101,6 +105,11 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 -   **Structure:** Each component resides in its own directory (e.g., `public/components/button/`).
 -   **Encapsulation:** Components use the **Shadow DOM** for true HTML and CSS encapsulation.
 -   **Loading:** The component's `.js` file is its entry point. It uses the `fetch()` API at runtime to load its own `.html` and `.css` files as text. It then injects this content into its Shadow DOM.
+
+**Shared Modules:**
+-   **`/public/js/constants.js`:** Single source of truth for CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS. Imported by app.js and components.
+-   **`/public/js/utils.js`:** Shared utility functions (escapeHtml, getWeekNumber, formatDate). Imported where needed.
+-   **Note:** `server.js` has its own copy of CATEGORIES and getWeekNumber (documented with comments) because Node.js cannot import ES modules from `/public` without additional setup.
 -   **Registration:** The `.js` file defines and registers a custom element (e.g., `<custom-button>`) using `customElements.define()`.
 -   **Usage:** Once a component's script is loaded in `index.html`, it can be used declaratively anywhere in the application's JavaScript via `document.createElement('custom-tag')`.
 

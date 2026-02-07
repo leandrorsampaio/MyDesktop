@@ -1,11 +1,4 @@
-const CATEGORIES = {
-    1: 'Non categorized',
-    2: 'Development',
-    3: 'Communication',
-    4: 'To Remember',
-    5: 'Planning',
-    6: 'Generic Task'
-};
+import { CATEGORIES } from '../../js/constants.js';
 
 class TaskCard extends HTMLElement {
     constructor() {
