@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.8.0
+**Version:** 2.9.0
 **Last Updated:** 2026-02-07
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.9.0   | 2026-02-07 | Modular architecture: split app.js into 5 modules (state.js, api.js, filters.js, crisis-mode.js, modals.js) for better maintainability and separation of concerns |
 | 2.8.0   | 2026-02-07 | Code maintainability: extracted magic numbers to constants.js (CHECKLIST_RESET_HOUR, DEBOUNCE_DELAY_MS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_PORT); added JSDoc comments to key functions in app.js; server.js now uses PORT env variable with fallback |
 | 2.7.0   | 2026-02-07 | Added comprehensive "Code Guidelines" section documenting coding standards, patterns, and anti-patterns to prevent common issues |
 | 2.6.0   | 2026-02-07 | Code consistency: created `toast-notification` component for user feedback; migrated Confirm and Checklist modals to `<modal-dialog>` component; removed window object functions and inline HTML handlers in favor of event delegation; replaced all `alert()` calls with toaster notifications |
@@ -72,12 +73,17 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 │   └── ... (data files)
 └── public/
     ├── index.html             # Single HTML page, loads components
-    ├── app.js                 # Main application logic (ES module)
+    ├── app.js                 # Main entry point (ES module), wires modules together
     ├── styles.css             # Global styles
     ├── favicon.png
     ├── js/
     │   ├── constants.js       # Shared constants (CATEGORIES, STATUS_COLUMNS, etc.)
-    │   └── utils.js           # Shared utilities (escapeHtml, getWeekNumber, etc.)
+    │   ├── utils.js           # Shared utilities (escapeHtml, getWeekNumber, etc.)
+    │   ├── state.js           # Shared application state management
+    │   ├── api.js             # HTTP API functions for server communication
+    │   ├── filters.js         # Category and priority filtering logic
+    │   ├── crisis-mode.js     # Crisis mode functionality
+    │   └── modals.js          # Modal dialog handling (task, reports, checklist, etc.)
     └── components/
         ├── button/
         │   ├── button.js
@@ -125,6 +131,11 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
     - `MAX_GRADIENT_STEPS` — Maximum gradient color steps (20)
     - `LIGHT_TEXT_THRESHOLD` — Gradient index threshold for light text (12)
 -   **`/public/js/utils.js`:** Shared utility functions (escapeHtml, getWeekNumber, formatDate). Imported where needed.
+-   **`/public/js/state.js`:** Centralized application state (tasks array, editing state, filter states, crisis mode state). Provides getter/setter functions for state mutations.
+-   **`/public/js/api.js`:** HTTP API functions for communicating with the server. Pure functions that return data without side effects.
+-   **`/public/js/filters.js`:** Category and priority filtering logic. Manages filter button rendering and applies filters to task cards.
+-   **`/public/js/crisis-mode.js`:** Crisis mode functionality including favicon generation and visual state changes.
+-   **`/public/js/modals.js`:** Modal dialog handling for task add/edit, reports, archived tasks, checklist editor, and delete confirmation.
 -   **Note:** `server.js` has its own copy of CATEGORIES and getWeekNumber (documented with comments) because Node.js cannot import ES modules from `/public` without additional setup.
 -   **Registration:** The `.js` file defines and registers a custom element (e.g., `<custom-button>`) using `customElements.define()`.
 -   **Usage:** Once a component's script is loaded in `index.html`, it can be used declaratively anywhere in the application's JavaScript via `document.createElement('custom-tag')`.

@@ -1,20 +1,48 @@
-// Task Tracker Application
-import { CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD } from './js/constants.js';
-import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
+/**
+ * Task Tracker Application - Main Entry Point
+ *
+ * This is the main application file that wires together all modules:
+ * - state.js: Shared application state
+ * - api.js: HTTP API functions
+ * - filters.js: Category and priority filtering
+ * - crisis-mode.js: Crisis mode functionality
+ * - modals.js: Modal dialog handling
+ */
+
+import { STATUS_COLUMNS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD } from './js/constants.js';
+import { getWeekNumber } from './js/utils.js';
+import {
+    tasks,
+    setTasks,
+    addTask,
+    updateTaskInState,
+    removeTask,
+    activeCategoryFilters,
+    priorityFilterActive
+} from './js/state.js';
+import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi } from './js/api.js';
+import {
+    renderCategoryFilters,
+    toggleCategoryFilter,
+    togglePriorityFilter,
+    applyAllFilters
+} from './js/filters.js';
+import { toggleCrisisMode } from './js/crisis-mode.js';
+import {
+    openAddTaskModal,
+    openEditModal,
+    openDeleteConfirmation,
+    confirmDeleteTask,
+    createTaskFormSubmitHandler,
+    openReportsModal,
+    openArchivedModal,
+    openChecklistModal,
+    addChecklistItem,
+    saveChecklist
+} from './js/modals.js';
 
 (function() {
     'use strict';
-
-    // ==========================================
-    // State
-    // ==========================================
-    let tasks = [];
-    let editingTaskId = null;
-    let draggedTask = null;
-    let activeCategoryFilters = new Set(); // Active category filter IDs
-    let priorityFilterActive = false;
-    let crisisModeActive = false;
-    let originalTitle = '';
 
     // ==========================================
     // DOM Elements
@@ -88,6 +116,10 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Header Date Functions
     // ==========================================
+
+    /**
+     * Initializes the header date display with current date info.
+     */
     function initHeaderDate() {
         const now = new Date();
 
@@ -107,11 +139,18 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Hamburger Menu
     // ==========================================
+
+    /**
+     * Toggles the hamburger menu open/closed.
+     */
     function toggleMenu() {
         elements.menuBtn.classList.toggle('--active');
         elements.dropdownMenu.classList.toggle('--active');
     }
 
+    /**
+     * Closes the hamburger menu.
+     */
     function closeMenu() {
         elements.menuBtn.classList.remove('--active');
         elements.dropdownMenu.classList.remove('--active');
@@ -165,90 +204,20 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     }
 
     // ==========================================
-    // API Functions
+    // Task Operations
     // ==========================================
 
     /**
      * Fetches all active tasks from the server and re-renders all columns.
-     * Updates the global tasks array with the fetched data.
      * @returns {Promise<void>}
      */
     async function fetchTasks() {
         try {
-            const response = await fetch('/api/tasks');
-            tasks = await response.json();
+            const fetchedTasks = await fetchTasksApi();
+            setTasks(fetchedTasks);
             renderAllColumns();
         } catch (error) {
             console.error('Error fetching tasks:', error);
-        }
-    }
-
-    /**
-     * Creates a new task via the API and adds it to the todo column.
-     * @param {Object} taskData - The task data to create
-     * @param {string} taskData.title - Task title (required)
-     * @param {string} [taskData.description] - Task description
-     * @param {boolean} [taskData.priority] - Whether this is a priority task
-     * @param {number} [taskData.category] - Category ID (1-6)
-     * @returns {Promise<Object|undefined>} The created task object, or undefined on error
-     */
-    async function createTask(taskData) {
-        try {
-            const response = await fetch('/api/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(taskData)
-            });
-            const newTask = await response.json();
-            tasks.push(newTask);
-            renderColumn('todo');
-            return newTask;
-        } catch (error) {
-            console.error('Error creating task:', error);
-        }
-    }
-
-    /**
-     * Updates an existing task via the API.
-     * @param {string} id - The task ID to update
-     * @param {Object} taskData - The fields to update
-     * @param {string} [taskData.title] - New title
-     * @param {string} [taskData.description] - New description
-     * @param {boolean} [taskData.priority] - New priority status
-     * @param {number} [taskData.category] - New category ID (1-6)
-     * @returns {Promise<Object|undefined>} The updated task object, or undefined on error
-     */
-    async function updateTask(id, taskData) {
-        try {
-            const response = await fetch(`/api/tasks/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(taskData)
-            });
-            const updatedTask = await response.json();
-            const index = tasks.findIndex(t => t.id === id);
-            if (index !== -1) {
-                tasks[index] = { ...tasks[index], ...updatedTask };
-            }
-            renderAllColumns();
-            return updatedTask;
-        } catch (error) {
-            console.error('Error updating task:', error);
-        }
-    }
-
-    /**
-     * Deletes a task permanently via the API.
-     * @param {string} id - The task ID to delete
-     * @returns {Promise<void>}
-     */
-    async function deleteTask(id) {
-        try {
-            await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-            tasks = tasks.filter(t => t.id !== id);
-            renderAllColumns();
-        } catch (error) {
-            console.error('Error deleting task:', error);
         }
     }
 
@@ -261,112 +230,11 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
      */
     async function moveTask(id, newStatus, newPosition) {
         try {
-            const response = await fetch(`/api/tasks/${id}/move`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newStatus, newPosition })
-            });
-            const result = await response.json();
+            const result = await moveTaskApi(id, newStatus, newPosition);
             await fetchTasks(); // Refresh all tasks to get updated positions
             return result;
         } catch (error) {
             console.error('Error moving task:', error);
-        }
-    }
-
-    /**
-     * Generates a report snapshot of all current tasks via the API.
-     * Does not modify or archive any tasks.
-     * @returns {Promise<Object|null>} The generated report object, or null on error
-     */
-    async function generateReport() {
-        try {
-            const response = await fetch('/api/reports/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                elements.toaster.error(error.error || 'Failed to generate report');
-                return null;
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Error generating report:', error);
-            elements.toaster.error('Failed to generate report');
-            return null;
-        }
-    }
-
-    /**
-     * Archives all completed (done) tasks via the API.
-     * Moves tasks from tasks.json to archived-tasks.json.
-     * @returns {Promise<Object|null>} Result with archivedCount, or null on error
-     */
-    async function archiveTasks() {
-        try {
-            const response = await fetch('/api/tasks/archive', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                elements.toaster.error(error.error || 'Failed to archive tasks');
-                return null;
-            }
-
-            const result = await response.json();
-            await fetchTasks();
-            return result;
-        } catch (error) {
-            console.error('Error archiving tasks:', error);
-            elements.toaster.error('Failed to archive tasks');
-            return null;
-        }
-    }
-
-    async function fetchArchivedTasks() {
-        try {
-            const response = await fetch('/api/archived');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching archived tasks:', error);
-            return [];
-        }
-    }
-
-    async function fetchReports() {
-        try {
-            const response = await fetch('/api/reports');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-            return [];
-        }
-    }
-
-    async function updateReportTitle(id, title) {
-        try {
-            await fetch(`/api/reports/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title })
-            });
-        } catch (error) {
-            console.error('Error updating report title:', error);
-        }
-    }
-
-    async function deleteReport(id) {
-        try {
-            await fetch(`/api/reports/${id}`, { method: 'DELETE' });
-            const reports = await fetchReports();
-            renderReportsList(reports);
-        } catch (error) {
-            console.error('Error deleting report:', error);
         }
     }
 
@@ -376,7 +244,6 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
 
     /**
      * Re-renders all kanban columns and applies active filters.
-     * Called after data changes that affect multiple columns.
      */
     function renderAllColumns() {
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
@@ -405,19 +272,13 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     /**
      * Creates a task-card custom element with proper styling and event handlers.
      * @param {Object} task - The task data object
-     * @param {string} task.id - Unique task identifier
-     * @param {string} task.title - Task title
-     * @param {string} [task.description] - Task description
-     * @param {boolean} [task.priority] - Whether this is a priority task
-     * @param {number} [task.category] - Category ID (1-6)
-     * @param {string} task.status - Current status (todo, wait, inprogress, done)
      * @param {number} position - Zero-based position in the column
      * @param {number} totalInColumn - Total number of tasks in the column
      * @returns {HTMLElement} The configured task-card custom element
      */
     function createTaskCard(task, position, totalInColumn) {
         const card = document.createElement('task-card');
-        
+
         card.dataset.taskId = task.id;
         card.dataset.status = task.status;
         card.dataset.category = String(task.category || 1);
@@ -451,467 +312,34 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         return card;
     }
 
-
     // ==========================================
-    // Category Filters
-    // ==========================================
-
-    /**
-     * Renders category filter buttons in the toolbar from CATEGORIES constant.
-     */
-    function renderCategoryFilters() {
-        const container = elements.categoryFilters;
-        container.innerHTML = '';
-
-        Object.entries(CATEGORIES).forEach(([id, label]) => {
-            const btn = document.createElement('button');
-            btn.className = 'toolbar__categoryBtn js-categoryFilterBtn';
-            btn.dataset.category = id;
-            btn.textContent = label;
-            if (activeCategoryFilters.has(Number(id))) {
-                btn.classList.add('--active');
-            }
-            btn.addEventListener('click', () => toggleCategoryFilter(Number(id)));
-            container.appendChild(btn);
-        });
-    }
-
-    /**
-     * Toggles a category filter on or off.
-     * When active, only tasks with matching categories are shown.
-     * @param {number} categoryId - The category ID to toggle (1-6)
-     */
-    function toggleCategoryFilter(categoryId) {
-        if (activeCategoryFilters.has(categoryId)) {
-            activeCategoryFilters.delete(categoryId);
-        } else {
-            activeCategoryFilters.add(categoryId);
-        }
-
-        // Update button states
-        elements.categoryFilters.querySelectorAll('.toolbar__categoryBtn').forEach(btn => {
-            btn.classList.toggle('--active', activeCategoryFilters.has(Number(btn.dataset.category)));
-        });
-
-        applyAllFilters();
-    }
-
-    /**
-     * Toggles the priority filter on or off.
-     * When active, only tasks with priority=true are shown.
-     */
-    function togglePriorityFilter() {
-        priorityFilterActive = !priorityFilterActive;
-        elements.priorityFilterBtn.classList.toggle('--active', priorityFilterActive);
-        applyAllFilters();
-    }
-
-    /**
-     * Applies all active filters (category and priority) to task cards.
-     * Queries through kanban-column Shadow DOMs to find task-card elements.
-     * Cards that don't match active filters are hidden via the hidden attribute.
-     */
-    function applyAllFilters() {
-        // Task cards are inside kanban-column Shadow DOMs, so we need to query through them
-        const columns = document.querySelectorAll('kanban-column');
-        const cards = Array.from(columns).flatMap(col =>
-            Array.from(col.shadowRoot?.querySelectorAll('task-card') || [])
-        );
-        const hasCategoryFilters = activeCategoryFilters.size > 0;
-
-        cards.forEach(card => {
-            let hidden = false;
-
-            // Category filter
-            if (hasCategoryFilters) {
-                const cardCategory = Number(card.dataset.category);
-                if (!activeCategoryFilters.has(cardCategory)) {
-                    hidden = true;
-                }
-            }
-
-            // Priority filter
-            if (priorityFilterActive && card.dataset.priority !== 'true') {
-                hidden = true;
-            }
-
-            card.hidden = hidden;
-        });
-    }
-
-    // ==========================================
-    // Crisis Mode
+    // Report & Archive Handlers
     // ==========================================
 
     /**
-     * Generates a red star favicon as a data URL using canvas.
-     * Used as the favicon during crisis mode.
-     * @returns {string} Data URL of the red star PNG image
+     * Handles the generate report button click.
      */
-    function generateRedStarFavicon() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-
-        // Draw a red star
-        ctx.fillStyle = '#C0392B';
-        ctx.beginPath();
-        const cx = 32, cy = 32, outerR = 30, innerR = 12, points = 5;
-        for (let i = 0; i < points * 2; i++) {
-            const r = i % 2 === 0 ? outerR : innerR;
-            const angle = (Math.PI / 2 * 3) + (Math.PI / points) * i;
-            const x = cx + Math.cos(angle) * r;
-            const y = cy + Math.sin(angle) * r;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill();
-
-        return canvas.toDataURL('image/png');
-    }
-
-    /**
-     * Updates the page favicon to the specified URL.
-     * @param {string} url - The favicon URL (can be a path or data URL)
-     */
-    function setFavicon(url) {
-        let link = document.querySelector('link[rel="icon"]');
-        if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
-        }
-        link.type = 'image/png';
-        link.href = url;
-    }
-
-    /**
-     * Toggles crisis mode on or off.
-     * Crisis mode: activates priority filter, red border, hides toolbar/done column/checklist,
-     * changes title to "!!!", and shows red star favicon.
-     */
-    function toggleCrisisMode() {
-        closeMenu();
-        crisisModeActive = !crisisModeActive;
-
-        if (crisisModeActive) {
-            // Save original state
-            originalTitle = document.title;
-
-            // Activate priority filter
-            priorityFilterActive = true;
-            elements.priorityFilterBtn.classList.add('--active');
-            applyAllFilters();
-
-            // Visual changes
-            document.body.classList.add('--crisisMode');
-            document.title = '!!!';
-            setFavicon(generateRedStarFavicon());
-
-            // Update menu button text
-            elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Exit Crisis Mode';
-        } else {
-            // Deactivate priority filter
-            priorityFilterActive = false;
-            elements.priorityFilterBtn.classList.remove('--active');
-            applyAllFilters();
-
-            // Restore visuals
-            document.body.classList.remove('--crisisMode');
-            document.title = originalTitle;
-            setFavicon('favicon.png');
-
-            // Restore menu button text
-            elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Crisis Mode';
-        }
-    }
-
-    // ==========================================
-    // Modal Functions
-    // ==========================================
-    function renderTaskModalActions(isEditing) {
-        elements.taskModalActions.innerHTML = '';
-
-        const rightActions = document.createElement('div');
-        rightActions.className = 'modal__actionsRight';
-
-        const cancelBtn = document.createElement('custom-button');
-        cancelBtn.setAttribute('label', 'Cancel');
-        cancelBtn.addEventListener('click', () => elements.taskModal.close());
-
-        const saveBtn = document.createElement('custom-button');
-        saveBtn.setAttribute('label', isEditing ? 'Update' : 'Save');
-        saveBtn.setAttribute('modifier', 'save');
-        saveBtn.setAttribute('type', 'submit');
-        
-        // The form's submit event is already handled by handleTaskFormSubmit
-        elements.taskForm.onsubmit = handleTaskFormSubmit;
-
-        rightActions.appendChild(cancelBtn);
-        rightActions.appendChild(saveBtn);
-
-        if (isEditing) {
-            const deleteBtn = document.createElement('custom-button');
-            deleteBtn.setAttribute('label', 'Delete Task');
-            deleteBtn.setAttribute('modifier', 'delete');
-            deleteBtn.addEventListener('click', openDeleteConfirmation);
-            elements.taskModalActions.appendChild(deleteBtn);
-        }
-
-        elements.taskModalActions.appendChild(rightActions);
-    }
-
-    function openAddTaskModal() {
-        editingTaskId = null;
-        elements.modalTitle.textContent = 'Add Task';
-        elements.taskForm.reset();
-        setCategorySelection(1);
-        elements.taskLogSection.style.display = 'none';
-
-        renderTaskModalActions(false);
-
-        elements.taskModal.open();
-        elements.taskTitle.focus();
-    }
-
-    function openEditModal(taskId) {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task) return;
-
-        editingTaskId = taskId;
-        elements.modalTitle.textContent = 'Edit Task';
-        elements.taskTitle.value = task.title;
-        elements.taskDescription.value = task.description || '';
-        elements.taskPriority.checked = task.priority || false;
-        setCategorySelection(task.category || 1);
-
-        // Render task log
-        if (task.log && task.log.length > 0) {
-            elements.taskLogSection.style.display = 'block';
-            elements.taskLogList.innerHTML = task.log.map(entry => `
-                <li><span class="taskForm__logDate">${entry.date}</span>: ${escapeHtml(entry.action)}</li>
-            `).join('');
-        } else {
-            elements.taskLogSection.style.display = 'none';
-        }
-
-        renderTaskModalActions(true);
-
-        elements.taskModal.open();
-        elements.taskTitle.focus();
-    }
-
-    async function handleTaskFormSubmit(e) {
-        e.preventDefault();
-
-        const title = elements.taskTitle.value.trim();
-        const description = elements.taskDescription.value.trim();
-        const priority = elements.taskPriority.checked;
-        const category = getSelectedCategory();
-
-        if (!title) {
-            elements.toaster.warning('Title is required');
-            return;
-        }
-
-        if (editingTaskId) {
-            await updateTask(editingTaskId, { title, description, priority, category });
-        } else {
-            await createTask({ title, description, priority, category });
-        }
-
-        elements.taskModal.close();
-    }
-
-    function setCategorySelection(value) {
-        const radio = document.querySelector(`input[name="task-category"][value="${value}"]`);
-        if (radio) radio.checked = true;
-    }
-
-    function getSelectedCategory() {
-        const selected = document.querySelector('input[name="task-category"]:checked');
-        return selected ? Number(selected.value) : 1;
-    }
-
-    function openDeleteConfirmation() {
-        elements.confirmModal.open();
-    }
-
-    async function confirmDeleteTask() {
-        if (editingTaskId) {
-            await deleteTask(editingTaskId);
-            elements.confirmModal.close();
-            elements.taskModal.close();
-            editingTaskId = null;
-        }
-    }
-
-    // ==========================================
-    // Reports Functions
-    // ==========================================
-    async function openReportsModal() {
-        closeMenu();
-        const reports = await fetchReports();
-        renderReportsList(reports);
-        elements.reportsModal.open();
-    }
-
-    function renderReportsList(reports) {
-        if (reports.length === 0) {
-            elements.reportsContainer.innerHTML = '<div class="emptyState">No reports generated yet</div>';
-            return;
-        }
-
-        // Sort reports by date (newest first)
-        reports.sort((a, b) => new Date(b.generatedDate) - new Date(a.generatedDate));
-
-        elements.reportsContainer.innerHTML = `
-            <ul class="reportsList">
-                ${reports.map(report => `
-                    <li class="reportsList__item" data-report-id="${report.id}">
-                        <div class="reportsList__row">
-                            <input type="text" class="reportsList__titleEdit js-reportTitleEdit"
-                                value="${escapeHtml(report.title)}" data-report-id="${report.id}" />
-                            <button class="reportsList__deleteBtn js-reportDeleteBtn"
-                                data-report-id="${report.id}" title="Delete report">delete</button>
-                        </div>
-                        <div class="reportsList__date">${formatDate(report.generatedDate)}</div>
-                    </li>
-                `).join('')}
-            </ul>
-        `;
-
-        // Event delegation for title edits
-        elements.reportsContainer.querySelectorAll('.js-reportTitleEdit').forEach(input => {
-            input.addEventListener('click', (e) => e.stopPropagation());
-            input.addEventListener('blur', async () => {
-                await updateReportTitle(input.dataset.reportId, input.value);
-            });
-        });
-
-        // Event delegation for delete buttons
-        elements.reportsContainer.querySelectorAll('.js-reportDeleteBtn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (confirm('Delete this report?')) {
-                    await deleteReport(btn.dataset.reportId);
-                }
-            });
-        });
-
-        // Add click listeners to view reports
-        elements.reportsContainer.querySelectorAll('.reportsList__item').forEach(li => {
-            li.addEventListener('click', (e) => {
-                if (e.target.classList.contains('js-reportTitleEdit') || e.target.classList.contains('js-reportDeleteBtn')) return;
-                const reportId = li.dataset.reportId;
-                const report = reports.find(r => r.id === reportId);
-                if (report) renderReportView(report, reports);
-            });
-        });
-    }
-
-
-    function renderReportView(report, allReports) {
-        elements.reportsContainer.innerHTML = `
-            <div class="reportDetail">
-                <div class="reportDetail__header">
-                    <button class="reportDetail__backBtn js-backToReportsBtn">← Back to Reports</button>
-                    <h3>${escapeHtml(report.title)}</h3>
-                </div>
-
-                ${renderReportSection('Completed Tasks (Archived)', report.content.archived)}
-                ${renderReportSection('In Progress', report.content.inProgress)}
-                ${renderReportSection('Waiting/Blocked', report.content.waiting)}
-                ${renderReportSection('To Do', report.content.todo)}
-
-                <div class="reportDetail__section">
-                    <h4>Notes</h4>
-                    ${report.notes && (typeof report.notes === 'string' ? report.notes.trim() : report.notes.length > 0) ?
-                        (typeof report.notes === 'string' ?
-                            `<pre class="reportDetail__notesText">${escapeHtml(report.notes)}</pre>` :
-                            report.notes.map(note => `
-                                <div class="reportDetail__notesItem ${note.checked ? '--checked' : ''}">
-                                    ${note.checked ? '☑' : '☐'} ${escapeHtml(note.text)}
-                                </div>
-                            `).join('')
-                        ) :
-                        '<div class="emptyState">No notes</div>'
-                    }
-                </div>
-            </div>
-        `;
-
-        // Event delegation for back button
-        elements.reportsContainer.querySelector('.js-backToReportsBtn').addEventListener('click', () => {
-            renderReportsList(allReports);
-        });
-    }
-
-    /**
-     * Renders a section of a report with tasks grouped by category.
-     * @param {string} title - Section title (e.g., "Completed Tasks")
-     * @param {Array<Object>} taskList - Array of task objects to display
-     * @returns {string} HTML string for the report section
-     */
-    function renderReportSection(title, taskList) {
-        if (!taskList || taskList.length === 0) {
-            return `
-                <div class="reportDetail__section">
-                    <h4>${title}</h4>
-                    <div class="emptyState">No tasks</div>
-                </div>
-            `;
-        }
-
-        // Group tasks by category
-        const grouped = {};
-        taskList.forEach(task => {
-            const cat = task.category || 1;
-            if (!grouped[cat]) grouped[cat] = [];
-            grouped[cat].push(task);
-        });
-
-        // Sort category keys numerically
-        const sortedKeys = Object.keys(grouped).map(Number).sort((a, b) => a - b);
-
-        const taskHtml = sortedKeys.map(catKey => {
-            const catLabel = CATEGORIES[catKey] || 'Non categorized';
-            const catTasks = grouped[catKey];
-            return `
-                <div class="reportDetail__categoryGroup">
-                    <div class="reportDetail__categoryLabel">${escapeHtml(catLabel)}</div>
-                    ${catTasks.map(task => `
-                        <div class="reportDetail__task">
-                            <div class="reportDetail__taskId">[${task.id.substring(0, 8)}]</div>
-                            <div class="reportDetail__taskTitle">${escapeHtml(task.title)}</div>
-                            ${task.description ? `<div class="reportDetail__taskDesc">Description: ${escapeHtml(task.description)}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }).join('');
-
-        return `
-            <div class="reportDetail__section">
-                <h4>${title}</h4>
-                ${taskHtml}
-            </div>
-        `;
-    }
-
     async function handleGenerateReport() {
         if (!confirm('Generate a report snapshot of all current tasks?')) {
             return;
         }
 
-        const report = await generateReport();
-        if (report) {
-            elements.toaster.success(`Report generated: ${report.title}`);
+        try {
+            const result = await generateReportApi();
+            if (result.ok) {
+                elements.toaster.success(`Report generated: ${result.data.title}`);
+            } else {
+                elements.toaster.error(result.error);
+            }
+        } catch (error) {
+            console.error('Error generating report:', error);
+            elements.toaster.error('Failed to generate report');
         }
     }
 
+    /**
+     * Handles the archive button click.
+     */
     async function handleArchive() {
         const doneTasks = tasks.filter(t => t.status === 'done');
         if (doneTasks.length === 0) {
@@ -923,149 +351,37 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             return;
         }
 
-        const result = await archiveTasks();
-        if (result) {
-            elements.toaster.success(`${result.archivedCount} task${result.archivedCount !== 1 ? 's' : ''} archived`);
-        }
-    }
-
-    // ==========================================
-    // Archived Tasks Functions
-    // ==========================================
-    async function openArchivedModal() {
-        closeMenu();
-        const archivedTasks = await fetchArchivedTasks();
-        renderArchivedTasks(archivedTasks);
-        elements.archivedModal.open();
-    }
-
-    function renderArchivedTasks(archivedTasks) {
-        if (archivedTasks.length === 0) {
-            elements.archivedContainer.innerHTML = '<div class="emptyState">No completed tasks yet</div>';
-            return;
-        }
-
-        // Sort by createdDate descending (newest completed first)
-        // We use the last log entry date if available, otherwise createdDate
-        archivedTasks.sort((a, b) => {
-            const aDate = a.log && a.log.length > 0
-                ? new Date(a.log[a.log.length - 1].date)
-                : new Date(a.createdDate);
-            const bDate = b.log && b.log.length > 0
-                ? new Date(b.log[b.log.length - 1].date)
-                : new Date(b.createdDate);
-            return bDate - aDate;
-        });
-
-        elements.archivedContainer.innerHTML = `
-            <div class="archivedView__count">${archivedTasks.length} completed task${archivedTasks.length !== 1 ? 's' : ''}</div>
-            <ul class="archivedView__list">
-                ${archivedTasks.map(task => {
-                    const completedDate = task.log && task.log.length > 0
-                        ? task.log[task.log.length - 1].date
-                        : task.createdDate.split('T')[0];
-                    return `
-                        <li class="archivedView__item">
-                            <div class="archivedView__itemHeader">
-                                ${task.priority ? '<span class="archivedView__itemStar">★</span>' : ''}
-                                <span class="archivedView__itemTitle">${escapeHtml(task.title)}</span>
-                            </div>
-                            ${task.description ? `<div class="archivedView__itemDesc">${escapeHtml(task.description)}</div>` : ''}
-                            <div class="archivedView__itemDate">Completed: ${completedDate}</div>
-                        </li>
-                    `;
-                }).join('')}
-            </ul>
-        `;
-    }
-
-    // ==========================================
-    // Checklist Modal Functions
-    // ==========================================
-    let checklistItems = [];
-
-    function openChecklistModal() {
-        closeMenu();
-        // Load current config from localStorage
-        const stored = localStorage.getItem('checklistConfig');
-        if (stored) {
-            try {
-                checklistItems = JSON.parse(stored);
-            } catch {
-                checklistItems = getDefaultChecklistItems();
+        try {
+            const result = await archiveTasksApi();
+            if (result.ok) {
+                await fetchTasks();
+                elements.toaster.success(`${result.data.archivedCount} task${result.data.archivedCount !== 1 ? 's' : ''} archived`);
+            } else {
+                elements.toaster.error(result.error);
             }
-        } else {
-            checklistItems = getDefaultChecklistItems();
+        } catch (error) {
+            console.error('Error archiving tasks:', error);
+            elements.toaster.error('Failed to archive tasks');
         }
-        renderChecklistEditor();
-        elements.checklistModal.open();
-    }
-
-    function getDefaultChecklistItems() {
-        return [...DEFAULT_CHECKLIST_ITEMS];
-    }
-
-    function renderChecklistEditor() {
-        elements.checklistItemsContainer.innerHTML = checklistItems.map((item, index) => `
-            <div class="checklistEditor__row" data-index="${index}">
-                <input type="text" class="checklistEditor__textInput" value="${escapeHtml(item.text)}" placeholder="Task text" />
-                <input type="text" class="checklistEditor__urlInput" value="${escapeHtml(item.url || '')}" placeholder="URL (optional)" />
-                <button type="button" class="checklistEditor__removeBtn" data-index="${index}">&times;</button>
-            </div>
-        `).join('');
-
-        // Add remove button listeners
-        elements.checklistItemsContainer.querySelectorAll('.checklistEditor__removeBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const index = parseInt(btn.dataset.index);
-                checklistItems.splice(index, 1);
-                renderChecklistEditor();
-            });
-        });
-    }
-
-    function addChecklistItem() {
-        checklistItems.push({ text: '', url: '' });
-        renderChecklistEditor();
-        // Focus the new text input
-        const inputs = elements.checklistItemsContainer.querySelectorAll('.checklistEditor__textInput');
-        if (inputs.length > 0) {
-            inputs[inputs.length - 1].focus();
-        }
-    }
-
-    function saveChecklist() {
-        // Read values from inputs
-        const items = [];
-        elements.checklistItemsContainer.querySelectorAll('.checklistEditor__row').forEach(itemEl => {
-            const text = itemEl.querySelector('.checklistEditor__textInput').value.trim();
-            const url = itemEl.querySelector('.checklistEditor__urlInput').value.trim();
-            if (text) {
-                items.push({ text, url });
-            }
-        });
-
-        // Save to localStorage
-        localStorage.setItem('checklistConfig', JSON.stringify(items));
-
-        // Refresh the daily-checklist component
-        const checklistComponent = document.querySelector('daily-checklist');
-        if (checklistComponent) {
-            checklistComponent.loadRecurrentTasks();
-            checklistComponent.render();
-        }
-
-        closeChecklistModal();
-    }
-
-    function closeChecklistModal() {
-        elements.checklistModal.close();
     }
 
     // ==========================================
     // Event Listeners
     // ==========================================
+
+    /**
+     * Initializes all event listeners.
+     */
     function initEventListeners() {
+        // Create the task form submit handler
+        const handleTaskFormSubmit = createTaskFormSubmitHandler(
+            elements,
+            renderColumn,
+            renderAllColumns,
+            addTask,
+            updateTaskInState
+        );
+
         // Hamburger Menu
         elements.menuBtn.addEventListener('click', toggleMenu);
 
@@ -1077,10 +393,14 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         });
 
         // Priority Filter
-        elements.priorityFilterBtn.addEventListener('click', togglePriorityFilter);
+        elements.priorityFilterBtn.addEventListener('click', () => {
+            togglePriorityFilter(elements.priorityFilterBtn, applyAllFilters);
+        });
 
         // Crisis Mode
-        elements.crisisModeBtn.addEventListener('click', toggleCrisisMode);
+        elements.crisisModeBtn.addEventListener('click', () => {
+            toggleCrisisMode(elements, closeMenu);
+        });
 
         // Privacy Toggle
         elements.privacyToggleBtn.addEventListener('click', () => {
@@ -1091,35 +411,58 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
         });
 
         // Add Task
-        elements.addTaskBtn.addEventListener('click', openAddTaskModal);
-
-        // Task Form submit is handled via onsubmit in renderTaskModalActions
+        elements.addTaskBtn.addEventListener('click', () => {
+            openAddTaskModal(
+                elements,
+                () => openDeleteConfirmation(elements),
+                handleTaskFormSubmit
+            );
+        });
 
         // Report & Archive
         elements.reportBtn.addEventListener('click', handleGenerateReport);
         elements.archiveBtn.addEventListener('click', handleArchive);
 
         // Reports
-        elements.viewReportsBtn.addEventListener('click', openReportsModal);
+        elements.viewReportsBtn.addEventListener('click', () => {
+            openReportsModal(elements, closeMenu);
+        });
 
         // Archived Tasks
-        elements.viewArchivedBtn.addEventListener('click', openArchivedModal);
+        elements.viewArchivedBtn.addEventListener('click', () => {
+            openArchivedModal(elements, closeMenu);
+        });
 
         // Checklist Modal
-        elements.editChecklistBtn.addEventListener('click', openChecklistModal);
-        elements.addChecklistItemBtn.addEventListener('click', addChecklistItem);
-        elements.checklistCancelBtn.addEventListener('click', closeChecklistModal);
-        elements.checklistSaveBtn.addEventListener('click', saveChecklist);
+        elements.editChecklistBtn.addEventListener('click', () => {
+            openChecklistModal(elements, closeMenu);
+        });
+        elements.addChecklistItemBtn.addEventListener('click', () => {
+            addChecklistItem(elements);
+        });
+        elements.checklistCancelBtn.addEventListener('click', () => {
+            elements.checklistModal.close();
+        });
+        elements.checklistSaveBtn.addEventListener('click', () => {
+            saveChecklist(elements);
+        });
 
         // Confirm Delete Modal
         elements.confirmCancel.addEventListener('click', () => {
             elements.confirmModal.close();
         });
-        elements.confirmDelete.addEventListener('click', confirmDeleteTask);
+        elements.confirmDelete.addEventListener('click', () => {
+            confirmDeleteTask(elements, renderAllColumns, removeTask);
+        });
 
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
-            openEditModal(e.detail.taskId);
+            openEditModal(
+                e.detail.taskId,
+                elements,
+                () => openDeleteConfirmation(elements),
+                handleTaskFormSubmit
+            );
         });
 
         elements.kanban.addEventListener('task-dropped', (e) => {
@@ -1127,7 +470,7 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
             moveTask(taskId, newStatus, newPosition);
         });
 
-        // Close menu on ESC key (modal-dialog components handle their own ESC/backdrop close)
+        // Close menu on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeMenu();
@@ -1138,12 +481,18 @@ import { escapeHtml, getWeekNumber, formatDate } from './js/utils.js';
     // ==========================================
     // Initialize
     // ==========================================
+
+    /**
+     * Initializes the application.
+     */
     async function init() {
         // Initialize header date
         initHeaderDate();
 
         // Initialize UI
-        renderCategoryFilters();
+        renderCategoryFilters(elements.categoryFilters, (categoryId) => {
+            toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
+        });
         initEventListeners();
 
         // Fetch data
