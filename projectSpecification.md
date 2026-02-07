@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.6.0
+**Version:** 2.7.0
 **Last Updated:** 2026-02-07
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.7.0   | 2026-02-07 | Added comprehensive "Code Guidelines" section documenting coding standards, patterns, and anti-patterns to prevent common issues |
 | 2.6.0   | 2026-02-07 | Code consistency: created `toast-notification` component for user feedback; migrated Confirm and Checklist modals to `<modal-dialog>` component; removed window object functions and inline HTML handlers in favor of event delegation; replaced all `alert()` calls with toaster notifications |
 | 2.5.0   | 2026-02-07 | Code cleanup: removed console.log statements from production code; fixed deprecated `substr()` to `substring()`; fixed crisis mode CSS selectors to target custom elements (`kanban-column`, `daily-checklist`); removed dead CSS rules targeting Shadow DOM internals |
 | 2.4.0   | 2026-02-07 | Refactored shared code: created `/public/js/constants.js` (CATEGORIES, STATUS_COLUMNS, DEFAULT_CHECKLIST_ITEMS) and `/public/js/utils.js` (escapeHtml, getWeekNumber, formatDate); converted app.js to ES module; eliminated code duplication across components |
@@ -125,6 +126,240 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 node server.js
 # → http://localhost:3001
 ```
+
+---
+
+## Code Guidelines
+
+This section documents coding standards and patterns to maintain consistency and prevent common issues. All contributors should follow these guidelines.
+
+### 1. Single Source of Truth (No Code Duplication)
+
+**Constants:**
+- Define shared constants ONCE in `/public/js/constants.js`
+- Import where needed: `import { CATEGORIES } from './js/constants.js';`
+- Never duplicate constant definitions across files
+- If server.js needs the same constants, document with a comment: `// Source of truth: /public/js/constants.js`
+
+**Utility Functions:**
+- Define shared utilities ONCE in `/public/js/utils.js`
+- Common utilities: `escapeHtml()`, `getWeekNumber()`, `formatDate()`
+- Import where needed: `import { escapeHtml } from './js/utils.js';`
+- Never copy-paste utility functions between files
+
+**Default Values:**
+- Define default configurations in one place (constants.js or the owning component)
+- Other files should import, not redefine
+
+### 2. Modal Implementation
+
+**Always use the `<modal-dialog>` component:**
+- Never create modals with raw `<div class="modal">` elements
+- Use size attribute: `<modal-dialog size="large">` or `size="small"`
+- Open/close via methods: `element.open()` and `element.close()`
+- The component handles: close button, backdrop click, ESC key, animations
+
+**Example:**
+```html
+<modal-dialog class="js-myModal" size="large">
+    <span slot="title">Modal Title</span>
+    <div>Content here</div>
+</modal-dialog>
+```
+
+```javascript
+elements.myModal.open();   // Correct
+elements.myModal.close();  // Correct
+// WRONG: elements.myModal.classList.add('--active');
+```
+
+### 3. User Feedback (No alert())
+
+**Always use the toaster component for user feedback:**
+```javascript
+elements.toaster.success('Operation completed');  // Green - success
+elements.toaster.error('Something went wrong');   // Red - errors
+elements.toaster.warning('Please fill required fields');  // Yellow - warnings
+elements.toaster.info('No items to display');     // Beige - informational
+```
+
+**Never use:**
+- `alert()` — blocks UI, ugly, inconsistent
+- `confirm()` — use `<modal-dialog>` with custom buttons instead (for important confirmations)
+
+### 4. Event Handling (No Global Functions)
+
+**Never expose functions on window object:**
+```javascript
+// WRONG:
+window.myFunction = function() { ... };
+
+// CORRECT:
+function myFunction() { ... }
+```
+
+**Never use inline HTML event handlers:**
+```javascript
+// WRONG:
+`<button onclick="window.doSomething('${id}')">Click</button>`
+`<input onblur="window.save(this.value)">`
+
+// CORRECT: Use event delegation after rendering
+container.innerHTML = `<button class="js-actionBtn" data-id="${id}">Click</button>`;
+container.querySelector('.js-actionBtn').addEventListener('click', (e) => {
+    const id = e.target.dataset.id;
+    doSomething(id);
+});
+```
+
+### 5. Shadow DOM Awareness
+
+**Querying elements inside Shadow DOM:**
+```javascript
+// WRONG: document.querySelectorAll('task-card') — won't find cards inside shadow roots
+
+// CORRECT: Query through each component's shadowRoot
+const columns = document.querySelectorAll('kanban-column');
+const cards = Array.from(columns).flatMap(col =>
+    Array.from(col.shadowRoot?.querySelectorAll('task-card') || [])
+);
+```
+
+**CSS cannot pierce Shadow DOM:**
+- Styles in `styles.css` cannot target elements inside Shadow DOM
+- Use CSS custom properties (variables) to pass styling through
+- Each component must define its own internal styles
+
+**CSS selectors must target actual elements:**
+```css
+/* WRONG: targeting old class names or Shadow DOM internals */
+body.--crisisMode .column[data-status="done"] { }
+body.--crisisMode .dailyChecklist { }
+
+/* CORRECT: target the custom element itself */
+body.--crisisMode kanban-column[data-status="done"] { visibility: hidden; }
+body.--crisisMode daily-checklist { visibility: hidden; }
+```
+
+### 6. Production Code Quality
+
+**No debug statements:**
+```javascript
+// WRONG: console.log('debug info');
+
+// If debugging is needed, use a debug flag:
+const DEBUG = false;
+function log(...args) { if (DEBUG) console.log(...args); }
+```
+
+**Use modern APIs:**
+```javascript
+// WRONG (deprecated):
+str.substr(2, 9)
+
+// CORRECT:
+str.substring(2, 11)
+```
+
+**Remove dead code:**
+- Delete unused CSS rules (especially those targeting removed elements)
+- Delete commented-out code blocks
+- Delete unused functions and variables
+
+### 7. ES Modules
+
+**app.js and components use ES modules:**
+```html
+<script type="module" src="app.js"></script>
+```
+
+```javascript
+// Importing
+import { CATEGORIES } from './js/constants.js';
+import { escapeHtml } from './js/utils.js';
+
+// Exporting (in constants.js, utils.js)
+export const CATEGORIES = { ... };
+export function escapeHtml(text) { ... }
+```
+
+### 8. Component Patterns
+
+**Every new component should:**
+1. Reside in `/public/components/[name]/` with `.js`, `.html`, `.css` files
+2. Use Shadow DOM for encapsulation
+3. Cache templates at class level to avoid repeated fetches (see Performance section)
+4. Clean up event listeners in `disconnectedCallback()`
+
+**Template caching pattern:**
+```javascript
+class MyComponent extends HTMLElement {
+    static templateCache = null;
+
+    async connectedCallback() {
+        if (!MyComponent.templateCache) {
+            MyComponent.templateCache = await Promise.all([
+                fetch('/components/my-component/my-component.html').then(r => r.text()),
+                fetch('/components/my-component/my-component.css').then(r => r.text())
+            ]);
+        }
+        const [html, css] = MyComponent.templateCache;
+        // Use cached templates...
+    }
+}
+```
+
+### 9. Naming Conventions
+
+**CSS (BEM with camelCase):**
+- Blocks/Elements: `.blockName__elementName`
+- Modifiers: `.--modifierName` (separate class)
+- JS hooks: `.js-camelCase` (never style these)
+
+**JavaScript:**
+- Functions: `camelCase` — `fetchTasks()`, `openEditModal()`
+- Constants: `UPPER_SNAKE_CASE` — `CATEGORIES`, `STATUS_COLUMNS`
+- Private/internal: prefix with underscore — `_handleClick()`
+
+**Files:**
+- Components: `kebab-case` — `task-card.js`, `modal-dialog.css`
+- Modules: `kebab-case` — `constants.js`, `utils.js`
+
+### 10. Error Handling
+
+**API functions should provide user feedback on errors:**
+```javascript
+async function myApiCall() {
+    try {
+        const response = await fetch('/api/endpoint');
+        if (!response.ok) {
+            const error = await response.json();
+            elements.toaster.error(error.message || 'Operation failed');
+            return null;
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        elements.toaster.error('Network error. Please try again.');
+        return null;
+    }
+}
+```
+
+### Quick Reference Checklist
+
+Before submitting code, verify:
+
+- [ ] No duplicate constants or utility functions
+- [ ] All modals use `<modal-dialog>` component
+- [ ] No `alert()` or `confirm()` calls — use toaster/modal
+- [ ] No `window.functionName` exports
+- [ ] No inline `onclick`, `onblur`, etc. handlers
+- [ ] CSS selectors target actual DOM elements (not Shadow DOM internals)
+- [ ] No `console.log` statements (except behind DEBUG flag)
+- [ ] No deprecated APIs (`substr`, etc.)
+- [ ] Shared code imported from `/public/js/` modules
+- [ ] Components cache their templates
 
 ---
 
