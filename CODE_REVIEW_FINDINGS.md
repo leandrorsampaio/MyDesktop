@@ -678,10 +678,6 @@ async function moveTask(id, newStatus, newPosition) {
 
 If you want to learn more advanced patterns, try Solution 3 (debounce) — it's a very common pattern in web development.
 
----
-
----
-
 ### 5.4 No input sanitization on server
 
 **File:** `server.js`
@@ -883,10 +879,6 @@ if (!result.success) {
 const validData = result.data;
 ```
 
----
-
----
-
 ### Section 5 Summary: What Should a Junior Developer Do?
 
 Here's my recommendation for how to approach these items, considering this is a **local-only, single-user app**:
@@ -1003,6 +995,10 @@ Additionally, `DEFAULT_PORT` is exported from `/public/js/constants.js` for clie
 
 ## 7. Security Considerations
 
+> **Junior Developer Note:** Security might seem less important for a local-only app, but learning these concepts now is crucial. The habits you build here will carry into your future projects where security IS critical. Plus, even local apps can have security issues if you ever share your screen or if someone accesses your computer.
+
+---
+
 ### 7.1 XSS potential in dynamically generated HTML
 
 **Files:** `app.js` various render functions
@@ -1013,12 +1009,166 @@ Additionally, `DEFAULT_PORT` is exported from `/public/js/constants.js` for clie
 - `app.js:692`: `onclick="...window.deleteReport('${report.id}')..."` - if report.id contained malicious content
 - `app.js:114`: URL in daily checklist link could be malicious
 
-**Solution:** Audit all template literals that include user data. Ensure:
-1. All user content goes through `escapeHtml()`
-2. URLs are validated before use
-3. Consider using a simple template sanitization library
+#### What is XSS (Cross-Site Scripting)?
 
----
+XSS is one of the most common web security vulnerabilities. It happens when an attacker injects malicious code (usually JavaScript) into your application, and that code runs in someone's browser.
+
+**The attack flow:**
+```
+1. Attacker creates a task with malicious title:
+   "<img src=x onerror='alert(document.cookie)'>"
+
+2. Your app saves this to tasks.json (server doesn't check)
+
+3. When the page loads, your app renders:
+   card.innerHTML = task.title;  // ❌ DANGEROUS!
+
+4. Browser sees an <img> tag, tries to load "x", fails,
+   and executes the onerror JavaScript!
+
+5. Attacker's code now runs with full access to:
+   - Your cookies
+   - Your localStorage
+   - The entire DOM
+   - Can make requests as you
+```
+
+#### Why is this dangerous even for a local app?
+
+| Scenario | Risk |
+|----------|------|
+| You paste a task title from the internet | Could contain hidden malicious code |
+| Someone sends you a "tasks.json" backup | Could be poisoned with XSS |
+| You share your screen | Malicious code could run visibly |
+| Future feature: import/export | Opens door to XSS attacks |
+
+#### The three types of XSS
+
+| Type | How it works | Example |
+|------|--------------|---------|
+| **Stored XSS** | Malicious script saved to database/file | Task title with `<script>` tag |
+| **Reflected XSS** | Script in URL gets displayed | `?search=<script>alert(1)</script>` |
+| **DOM XSS** | Script injected via client-side JS | `innerHTML = userInput` |
+
+This project is vulnerable to **Stored XSS** (saved in tasks.json) and **DOM XSS** (using innerHTML).
+
+#### Safe vs Unsafe ways to display user content
+
+```javascript
+// ❌ UNSAFE - HTML is parsed and executed
+element.innerHTML = userInput;
+element.innerHTML = `<div>${userInput}</div>`;
+
+// ✅ SAFE - Displayed as plain text, HTML not parsed
+element.textContent = userInput;
+element.innerText = userInput;
+
+// ✅ SAFE - Escaped before insertion
+element.innerHTML = `<div>${escapeHtml(userInput)}</div>`;
+```
+
+#### How escapeHtml() works
+
+```javascript
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;  // Browser escapes automatically
+    return div.innerHTML;    // Returns escaped string
+}
+
+// What it does:
+escapeHtml('<script>alert("xss")</script>')
+// Returns: '&lt;script&gt;alert("xss")&lt;/script&gt;'
+// Browser displays: <script>alert("xss")</script>
+// But it's just TEXT, not executable!
+```
+
+#### The specific issues in this project
+
+**Issue 1: Inline event handlers with IDs**
+```javascript
+// Current code (simplified):
+`<button onclick="window.deleteReport('${report.id}')">Delete</button>`
+
+// If report.id was: "'); alert('xss'); ('"
+// The result would be:
+`<button onclick="window.deleteReport(''); alert('xss'); ('')">Delete</button>`
+//                                         ^^^^^^^^^^^^^^^ Injected code!
+```
+
+**Solution:** Use event delegation instead of inline handlers:
+```javascript
+// Generate HTML without inline handlers:
+`<button class="js-deleteBtn" data-id="${escapeHtml(report.id)}">Delete</button>`
+
+// Attach listener after rendering:
+container.addEventListener('click', (e) => {
+    if (e.target.matches('.js-deleteBtn')) {
+        const id = e.target.dataset.id; // Already safe
+        deleteReport(id);
+    }
+});
+```
+
+**Issue 2: URLs in checklist items**
+```javascript
+// Current code might do:
+`<a href="${item.url}">Link</a>`
+
+// If item.url was: "javascript:alert('xss')"
+// Clicking the link executes JavaScript!
+```
+
+**Solution:** Validate URLs before using:
+```javascript
+function isValidUrl(string) {
+    try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+// Only render link if URL is valid
+if (item.url && isValidUrl(item.url)) {
+    html += `<a href="${escapeHtml(item.url)}">↗</a>`;
+}
+```
+
+#### Audit checklist for XSS prevention
+
+Go through your code and check every place where user data is displayed:
+
+| Location | User Data | Currently Safe? | Fix Needed? |
+|----------|-----------|-----------------|-------------|
+| Task card title | `task.title` | Check if using escapeHtml | Audit |
+| Task card description | `task.description` | Check if using escapeHtml | Audit |
+| Report list titles | `report.title` | Check if using escapeHtml | Audit |
+| Checklist item text | `item.text` | Check if using escapeHtml | Audit |
+| Checklist item URL | `item.url` | Needs URL validation | Yes |
+| Modal activity log | `log.action` | Check if using escapeHtml | Audit |
+| Notes content | `notes.content` | Uses textarea (safe) | No |
+
+#### Pros of fixing XSS issues
+
+1. **Security habit** — Learn patterns you'll use forever
+2. **Defense in depth** — Multiple layers of protection
+3. **Future-proofing** — Safe if you ever add multi-user features
+
+#### Cons / Why you might deprioritize
+
+1. **Local-only app** — Only you can create tasks
+2. **Time investment** — Need to audit entire codebase
+3. **Low practical risk** — You're not likely to XSS yourself
+
+#### Recommendation for this project
+
+**Priority: Medium-Low for security, High for learning.**
+
+1. **Quick win:** Replace all inline `onclick` handlers with event delegation (also improves code quality)
+2. **Audit:** Search for `innerHTML` and verify each one uses `escapeHtml()`
+3. **Add URL validation:** For the checklist URL feature
 
 ### 7.2 No request rate limiting
 
@@ -1026,15 +1176,215 @@ Additionally, `DEFAULT_PORT` is exported from `/public/js/constants.js` for clie
 
 **Impact:** Server could be overwhelmed by rapid requests.
 
-**Solution:** For a self-hosted app this is low priority, but consider adding:
-```javascript
-const rateLimit = require('express-rate-limit');
-app.use('/api/', rateLimit({ windowMs: 60000, max: 100 }));
+#### What is rate limiting?
+
+Rate limiting is like a bouncer at a club who says "you can only enter 5 times per hour." It prevents anyone (or any program) from making too many requests in a short time.
+
 ```
+Without rate limiting:
+─────────────────────────────────────────────────────
+Client: GET GET GET GET GET GET GET GET GET GET GET GET...
+Server: 😰 Processing all requests... CPU at 100%... crash!
+
+With rate limiting (max 5 requests per second):
+─────────────────────────────────────────────────────
+Client: GET GET GET GET GET GET GET GET GET GET GET GET...
+Server: ✓   ✓   ✓   ✓   ✓   ❌  ❌  ❌  ❌  ❌  ❌  ❌
+                              └── "429 Too Many Requests"
+```
+
+#### Why would someone make too many requests?
+
+| Source | Intent | Impact |
+|--------|--------|--------|
+| Bug in your code | Accidental infinite loop | Server overload |
+| User clicking fast | Impatience | Duplicate operations |
+| Script/bot | Malicious (DoS attack) | Server crash |
+| Browser auto-retry | Network issues | Request storm |
+
+#### Why this is LOW priority for self-hosted apps
+
+```
+Public web app:                    Self-hosted app:
+──────────────────                 ──────────────────
+Internet → Server                  localhost → Server
+    ↑                                    ↑
+Millions of                        Only YOU
+potential attackers                (and maybe your cat)
+```
+
+For a self-hosted, local-only app like this:
+1. Only YOU can access the server
+2. You're not going to DoS yourself
+3. No internet exposure = no external attackers
+
+#### When you WOULD want rate limiting
+
+Even for self-hosted apps, consider rate limiting if:
+
+1. **You expose it to your local network** — Other devices can access
+2. **You add any remote access** — VPN, port forwarding, etc.
+3. **You have background sync** — Could create accidental request storms
+4. **Learning purposes** — Practice implementing it
+
+#### How to implement rate limiting
+
+**Option 1: Express Rate Limit (npm package)**
+
+```bash
+npm install express-rate-limit
+```
+
+```javascript
+// In server.js
+const rateLimit = require('express-rate-limit');
+
+// Create a limiter: max 100 requests per minute per IP
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,  // 1 minute window
+    max: 100,              // Max 100 requests per window
+    message: {
+        error: 'Too many requests, please try again later.'
+    },
+    standardHeaders: true, // Return rate limit info in headers
+    legacyHeaders: false
+});
+
+// Apply to all API routes
+app.use('/api/', apiLimiter);
+```
+
+**What this does:**
+- Tracks requests per IP address
+- After 100 requests in 1 minute, returns 429 error
+- Resets counter after the window expires
+
+**Option 2: Simple DIY rate limiter (no dependencies)**
+
+```javascript
+// Simple in-memory rate limiter
+const requestCounts = new Map();
+
+function simpleRateLimiter(maxRequests, windowMs) {
+    return (req, res, next) => {
+        const ip = req.ip;
+        const now = Date.now();
+
+        // Get or create entry for this IP
+        let entry = requestCounts.get(ip);
+        if (!entry || now - entry.windowStart > windowMs) {
+            entry = { count: 0, windowStart: now };
+            requestCounts.set(ip, entry);
+        }
+
+        entry.count++;
+
+        if (entry.count > maxRequests) {
+            return res.status(429).json({
+                error: 'Too many requests. Please slow down.'
+            });
+        }
+
+        next();
+    };
+}
+
+// Usage
+app.use('/api/', simpleRateLimiter(100, 60000));
+```
+
+**Pros:** No dependencies, educational, simple
+**Cons:** Doesn't persist across restarts, memory grows with IPs
+
+**Option 3: Per-operation limiting**
+
+Instead of limiting all API calls, limit specific risky operations:
+
+```javascript
+// Only limit operations that are expensive or risky
+app.post('/api/reports/generate', generateReportLimiter, (req, res) => {
+    // Generate report...
+});
+
+// Generous limit for read operations
+app.get('/api/tasks', readLimiter, (req, res) => {
+    // Get tasks...
+});
+```
+
+#### Understanding HTTP 429
+
+When rate limit is exceeded, return status code `429 Too Many Requests`:
+
+```javascript
+res.status(429).json({
+    error: 'Rate limit exceeded',
+    retryAfter: 60  // Tell client when to retry (seconds)
+});
+```
+
+Your frontend should handle this:
+```javascript
+async function fetchTasks() {
+    const response = await fetch('/api/tasks');
+
+    if (response.status === 429) {
+        elements.toaster.warning('Too many requests. Please wait a moment.');
+        return null;
+    }
+
+    // ... rest of handling
+}
+```
+
+#### Pros of adding rate limiting
+
+1. **Protection** — Prevents accidental or intentional overload
+2. **Learning** — Common pattern in web development
+3. **Future-proofing** — Ready if you ever expose the app
+
+#### Cons / Why skip it for this project
+
+1. **Unnecessary** — Local-only means no external threats
+2. **Added dependency** — One more package to manage
+3. **Could interfere** — Might break normal usage if limits are too strict
+4. **Premature optimization** — Solving a problem that doesn't exist
+
+#### Recommendation for this project
+
+**Priority: Very Low (Skip for now).**
+
+This is the one item you can safely ignore for a self-hosted, local-only app. Focus your energy on:
+- Learning the concept (read this section)
+- Add it later if you ever expose the app to a network
+
+If you DO want to implement it for learning:
+- Use the simple DIY version (Option 2)
+- Set generous limits (1000 requests/minute)
+- Only apply to write operations (POST/PUT/DELETE)
+
+---
+
+### Section 7 Summary: Security for Self-Hosted Apps
+
+| Item | Applies to Self-Hosted? | Priority | Action |
+|------|------------------------|----------|--------|
+| 7.1 XSS | Yes (data could come from outside) | Medium | Audit innerHTML usage |
+| 7.2 Rate limiting | No (only you access it) | Very Low | Skip |
+
+**The key insight:** Even for local apps, **input handling** matters because data might come from external sources (copy/paste, imports, shared files). But **network protection** is less relevant when there's no network exposure.
 
 ---
 
 ## 8. Testing Readiness
+
+> **Junior Developer Note:** This section is ESPECIALLY important for a self-hosted, open-source project. Why? Because:
+> 1. **You are the QA team** — No one else will test before you deploy
+> 2. **Contributors need confidence** — Tests let others contribute without fear of breaking things
+> 3. **You'll forget how it works** — Tests document expected behavior
+> 4. **Regressions are silent** — Without tests, bugs sneak back in unnoticed
+
+---
 
 ### 8.1 No test infrastructure
 
@@ -1042,11 +1392,513 @@ app.use('/api/', rateLimit({ windowMs: 60000, max: 100 }));
 
 **Impact:** Changes can't be verified automatically. Regressions go unnoticed.
 
-**Solution:** Add basic test infrastructure:
-1. Add `jest` or `vitest` to package.json
-2. Create `/tests/` directory
-3. Start with API endpoint tests (easiest)
-4. Add component unit tests
+#### What is automated testing?
+
+Instead of manually clicking through your app to check if things work, you write code that checks for you:
+
+```javascript
+// Manual testing (what you do now):
+// 1. Open browser
+// 2. Create a task
+// 3. Check if it appears
+// 4. Edit the task
+// 5. Check if changes saved
+// ... repeat for every feature, every time you change code
+
+// Automated testing (what you could do):
+test('creating a task adds it to the list', async () => {
+    const response = await fetch('/api/tasks', {
+        method: 'POST',
+        body: JSON.stringify({ title: 'Test task' })
+    });
+    const task = await response.json();
+
+    expect(task.title).toBe('Test task');
+    expect(task.id).toBeDefined();
+    expect(task.status).toBe('todo');
+});
+// Run this 1000 times with one command!
+```
+
+#### Types of tests (Testing Pyramid)
+
+```
+                    /\
+                   /  \      E2E Tests (slowest, most realistic)
+                  /    \     - Test entire app in real browser
+                 /──────\    - Example: Puppeteer, Playwright, Cypress
+                /        \
+               /          \  Integration Tests (medium speed)
+              /            \ - Test multiple parts together
+             /──────────────\- Example: API endpoints with real database
+            /                \
+           /                  \ Unit Tests (fastest, most numerous)
+          /                    \- Test individual functions
+         /────────────────────────- Example: escapeHtml(), getWeekNumber()
+```
+
+| Type | Speed | Confidence | Maintenance | Start Here? |
+|------|-------|------------|-------------|-------------|
+| Unit | ⚡ Fast | Low (isolated) | Easy | Yes |
+| Integration | 🚗 Medium | Medium | Medium | Yes |
+| E2E | 🐢 Slow | High (realistic) | Hard | No |
+
+**For this project, start with Unit and Integration tests.**
+
+#### Why testing matters for self-hosted projects
+
+| Scenario | Without Tests | With Tests |
+|----------|---------------|------------|
+| You add a new feature | Might break existing features without knowing | Tests catch regressions immediately |
+| Someone contributes code | You manually test everything | CI runs tests automatically |
+| You return after 3 months | "Does this still work?" *clicks around nervously* | Run tests, get instant confidence |
+| Refactoring code | Terrifying, might break something | Refactor freely, tests verify behavior |
+
+#### Step 1: Choose a test framework
+
+**For Node.js/JavaScript, the main options:**
+
+| Framework | Pros | Cons | Best For |
+|-----------|------|------|----------|
+| **Jest** | Most popular, great docs, built-in coverage | Slower, heavy | General purpose |
+| **Vitest** | Very fast, modern, Jest-compatible API | Newer, smaller ecosystem | Vite projects, modern |
+| **Node Test Runner** | Built into Node.js, no install | Less features | Minimal projects |
+
+**Recommendation: Jest** — It's the industry standard, has great documentation, and skills transfer to any job.
+
+#### Step 2: Install Jest
+
+```bash
+# In your project directory
+npm install --save-dev jest
+
+# For ES modules support (since your project uses import/export)
+npm install --save-dev @babel/preset-env
+```
+
+Add to `package.json`:
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/tests"],
+    "verbose": true
+  }
+}
+```
+
+Create `.babelrc` for ES modules:
+```json
+{
+  "presets": [
+    ["@babel/preset-env", { "targets": { "node": "current" } }]
+  ]
+}
+```
+
+#### Step 3: Create test directory structure
+
+```
+/
+├── server.js
+├── package.json
+├── tests/                      # All tests go here
+│   ├── api/                    # API/Integration tests
+│   │   ├── tasks.test.js       # Tests for /api/tasks endpoints
+│   │   ├── reports.test.js     # Tests for /api/reports endpoints
+│   │   └── notes.test.js       # Tests for /api/notes endpoints
+│   ├── unit/                   # Unit tests
+│   │   ├── utils.test.js       # Tests for utility functions
+│   │   └── validation.test.js  # Tests for validation logic
+│   └── setup.js                # Test setup/teardown
+└── public/
+    └── js/
+        └── utils.js
+```
+
+#### Step 4: Write your first tests
+
+**Start with the easiest: utility functions (unit tests)**
+
+Create `tests/unit/utils.test.js`:
+```javascript
+// Test the getWeekNumber function
+describe('getWeekNumber', () => {
+    // Import function (you may need to export it first)
+    const getWeekNumber = (date) => {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+        const yearStart = new Date(d.getFullYear(), 0, 1);
+        return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    };
+
+    test('returns week 1 for January 1st, 2026', () => {
+        expect(getWeekNumber(new Date('2026-01-01'))).toBe(1);
+    });
+
+    test('returns week 52 or 53 for end of year', () => {
+        const week = getWeekNumber(new Date('2026-12-31'));
+        expect(week).toBeGreaterThanOrEqual(52);
+        expect(week).toBeLessThanOrEqual(53);
+    });
+
+    test('returns correct week for mid-year date', () => {
+        // July 15, 2026 should be around week 29
+        const week = getWeekNumber(new Date('2026-07-15'));
+        expect(week).toBe(29);
+    });
+});
+
+describe('escapeHtml', () => {
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+
+    // Note: This test needs jsdom environment for document
+    test.skip('escapes HTML special characters', () => {
+        expect(escapeHtml('<script>')).toBe('&lt;script&gt;');
+        expect(escapeHtml('"quotes"')).toBe('&quot;quotes&quot;');
+        expect(escapeHtml("it's")).toBe("it's"); // Single quotes OK
+    });
+});
+```
+
+Run with: `npm test`
+
+#### Step 5: Write API integration tests
+
+These test your Express endpoints with a real (test) database.
+
+Create `tests/api/tasks.test.js`:
+```javascript
+const request = require('supertest');
+const fs = require('fs').promises;
+const path = require('path');
+
+// Import your Express app (you may need to export it from server.js)
+// const app = require('../../server');
+
+describe('Tasks API', () => {
+    const TEST_DATA_DIR = './test-data';
+    const TASKS_FILE = path.join(TEST_DATA_DIR, 'tasks.json');
+
+    beforeAll(async () => {
+        // Create test data directory
+        await fs.mkdir(TEST_DATA_DIR, { recursive: true });
+    });
+
+    beforeEach(async () => {
+        // Reset tasks file before each test
+        await fs.writeFile(TASKS_FILE, '[]');
+    });
+
+    afterAll(async () => {
+        // Clean up test data
+        await fs.rm(TEST_DATA_DIR, { recursive: true, force: true });
+    });
+
+    describe('POST /api/tasks', () => {
+        test('creates a new task with valid data', async () => {
+            const newTask = {
+                title: 'Test Task',
+                description: 'Test Description',
+                category: 2,
+                priority: true
+            };
+
+            const response = await request(app)
+                .post('/api/tasks')
+                .send(newTask)
+                .expect(201);
+
+            expect(response.body.title).toBe('Test Task');
+            expect(response.body.id).toBeDefined();
+            expect(response.body.status).toBe('todo');
+            expect(response.body.position).toBe(0);
+        });
+
+        test('returns 400 when title is missing', async () => {
+            const response = await request(app)
+                .post('/api/tasks')
+                .send({ description: 'No title' })
+                .expect(400);
+
+            expect(response.body.error).toBeDefined();
+        });
+
+        test('returns 400 when title is empty string', async () => {
+            const response = await request(app)
+                .post('/api/tasks')
+                .send({ title: '   ' })  // Just whitespace
+                .expect(400);
+
+            expect(response.body.error).toBeDefined();
+        });
+    });
+
+    describe('GET /api/tasks', () => {
+        test('returns empty array when no tasks exist', async () => {
+            const response = await request(app)
+                .get('/api/tasks')
+                .expect(200);
+
+            expect(response.body).toEqual([]);
+        });
+
+        test('returns all tasks', async () => {
+            // Create two tasks first
+            await request(app).post('/api/tasks').send({ title: 'Task 1' });
+            await request(app).post('/api/tasks').send({ title: 'Task 2' });
+
+            const response = await request(app)
+                .get('/api/tasks')
+                .expect(200);
+
+            expect(response.body).toHaveLength(2);
+        });
+    });
+
+    describe('DELETE /api/tasks/:id', () => {
+        test('deletes an existing task', async () => {
+            // Create a task
+            const createResponse = await request(app)
+                .post('/api/tasks')
+                .send({ title: 'To Delete' });
+
+            const taskId = createResponse.body.id;
+
+            // Delete it
+            await request(app)
+                .delete(`/api/tasks/${taskId}`)
+                .expect(200);
+
+            // Verify it's gone
+            const getResponse = await request(app).get('/api/tasks');
+            expect(getResponse.body).toHaveLength(0);
+        });
+
+        test('returns 404 for non-existent task', async () => {
+            await request(app)
+                .delete('/api/tasks/nonexistent123')
+                .expect(404);
+        });
+    });
+});
+```
+
+#### Step 6: Make server.js testable
+
+Currently, `server.js` starts listening immediately. For testing, you need to export the app:
+
+```javascript
+// At the end of server.js, change:
+
+// FROM:
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+});
+
+// TO:
+if (require.main === module) {
+    // Only start server if run directly (node server.js)
+    app.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}`);
+    });
+}
+
+// Export for testing
+module.exports = app;
+```
+
+This pattern lets:
+- `node server.js` → Server starts normally
+- `require('./server')` in tests → Just gets the app, doesn't start listening
+
+#### What to test first (priority order)
+
+| Priority | What | Why | Difficulty |
+|----------|------|-----|------------|
+| 1 | API endpoints (CRUD) | Core functionality, easy to test | Easy |
+| 2 | Utility functions | Pure functions, no dependencies | Easy |
+| 3 | Validation logic | Prevents bad data | Easy |
+| 4 | Report generation | Complex logic | Medium |
+| 5 | Position/ordering | Tricky edge cases | Medium |
+| 6 | Frontend components | Needs browser environment | Hard |
+
+#### Running tests
+
+```bash
+# Run all tests once
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run specific test file
+npm test -- tests/api/tasks.test.js
+
+# Run tests matching a pattern
+npm test -- --testNamePattern="creates a new task"
+```
+
+#### Understanding test output
+
+```
+ PASS  tests/api/tasks.test.js
+  Tasks API
+    POST /api/tasks
+      ✓ creates a new task with valid data (45 ms)
+      ✓ returns 400 when title is missing (12 ms)
+      ✓ returns 400 when title is empty string (8 ms)
+    GET /api/tasks
+      ✓ returns empty array when no tasks exist (5 ms)
+      ✓ returns all tasks (23 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        1.234 s
+```
+
+Green checkmarks = passing tests. Red X = failing tests.
+
+#### Test coverage
+
+Coverage shows what percentage of your code is tested:
+
+```
+npm run test:coverage
+```
+
+```
+----------|---------|----------|---------|---------|-------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines
+----------|---------|----------|---------|---------|-------------------
+server.js |   75.5  |    60.0  |   85.7  |   75.5  | 45-50, 78-82
+----------|---------|----------|---------|---------|-------------------
+```
+
+- **Stmts (Statements):** Lines of code executed
+- **Branch:** If/else paths taken
+- **Funcs:** Functions called
+- **Lines:** Similar to statements
+
+**Don't aim for 100%** — that's often counterproductive. 70-80% is usually good enough.
+
+#### Common testing patterns
+
+**1. Arrange-Act-Assert (AAA)**
+```javascript
+test('something works', () => {
+    // ARRANGE: Set up the test
+    const input = 'test';
+
+    // ACT: Do the thing you're testing
+    const result = myFunction(input);
+
+    // ASSERT: Check the result
+    expect(result).toBe('expected');
+});
+```
+
+**2. Testing error cases**
+```javascript
+test('throws error for invalid input', () => {
+    expect(() => {
+        myFunction(null);
+    }).toThrow('Input cannot be null');
+});
+```
+
+**3. Testing async code**
+```javascript
+test('async operation completes', async () => {
+    const result = await fetchData();
+    expect(result).toBeDefined();
+});
+```
+
+**4. Using test fixtures**
+```javascript
+// tests/fixtures/tasks.js
+export const sampleTasks = [
+    { id: '1', title: 'Task 1', status: 'todo' },
+    { id: '2', title: 'Task 2', status: 'done' }
+];
+
+// In your test
+import { sampleTasks } from '../fixtures/tasks';
+
+beforeEach(() => {
+    // Use sample data for each test
+});
+```
+
+#### Pros of adding tests
+
+1. **Confidence** — Change code without fear
+2. **Documentation** — Tests show how code should work
+3. **Faster debugging** — Tests pinpoint what's broken
+4. **Collaboration** — Contributors can verify their changes
+5. **Professional skill** — Required in most dev jobs
+
+#### Cons / Challenges
+
+1. **Time investment** — Writing tests takes time upfront
+2. **Learning curve** — New concepts and tools to learn
+3. **Maintenance** — Tests need updating when features change
+4. **False confidence** — Passing tests don't guarantee bug-free code
+
+#### Recommendation for this project
+
+**Priority: HIGH for a self-hosted/open-source project.**
+
+Here's a realistic implementation plan:
+
+**Week 1:**
+1. Install Jest and set up test infrastructure
+2. Write tests for utility functions (5-10 tests)
+3. Run tests after every code change
+
+**Week 2:**
+1. Export Express app for testing
+2. Write API tests for GET /api/tasks
+3. Write API tests for POST /api/tasks
+
+**Week 3:**
+1. Add tests for PUT and DELETE
+2. Add tests for error cases (400, 404)
+3. Add coverage reporting
+
+**Ongoing:**
+1. Write tests for new features BEFORE implementing
+2. Add tests when you find bugs (regression tests)
+3. Keep coverage above 60%
+
+---
+
+### Section 8 Summary: Testing for Self-Hosted Projects
+
+| Aspect | Without Tests | With Tests |
+|--------|---------------|------------|
+| Making changes | Scary, might break things | Confident, tests catch issues |
+| Accepting contributions | Must test manually | CI runs automatically |
+| Documentation | Just the code | Tests show expected behavior |
+| Debugging | Console.log everywhere | Tests isolate the problem |
+| Refactoring | Avoid it | Do it freely |
+
+**Key insight for self-hosted projects:** You don't have a QA team, staging environment, or production monitoring. Tests are your safety net. Start small, build the habit, and grow coverage over time.
 
 ---
 
