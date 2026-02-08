@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.15.0
+**Version:** 2.16.0
 **Last Updated:** 2026-02-08
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.16.0  | 2026-02-08 | Reliability: Added simple lock (`isMoving` flag) to `moveTask` function to prevent race conditions when user drags multiple cards quickly; uses `finally` block to ensure lock is always released |
 | 2.15.0  | 2026-02-08 | Reliability: Added `disconnectedCallback` lifecycle method to components for proper cleanup; modal-dialog cleans up ESC key listener; notes-widget clears debounce timeout; toast-notification clears auto-dismiss timeouts; prevents memory leaks |
 | 2.14.0  | 2026-02-08 | UX: Optimistic UI with rollback for all task operations (create, update, delete, move); instant visual feedback with automatic rollback on API failure; new state management functions (createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId) |
 | 2.13.0  | 2026-02-08 | Testing: added vanilla Node.js test infrastructure (146 tests) using built-in `node:test` module; tests for utilities, validation, and all API endpoints; npm scripts for running tests |
@@ -486,6 +487,36 @@ async function performAction(id) {
 - Delete task (`modals.js`) — Removes immediately, restores on failure
 - Move task (`app.js`) — Moves immediately, fetches fresh positions on success, rolls back on failure
 
+### 12. Race Condition Prevention
+
+**Use locks for async operations that shouldn't overlap:**
+
+When users can trigger the same async operation multiple times quickly (e.g., drag-and-drop), use a simple lock to prevent race conditions.
+
+**Pattern:**
+```javascript
+let isOperating = false;
+
+async function doOperation() {
+    if (isOperating) return; // Ignore if already processing
+    isOperating = true;
+
+    try {
+        // ... async operation ...
+    } finally {
+        isOperating = false; // Always unlock, even on error
+    }
+}
+```
+
+**Key points:**
+- Check lock at the very start, before any state changes
+- Use `finally` to ensure lock is released even if an error occurs
+- Lock is scoped to the operation type (e.g., `isMoving` for move operations)
+
+**Currently implemented:**
+- `moveTask()` in `app.js` — Uses `isMoving` lock to prevent overlapping drag operations
+
 ### Quick Reference Checklist
 
 Before submitting code, verify:
@@ -502,6 +533,7 @@ Before submitting code, verify:
 - [ ] Components cache their templates
 - [ ] Task operations use optimistic UI pattern with rollback
 - [ ] Components with document listeners or timers have `disconnectedCallback`
+- [ ] Async operations that can be triggered rapidly use locks to prevent race conditions
 
 ---
 

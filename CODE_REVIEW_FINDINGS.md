@@ -517,7 +517,7 @@ Added `disconnectedCallback` lifecycle method to components that need cleanup:
 
 ---
 
-### 5.3 Race condition in moveTask
+### 5.3 Race condition in moveTask ✅ RESOLVED
 
 **File:** `app.js:234-247`
 
@@ -715,6 +715,38 @@ async function moveTask(id, newStatus, newPosition) {
 3. You can always upgrade to a queue later if needed
 
 If you want to learn more advanced patterns, try Solution 3 (debounce) — it's a very common pattern in web development.
+
+**Solution implemented (v2.16.0):**
+
+Used Solution 1 (Simple Lock) as recommended:
+
+```javascript
+let isMoving = false;
+
+async function moveTask(id, newStatus, newPosition) {
+    if (isMoving) return; // Ignore if already processing
+    isMoving = true;
+
+    // ... optimistic UI update ...
+
+    try {
+        await moveTaskApi(id, newStatus, newPosition);
+        await fetchTasks();
+    } catch (error) {
+        // ... rollback ...
+    } finally {
+        isMoving = false; // Always unlock
+    }
+}
+```
+
+**Key implementation details:**
+- Lock check happens before any state changes
+- Early return with lock release if task not found
+- `finally` block ensures lock is always released, even on error
+- Simple and effective for a local app where network is fast
+
+---
 
 ### 5.4 No input sanitization on server
 
@@ -925,14 +957,14 @@ Here's my recommendation for how to approach these items, considering this is a 
 |------|--------|--------|--------|----------------|
 | 5.1 Error recovery | Medium | Low (local network is reliable) | ⭐⭐⭐ Great for learning | ✅ Implemented (v2.14.0) |
 | 5.2 disconnectedCallback | Low | Low (page refreshes clean up) | ⭐⭐ Good concept | ✅ Implemented (v2.15.0) |
-| 5.3 Race condition | Low | Low (local = fast) | ⭐⭐⭐ Very common issue | Add simple lock (4 lines of code) |
+| 5.3 Race condition | Low | Low (local = fast) | ⭐⭐⭐ Very common issue | ✅ Implemented (v2.16.0) |
 | 5.4 Input validation | Medium | Medium (prevents weird bugs) | ⭐⭐⭐ Essential skill | Add length limits at minimum |
 
 #### Suggested order of implementation:
 
 1. ~~**5.1 (Error recovery)** — Optimistic UI with rollback~~ ✅ DONE (v2.14.0)
 2. ~~**5.2 (disconnectedCallback)** — Component cleanup~~ ✅ DONE (v2.15.0)
-3. **5.3 (Race condition)** — Quickest win, most likely to cause visible bugs
+3. ~~**5.3 (Race condition)** — Simple lock pattern~~ ✅ DONE (v2.16.0)
 4. **5.4 (Input validation)** — Important skill to learn, prevents data issues
 
 #### Key takeaways for your career:
@@ -2180,6 +2212,7 @@ No npm install. No configuration. Just write tests and run them.
 9. ~~**Add test infrastructure** - 2 hours~~ ✅ DONE (146 tests, vanilla Node.js)
 10. ~~**Add optimistic UI with rollback** - 1 hour~~ ✅ DONE (v2.14.0)
 11. ~~**Add disconnectedCallback to components** - 30 minutes~~ ✅ DONE (v2.15.0)
+12. ~~**Add race condition lock to moveTask** - 5 minutes~~ ✅ DONE (v2.16.0)
 
 ---
 

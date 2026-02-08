@@ -193,6 +193,9 @@ import {
     // Task Operations
     // ==========================================
 
+    /** @type {boolean} Lock to prevent race conditions during move operations */
+    let isMoving = false;
+
     /**
      * Fetches all active tasks from the server and re-renders all columns.
      * @returns {Promise<void>}
@@ -210,16 +213,24 @@ import {
     /**
      * Moves a task to a different column or reorders within the same column.
      * Uses optimistic UI - updates immediately, rolls back on failure.
+     * Uses a lock to prevent race conditions from rapid drag operations.
      * @param {string} id - The task ID to move
      * @param {string} newStatus - Target column status (todo, wait, inprogress, done)
      * @param {number} newPosition - Zero-based position in the target column
      * @returns {Promise<Object|undefined>} The moved task object, or undefined on error
      */
     async function moveTask(id, newStatus, newPosition) {
+        // Prevent race condition: ignore if already processing a move
+        if (isMoving) return;
+        isMoving = true;
+
         // Save snapshot for potential rollback
         const previousTasks = createTasksSnapshot();
         const task = findTask(id);
-        if (!task) return;
+        if (!task) {
+            isMoving = false;
+            return;
+        }
 
         const oldStatus = task.status;
 
@@ -253,6 +264,9 @@ import {
             renderAllColumns();
             console.error('Error moving task:', error);
             elements.toaster.error('Failed to move task. Changes have been reverted.');
+        } finally {
+            // Always unlock, even if error occurred
+            isMoving = false;
         }
     }
 
