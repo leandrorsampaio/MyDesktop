@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.11.0
-**Last Updated:** 2026-02-07
+**Version:** 2.13.0
+**Last Updated:** 2026-02-08
 
 ---
 
@@ -9,6 +9,8 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.13.0  | 2026-02-08 | Testing: added vanilla Node.js test infrastructure (146 tests) using built-in `node:test` module; tests for utilities, validation, and all API endpoints; npm scripts for running tests |
+| 2.12.0  | 2026-02-08 | Security: added DIY rate limiting middleware (no external packages); 100 req/min for reads, 30 req/min for writes; includes informational headers and auto-cleanup |
 | 2.11.0  | 2026-02-07 | Documentation: added comprehensive README.md for open source release with project philosophy, setup instructions, API reference, and contributing guidelines; added MIT LICENSE file |
 | 2.10.0  | 2026-02-07 | Performance: added template caching to all 7 components (reduces HTTP requests from O(n) to O(1) per component type); removed double filter application; combined getTaskGradient/shouldUseLightText into single getTaskColorInfo function |
 | 2.9.0   | 2026-02-07 | Modular architecture: split app.js into 5 modules (state.js, api.js, filters.js, crisis-mode.js, modals.js) for better maintainability and separation of concerns |
@@ -73,6 +75,15 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 ├── package.json
 ├── data/
 │   └── ... (data files)
+├── tests/                     # Vanilla Node.js tests (node:test)
+│   ├── unit/
+│   │   ├── utils.test.js      # Tests for utility functions
+│   │   └── validation.test.js # Tests for input validation
+│   └── api/
+│       ├── tasks.test.js      # Tests for tasks API endpoints
+│       ├── notes.test.js      # Tests for notes API endpoints
+│       ├── reports.test.js    # Tests for reports API endpoints
+│       └── rate-limit.test.js # Tests for rate limiting
 └── public/
     ├── index.html             # Single HTML page, loads components
     ├── app.js                 # Main entry point (ES module), wires modules together
@@ -152,6 +163,29 @@ node server.js
 PORT=4000 node server.js
 # → http://localhost:4000
 ```
+
+### Testing
+
+The project uses vanilla Node.js testing with the built-in `node:test` module (no external packages).
+
+```bash
+# Run all tests (API tests require server running)
+npm test
+
+# Run only unit tests (no server needed)
+npm run test:unit
+
+# Run only API tests (server must be running)
+npm run test:api
+
+# Watch mode - re-runs on file changes
+npm run test:watch
+```
+
+**Test coverage:**
+- Unit tests: Utility functions, validation logic
+- API tests: All endpoints (tasks, notes, reports, archive, rate limiting)
+- Total: 146 tests
 
 ---
 

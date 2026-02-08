@@ -1388,11 +1388,40 @@ If you DO want to implement it for learning:
 
 ---
 
-### 8.1 No test infrastructure
+### 8.1 No test infrastructure ✅ RESOLVED
 
-**Current state:** No test files, no test framework configured.
+**Previous state:** No test files, no test framework configured.
 
 **Impact:** Changes can't be verified automatically. Regressions go unnoticed.
+
+**Solution implemented:** Vanilla Node.js test runner (zero dependencies)
+
+**Test files created:**
+```
+tests/
+├── unit/
+│   ├── utils.test.js        # 15 tests - getWeekNumber, formatDateRange, generateId
+│   └── validation.test.js   # 54 tests - title, category, priority, status, position
+└── api/
+    ├── tasks.test.js        # 32 tests - CRUD operations for tasks
+    ├── notes.test.js        # 12 tests - Notes save/retrieve
+    ├── reports.test.js      # 25 tests - Report generation, archive
+    └── rate-limit.test.js   # 8 tests - Rate limiting headers
+```
+
+**Test commands added to package.json:**
+```json
+{
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.js'",
+    "test:unit": "node --test 'tests/unit/*.test.js'",
+    "test:api": "node --test 'tests/api/*.test.js'",
+    "test:watch": "node --test --watch 'tests/**/*.test.js'"
+  }
+}
+```
+
+**Total: 146 tests using vanilla Node.js `node:test` module (no npm packages)**
 
 #### What is automated testing?
 
@@ -2043,15 +2072,15 @@ Here's a realistic implementation plan:
 
 ---
 
-### Section 8 Summary: Testing for Self-Hosted Projects
+### Section 8 Summary: Testing for Self-Hosted Projects ✅ IMPLEMENTED
 
 | Aspect | Without Tests | With Tests |
 |--------|---------------|------------|
-| Making changes | Scary, might break things | Confident, tests catch issues |
-| Accepting contributions | Must test manually | CI runs automatically |
-| Documentation | Just the code | Tests show expected behavior |
-| Debugging | Console.log everywhere | Tests isolate the problem |
-| Refactoring | Avoid it | Do it freely |
+| Making changes | Scary, might break things | ✅ Confident, tests catch issues |
+| Accepting contributions | Must test manually | ✅ CI runs automatically |
+| Documentation | Just the code | ✅ Tests show expected behavior |
+| Debugging | Console.log everywhere | ✅ Tests isolate the problem |
+| Refactoring | Avoid it | ✅ Do it freely |
 
 **Why vanilla Node.js testing is ideal for this project:**
 
@@ -2109,6 +2138,8 @@ No npm install. No configuration. Just write tests and run them.
 5. ~~**Fix crisis mode CSS selectors** - 5 minutes~~ ✅ DONE (v2.5.0)
 6. ~~**Add environment variable for PORT** - 2 minutes~~ ✅ DONE (v2.8.0)
 7. ~~**Combine getTaskGradient/shouldUseLightText** - 10 minutes~~ ✅ DONE (v2.10.0)
+8. ~~**Add DIY rate limiting** - 30 minutes~~ ✅ DONE (vanilla, no dependencies)
+9. ~~**Add test infrastructure** - 2 hours~~ ✅ DONE (146 tests, vanilla Node.js)
 
 ---
 
@@ -2119,6 +2150,8 @@ No npm install. No configuration. Just write tests and run them.
 3. ~~**Medium Priority (Code Quality):** Items 1.1-1.4 (duplication), 2.1-2.4 (consistency)~~ ✅ DONE
 4. ~~**Lower Priority (Polish):** Items 4.1, 4.2, 6.1-6.4~~ ✅ ALL DONE
 5. ~~**Documentation:** Item 9.1 (README.md)~~ ✅ DONE (v2.11.0)
+6. ~~**Security:** Item 7.2 (rate limiting)~~ ✅ DONE (DIY vanilla implementation)
+7. ~~**Testing:** Item 8.1 (test infrastructure)~~ ✅ DONE (146 tests, vanilla Node.js)
 
 ---
 
