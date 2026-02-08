@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.14.0
+**Version:** 2.15.0
 **Last Updated:** 2026-02-08
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.15.0  | 2026-02-08 | Reliability: Added `disconnectedCallback` lifecycle method to components for proper cleanup; modal-dialog cleans up ESC key listener; notes-widget clears debounce timeout; toast-notification clears auto-dismiss timeouts; prevents memory leaks |
 | 2.14.0  | 2026-02-08 | UX: Optimistic UI with rollback for all task operations (create, update, delete, move); instant visual feedback with automatic rollback on API failure; new state management functions (createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId) |
 | 2.13.0  | 2026-02-08 | Testing: added vanilla Node.js test infrastructure (146 tests) using built-in `node:test` module; tests for utilities, validation, and all API endpoints; npm scripts for running tests |
 | 2.12.0  | 2026-02-08 | Security: added DIY rate limiting middleware (no external packages); 100 req/min for reads, 30 req/min for writes; includes informational headers and auto-cleanup |
@@ -350,7 +351,7 @@ export function escapeHtml(text) { ... }
 1. Reside in `/public/components/[name]/` with `.js`, `.html`, `.css` files
 2. Use Shadow DOM for encapsulation
 3. Cache templates at class level to avoid repeated fetches (see Performance section)
-4. Clean up event listeners in `disconnectedCallback()`
+4. Clean up event listeners and timers in `disconnectedCallback()`
 
 **Template caching pattern:**
 ```javascript
@@ -369,6 +370,38 @@ class MyComponent extends HTMLElement {
     }
 }
 ```
+
+**Cleanup pattern (disconnectedCallback):**
+```javascript
+class MyComponent extends HTMLElement {
+    constructor() {
+        super();
+        // Bind handlers once in constructor for proper cleanup
+        this._boundHandler = this.handleEvent.bind(this);
+        this._timeoutId = null;
+    }
+
+    connectedCallback() {
+        // Add document-level listeners
+        document.addEventListener('keydown', this._boundHandler);
+    }
+
+    disconnectedCallback() {
+        // Clean up document-level listeners
+        document.removeEventListener('keydown', this._boundHandler);
+        // Clear any pending timers
+        if (this._timeoutId) {
+            clearTimeout(this._timeoutId);
+            this._timeoutId = null;
+        }
+    }
+}
+```
+
+**Components with cleanup implemented:**
+- `modal-dialog.js` — Removes ESC key listener from document
+- `notes-widget.js` — Clears debounce timeout
+- `toast-notification.js` — Clears all auto-dismiss timeouts
 
 ### 9. Naming Conventions
 
@@ -468,6 +501,7 @@ Before submitting code, verify:
 - [ ] Shared code imported from `/public/js/` modules
 - [ ] Components cache their templates
 - [ ] Task operations use optimistic UI pattern with rollback
+- [ ] Components with document listeners or timers have `disconnectedCallback`
 
 ---
 

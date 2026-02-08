@@ -25,6 +25,7 @@ class ToastNotification extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.toasts = [];
+        this._timeoutIds = new Set(); // Track auto-dismiss timeouts for cleanup
     }
 
     async connectedCallback() {
@@ -77,9 +78,11 @@ class ToastNotification extends HTMLElement {
 
         // Auto-dismiss
         if (duration > 0) {
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
+                this._timeoutIds.delete(timeoutId);
                 this.dismiss(toast);
             }, duration);
+            this._timeoutIds.add(timeoutId);
         }
 
         return toast;
@@ -144,6 +147,12 @@ class ToastNotification extends HTMLElement {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    disconnectedCallback() {
+        // Clear all pending auto-dismiss timeouts to prevent memory leaks
+        this._timeoutIds.forEach(id => clearTimeout(id));
+        this._timeoutIds.clear();
     }
 }
 

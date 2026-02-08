@@ -45,6 +45,11 @@ class ModalDialog extends HTMLElement {
         }
     }
 
+    disconnectedCallback() {
+        // Clean up document-level event listener to prevent memory leaks
+        document.removeEventListener('keydown', this._boundOnEsc);
+    }
+
     open() {
         this.setAttribute('open', '');
         this.dispatchEvent(new CustomEvent('modal-opened', { bubbles: true, composed: true }));

@@ -373,7 +373,7 @@ Optimistic UI with rollback has been implemented for all task operations:
 
 ---
 
-### 5.2 Missing disconnectedCallback in components
+### 5.2 Missing disconnectedCallback in components ✅ RESOLVED
 
 **Files affected:** All component `.js` files
 
@@ -491,7 +491,29 @@ document.removeEventListener('keydown', this._boundKeyHandler);
 
 If you want to learn, start with `modal-dialog.js` — it's the clearest example of the pattern.
 
----
+**Solution implemented (v2.15.0):**
+
+Added `disconnectedCallback` lifecycle method to components that need cleanup:
+
+1. **modal-dialog.js:**
+   - Already had `_boundOnEsc` bound in constructor
+   - Added `disconnectedCallback()` that removes the document keydown listener
+   - Ensures listener is cleaned up even if modal is removed while open
+
+2. **notes-widget.js:**
+   - Added `disconnectedCallback()` that clears the debounce timeout
+   - Prevents delayed save from executing after component is removed
+
+3. **toast-notification.js:**
+   - Added `_timeoutIds` Set to track auto-dismiss timeout IDs
+   - Added `disconnectedCallback()` that clears all pending timeouts
+   - Prevents auto-dismiss from executing after component is removed
+
+**Components that don't need cleanup:**
+- `task-card.js` — Only shadow DOM listeners (cleaned up automatically)
+- `kanban-column.js` — Only shadow DOM listeners
+- `daily-checklist.js` — Only shadow DOM listeners
+- `button.js` — Only shadow DOM listeners
 
 ---
 
@@ -902,16 +924,16 @@ Here's my recommendation for how to approach these items, considering this is a 
 | Item | Effort | Impact | Learn? | Recommendation |
 |------|--------|--------|--------|----------------|
 | 5.1 Error recovery | Medium | Low (local network is reliable) | ⭐⭐⭐ Great for learning | ✅ Implemented (v2.14.0) |
-| 5.2 disconnectedCallback | Low | Low (page refreshes clean up) | ⭐⭐ Good concept | Fix modal-dialog.js as exercise |
+| 5.2 disconnectedCallback | Low | Low (page refreshes clean up) | ⭐⭐ Good concept | ✅ Implemented (v2.15.0) |
 | 5.3 Race condition | Low | Low (local = fast) | ⭐⭐⭐ Very common issue | Add simple lock (4 lines of code) |
 | 5.4 Input validation | Medium | Medium (prevents weird bugs) | ⭐⭐⭐ Essential skill | Add length limits at minimum |
 
 #### Suggested order of implementation:
 
 1. ~~**5.1 (Error recovery)** — Optimistic UI with rollback~~ ✅ DONE (v2.14.0)
-2. **5.3 (Race condition)** — Quickest win, most likely to cause visible bugs
-3. **5.4 (Input validation)** — Important skill to learn, prevents data issues
-4. **5.2 (disconnectedCallback)** — Good learning exercise, start with modal-dialog.js
+2. ~~**5.2 (disconnectedCallback)** — Component cleanup~~ ✅ DONE (v2.15.0)
+3. **5.3 (Race condition)** — Quickest win, most likely to cause visible bugs
+4. **5.4 (Input validation)** — Important skill to learn, prevents data issues
 
 #### Key takeaways for your career:
 
@@ -2157,6 +2179,7 @@ No npm install. No configuration. Just write tests and run them.
 8. ~~**Add DIY rate limiting** - 30 minutes~~ ✅ DONE (vanilla, no dependencies)
 9. ~~**Add test infrastructure** - 2 hours~~ ✅ DONE (146 tests, vanilla Node.js)
 10. ~~**Add optimistic UI with rollback** - 1 hour~~ ✅ DONE (v2.14.0)
+11. ~~**Add disconnectedCallback to components** - 30 minutes~~ ✅ DONE (v2.15.0)
 
 ---
 

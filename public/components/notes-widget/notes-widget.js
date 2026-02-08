@@ -91,6 +91,14 @@ class NotesWidget extends HTMLElement {
             this.saveNotes();
         }, DEBOUNCE_DELAY_MS);
     }
+
+    disconnectedCallback() {
+        // Clean up pending debounce timeout to prevent memory leaks
+        if (this.saveNotesTimeout) {
+            clearTimeout(this.saveNotesTimeout);
+            this.saveNotesTimeout = null;
+        }
+    }
 }
 
 customElements.define('notes-widget', NotesWidget);
