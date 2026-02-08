@@ -1460,44 +1460,36 @@ test('creating a task adds it to the list', async () => {
 
 | Framework | Pros | Cons | Best For |
 |-----------|------|------|----------|
-| **Jest** | Most popular, great docs, built-in coverage | Slower, heavy | General purpose |
-| **Vitest** | Very fast, modern, Jest-compatible API | Newer, smaller ecosystem | Vite projects, modern |
-| **Node Test Runner** | Built into Node.js, no install | Less features | Minimal projects |
+| **Node Test Runner** | Built into Node.js, no install, vanilla | Less features than Jest | ✅ **This project** |
+| **Jest** | Most popular, great docs, built-in coverage | Slower, heavy, external dependency | Large projects |
+| **Vitest** | Very fast, modern, Jest-compatible API | Newer, external dependency | Vite projects |
 
-**Recommendation: Jest** — It's the industry standard, has great documentation, and skills transfer to any job.
+**Recommendation for this project: Node.js Built-in Test Runner** — It aligns with your vanilla philosophy: zero dependencies, built into Node.js since v18.
 
-#### Step 2: Install Jest
+> **Why vanilla testing fits this project:**
+> - No `npm install` needed — just use what Node.js provides
+> - No configuration files (`.babelrc`, `jest.config.js`, etc.)
+> - No version conflicts or security updates to manage
+> - Same syntax concepts as Jest (easy to learn Jest later if needed)
+> - Perfect for a self-hosted project that values simplicity
 
+#### Step 2: Setup (Zero Install!)
+
+**Check your Node.js version:**
 ```bash
-# In your project directory
-npm install --save-dev jest
-
-# For ES modules support (since your project uses import/export)
-npm install --save-dev @babel/preset-env
+node --version
+# Must be v18.0.0 or higher (you likely have v20+)
 ```
+
+**That's it!** No packages to install. The test runner is built into Node.js.
 
 Add to `package.json`:
 ```json
 {
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "roots": ["<rootDir>/tests"],
-    "verbose": true
+    "test": "node --test",
+    "test:watch": "node --test --watch"
   }
-}
-```
-
-Create `.babelrc` for ES modules:
-```json
-{
-  "presets": [
-    ["@babel/preset-env", { "targets": { "node": "current" } }]
-  ]
 }
 ```
 
@@ -1512,101 +1504,191 @@ Create `.babelrc` for ES modules:
 │   │   ├── tasks.test.js       # Tests for /api/tasks endpoints
 │   │   ├── reports.test.js     # Tests for /api/reports endpoints
 │   │   └── notes.test.js       # Tests for /api/notes endpoints
-│   ├── unit/                   # Unit tests
-│   │   ├── utils.test.js       # Tests for utility functions
-│   │   └── validation.test.js  # Tests for validation logic
-│   └── setup.js                # Test setup/teardown
+│   └── unit/                   # Unit tests
+│       ├── utils.test.js       # Tests for utility functions
+│       └── validation.test.js  # Tests for validation logic
 └── public/
     └── js/
         └── utils.js
 ```
 
-#### Step 4: Write your first tests
+#### Step 4: Write your first tests (Vanilla Node.js)
 
-**Start with the easiest: utility functions (unit tests)**
+**The built-in test runner uses `node:test` and `node:assert` modules:**
 
 Create `tests/unit/utils.test.js`:
 ```javascript
-// Test the getWeekNumber function
+// Import Node.js built-in test modules (no npm install needed!)
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
+
+// Copy the function here for now (later we'll import from shared module)
+function getWeekNumber(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+}
+
+// Group related tests with describe()
 describe('getWeekNumber', () => {
-    // Import function (you may need to export it first)
-    const getWeekNumber = (date) => {
-        const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-        const yearStart = new Date(d.getFullYear(), 0, 1);
-        return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-    };
 
-    test('returns week 1 for January 1st, 2026', () => {
-        expect(getWeekNumber(new Date('2026-01-01'))).toBe(1);
+    it('returns week 1 for January 1st, 2026', () => {
+        const result = getWeekNumber(new Date('2026-01-01'));
+        assert.strictEqual(result, 1);
     });
 
-    test('returns week 52 or 53 for end of year', () => {
+    it('returns week 52 or 53 for end of year', () => {
         const week = getWeekNumber(new Date('2026-12-31'));
-        expect(week).toBeGreaterThanOrEqual(52);
-        expect(week).toBeLessThanOrEqual(53);
+        assert.ok(week >= 52, 'Week should be at least 52');
+        assert.ok(week <= 53, 'Week should be at most 53');
     });
 
-    test('returns correct week for mid-year date', () => {
+    it('returns correct week for mid-year date', () => {
         // July 15, 2026 should be around week 29
         const week = getWeekNumber(new Date('2026-07-15'));
-        expect(week).toBe(29);
+        assert.strictEqual(week, 29);
+    });
+
+    it('handles string date input', () => {
+        const week = getWeekNumber('2026-03-15');
+        assert.strictEqual(typeof week, 'number');
+        assert.ok(week > 0 && week <= 53);
     });
 });
 
-describe('escapeHtml', () => {
-    const escapeHtml = (text) => {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    };
+// Test input validation (example for future validation logic)
+describe('input validation', () => {
 
-    // Note: This test needs jsdom environment for document
-    test.skip('escapes HTML special characters', () => {
-        expect(escapeHtml('<script>')).toBe('&lt;script&gt;');
-        expect(escapeHtml('"quotes"')).toBe('&quot;quotes&quot;');
-        expect(escapeHtml("it's")).toBe("it's"); // Single quotes OK
+    it('category must be between 1 and 6', () => {
+        const isValidCategory = (cat) => Number.isInteger(cat) && cat >= 1 && cat <= 6;
+
+        assert.strictEqual(isValidCategory(1), true);
+        assert.strictEqual(isValidCategory(6), true);
+        assert.strictEqual(isValidCategory(0), false);
+        assert.strictEqual(isValidCategory(7), false);
+        assert.strictEqual(isValidCategory(3.5), false);
+        assert.strictEqual(isValidCategory('2'), false);
+    });
+
+    it('title must not be empty after trimming', () => {
+        const isValidTitle = (title) => typeof title === 'string' && title.trim().length > 0;
+
+        assert.strictEqual(isValidTitle('Hello'), true);
+        assert.strictEqual(isValidTitle('  Hello  '), true);
+        assert.strictEqual(isValidTitle(''), false);
+        assert.strictEqual(isValidTitle('   '), false);
+        assert.strictEqual(isValidTitle(null), false);
     });
 });
 ```
 
-Run with: `npm test`
+**Run with:**
+```bash
+npm test
+# Or directly:
+node --test
+```
 
-#### Step 5: Write API integration tests
+#### Node.js Assert Methods (Cheat Sheet)
 
-These test your Express endpoints with a real (test) database.
+| Method | What it checks | Example |
+|--------|----------------|---------|
+| `assert.strictEqual(a, b)` | a === b (exact match) | `assert.strictEqual(1 + 1, 2)` |
+| `assert.notStrictEqual(a, b)` | a !== b | `assert.notStrictEqual(1, 2)` |
+| `assert.deepStrictEqual(a, b)` | Objects/arrays match | `assert.deepStrictEqual([1,2], [1,2])` |
+| `assert.ok(value)` | Value is truthy | `assert.ok(result > 0)` |
+| `assert.throws(fn)` | Function throws error | `assert.throws(() => badFn())` |
+| `assert.rejects(promise)` | Promise rejects | `await assert.rejects(asyncBadFn())` |
+
+**Jest vs Node.js comparison:**
+```javascript
+// Jest syntax:
+expect(value).toBe(2);
+expect(value).toEqual({ a: 1 });
+expect(value).toBeTruthy();
+
+// Node.js syntax (what we use):
+assert.strictEqual(value, 2);
+assert.deepStrictEqual(value, { a: 1 });
+assert.ok(value);
+```
+
+The concepts are identical — only the syntax differs. If you learn Node.js testing, you can easily switch to Jest later.
+
+#### Step 5: Write API integration tests (Vanilla Node.js)
+
+These test your Express endpoints. We'll use Node.js built-in `http` module — no `supertest` needed!
 
 Create `tests/api/tasks.test.js`:
 ```javascript
-const request = require('supertest');
-const fs = require('fs').promises;
-const path = require('path');
+const { describe, it, before, after, beforeEach } = require('node:test');
+const assert = require('node:assert');
+const fs = require('node:fs').promises;
+const path = require('node:path');
 
-// Import your Express app (you may need to export it from server.js)
-// const app = require('../../server');
+// Simple HTTP helper (vanilla replacement for supertest)
+function makeRequest(method, path, body = null) {
+    return new Promise((resolve, reject) => {
+        const http = require('node:http');
+        const options = {
+            hostname: 'localhost',
+            port: 3001,
+            path: path,
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+
+        const req = http.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                resolve({
+                    status: res.statusCode,
+                    body: data ? JSON.parse(data) : null
+                });
+            });
+        });
+
+        req.on('error', reject);
+        if (body) req.write(JSON.stringify(body));
+        req.end();
+    });
+}
+
+// Helper shortcuts
+const get = (path) => makeRequest('GET', path);
+const post = (path, body) => makeRequest('POST', path, body);
+const del = (path) => makeRequest('DELETE', path);
 
 describe('Tasks API', () => {
-    const TEST_DATA_DIR = './test-data';
-    const TASKS_FILE = path.join(TEST_DATA_DIR, 'tasks.json');
+    const DATA_DIR = './data';
+    const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+    let originalTasks;
 
-    beforeAll(async () => {
-        // Create test data directory
-        await fs.mkdir(TEST_DATA_DIR, { recursive: true });
+    // Save original tasks before all tests
+    before(async () => {
+        try {
+            originalTasks = await fs.readFile(TASKS_FILE, 'utf8');
+        } catch {
+            originalTasks = '[]';
+        }
     });
 
+    // Reset tasks file before each test
     beforeEach(async () => {
-        // Reset tasks file before each test
         await fs.writeFile(TASKS_FILE, '[]');
     });
 
-    afterAll(async () => {
-        // Clean up test data
-        await fs.rm(TEST_DATA_DIR, { recursive: true, force: true });
+    // Restore original tasks after all tests
+    after(async () => {
+        await fs.writeFile(TASKS_FILE, originalTasks);
     });
 
     describe('POST /api/tasks', () => {
-        test('creates a new task with valid data', async () => {
+
+        it('creates a new task with valid data', async () => {
             const newTask = {
                 title: 'Test Task',
                 description: 'Test Description',
@@ -1614,113 +1696,135 @@ describe('Tasks API', () => {
                 priority: true
             };
 
-            const response = await request(app)
-                .post('/api/tasks')
-                .send(newTask)
-                .expect(201);
+            const response = await post('/api/tasks', newTask);
 
-            expect(response.body.title).toBe('Test Task');
-            expect(response.body.id).toBeDefined();
-            expect(response.body.status).toBe('todo');
-            expect(response.body.position).toBe(0);
+            assert.strictEqual(response.status, 201);
+            assert.strictEqual(response.body.title, 'Test Task');
+            assert.ok(response.body.id, 'Task should have an ID');
+            assert.strictEqual(response.body.status, 'todo');
+            assert.strictEqual(response.body.position, 0);
         });
 
-        test('returns 400 when title is missing', async () => {
-            const response = await request(app)
-                .post('/api/tasks')
-                .send({ description: 'No title' })
-                .expect(400);
+        it('returns 400 when title is missing', async () => {
+            const response = await post('/api/tasks', { description: 'No title' });
 
-            expect(response.body.error).toBeDefined();
+            assert.strictEqual(response.status, 400);
+            assert.ok(response.body.error, 'Should return error message');
         });
 
-        test('returns 400 when title is empty string', async () => {
-            const response = await request(app)
-                .post('/api/tasks')
-                .send({ title: '   ' })  // Just whitespace
-                .expect(400);
+        it('returns 400 when title is empty string', async () => {
+            const response = await post('/api/tasks', { title: '   ' });
 
-            expect(response.body.error).toBeDefined();
+            assert.strictEqual(response.status, 400);
+            assert.ok(response.body.error, 'Should return error message');
+        });
+
+        it('sets default category to 1 if not provided', async () => {
+            const response = await post('/api/tasks', { title: 'No category' });
+
+            assert.strictEqual(response.status, 201);
+            assert.strictEqual(response.body.category, 1);
         });
     });
 
     describe('GET /api/tasks', () => {
-        test('returns empty array when no tasks exist', async () => {
-            const response = await request(app)
-                .get('/api/tasks')
-                .expect(200);
 
-            expect(response.body).toEqual([]);
+        it('returns empty array when no tasks exist', async () => {
+            const response = await get('/api/tasks');
+
+            assert.strictEqual(response.status, 200);
+            assert.deepStrictEqual(response.body, []);
         });
 
-        test('returns all tasks', async () => {
+        it('returns all tasks', async () => {
             // Create two tasks first
-            await request(app).post('/api/tasks').send({ title: 'Task 1' });
-            await request(app).post('/api/tasks').send({ title: 'Task 2' });
+            await post('/api/tasks', { title: 'Task 1' });
+            await post('/api/tasks', { title: 'Task 2' });
 
-            const response = await request(app)
-                .get('/api/tasks')
-                .expect(200);
+            const response = await get('/api/tasks');
 
-            expect(response.body).toHaveLength(2);
+            assert.strictEqual(response.status, 200);
+            assert.strictEqual(response.body.length, 2);
         });
     });
 
     describe('DELETE /api/tasks/:id', () => {
-        test('deletes an existing task', async () => {
-            // Create a task
-            const createResponse = await request(app)
-                .post('/api/tasks')
-                .send({ title: 'To Delete' });
 
+        it('deletes an existing task', async () => {
+            // Create a task
+            const createResponse = await post('/api/tasks', { title: 'To Delete' });
             const taskId = createResponse.body.id;
 
             // Delete it
-            await request(app)
-                .delete(`/api/tasks/${taskId}`)
-                .expect(200);
+            const deleteResponse = await del(`/api/tasks/${taskId}`);
+            assert.strictEqual(deleteResponse.status, 200);
 
             // Verify it's gone
-            const getResponse = await request(app).get('/api/tasks');
-            expect(getResponse.body).toHaveLength(0);
+            const getResponse = await get('/api/tasks');
+            assert.strictEqual(getResponse.body.length, 0);
         });
 
-        test('returns 404 for non-existent task', async () => {
-            await request(app)
-                .delete('/api/tasks/nonexistent123')
-                .expect(404);
+        it('returns 404 for non-existent task', async () => {
+            const response = await del('/api/tasks/nonexistent123');
+
+            assert.strictEqual(response.status, 404);
         });
     });
 });
 ```
 
-#### Step 6: Make server.js testable
+**Important:** API tests require the server to be running. Run in two terminals:
+```bash
+# Terminal 1: Start the server
+node server.js
 
-Currently, `server.js` starts listening immediately. For testing, you need to export the app:
+# Terminal 2: Run API tests
+node --test tests/api/
+```
+
+Or create a test script that starts/stops the server automatically (advanced).
+
+#### Step 6: Test Lifecycle Hooks
+
+The Node.js test runner provides hooks to run code before/after tests:
 
 ```javascript
-// At the end of server.js, change:
+const { describe, it, before, after, beforeEach, afterEach } = require('node:test');
 
-// FROM:
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+describe('my tests', () => {
 
-// TO:
-if (require.main === module) {
-    // Only start server if run directly (node server.js)
-    app.listen(PORT, () => {
-        console.log(`Server running at http://localhost:${PORT}`);
+    before(() => {
+        // Runs ONCE before all tests in this describe block
+        console.log('Setting up...');
     });
-}
 
-// Export for testing
-module.exports = app;
+    beforeEach(() => {
+        // Runs before EACH test
+        // Good for resetting state
+    });
+
+    afterEach(() => {
+        // Runs after EACH test
+        // Good for cleanup
+    });
+
+    after(() => {
+        // Runs ONCE after all tests complete
+        console.log('Tearing down...');
+    });
+
+    it('test 1', () => { /* ... */ });
+    it('test 2', () => { /* ... */ });
+});
 ```
 
-This pattern lets:
-- `node server.js` → Server starts normally
-- `require('./server')` in tests → Just gets the app, doesn't start listening
+**Common use cases:**
+| Hook | Use For |
+|------|---------|
+| `before` | Start server, create test database |
+| `beforeEach` | Reset data to known state |
+| `afterEach` | Clean up created resources |
+| `after` | Stop server, delete test files |
 
 #### What to test first (priority order)
 
@@ -1738,69 +1842,76 @@ This pattern lets:
 ```bash
 # Run all tests once
 npm test
+# Or directly:
+node --test
 
 # Run tests in watch mode (re-runs on file changes)
 npm run test:watch
+# Or directly:
+node --test --watch
 
-# Run tests with coverage report
-npm run test:coverage
+# Run only unit tests
+node --test tests/unit/
 
-# Run specific test file
-npm test -- tests/api/tasks.test.js
+# Run only API tests
+node --test tests/api/
 
-# Run tests matching a pattern
-npm test -- --testNamePattern="creates a new task"
+# Run a specific test file
+node --test tests/unit/utils.test.js
+
+# Run tests matching a pattern in the name
+node --test --test-name-pattern="creates a new task"
 ```
 
 #### Understanding test output
 
 ```
- PASS  tests/api/tasks.test.js
-  Tasks API
-    POST /api/tasks
-      ✓ creates a new task with valid data (45 ms)
-      ✓ returns 400 when title is missing (12 ms)
-      ✓ returns 400 when title is empty string (8 ms)
-    GET /api/tasks
-      ✓ returns empty array when no tasks exist (5 ms)
-      ✓ returns all tasks (23 ms)
+▶ getWeekNumber
+  ✔ returns week 1 for January 1st, 2026 (1.234ms)
+  ✔ returns week 52 or 53 for end of year (0.456ms)
+  ✔ returns correct week for mid-year date (0.234ms)
+  ✔ handles string date input (0.123ms)
+▶ getWeekNumber (2.345ms)
 
-Test Suites: 1 passed, 1 total
-Tests:       5 passed, 5 total
-Snapshots:   0 total
-Time:        1.234 s
+▶ input validation
+  ✔ category must be between 1 and 6 (0.567ms)
+  ✔ title must not be empty after trimming (0.234ms)
+▶ input validation (0.890ms)
+
+ℹ tests 6
+ℹ suites 2
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ duration_ms 45.678
 ```
 
-Green checkmarks = passing tests. Red X = failing tests.
+- ✔ = passing test (green)
+- ✖ = failing test (red)
+- ℹ = summary information
 
-#### Test coverage
+#### Test coverage (optional)
 
-Coverage shows what percentage of your code is tested:
+Node.js has experimental built-in coverage (no npm packages needed):
 
-```
-npm run test:coverage
-```
+```bash
+# Run tests with coverage
+node --test --experimental-test-coverage
 
-```
-----------|---------|----------|---------|---------|-------------------
-File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Lines
-----------|---------|----------|---------|---------|-------------------
-server.js |   75.5  |    60.0  |   85.7  |   75.5  | 45-50, 78-82
-----------|---------|----------|---------|---------|-------------------
+# Output includes:
+# ℹ coverage 75.5%
 ```
 
-- **Stmts (Statements):** Lines of code executed
-- **Branch:** If/else paths taken
-- **Funcs:** Functions called
-- **Lines:** Similar to statements
+For detailed coverage reports, you'd need an external tool, but for a vanilla project, the basic coverage indicator is often enough.
 
 **Don't aim for 100%** — that's often counterproductive. 70-80% is usually good enough.
 
-#### Common testing patterns
+#### Common testing patterns (Vanilla Node.js)
 
 **1. Arrange-Act-Assert (AAA)**
 ```javascript
-test('something works', () => {
+it('something works', () => {
     // ARRANGE: Set up the test
     const input = 'test';
 
@@ -1808,40 +1919,70 @@ test('something works', () => {
     const result = myFunction(input);
 
     // ASSERT: Check the result
-    expect(result).toBe('expected');
+    assert.strictEqual(result, 'expected');
 });
 ```
 
 **2. Testing error cases**
 ```javascript
-test('throws error for invalid input', () => {
-    expect(() => {
-        myFunction(null);
-    }).toThrow('Input cannot be null');
+it('throws error for invalid input', () => {
+    assert.throws(
+        () => myFunction(null),
+        { message: 'Input cannot be null' }
+    );
 });
 ```
 
 **3. Testing async code**
 ```javascript
-test('async operation completes', async () => {
+it('async operation completes', async () => {
     const result = await fetchData();
-    expect(result).toBeDefined();
+    assert.ok(result, 'Result should be defined');
+});
+
+// Testing that async code rejects
+it('rejects with invalid input', async () => {
+    await assert.rejects(
+        async () => await badAsyncFunction(),
+        { message: 'Expected error message' }
+    );
 });
 ```
 
 **4. Using test fixtures**
 ```javascript
 // tests/fixtures/tasks.js
-export const sampleTasks = [
+const sampleTasks = [
     { id: '1', title: 'Task 1', status: 'todo' },
     { id: '2', title: 'Task 2', status: 'done' }
 ];
 
-// In your test
-import { sampleTasks } from '../fixtures/tasks';
+module.exports = { sampleTasks };
+
+// In your test file
+const { sampleTasks } = require('./fixtures/tasks');
 
 beforeEach(() => {
     // Use sample data for each test
+});
+```
+
+**5. Skipping tests**
+```javascript
+// Skip a single test
+it.skip('this test is not ready yet', () => {
+    // This won't run
+});
+
+// Skip an entire describe block
+describe.skip('these tests are not ready', () => {
+    it('test 1', () => { });
+    it('test 2', () => { });
+});
+
+// Only run specific tests (useful during development)
+it.only('only this test will run', () => {
+    // All other tests are skipped
 });
 ```
 
@@ -1864,27 +2005,39 @@ beforeEach(() => {
 
 **Priority: HIGH for a self-hosted/open-source project.**
 
+**Why vanilla testing is perfect for this project:**
+- Zero dependencies — aligns with your project philosophy
+- Built into Node.js — no npm install, no version conflicts
+- Simple and educational — you learn the fundamentals, not framework magic
+- Portable skills — the concepts transfer to any testing framework
+
 Here's a realistic implementation plan:
 
-**Week 1:**
-1. Install Jest and set up test infrastructure
-2. Write tests for utility functions (5-10 tests)
-3. Run tests after every code change
+**Day 1-2: Setup and first tests**
+1. Create `tests/unit/` directory
+2. Write tests for `getWeekNumber()` function (copy from example above)
+3. Run `node --test` and see it work
+4. Add `"test": "node --test"` to package.json
+
+**Day 3-4: Validation tests**
+1. Add tests for input validation logic (category, title, priority)
+2. These tests will help you implement the validation from Section 5.4
+
+**Day 5-7: API tests**
+1. Create `tests/api/` directory
+2. Write tests for GET /api/tasks
+3. Write tests for POST /api/tasks
+4. Run server in one terminal, tests in another
 
 **Week 2:**
-1. Export Express app for testing
-2. Write API tests for GET /api/tasks
-3. Write API tests for POST /api/tasks
-
-**Week 3:**
-1. Add tests for PUT and DELETE
+1. Add tests for PUT, DELETE, and move operations
 2. Add tests for error cases (400, 404)
-3. Add coverage reporting
+3. Test report generation logic
 
 **Ongoing:**
-1. Write tests for new features BEFORE implementing
-2. Add tests when you find bugs (regression tests)
-3. Keep coverage above 60%
+1. Write tests for new features BEFORE implementing (TDD approach)
+2. When you find a bug, write a test that reproduces it first
+3. Run tests before every commit
 
 ---
 
@@ -1898,7 +2051,29 @@ Here's a realistic implementation plan:
 | Debugging | Console.log everywhere | Tests isolate the problem |
 | Refactoring | Avoid it | Do it freely |
 
+**Why vanilla Node.js testing is ideal for this project:**
+
+| Consideration | Vanilla (node:test) | Jest/Vitest |
+|--------------|---------------------|-------------|
+| Dependencies | Zero | 50+ packages |
+| Setup time | 0 minutes | 10+ minutes |
+| Config files | None | jest.config.js, babel.config.js |
+| Node.js version | 18+ (you likely have this) | Any |
+| Security updates | Automatic with Node.js | Manual npm updates |
+| Philosophy match | ✅ Perfect | ❌ Adds complexity |
+
 **Key insight for self-hosted projects:** You don't have a QA team, staging environment, or production monitoring. Tests are your safety net. Start small, build the habit, and grow coverage over time.
+
+**Getting started is as simple as:**
+```bash
+# Create your first test file
+mkdir -p tests/unit
+# Write tests (copy from examples above)
+# Run them
+node --test
+```
+
+No npm install. No configuration. Just write tests and run them.
 
 ---
 
