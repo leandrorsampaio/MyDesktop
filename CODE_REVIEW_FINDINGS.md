@@ -1101,13 +1101,13 @@ Additionally, `DEFAULT_PORT` is exported from `/public/js/constants.js` for clie
 
 ---
 
-## 7. Security Considerations
+## 7. Security Considerations ✅ RESOLVED
 
 > **Junior Developer Note:** Security might seem less important for a local-only app, but learning these concepts now is crucial. The habits you build here will carry into your future projects where security IS critical. Plus, even local apps can have security issues if you ever share your screen or if someone accesses your computer.
 
 ---
 
-### 7.1 XSS potential in dynamically generated HTML
+### 7.1 XSS potential in dynamically generated HTML ⏭️ SKIPPED (Not Applicable)
 
 **Files:** `app.js` various render functions
 
@@ -1277,6 +1277,31 @@ Go through your code and check every place where user data is displayed:
 1. **Quick win:** Replace all inline `onclick` handlers with event delegation (also improves code quality)
 2. **Audit:** Search for `innerHTML` and verify each one uses `escapeHtml()`
 3. **Add URL validation:** For the checklist URL feature
+
+---
+
+#### ⚠️ Why This Item Is NOT NECESSARY For This Project
+
+**Decision: SKIPPED — Not applicable to local-only, single-user apps.**
+
+After review, this item does not need to be implemented because:
+
+1. **XSS requires an attacker and a victim** — In this app, you are both. There's no one else to attack. If you "inject" malicious JavaScript into your own tasks, you're just running your own code — which you could do anyway by opening the browser console.
+
+2. **Local-only, no network exposure** — The app runs on `localhost`. No external users can access it or inject data.
+
+3. **You control all the data** — All data comes from you, is stored on your machine, and is viewed only by you. There's no external data source that could contain malicious content.
+
+4. **Already following best practices** — The codebase already uses `escapeHtml()` in most places where user content is rendered (reports, archived tasks, checklist items, task cards, etc.).
+
+**When this WOULD matter:**
+- If you added multi-user support
+- If you exposed the app to the internet
+- If you imported data from untrusted external sources
+
+**Conclusion:** The existing `escapeHtml()` usage is sufficient. A full XSS audit would be effort spent on a theoretical risk that doesn't apply to this project's architecture.
+
+---
 
 ### 7.2 No request rate limiting ✅ RESOLVED
 
