@@ -748,7 +748,7 @@ async function moveTask(id, newStatus, newPosition) {
 
 ---
 
-### 5.4 No input sanitization on server
+### 5.4 No input sanitization on server ✅ RESOLVED
 
 **File:** `server.js`
 
@@ -949,6 +949,42 @@ if (!result.success) {
 const validData = result.data;
 ```
 
+**Solution implemented (v2.17.0):**
+
+Added comprehensive server-side input validation:
+
+1. **Validation constants:**
+```javascript
+const VALIDATION = {
+    TITLE_MAX_LENGTH: 200,
+    DESCRIPTION_MAX_LENGTH: 2000,
+    NOTES_MAX_LENGTH: 10000,
+    REPORT_TITLE_MAX_LENGTH: 200,
+    VALID_CATEGORIES: [1, 2, 3, 4, 5, 6],
+    VALID_STATUSES: ['todo', 'wait', 'inprogress', 'done']
+};
+```
+
+2. **Reusable validation helpers:**
+   - `validateTaskInput(data, options)` — Validates task create/update data
+   - `validateMoveInput(data)` — Validates move operation data
+
+3. **Endpoints updated:**
+   - `POST /api/tasks` — Validates title (required, max 200), description (max 2000), category (1-6), priority (boolean)
+   - `PUT /api/tasks/:id` — Same validation, but title is optional
+   - `POST /api/tasks/:id/move` — Validates status (valid enum), position (non-negative integer)
+   - `POST /api/notes` — Validates content length (max 10000)
+   - `PUT /api/reports/:id` — Validates title length (max 200)
+
+4. **Clear error messages:**
+```javascript
+{ "error": "Title must be 200 characters or less" }
+{ "error": "Category must be one of: 1, 2, 3, 4, 5, 6" }
+{ "error": "Status must be one of: todo, wait, inprogress, done" }
+```
+
+---
+
 ### Section 5 Summary: What Should a Junior Developer Do?
 
 Here's my recommendation for how to approach these items, considering this is a **local-only, single-user app**:
@@ -958,14 +994,16 @@ Here's my recommendation for how to approach these items, considering this is a 
 | 5.1 Error recovery | Medium | Low (local network is reliable) | ⭐⭐⭐ Great for learning | ✅ Implemented (v2.14.0) |
 | 5.2 disconnectedCallback | Low | Low (page refreshes clean up) | ⭐⭐ Good concept | ✅ Implemented (v2.15.0) |
 | 5.3 Race condition | Low | Low (local = fast) | ⭐⭐⭐ Very common issue | ✅ Implemented (v2.16.0) |
-| 5.4 Input validation | Medium | Medium (prevents weird bugs) | ⭐⭐⭐ Essential skill | Add length limits at minimum |
+| 5.4 Input validation | Medium | Medium (prevents weird bugs) | ⭐⭐⭐ Essential skill | ✅ Implemented (v2.17.0) |
 
 #### Suggested order of implementation:
 
 1. ~~**5.1 (Error recovery)** — Optimistic UI with rollback~~ ✅ DONE (v2.14.0)
 2. ~~**5.2 (disconnectedCallback)** — Component cleanup~~ ✅ DONE (v2.15.0)
 3. ~~**5.3 (Race condition)** — Simple lock pattern~~ ✅ DONE (v2.16.0)
-4. **5.4 (Input validation)** — Important skill to learn, prevents data issues
+4. ~~**5.4 (Input validation)** — Server-side validation~~ ✅ DONE (v2.17.0)
+
+**🎉 Section 5 Complete!** All robustness issues have been addressed.
 
 #### Key takeaways for your career:
 
@@ -2213,6 +2251,7 @@ No npm install. No configuration. Just write tests and run them.
 10. ~~**Add optimistic UI with rollback** - 1 hour~~ ✅ DONE (v2.14.0)
 11. ~~**Add disconnectedCallback to components** - 30 minutes~~ ✅ DONE (v2.15.0)
 12. ~~**Add race condition lock to moveTask** - 5 minutes~~ ✅ DONE (v2.16.0)
+13. ~~**Add server-side input validation** - 45 minutes~~ ✅ DONE (v2.17.0)
 
 ---
 

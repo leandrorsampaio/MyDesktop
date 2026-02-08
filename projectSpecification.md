@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.16.0
+**Version:** 2.17.0
 **Last Updated:** 2026-02-08
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.17.0  | 2026-02-08 | Security: Added server-side input validation for all API endpoints; validates title/description lengths, category values (1-6), status values, position integers; reusable validation helpers with clear error messages |
 | 2.16.0  | 2026-02-08 | Reliability: Added simple lock (`isMoving` flag) to `moveTask` function to prevent race conditions when user drags multiple cards quickly; uses `finally` block to ensure lock is always released |
 | 2.15.0  | 2026-02-08 | Reliability: Added `disconnectedCallback` lifecycle method to components for proper cleanup; modal-dialog cleans up ESC key listener; notes-widget clears debounce timeout; toast-notification clears auto-dismiss timeouts; prevents memory leaks |
 | 2.14.0  | 2026-02-08 | UX: Optimistic UI with rollback for all task operations (create, update, delete, move); instant visual feedback with automatic rollback on API failure; new state management functions (createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId) |
@@ -517,6 +518,47 @@ async function doOperation() {
 **Currently implemented:**
 - `moveTask()` in `app.js` — Uses `isMoving` lock to prevent overlapping drag operations
 
+### 13. Server-Side Input Validation
+
+**All API endpoints validate user input:**
+
+The server validates all incoming data before processing. This prevents malformed data from corrupting the database and provides clear error messages.
+
+**Validation constants (in `server.js`):**
+```javascript
+const VALIDATION = {
+    TITLE_MAX_LENGTH: 200,
+    DESCRIPTION_MAX_LENGTH: 2000,
+    NOTES_MAX_LENGTH: 10000,
+    REPORT_TITLE_MAX_LENGTH: 200,
+    VALID_CATEGORIES: [1, 2, 3, 4, 5, 6],
+    VALID_STATUSES: ['todo', 'wait', 'inprogress', 'done']
+};
+```
+
+**Validation helpers:**
+- `validateTaskInput(data, options)` — Validates task create/update data
+- `validateMoveInput(data)` — Validates move operation data
+
+**What gets validated:**
+| Field | Validation |
+|-------|------------|
+| `title` | Required on create, string, max 200 chars |
+| `description` | Optional, string, max 2000 chars |
+| `category` | Optional, integer 1-6 |
+| `priority` | Optional, boolean |
+| `newStatus` | Must be: todo, wait, inprogress, done |
+| `newPosition` | Non-negative integer |
+| `notes.content` | String, max 10000 chars |
+| `report.title` | String, max 200 chars |
+
+**Error responses:**
+```javascript
+// 400 Bad Request with clear message
+{ "error": "Title must be 200 characters or less" }
+{ "error": "Category must be one of: 1, 2, 3, 4, 5, 6" }
+```
+
 ### Quick Reference Checklist
 
 Before submitting code, verify:
@@ -534,6 +576,7 @@ Before submitting code, verify:
 - [ ] Task operations use optimistic UI pattern with rollback
 - [ ] Components with document listeners or timers have `disconnectedCallback`
 - [ ] Async operations that can be triggered rapidly use locks to prevent race conditions
+- [ ] API endpoints validate all user input (types, lengths, allowed values)
 
 ---
 

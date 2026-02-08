@@ -106,6 +106,97 @@ const writeLimiter = createRateLimiter({ maxRequests: RATE_LIMIT.MAX_WRITES, isW
 // Apply rate limiting to all API routes
 app.use('/api/', readLimiter);
 
+// ===========================================
+// Input Validation
+// ===========================================
+
+/**
+ * Validation constraints for user input
+ */
+const VALIDATION = {
+    TITLE_MAX_LENGTH: 200,
+    DESCRIPTION_MAX_LENGTH: 2000,
+    NOTES_MAX_LENGTH: 10000,
+    REPORT_TITLE_MAX_LENGTH: 200,
+    VALID_CATEGORIES: [1, 2, 3, 4, 5, 6],
+    VALID_STATUSES: ['todo', 'wait', 'inprogress', 'done']
+};
+
+/**
+ * Validates task input data
+ * @param {Object} data - The input data to validate
+ * @param {Object} options - Validation options
+ * @param {boolean} options.requireTitle - Whether title is required (true for create, false for update)
+ * @returns {{valid: boolean, errors: string[]}} Validation result
+ */
+function validateTaskInput(data, { requireTitle = false } = {}) {
+    const errors = [];
+
+    // Title validation
+    if (requireTitle) {
+        if (!data.title || (typeof data.title === 'string' && data.title.trim() === '')) {
+            errors.push('Title is required');
+        }
+    }
+    if (data.title !== undefined) {
+        if (typeof data.title !== 'string') {
+            errors.push('Title must be a string');
+        } else if (data.title.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+            errors.push(`Title must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less`);
+        }
+    }
+
+    // Description validation
+    if (data.description !== undefined) {
+        if (typeof data.description !== 'string') {
+            errors.push('Description must be a string');
+        } else if (data.description.length > VALIDATION.DESCRIPTION_MAX_LENGTH) {
+            errors.push(`Description must be ${VALIDATION.DESCRIPTION_MAX_LENGTH} characters or less`);
+        }
+    }
+
+    // Category validation
+    if (data.category !== undefined) {
+        const category = Number(data.category);
+        if (isNaN(category) || !VALIDATION.VALID_CATEGORIES.includes(category)) {
+            errors.push(`Category must be one of: ${VALIDATION.VALID_CATEGORIES.join(', ')}`);
+        }
+    }
+
+    // Priority validation
+    if (data.priority !== undefined && typeof data.priority !== 'boolean') {
+        errors.push('Priority must be a boolean');
+    }
+
+    return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validates move task input data
+ * @param {Object} data - The input data to validate
+ * @returns {{valid: boolean, errors: string[]}} Validation result
+ */
+function validateMoveInput(data) {
+    const errors = [];
+
+    // Status validation
+    if (data.newStatus !== undefined) {
+        if (typeof data.newStatus !== 'string' || !VALIDATION.VALID_STATUSES.includes(data.newStatus)) {
+            errors.push(`Status must be one of: ${VALIDATION.VALID_STATUSES.join(', ')}`);
+        }
+    }
+
+    // Position validation
+    if (data.newPosition !== undefined) {
+        const position = Number(data.newPosition);
+        if (isNaN(position) || !Number.isInteger(position) || position < 0) {
+            errors.push('Position must be a non-negative integer');
+        }
+    }
+
+    return { valid: errors.length === 0, errors };
+}
+
 // Helper functions
 async function ensureDataDir() {
     try {
@@ -203,12 +294,14 @@ app.get('/api/tasks', async (req, res) => {
 // POST create new task
 app.post('/api/tasks', writeLimiter, async (req, res) => {
     try {
+        // Validate input
+        const validation = validateTaskInput(req.body, { requireTitle: true });
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
         const tasks = await readJsonFile(TASKS_FILE, []);
         const { title, description = '', priority = false } = req.body;
-
-        if (!title || title.trim() === '') {
-            return res.status(400).json({ error: 'Title is required' });
-        }
 
         // Get max position in todo column
         const todoTasks = tasks.filter(t => t.status === 'todo');
@@ -221,8 +314,8 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
         const newTask = {
             id: generateId(),
             title: title.trim(),
-            description: description.trim(),
-            priority,
+            description: typeof description === 'string' ? description.trim() : '',
+            priority: Boolean(priority),
             category,
             status: 'todo',
             position: maxPosition,
@@ -241,6 +334,12 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
 // PUT update task
 app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
     try {
+        // Validate input (title not required for updates)
+        const validation = validateTaskInput(req.body, { requireTitle: false });
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
         const tasks = await readJsonFile(TASKS_FILE, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
 
@@ -252,7 +351,7 @@ app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
 
         if (title !== undefined) tasks[taskIndex].title = title.trim();
         if (description !== undefined) tasks[taskIndex].description = description.trim();
-        if (priority !== undefined) tasks[taskIndex].priority = priority;
+        if (priority !== undefined) tasks[taskIndex].priority = Boolean(priority);
 
         // Handle category change with logging
         if (category !== undefined) {
@@ -299,6 +398,12 @@ app.delete('/api/tasks/:id', writeLimiter, async (req, res) => {
 // POST move task between columns or reorder
 app.post('/api/tasks/:id/move', writeLimiter, async (req, res) => {
     try {
+        // Validate input
+        const validation = validateMoveInput(req.body);
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
         const tasks = await readJsonFile(TASKS_FILE, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
 
@@ -465,6 +570,18 @@ app.get('/api/reports/:id', async (req, res) => {
 // PUT update report title
 app.put('/api/reports/:id', writeLimiter, async (req, res) => {
     try {
+        const { title } = req.body;
+
+        // Validate title
+        if (title !== undefined) {
+            if (typeof title !== 'string') {
+                return res.status(400).json({ error: 'Title must be a string' });
+            }
+            if (title.trim().length > VALIDATION.REPORT_TITLE_MAX_LENGTH) {
+                return res.status(400).json({ error: `Title must be ${VALIDATION.REPORT_TITLE_MAX_LENGTH} characters or less` });
+            }
+        }
+
         const reports = await readJsonFile(REPORTS_FILE, []);
         const reportIndex = reports.findIndex(r => r.id === req.params.id);
 
@@ -472,7 +589,6 @@ app.put('/api/reports/:id', writeLimiter, async (req, res) => {
             return res.status(404).json({ error: 'Report not found' });
         }
 
-        const { title } = req.body;
         if (title) {
             reports[reportIndex].title = title.trim();
         }
@@ -516,7 +632,13 @@ app.get('/api/notes', async (req, res) => {
 app.post('/api/notes', writeLimiter, async (req, res) => {
     try {
         const { content } = req.body;
-        const notes = { content: content || '' };
+
+        // Validate content length
+        if (content !== undefined && typeof content === 'string' && content.length > VALIDATION.NOTES_MAX_LENGTH) {
+            return res.status(400).json({ error: `Notes must be ${VALIDATION.NOTES_MAX_LENGTH} characters or less` });
+        }
+
+        const notes = { content: typeof content === 'string' ? content : '' };
         await writeJsonFile(NOTES_FILE, notes);
         res.json(notes);
     } catch (error) {
