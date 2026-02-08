@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.13.0
+**Version:** 2.14.0
 **Last Updated:** 2026-02-08
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.14.0  | 2026-02-08 | UX: Optimistic UI with rollback for all task operations (create, update, delete, move); instant visual feedback with automatic rollback on API failure; new state management functions (createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId) |
 | 2.13.0  | 2026-02-08 | Testing: added vanilla Node.js test infrastructure (146 tests) using built-in `node:test` module; tests for utilities, validation, and all API endpoints; npm scripts for running tests |
 | 2.12.0  | 2026-02-08 | Security: added DIY rate limiting middleware (no external packages); 100 req/min for reads, 30 req/min for writes; includes informational headers and auto-cleanup |
 | 2.11.0  | 2026-02-07 | Documentation: added comprehensive README.md for open source release with project philosophy, setup instructions, API reference, and contributing guidelines; added MIT LICENSE file |
@@ -144,7 +145,7 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
     - `MAX_GRADIENT_STEPS` — Maximum gradient color steps (20)
     - `LIGHT_TEXT_THRESHOLD` — Gradient index threshold for light text (12)
 -   **`/public/js/utils.js`:** Shared utility functions (escapeHtml, getWeekNumber, formatDate). Imported where needed.
--   **`/public/js/state.js`:** Centralized application state (tasks array, editing state, filter states, crisis mode state). Provides getter/setter functions for state mutations.
+-   **`/public/js/state.js`:** Centralized application state (tasks array, editing state, filter states, crisis mode state). Provides getter/setter functions for state mutations. Also provides optimistic UI helpers: `createTasksSnapshot()`, `restoreTasksFromSnapshot()`, `replaceTask()`, `generateTempId()`.
 -   **`/public/js/api.js`:** HTTP API functions for communicating with the server. Pure functions that return data without side effects.
 -   **`/public/js/filters.js`:** Category and priority filtering logic. Manages filter button rendering and applies filters to task cards.
 -   **`/public/js/crisis-mode.js`:** Crisis mode functionality including favicon generation and visual state changes.
@@ -406,6 +407,52 @@ async function myApiCall() {
 }
 ```
 
+### 11. Optimistic UI Pattern
+
+**All task operations use optimistic UI with rollback:**
+
+The application updates the UI immediately when a user performs an action, then makes the API call in the background. If the API call fails, the state is rolled back and the user is notified.
+
+**Why this matters:**
+- **Instant feedback** — The app feels snappy and responsive
+- **Better UX** — Even on slow networks, the UI responds immediately
+- **Graceful degradation** — Failures are handled with automatic rollback
+
+**Pattern:**
+```javascript
+async function performAction(id) {
+    // 1. Save snapshot for potential rollback
+    const previousTasks = createTasksSnapshot();
+
+    // 2. Update state and UI immediately
+    updateTaskInState(id, { /* changes */ });
+    renderAllColumns();
+
+    try {
+        // 3. Make API call
+        await apiFunction(id, { /* data */ });
+        // Success! UI already shows correct state
+    } catch (error) {
+        // 4. Rollback on failure
+        restoreTasksFromSnapshot(previousTasks);
+        renderAllColumns();
+        elements.toaster.error('Operation failed. Changes have been reverted.');
+    }
+}
+```
+
+**State management functions (in `/public/js/state.js`):**
+- `createTasksSnapshot()` — Creates a deep copy of tasks for rollback
+- `restoreTasksFromSnapshot(snapshot)` — Restores tasks from a snapshot
+- `replaceTask(oldId, newTask)` — Replaces a temporary task with a server-confirmed one
+- `generateTempId()` — Generates a temporary ID for optimistic creates
+
+**Operations using optimistic UI:**
+- Create task (`modals.js`) — Creates temp task, replaces with server response on success
+- Update task (`modals.js`) — Updates immediately, rolls back on failure
+- Delete task (`modals.js`) — Removes immediately, restores on failure
+- Move task (`app.js`) — Moves immediately, fetches fresh positions on success, rolls back on failure
+
 ### Quick Reference Checklist
 
 Before submitting code, verify:
@@ -420,6 +467,7 @@ Before submitting code, verify:
 - [ ] No deprecated APIs (`substr`, etc.)
 - [ ] Shared code imported from `/public/js/` modules
 - [ ] Components cache their templates
+- [ ] Task operations use optimistic UI pattern with rollback
 
 ---
 

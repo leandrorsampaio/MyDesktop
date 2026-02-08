@@ -59,6 +59,53 @@ export function removeTask(id) {
 }
 
 /**
+ * Creates a deep copy snapshot of the current tasks array for rollback purposes.
+ * @returns {Array<Object>} A deep copy of the tasks array
+ */
+export function createTasksSnapshot() {
+    return JSON.parse(JSON.stringify(tasks));
+}
+
+/**
+ * Restores the tasks array from a snapshot (used for rollback on API failure).
+ * @param {Array<Object>} snapshot - The snapshot to restore from
+ */
+export function restoreTasksFromSnapshot(snapshot) {
+    tasks = snapshot;
+}
+
+/**
+ * Finds a task by ID.
+ * @param {string} id - The task ID to find
+ * @returns {Object|undefined} The task object, or undefined if not found
+ */
+export function findTask(id) {
+    return tasks.find(t => t.id === id);
+}
+
+/**
+ * Replaces a task in the tasks array by ID.
+ * Used for replacing temporary tasks with server-confirmed ones.
+ * @param {string} oldId - The ID of the task to replace
+ * @param {Object} newTask - The new task object
+ */
+export function replaceTask(oldId, newTask) {
+    const index = tasks.findIndex(t => t.id === oldId);
+    if (index !== -1) {
+        tasks[index] = newTask;
+    }
+}
+
+/**
+ * Generates a temporary task ID for optimistic UI.
+ * Prefixed with 'temp-' to identify optimistic tasks.
+ * @returns {string} A temporary task ID
+ */
+export function generateTempId() {
+    return 'temp-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+}
+
+/**
  * Sets the editing task ID.
  * @param {string|null} id - The task ID being edited, or null if not editing
  */

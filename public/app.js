@@ -18,7 +18,10 @@ import {
     updateTaskInState,
     removeTask,
     activeCategoryFilters,
-    priorityFilterActive
+    priorityFilterActive,
+    createTasksSnapshot,
+    restoreTasksFromSnapshot,
+    findTask
 } from './js/state.js';
 import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi } from './js/api.js';
 import {
@@ -206,18 +209,50 @@ import {
 
     /**
      * Moves a task to a different column or reorders within the same column.
+     * Uses optimistic UI - updates immediately, rolls back on failure.
      * @param {string} id - The task ID to move
      * @param {string} newStatus - Target column status (todo, wait, inprogress, done)
      * @param {number} newPosition - Zero-based position in the target column
      * @returns {Promise<Object|undefined>} The moved task object, or undefined on error
      */
     async function moveTask(id, newStatus, newPosition) {
+        // Save snapshot for potential rollback
+        const previousTasks = createTasksSnapshot();
+        const task = findTask(id);
+        if (!task) return;
+
+        const oldStatus = task.status;
+
+        // Optimistic update: Update task locally
+        updateTaskInState(id, { status: newStatus, position: newPosition });
+
+        // Reorder positions in affected columns
+        const affectedStatuses = new Set([oldStatus, newStatus]);
+        affectedStatuses.forEach(status => {
+            const columnTasks = tasks
+                .filter(t => t.status === status)
+                .sort((a, b) => a.position - b.position);
+
+            columnTasks.forEach((t, idx) => {
+                if (t.id !== id) {
+                    updateTaskInState(t.id, { position: idx >= newPosition && status === newStatus ? idx + 1 : idx });
+                }
+            });
+        });
+
+        // Render immediately
+        renderAllColumns();
+
         try {
-            const result = await moveTaskApi(id, newStatus, newPosition);
-            await fetchTasks(); // Refresh all tasks to get updated positions
-            return result;
+            await moveTaskApi(id, newStatus, newPosition);
+            // Fetch fresh data to get accurate positions from server
+            await fetchTasks();
         } catch (error) {
+            // Rollback on failure
+            restoreTasksFromSnapshot(previousTasks);
+            renderAllColumns();
             console.error('Error moving task:', error);
+            elements.toaster.error('Failed to move task. Changes have been reverted.');
         }
     }
 

@@ -5,7 +5,7 @@
 
 import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS } from './constants.js';
 import { escapeHtml, formatDate } from './utils.js';
-import { tasks, editingTaskId, setEditingTaskId } from './state.js';
+import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask } from './state.js';
 import {
     createTaskApi,
     updateTaskApi,
@@ -130,7 +130,8 @@ export function openEditModal(taskId, elements, onDelete, onSubmit) {
 }
 
 /**
- * Creates a form submit handler for the task modal.
+ * Creates a form submit handler for the task modal using optimistic UI.
+ * Updates UI immediately, then makes API call. Rolls back on failure.
  * @param {Object} elements - DOM element references
  * @param {Function} renderColumn - Function to render a column
  * @param {Function} renderAllColumns - Function to render all columns
@@ -152,20 +153,60 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             return;
         }
 
-        try {
-            if (editingTaskId) {
-                const updatedTask = await updateTaskApi(editingTaskId, { title, description, priority, category });
-                updateTaskInState(editingTaskId, updatedTask);
-                renderAllColumns();
-            } else {
-                const newTask = await createTaskApi({ title, description, priority, category });
-                addTaskToState(newTask);
-                renderColumn('todo');
-            }
+        if (editingTaskId) {
+            // UPDATE: Optimistic UI with rollback
+            const previousTasks = createTasksSnapshot();
+            const taskId = editingTaskId;
+
+            // Optimistic update
+            updateTaskInState(taskId, { title, description, priority, category });
+            renderAllColumns();
             elements.taskModal.close();
-        } catch (error) {
-            console.error('Error saving task:', error);
-            elements.toaster.error('Failed to save task');
+
+            try {
+                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category });
+                // Replace with server response (includes updated log, etc.)
+                updateTaskInState(taskId, updatedTask);
+                renderAllColumns();
+            } catch (error) {
+                // Rollback on failure
+                restoreTasksFromSnapshot(previousTasks);
+                renderAllColumns();
+                console.error('Error updating task:', error);
+                elements.toaster.error('Failed to update task. Changes have been reverted.');
+            }
+        } else {
+            // CREATE: Optimistic UI with rollback
+            const tempId = generateTempId();
+            const tempTask = {
+                id: tempId,
+                title,
+                description,
+                priority,
+                category,
+                status: 'todo',
+                position: 0, // Will be at top
+                log: [],
+                createdDate: new Date().toISOString()
+            };
+
+            // Optimistic add
+            addTaskToState(tempTask);
+            renderColumn('todo');
+            elements.taskModal.close();
+
+            try {
+                const newTask = await createTaskApi({ title, description, priority, category });
+                // Replace temp task with real one from server
+                replaceTask(tempId, newTask);
+                renderColumn('todo');
+            } catch (error) {
+                // Rollback on failure - remove temp task
+                removeTask(tempId);
+                renderColumn('todo');
+                console.error('Error creating task:', error);
+                elements.toaster.error('Failed to create task. Changes have been reverted.');
+            }
         }
     };
 }
@@ -179,24 +220,35 @@ export function openDeleteConfirmation(elements) {
 }
 
 /**
- * Confirms and executes task deletion.
+ * Confirms and executes task deletion using optimistic UI.
+ * Updates UI immediately, then makes API call. Rolls back on failure.
  * @param {Object} elements - DOM element references
  * @param {Function} renderAllColumns - Function to render all columns
  * @param {Function} removeTaskFromState - Function to remove task from state
  */
 export async function confirmDeleteTask(elements, renderAllColumns, removeTaskFromState) {
-    if (editingTaskId) {
-        try {
-            await deleteTaskApi(editingTaskId);
-            removeTaskFromState(editingTaskId);
-            renderAllColumns();
-            elements.confirmModal.close();
-            elements.taskModal.close();
-            setEditingTaskId(null);
-        } catch (error) {
-            console.error('Error deleting task:', error);
-            elements.toaster.error('Failed to delete task');
-        }
+    if (!editingTaskId) return;
+
+    // Save snapshot for potential rollback
+    const previousTasks = createTasksSnapshot();
+    const taskId = editingTaskId;
+
+    // Optimistic UI: Update immediately
+    removeTaskFromState(taskId);
+    renderAllColumns();
+    elements.confirmModal.close();
+    elements.taskModal.close();
+    setEditingTaskId(null);
+
+    try {
+        await deleteTaskApi(taskId);
+        // Success! UI already shows correct state
+    } catch (error) {
+        // Rollback: Restore previous state
+        restoreTasksFromSnapshot(previousTasks);
+        renderAllColumns();
+        console.error('Error deleting task:', error);
+        elements.toaster.error('Failed to delete task. Changes have been reverted.');
     }
 }
 

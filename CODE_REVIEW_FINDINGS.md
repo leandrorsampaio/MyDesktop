@@ -267,7 +267,7 @@ The responsive media queries reference `.column`, `.taskCard`, `.taskCard__title
 
 ---
 
-### 5.1 No error recovery for failed API calls
+### 5.1 No error recovery for failed API calls ✅ RESOLVED
 
 **Current state:** If an API call fails, the operation silently fails or shows an alert.
 
@@ -353,7 +353,23 @@ Since this is a **local-only app** (server runs on localhost), network failures 
 2. Test it by temporarily making the API fail
 3. Gradually apply to other functions
 
----
+**Solution implemented (v2.14.0):**
+
+Optimistic UI with rollback has been implemented for all task operations:
+
+1. **State management functions added to `/public/js/state.js`:**
+   - `createTasksSnapshot()` — Creates a deep copy of tasks for rollback
+   - `restoreTasksFromSnapshot(snapshot)` — Restores tasks from a snapshot
+   - `replaceTask(oldId, newTask)` — Replaces temporary tasks with server-confirmed ones
+   - `generateTempId()` — Generates prefixed IDs for optimistic creates
+
+2. **Operations updated:**
+   - **Create task** (`modals.js`): Creates temp task immediately, replaces with server response on success, removes on failure
+   - **Update task** (`modals.js`): Updates state immediately, rolls back on failure
+   - **Delete task** (`modals.js`): Removes task immediately, restores on failure
+   - **Move task** (`app.js`): Moves task immediately, fetches fresh positions on success, rolls back on failure
+
+3. **User feedback:** All failures show a toast notification with "Changes have been reverted."
 
 ---
 
@@ -885,17 +901,17 @@ Here's my recommendation for how to approach these items, considering this is a 
 
 | Item | Effort | Impact | Learn? | Recommendation |
 |------|--------|--------|--------|----------------|
-| 5.1 Error recovery | Medium | Low (local network is reliable) | ⭐⭐⭐ Great for learning | Optional, but try on one function |
+| 5.1 Error recovery | Medium | Low (local network is reliable) | ⭐⭐⭐ Great for learning | ✅ Implemented (v2.14.0) |
 | 5.2 disconnectedCallback | Low | Low (page refreshes clean up) | ⭐⭐ Good concept | Fix modal-dialog.js as exercise |
 | 5.3 Race condition | Low | Low (local = fast) | ⭐⭐⭐ Very common issue | Add simple lock (4 lines of code) |
 | 5.4 Input validation | Medium | Medium (prevents weird bugs) | ⭐⭐⭐ Essential skill | Add length limits at minimum |
 
 #### Suggested order of implementation:
 
-1. **5.3 (Race condition)** — Quickest win, most likely to cause visible bugs
-2. **5.4 (Input validation)** — Important skill to learn, prevents data issues
-3. **5.2 (disconnectedCallback)** — Good learning exercise, start with modal-dialog.js
-4. **5.1 (Error recovery)** — Most complex, save for when you want a challenge
+1. ~~**5.1 (Error recovery)** — Optimistic UI with rollback~~ ✅ DONE (v2.14.0)
+2. **5.3 (Race condition)** — Quickest win, most likely to cause visible bugs
+3. **5.4 (Input validation)** — Important skill to learn, prevents data issues
+4. **5.2 (disconnectedCallback)** — Good learning exercise, start with modal-dialog.js
 
 #### Key takeaways for your career:
 
@@ -2140,6 +2156,7 @@ No npm install. No configuration. Just write tests and run them.
 7. ~~**Combine getTaskGradient/shouldUseLightText** - 10 minutes~~ ✅ DONE (v2.10.0)
 8. ~~**Add DIY rate limiting** - 30 minutes~~ ✅ DONE (vanilla, no dependencies)
 9. ~~**Add test infrastructure** - 2 hours~~ ✅ DONE (146 tests, vanilla Node.js)
+10. ~~**Add optimistic UI with rollback** - 1 hour~~ ✅ DONE (v2.14.0)
 
 ---
 
