@@ -22,6 +22,90 @@ const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ===========================================
+// Rate Limiting (DIY - no external packages)
+// ===========================================
+
+/**
+ * Rate limit configuration
+ * Generous limits since this is a local-only app
+ */
+const RATE_LIMIT = {
+    WINDOW_MS: 60 * 1000,    // 1 minute window
+    MAX_REQUESTS: 100,        // Max requests per window (read operations)
+    MAX_WRITES: 30            // Max write operations per window (POST/PUT/DELETE)
+};
+
+/**
+ * In-memory store for rate limiting
+ * Key: IP address, Value: { count, writeCount, windowStart }
+ */
+const rateLimitStore = new Map();
+
+/**
+ * Clean up old entries every 5 minutes to prevent memory growth
+ */
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, data] of rateLimitStore.entries()) {
+        if (now - data.windowStart > RATE_LIMIT.WINDOW_MS * 2) {
+            rateLimitStore.delete(ip);
+        }
+    }
+}, 5 * 60 * 1000);
+
+/**
+ * Rate limiter middleware factory
+ * @param {Object} options - Configuration options
+ * @param {number} options.maxRequests - Maximum requests per window
+ * @param {boolean} options.isWriteOperation - Whether this is a write operation
+ * @returns {Function} Express middleware
+ */
+function createRateLimiter({ maxRequests, isWriteOperation = false }) {
+    return (req, res, next) => {
+        const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        const now = Date.now();
+
+        // Get or create entry for this IP
+        let entry = rateLimitStore.get(ip);
+        if (!entry || now - entry.windowStart > RATE_LIMIT.WINDOW_MS) {
+            entry = { count: 0, writeCount: 0, windowStart: now };
+            rateLimitStore.set(ip, entry);
+        }
+
+        // Increment appropriate counter
+        entry.count++;
+        if (isWriteOperation) {
+            entry.writeCount++;
+        }
+
+        // Check limits
+        const currentCount = isWriteOperation ? entry.writeCount : entry.count;
+        if (currentCount > maxRequests) {
+            const retryAfter = Math.ceil((entry.windowStart + RATE_LIMIT.WINDOW_MS - now) / 1000);
+            res.set('Retry-After', retryAfter);
+            return res.status(429).json({
+                error: 'Too many requests. Please slow down.',
+                retryAfter: retryAfter
+            });
+        }
+
+        // Add rate limit headers (informational)
+        res.set('X-RateLimit-Limit', maxRequests);
+        res.set('X-RateLimit-Remaining', Math.max(0, maxRequests - currentCount));
+        res.set('X-RateLimit-Reset', Math.ceil((entry.windowStart + RATE_LIMIT.WINDOW_MS) / 1000));
+
+        next();
+    };
+}
+
+// Create rate limiters for different operation types
+const readLimiter = createRateLimiter({ maxRequests: RATE_LIMIT.MAX_REQUESTS });
+const writeLimiter = createRateLimiter({ maxRequests: RATE_LIMIT.MAX_WRITES, isWriteOperation: true });
+
+// Apply rate limiting to all API routes
+app.use('/api/', readLimiter);
+
 // Helper functions
 async function ensureDataDir() {
     try {
@@ -117,7 +201,7 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 // POST create new task
-app.post('/api/tasks', async (req, res) => {
+app.post('/api/tasks', writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const { title, description = '', priority = false } = req.body;
@@ -155,7 +239,7 @@ app.post('/api/tasks', async (req, res) => {
 });
 
 // PUT update task
-app.put('/api/tasks/:id', async (req, res) => {
+app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
@@ -195,7 +279,7 @@ app.put('/api/tasks/:id', async (req, res) => {
 });
 
 // DELETE task
-app.delete('/api/tasks/:id', async (req, res) => {
+app.delete('/api/tasks/:id', writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
@@ -213,7 +297,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
 });
 
 // POST move task between columns or reorder
-app.post('/api/tasks/:id/move', async (req, res) => {
+app.post('/api/tasks/:id/move', writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
@@ -271,7 +355,7 @@ app.post('/api/tasks/:id/move', async (req, res) => {
 });
 
 // POST generate report (snapshot only, no archiving)
-app.post('/api/reports/generate', async (req, res) => {
+app.post('/api/reports/generate', writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const reports = await readJsonFile(REPORTS_FILE, []);
@@ -314,7 +398,7 @@ app.post('/api/reports/generate', async (req, res) => {
 });
 
 // POST archive completed tasks (no report generation)
-app.post('/api/tasks/archive', async (req, res) => {
+app.post('/api/tasks/archive', writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(TASKS_FILE, []);
         const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
@@ -379,7 +463,7 @@ app.get('/api/reports/:id', async (req, res) => {
 });
 
 // PUT update report title
-app.put('/api/reports/:id', async (req, res) => {
+app.put('/api/reports/:id', writeLimiter, async (req, res) => {
     try {
         const reports = await readJsonFile(REPORTS_FILE, []);
         const reportIndex = reports.findIndex(r => r.id === req.params.id);
@@ -401,7 +485,7 @@ app.put('/api/reports/:id', async (req, res) => {
 });
 
 // DELETE report
-app.delete('/api/reports/:id', async (req, res) => {
+app.delete('/api/reports/:id', writeLimiter, async (req, res) => {
     try {
         const reports = await readJsonFile(REPORTS_FILE, []);
         const reportIndex = reports.findIndex(r => r.id === req.params.id);
@@ -429,7 +513,7 @@ app.get('/api/notes', async (req, res) => {
 });
 
 // POST save notes
-app.post('/api/notes', async (req, res) => {
+app.post('/api/notes', writeLimiter, async (req, res) => {
     try {
         const { content } = req.body;
         const notes = { content: content || '' };

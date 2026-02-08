@@ -1170,11 +1170,13 @@ Go through your code and check every place where user data is displayed:
 2. **Audit:** Search for `innerHTML` and verify each one uses `escapeHtml()`
 3. **Add URL validation:** For the checklist URL feature
 
-### 7.2 No request rate limiting
+### 7.2 No request rate limiting ✅ RESOLVED
 
 **File:** `server.js`
 
 **Impact:** Server could be overwhelmed by rapid requests.
+
+**Solution implemented:** DIY vanilla rate limiter (no external packages)
 
 #### What is rate limiting?
 
@@ -1367,10 +1369,10 @@ If you DO want to implement it for learning:
 
 ### Section 7 Summary: Security for Self-Hosted Apps
 
-| Item | Applies to Self-Hosted? | Priority | Action |
+| Item | Applies to Self-Hosted? | Priority | Status |
 |------|------------------------|----------|--------|
 | 7.1 XSS | Yes (data could come from outside) | Medium | Audit innerHTML usage |
-| 7.2 Rate limiting | No (only you access it) | Very Low | Skip |
+| 7.2 Rate limiting | Optional (only you access it) | Very Low | ✅ Implemented (DIY) |
 
 **The key insight:** Even for local apps, **input handling** matters because data might come from external sources (copy/paste, imports, shared files). But **network protection** is less relevant when there's no network exposure.
 
