@@ -17,6 +17,7 @@ const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
 const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
 const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
+const EPICS_FILE = path.join(DATA_DIR, 'epics.json');
 
 // Middleware
 app.use(express.json());
@@ -247,6 +248,56 @@ const CATEGORY_LABELS = {
 };
 
 /**
+ * Maximum number of epics allowed.
+ * Source of truth: /public/js/constants.js
+ */
+const MAX_EPICS = 20;
+
+/**
+ * Pre-defined epic colors (20 rainbow-inspired colors).
+ * Source of truth: /public/js/constants.js
+ */
+const EPIC_COLORS_SERVER = [
+    { name: 'Ruby Red', hex: '#E74C3C' },
+    { name: 'Coral', hex: '#FF6F61' },
+    { name: 'Tangerine', hex: '#E67E22' },
+    { name: 'Amber', hex: '#F5A623' },
+    { name: 'Sunflower', hex: '#F1C40F' },
+    { name: 'Lime', hex: '#A8D84E' },
+    { name: 'Emerald', hex: '#2ECC71' },
+    { name: 'Jade', hex: '#00B894' },
+    { name: 'Teal', hex: '#1ABC9C' },
+    { name: 'Cyan', hex: '#00CEC9' },
+    { name: 'Sky Blue', hex: '#54A0FF' },
+    { name: 'Ocean', hex: '#2E86DE' },
+    { name: 'Royal Blue', hex: '#3742FA' },
+    { name: 'Indigo', hex: '#5758BB' },
+    { name: 'Purple', hex: '#8E44AD' },
+    { name: 'Orchid', hex: '#B24BDB' },
+    { name: 'Magenta', hex: '#E84393' },
+    { name: 'Rose', hex: '#FD79A8' },
+    { name: 'Slate', hex: '#636E72' },
+    { name: 'Charcoal', hex: '#2D3436' }
+];
+
+/**
+ * Converts a string to camelCase for epic alias.
+ * @param {string} str - The string to convert
+ * @returns {string} camelCase version
+ */
+function toCamelCase(str) {
+    return str
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length > 0)
+        .map((word, i) => i === 0
+            ? word.toLowerCase()
+            : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join('');
+}
+
+/**
  * Calculates the ISO week number for a given date.
  *
  * NOTE: This is a copy of getWeekNumber from /public/js/utils.js.
@@ -310,6 +361,7 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
             : 0;
 
         const category = req.body.category !== undefined ? Number(req.body.category) : 1;
+        const epicId = req.body.epicId || null;
 
         const newTask = {
             id: generateId(),
@@ -317,6 +369,7 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
             description: typeof description === 'string' ? description.trim() : '',
             priority: Boolean(priority),
             category,
+            epicId,
             status: 'todo',
             position: maxPosition,
             log: [],
@@ -347,11 +400,16 @@ app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
             return res.status(404).json({ error: 'Task not found' });
         }
 
-        const { title, description, priority, category } = req.body;
+        const { title, description, priority, category, epicId } = req.body;
 
         if (title !== undefined) tasks[taskIndex].title = title.trim();
         if (description !== undefined) tasks[taskIndex].description = description.trim();
         if (priority !== undefined) tasks[taskIndex].priority = Boolean(priority);
+
+        // Handle epicId change (no logging per spec)
+        if (epicId !== undefined) {
+            tasks[taskIndex].epicId = epicId || null;
+        }
 
         // Handle category change with logging
         if (category !== undefined) {
@@ -475,7 +533,7 @@ app.post('/api/reports/generate', writeLimiter, async (req, res) => {
         const weekNumber = getWeekNumber(now);
         const dateRange = formatDateRange(now);
 
-        const mapTask = t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1 });
+        const mapTask = t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1, epicId: t.epicId || null });
 
         const report = {
             id: generateId(),
@@ -643,6 +701,164 @@ app.post('/api/notes', writeLimiter, async (req, res) => {
         res.json(notes);
     } catch (error) {
         res.status(500).json({ error: 'Failed to save notes' });
+    }
+});
+
+// ===========================================
+// Epic API Routes
+// ===========================================
+
+// GET all epics
+app.get('/api/epics', async (req, res) => {
+    try {
+        const epics = await readJsonFile(EPICS_FILE, []);
+        res.json(epics);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read epics' });
+    }
+});
+
+// POST create new epic
+app.post('/api/epics', writeLimiter, async (req, res) => {
+    try {
+        const epics = await readJsonFile(EPICS_FILE, []);
+
+        if (epics.length >= MAX_EPICS) {
+            return res.status(400).json({ error: `Maximum of ${MAX_EPICS} epics allowed` });
+        }
+
+        const { name, color } = req.body;
+
+        if (!name || typeof name !== 'string' || name.trim() === '') {
+            return res.status(400).json({ error: 'Epic name is required' });
+        }
+
+        if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Epic name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
+        }
+
+        if (!color || typeof color !== 'string') {
+            return res.status(400).json({ error: 'Epic color is required' });
+        }
+
+        // Validate color is one of the predefined colors
+        const validColor = EPIC_COLORS_SERVER.find(c => c.hex === color);
+        if (!validColor) {
+            return res.status(400).json({ error: 'Invalid color selection' });
+        }
+
+        // Check color uniqueness
+        const colorTaken = epics.find(e => e.color === color);
+        if (colorTaken) {
+            return res.status(400).json({ error: `Color "${validColor.name}" is already used by epic "${colorTaken.name}"` });
+        }
+
+        const alias = toCamelCase(name.trim());
+
+        const newEpic = {
+            id: generateId(),
+            name: name.trim(),
+            color,
+            alias
+        };
+
+        epics.push(newEpic);
+        await writeJsonFile(EPICS_FILE, epics);
+        res.status(201).json(newEpic);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create epic' });
+    }
+});
+
+// PUT update epic
+app.put('/api/epics/:id', writeLimiter, async (req, res) => {
+    try {
+        const epics = await readJsonFile(EPICS_FILE, []);
+        const epicIndex = epics.findIndex(e => e.id === req.params.id);
+
+        if (epicIndex === -1) {
+            return res.status(404).json({ error: 'Epic not found' });
+        }
+
+        const { name, color } = req.body;
+
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.trim() === '') {
+                return res.status(400).json({ error: 'Epic name is required' });
+            }
+            if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+                return res.status(400).json({ error: `Epic name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
+            }
+            epics[epicIndex].name = name.trim();
+            epics[epicIndex].alias = toCamelCase(name.trim());
+        }
+
+        if (color !== undefined) {
+            if (typeof color !== 'string') {
+                return res.status(400).json({ error: 'Epic color must be a string' });
+            }
+            const validColor = EPIC_COLORS_SERVER.find(c => c.hex === color);
+            if (!validColor) {
+                return res.status(400).json({ error: 'Invalid color selection' });
+            }
+            // Check color uniqueness (excluding current epic)
+            const colorTaken = epics.find(e => e.color === color && e.id !== req.params.id);
+            if (colorTaken) {
+                return res.status(400).json({ error: `Color "${validColor.name}" is already used by epic "${colorTaken.name}"` });
+            }
+            epics[epicIndex].color = color;
+        }
+
+        await writeJsonFile(EPICS_FILE, epics);
+        res.json(epics[epicIndex]);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update epic' });
+    }
+});
+
+// DELETE epic (removes epicId from all tasks that have it)
+app.delete('/api/epics/:id', writeLimiter, async (req, res) => {
+    try {
+        const epics = await readJsonFile(EPICS_FILE, []);
+        const epicIndex = epics.findIndex(e => e.id === req.params.id);
+
+        if (epicIndex === -1) {
+            return res.status(404).json({ error: 'Epic not found' });
+        }
+
+        const epicId = req.params.id;
+        epics.splice(epicIndex, 1);
+        await writeJsonFile(EPICS_FILE, epics);
+
+        // Remove epicId from all tasks that reference this epic
+        const tasks = await readJsonFile(TASKS_FILE, []);
+        let tasksUpdated = false;
+        for (const task of tasks) {
+            if (task.epicId === epicId) {
+                task.epicId = null;
+                tasksUpdated = true;
+            }
+        }
+        if (tasksUpdated) {
+            await writeJsonFile(TASKS_FILE, tasks);
+        }
+
+        // Also clean archived tasks
+        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
+        let archivedUpdated = false;
+        for (const task of archivedTasks) {
+            if (task.epicId === epicId) {
+                task.epicId = null;
+                archivedUpdated = true;
+            }
+        }
+        if (archivedUpdated) {
+            await writeJsonFile(ARCHIVED_FILE, archivedTasks);
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete epic' });
     }
 });
 

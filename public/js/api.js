@@ -152,3 +152,75 @@ export async function deleteReportApi(id) {
     const response = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
     return await response.json();
 }
+
+// ===========================================
+// Epic API Functions
+// ===========================================
+
+/**
+ * Fetches all epics from the server.
+ * @returns {Promise<Array<Object>>} Array of epic objects
+ */
+export async function fetchEpicsApi() {
+    const response = await fetch('/api/epics');
+    return await response.json();
+}
+
+/**
+ * Creates a new epic via the API.
+ * @param {Object} epicData - The epic data { name, color }
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function createEpicApi(epicData) {
+    const response = await fetch('/api/epics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(epicData)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to create epic' };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+}
+
+/**
+ * Updates an existing epic via the API.
+ * @param {string} id - The epic ID to update
+ * @param {Object} epicData - The fields to update { name?, color? }
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function updateEpicApi(id, epicData) {
+    const response = await fetch(`/api/epics/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(epicData)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to update epic' };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+}
+
+/**
+ * Deletes an epic via the API.
+ * @param {string} id - The epic ID to delete
+ * @returns {Promise<{ok: boolean, error?: string}>} Result object
+ */
+export async function deleteEpicApi(id) {
+    const response = await fetch(`/api/epics/${id}`, { method: 'DELETE' });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to delete epic' };
+    }
+
+    return { ok: true };
+}

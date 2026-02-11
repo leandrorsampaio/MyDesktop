@@ -21,14 +21,18 @@ import {
     priorityFilterActive,
     createTasksSnapshot,
     restoreTasksFromSnapshot,
-    findTask
+    findTask,
+    epics,
+    setEpics
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi } from './js/api.js';
 import {
     renderCategoryFilters,
     toggleCategoryFilter,
     togglePriorityFilter,
-    applyAllFilters
+    applyAllFilters,
+    renderEpicFilter,
+    handleEpicFilterChange
 } from './js/filters.js';
 import { toggleCrisisMode } from './js/crisis-mode.js';
 import {
@@ -41,7 +45,8 @@ import {
     openArchivedModal,
     openChecklistModal,
     addChecklistItem,
-    saveChecklist
+    saveChecklist,
+    openEpicsModal
 } from './js/modals.js';
 
 (function() {
@@ -89,9 +94,23 @@ import {
         appContainer: document.querySelector('.js-appContainer'),
         privacyToggleBtn: document.querySelector('.js-privacyToggleBtn'),
 
+        // Task Epic dropdown
+        taskEpic: document.querySelector('.js-taskEpic'),
+
         // Category Filters
         categoryFilters: document.querySelector('.js-categoryFilters'),
         priorityFilterBtn: document.querySelector('.js-priorityFilterBtn'),
+        epicFilter: document.querySelector('.js-epicFilter'),
+
+        // Epic Management
+        manageEpicsBtn: document.querySelector('.js-manageEpicsBtn'),
+        epicsModal: document.querySelector('.js-epicsModal'),
+        epicNameInput: document.querySelector('.js-epicNameInput'),
+        epicColorSelect: document.querySelector('.js-epicColorSelect'),
+        epicAddBtn: document.querySelector('.js-epicAddBtn'),
+        epicAliasPreview: document.querySelector('.js-epicAliasPreview'),
+        epicColorError: document.querySelector('.js-epicColorError'),
+        epicsList: document.querySelector('.js-epicsList'),
 
         // Crisis Mode
         crisisModeBtn: document.querySelector('.js-crisisModeBtn'),
@@ -279,6 +298,7 @@ import {
      */
     function renderAllColumns() {
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
+        renderEpicFilter(elements.epicFilter);
         applyAllFilters();
     }
 
@@ -314,6 +334,18 @@ import {
         card.dataset.priority = task.priority ? 'true' : 'false';
         card.dataset.title = task.title;
         card.dataset.description = task.description || '';
+        card.dataset.epicId = task.epicId || '';
+
+        // Epic data for the card
+        const epic = task.epicId ? epics.find(e => e.id === task.epicId) : null;
+        if (epic) {
+            card.dataset.epicName = epic.name;
+            card.dataset.epicColor = epic.color;
+            card.dataset.epicAlias = epic.alias;
+            card.classList.add(`epic-${epic.alias}`);
+        } else {
+            card.classList.add('epic-none');
+        }
 
         card.draggable = true;
 
@@ -427,6 +459,18 @@ import {
             togglePriorityFilter(elements.priorityFilterBtn, applyAllFilters);
         });
 
+        // Epic Filter
+        elements.epicFilter.addEventListener('change', () => {
+            handleEpicFilterChange(elements.epicFilter, applyAllFilters);
+        });
+
+        // Manage Epics
+        elements.manageEpicsBtn.addEventListener('click', () => {
+            openEpicsModal(elements, closeMenu, () => {
+                renderAllColumns();
+            });
+        });
+
         // Crisis Mode
         elements.crisisModeBtn.addEventListener('click', () => {
             toggleCrisisMode(elements, closeMenu);
@@ -525,7 +569,13 @@ import {
         });
         initEventListeners();
 
-        // Fetch data
+        // Fetch data (epics first so cards can reference them)
+        try {
+            const fetchedEpics = await fetchEpicsApi();
+            setEpics(fetchedEpics);
+        } catch (error) {
+            console.error('Error fetching epics:', error);
+        }
         await fetchTasks();
     }
 

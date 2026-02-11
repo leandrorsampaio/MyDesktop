@@ -4,7 +4,7 @@
  */
 
 import { CATEGORIES } from './constants.js';
-import { activeCategoryFilters, priorityFilterActive, setPriorityFilterActive } from './state.js';
+import { activeCategoryFilters, priorityFilterActive, setPriorityFilterActive, activeEpicFilter, setActiveEpicFilter, epics, tasks } from './state.js';
 
 /**
  * Renders category filter buttons in the toolbar.
@@ -88,8 +88,49 @@ export function applyAllFilters() {
             hidden = true;
         }
 
+        // Epic filter
+        if (activeEpicFilter) {
+            const cardEpicId = card.dataset.epicId || '';
+            if (cardEpicId !== activeEpicFilter) {
+                hidden = true;
+            }
+        }
+
         card.hidden = hidden;
     });
+}
+
+/**
+ * Renders the epic filter dropdown with only epics that have tasks in the board.
+ * @param {HTMLSelectElement} selectEl - The epic filter select element
+ */
+export function renderEpicFilter(selectEl) {
+    // Find epics that have at least one task in the board
+    const epicIdsInBoard = new Set(
+        tasks.filter(t => t.epicId).map(t => t.epicId)
+    );
+
+    const availableEpics = epics.filter(e => epicIdsInBoard.has(e.id));
+
+    selectEl.innerHTML = '<option value="">Epics</option>';
+    availableEpics.forEach(epic => {
+        const option = document.createElement('option');
+        option.value = epic.id;
+        option.textContent = epic.name;
+        if (activeEpicFilter === epic.id) option.selected = true;
+        selectEl.appendChild(option);
+    });
+}
+
+/**
+ * Handles epic filter dropdown change.
+ * @param {HTMLSelectElement} selectEl - The epic filter select element
+ * @param {Function} applyFilters - Function to apply all filters
+ */
+export function handleEpicFilterChange(selectEl, applyFilters) {
+    const value = selectEl.value || null;
+    setActiveEpicFilter(value);
+    applyFilters();
 }
 
 /**

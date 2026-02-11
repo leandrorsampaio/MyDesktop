@@ -3,9 +3,9 @@
  * Handles all modal dialogs: task add/edit, reports, archived tasks, checklist, and confirmations.
  */
 
-import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS } from './constants.js';
+import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS } from './constants.js';
 import { escapeHtml, formatDate } from './utils.js';
-import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask } from './state.js';
+import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics } from './state.js';
 import {
     createTaskApi,
     updateTaskApi,
@@ -13,7 +13,11 @@ import {
     fetchReportsApi,
     updateReportTitleApi,
     deleteReportApi,
-    fetchArchivedTasksApi
+    fetchArchivedTasksApi,
+    fetchEpicsApi,
+    createEpicApi,
+    updateEpicApi,
+    deleteEpicApi
 } from './api.js';
 
 // ==========================================
@@ -87,6 +91,7 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     elements.modalTitle.textContent = 'Add Task';
     elements.taskForm.reset();
     setCategorySelection(1);
+    populateTaskEpicSelect(elements.taskEpic, '');
     elements.taskLogSection.style.display = 'none';
 
     renderTaskModalActions(false, elements, onDelete, onSubmit);
@@ -112,6 +117,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit) {
     elements.taskDescription.value = task.description || '';
     elements.taskPriority.checked = task.priority || false;
     setCategorySelection(task.category || 1);
+    populateTaskEpicSelect(elements.taskEpic, task.epicId || '');
 
     // Render task log
     if (task.log && task.log.length > 0) {
@@ -147,6 +153,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
         const description = elements.taskDescription.value.trim();
         const priority = elements.taskPriority.checked;
         const category = getSelectedCategory();
+        const epicId = elements.taskEpic.value || null;
 
         if (!title) {
             elements.toaster.warning('Title is required');
@@ -159,12 +166,12 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             const taskId = editingTaskId;
 
             // Optimistic update
-            updateTaskInState(taskId, { title, description, priority, category });
+            updateTaskInState(taskId, { title, description, priority, category, epicId });
             renderAllColumns();
             elements.taskModal.close();
 
             try {
-                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category });
+                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category, epicId });
                 // Replace with server response (includes updated log, etc.)
                 updateTaskInState(taskId, updatedTask);
                 renderAllColumns();
@@ -184,6 +191,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
                 description,
                 priority,
                 category,
+                epicId,
                 status: 'todo',
                 position: 0, // Will be at top
                 log: [],
@@ -196,7 +204,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             elements.taskModal.close();
 
             try {
-                const newTask = await createTaskApi({ title, description, priority, category });
+                const newTask = await createTaskApi({ title, description, priority, category, epicId });
                 // Replace temp task with real one from server
                 replaceTask(tempId, newTask);
                 renderColumn('todo');
@@ -417,13 +425,17 @@ export function renderReportSection(title, taskList) {
         return `
             <div class="reportDetail__categoryGroup">
                 <div class="reportDetail__categoryLabel">${escapeHtml(catLabel)}</div>
-                ${catTasks.map(task => `
+                ${catTasks.map(task => {
+                    const epicName = task.epicId ? (epics.find(e => e.id === task.epicId)?.name || '') : '';
+                    const epicLabel = epicName ? ` | ${escapeHtml(epicName)}` : '';
+                    return `
                     <div class="reportDetail__task">
-                        <div class="reportDetail__taskId">[${task.id.substring(0, 8)}]</div>
+                        <div class="reportDetail__taskId">[${task.id.substring(0, 8)}${epicLabel}]</div>
                         <div class="reportDetail__taskTitle">${escapeHtml(task.title)}</div>
                         ${task.description ? `<div class="reportDetail__taskDesc">Description: ${escapeHtml(task.description)}</div>` : ''}
                     </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
     }).join('');
@@ -572,6 +584,258 @@ export function addChecklistItem(elements) {
     if (inputs.length > 0) {
         inputs[inputs.length - 1].focus();
     }
+}
+
+// ==========================================
+// Epic Helper Functions
+// ==========================================
+
+/**
+ * Populates the epic select dropdown in the task modal.
+ * @param {HTMLSelectElement} selectEl - The select element
+ * @param {string} selectedEpicId - The currently selected epic ID
+ */
+export function populateTaskEpicSelect(selectEl, selectedEpicId) {
+    selectEl.innerHTML = '<option value="">Choose an epic</option>';
+    epics.forEach(epic => {
+        const option = document.createElement('option');
+        option.value = epic.id;
+        option.textContent = epic.name;
+        if (epic.id === selectedEpicId) option.selected = true;
+        selectEl.appendChild(option);
+    });
+}
+
+/**
+ * Converts a string to camelCase for epic alias preview.
+ * @param {string} str - The string to convert
+ * @returns {string} camelCase version
+ */
+function toCamelCase(str) {
+    return str
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length > 0)
+        .map((word, i) => i === 0
+            ? word.toLowerCase()
+            : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join('');
+}
+
+// ==========================================
+// Epic Management Modal Functions
+// ==========================================
+
+/**
+ * Opens the epics management modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} closeMenu - Function to close dropdown menu
+ * @param {Function} onEpicsChanged - Callback when epics are modified (to refresh filters/cards)
+ */
+export async function openEpicsModal(elements, closeMenu, onEpicsChanged) {
+    closeMenu();
+    try {
+        const fetchedEpics = await fetchEpicsApi();
+        setEpics(fetchedEpics);
+        renderEpicsEditor(elements, onEpicsChanged);
+        elements.epicsModal.open();
+    } catch (error) {
+        console.error('Error fetching epics:', error);
+        elements.toaster.error('Failed to load epics');
+    }
+}
+
+/**
+ * Populates the color select dropdown with available colors.
+ * @param {HTMLSelectElement} selectEl - The select element
+ * @param {Array<Object>} currentEpics - Current epics to check used colors
+ * @param {string} [excludeEpicId] - Epic ID to exclude from used colors check (for editing)
+ */
+function populateColorSelect(selectEl, currentEpics, excludeEpicId) {
+    const usedColors = new Set(
+        currentEpics
+            .filter(e => e.id !== excludeEpicId)
+            .map(e => e.color)
+    );
+
+    selectEl.innerHTML = '<option value="">Select color</option>';
+    EPIC_COLORS.forEach(color => {
+        const option = document.createElement('option');
+        option.value = color.hex;
+        const taken = usedColors.has(color.hex);
+        option.textContent = taken ? `${color.name} (taken)` : color.name;
+        option.disabled = taken;
+        option.style.color = color.hex;
+        selectEl.appendChild(option);
+    });
+}
+
+/**
+ * Renders the epics editor (form + list) in the modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} onEpicsChanged - Callback when epics are modified
+ */
+function renderEpicsEditor(elements, onEpicsChanged) {
+    // Populate color dropdown for add form
+    populateColorSelect(elements.epicColorSelect, epics);
+
+    // Clear form
+    elements.epicNameInput.value = '';
+    elements.epicColorSelect.value = '';
+    elements.epicAliasPreview.textContent = '';
+    elements.epicColorError.style.display = 'none';
+
+    // Name input: live alias preview
+    elements.epicNameInput.oninput = () => {
+        const name = elements.epicNameInput.value.trim();
+        if (name) {
+            elements.epicAliasPreview.textContent = `Alias: ${toCamelCase(name)}`;
+        } else {
+            elements.epicAliasPreview.textContent = '';
+        }
+    };
+
+    // Color select: check availability
+    elements.epicColorSelect.onchange = () => {
+        elements.epicColorError.style.display = 'none';
+    };
+
+    // Add button handler
+    elements.epicAddBtn.onclick = async () => {
+        const name = elements.epicNameInput.value.trim();
+        const color = elements.epicColorSelect.value;
+
+        if (!name) {
+            elements.toaster.warning('Epic name is required');
+            return;
+        }
+        if (!color) {
+            elements.toaster.warning('Please select a color');
+            return;
+        }
+
+        if (epics.length >= MAX_EPICS) {
+            elements.toaster.warning(`Maximum of ${MAX_EPICS} epics allowed`);
+            return;
+        }
+
+        const result = await createEpicApi({ name, color });
+        if (result.ok) {
+            const fetchedEpics = await fetchEpicsApi();
+            setEpics(fetchedEpics);
+            renderEpicsEditor(elements, onEpicsChanged);
+            onEpicsChanged();
+            elements.toaster.success(`Epic "${name}" created`);
+        } else {
+            elements.epicColorError.textContent = result.error;
+            elements.epicColorError.style.display = 'block';
+        }
+    };
+
+    // Render epic list
+    renderEpicsList(elements, onEpicsChanged);
+}
+
+/**
+ * Renders the list of existing epics with edit/delete controls.
+ * @param {Object} elements - DOM element references
+ * @param {Function} onEpicsChanged - Callback when epics are modified
+ */
+function renderEpicsList(elements, onEpicsChanged) {
+    if (epics.length === 0) {
+        elements.epicsList.innerHTML = '<div class="emptyState">No epics created yet</div>';
+        return;
+    }
+
+    elements.epicsList.innerHTML = epics.map(epic => `
+        <div class="epicsEditor__item" data-epic-id="${epic.id}">
+            <div class="epicsEditor__itemColor" style="background-color: ${epic.color};"></div>
+            <div class="epicsEditor__itemInfo">
+                <input type="text" class="epicsEditor__itemName js-epicItemName" value="${escapeHtml(epic.name)}" data-epic-id="${epic.id}" />
+                <span class="epicsEditor__itemAlias">Alias: ${escapeHtml(epic.alias)}</span>
+            </div>
+            <select class="epicsEditor__itemColorSelect js-epicItemColor" data-epic-id="${epic.id}">
+                <!-- colors populated via JS -->
+            </select>
+            <button class="epicsEditor__deleteBtn js-epicDeleteBtn" data-epic-id="${epic.id}" title="Delete epic">&times;</button>
+        </div>
+    `).join('');
+
+    // Populate color selects for each item
+    elements.epicsList.querySelectorAll('.js-epicItemColor').forEach(select => {
+        const epicId = select.dataset.epicId;
+        const epic = epics.find(e => e.id === epicId);
+        populateColorSelect(select, epics, epicId);
+        if (epic) select.value = epic.color;
+    });
+
+    // Name edit (blur to save)
+    elements.epicsList.querySelectorAll('.js-epicItemName').forEach(input => {
+        input.addEventListener('blur', async () => {
+            const epicId = input.dataset.epicId;
+            const name = input.value.trim();
+            if (!name) {
+                elements.toaster.warning('Epic name cannot be empty');
+                const epic = epics.find(e => e.id === epicId);
+                if (epic) input.value = epic.name;
+                return;
+            }
+            const result = await updateEpicApi(epicId, { name });
+            if (result.ok) {
+                const fetchedEpics = await fetchEpicsApi();
+                setEpics(fetchedEpics);
+                renderEpicsList(elements, onEpicsChanged);
+                onEpicsChanged();
+            } else {
+                elements.toaster.error(result.error);
+            }
+        });
+    });
+
+    // Color change
+    elements.epicsList.querySelectorAll('.js-epicItemColor').forEach(select => {
+        select.addEventListener('change', async () => {
+            const epicId = select.dataset.epicId;
+            const color = select.value;
+            if (!color) return;
+            const result = await updateEpicApi(epicId, { color });
+            if (result.ok) {
+                const fetchedEpics = await fetchEpicsApi();
+                setEpics(fetchedEpics);
+                renderEpicsEditor(elements, onEpicsChanged);
+                onEpicsChanged();
+            } else {
+                elements.toaster.error(result.error);
+                const epic = epics.find(e => e.id === epicId);
+                if (epic) select.value = epic.color;
+            }
+        });
+    });
+
+    // Delete buttons
+    elements.epicsList.querySelectorAll('.js-epicDeleteBtn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const epicId = btn.dataset.epicId;
+            const epic = epics.find(e => e.id === epicId);
+            if (!confirm(`Delete epic "${epic?.name || ''}"? Tasks with this epic will lose it.`)) return;
+
+            const result = await deleteEpicApi(epicId);
+            if (result.ok) {
+                // Remove epicId from local task state
+                tasks.forEach(t => {
+                    if (t.epicId === epicId) t.epicId = null;
+                });
+                const fetchedEpics = await fetchEpicsApi();
+                setEpics(fetchedEpics);
+                renderEpicsEditor(elements, onEpicsChanged);
+                onEpicsChanged();
+                elements.toaster.success('Epic deleted');
+            } else {
+                elements.toaster.error(result.error);
+            }
+        });
+    });
 }
 
 /**

@@ -19,6 +19,12 @@ export let priorityFilterActive = false;
 /** @type {boolean} Whether crisis mode is active */
 export let crisisModeActive = false;
 
+/** @type {Array<Object>} All epics */
+export let epics = [];
+
+/** @type {string|null} Active epic filter ID (null = no filter) */
+export let activeEpicFilter = null;
+
 /** @type {string} Original page title (saved when entering crisis mode) */
 export let originalTitle = '';
 
@@ -135,4 +141,20 @@ export function setCrisisModeActive(active) {
  */
 export function setOriginalTitle(title) {
     originalTitle = title;
+}
+
+/**
+ * Updates the epics array with new data.
+ * @param {Array<Object>} newEpics - The new epics array
+ */
+export function setEpics(newEpics) {
+    epics = newEpics;
+}
+
+/**
+ * Sets the active epic filter.
+ * @param {string|null} epicId - The epic ID to filter by, or null to clear
+ */
+export function setActiveEpicFilter(epicId) {
+    activeEpicFilter = epicId;
 }

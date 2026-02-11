@@ -54,3 +54,35 @@ export const STATUS_COLUMNS = {
     'inprogress': 'kanban-column[data-status="inprogress"]',
     'done': 'kanban-column[data-status="done"]'
 };
+
+/** Maximum number of epics allowed */
+export const MAX_EPICS = 20;
+
+/**
+ * Pre-defined epic colors (20 rainbow-inspired colors).
+ * Each entry has a name and hex value.
+ * Note: server.js has its own copy (EPIC_COLORS_SERVER).
+ * Source of truth: /public/js/constants.js
+ */
+export const EPIC_COLORS = [
+    { name: 'Ruby Red', hex: '#E74C3C' },
+    { name: 'Coral', hex: '#FF6F61' },
+    { name: 'Tangerine', hex: '#E67E22' },
+    { name: 'Amber', hex: '#F5A623' },
+    { name: 'Sunflower', hex: '#F1C40F' },
+    { name: 'Lime', hex: '#A8D84E' },
+    { name: 'Emerald', hex: '#2ECC71' },
+    { name: 'Jade', hex: '#00B894' },
+    { name: 'Teal', hex: '#1ABC9C' },
+    { name: 'Cyan', hex: '#00CEC9' },
+    { name: 'Sky Blue', hex: '#54A0FF' },
+    { name: 'Ocean', hex: '#2E86DE' },
+    { name: 'Royal Blue', hex: '#3742FA' },
+    { name: 'Indigo', hex: '#5758BB' },
+    { name: 'Purple', hex: '#8E44AD' },
+    { name: 'Orchid', hex: '#B24BDB' },
+    { name: 'Magenta', hex: '#E84393' },
+    { name: 'Rose', hex: '#FD79A8' },
+    { name: 'Slate', hex: '#636E72' },
+    { name: 'Charcoal', hex: '#2D3436' }
+];

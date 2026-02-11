@@ -28,6 +28,10 @@
                 <div class="toolbar__filters js-categoryFilters">
                     <!-- Filter buttons rendered by JS from CATEGORIES -->
                 </div>
+                <select class="toolbar__epicFilter js-epicFilter">
+                    <option value="">Epics</option>
+                    <!-- Epic options rendered dynamically -->
+                </select>
                 <button class="toolbar__priorityBtn js-priorityFilterBtn">★ Priority</button>
                 <div class="toolbar__divider"></div>
                 <button class="toolbar__privacyBtn js-privacyToggleBtn">Hide</button>
@@ -43,6 +47,9 @@
                 </button>
                 <button class="navMenu__item js-viewArchivedBtn">
                     <span class="navMenu__icon">📦</span> All Completed Tasks
+                </button>
+                <button class="navMenu__item js-manageEpicsBtn">
+                    <span class="navMenu__icon">🏷️</span> Manage Epics
                 </button>
                 <button class="navMenu__item js-editChecklistBtn">
                     <span class="navMenu__icon">📝</span> Edit Daily Checklist
@@ -118,6 +125,14 @@
                 </div>
             </div>
 
+            <div class="taskForm__group">
+                <label>Epic</label>
+                <select class="taskForm__epicSelect js-taskEpic">
+                    <option value="">Choose an epic</option>
+                    <!-- Epic options rendered by JS -->
+                </select>
+            </div>
+
             <!-- Task Log (only shown in edit mode) -->
             <div class="taskForm__group taskForm__log js-taskLogSection" style="display: none;">
                 <label>Activity Log</label>
@@ -156,6 +171,28 @@
             <div class="confirmDialog__actions">
                 <button type="button" class="btn --cancel js-confirmCancel">Cancel</button>
                 <button type="button" class="btn --delete js-confirmDelete">Delete</button>
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Manage Epics Modal -->
+    <modal-dialog class="js-epicsModal" size="large">
+        <span slot="title">Manage Epics</span>
+        <div class="epicsEditor">
+            <p class="epicsEditor__hint">Create and manage epics to group your tasks. Each epic has a unique color. Maximum 20 epics.</p>
+            <div class="epicsEditor__form js-epicForm">
+                <div class="epicsEditor__formRow">
+                    <input type="text" class="epicsEditor__nameInput js-epicNameInput" placeholder="Epic name" />
+                    <select class="epicsEditor__colorSelect js-epicColorSelect">
+                        <option value="">Select color</option>
+                    </select>
+                    <button type="button" class="btn --save js-epicAddBtn">Add Epic</button>
+                </div>
+                <div class="epicsEditor__alias js-epicAliasPreview"></div>
+                <div class="epicsEditor__colorError js-epicColorError" style="display: none;"></div>
+            </div>
+            <div class="epicsEditor__list js-epicsList">
+                <!-- Epics list rendered by JS -->
             </div>
         </div>
     </modal-dialog>

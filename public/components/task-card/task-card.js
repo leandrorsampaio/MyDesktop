@@ -37,7 +37,7 @@ class TaskCard extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['data-task-id', 'data-status', 'data-category', 'data-priority', 'data-title', 'data-description', 'hidden'];
+        return ['data-task-id', 'data-status', 'data-category', 'data-priority', 'data-title', 'data-description', 'data-epic-name', 'data-epic-color', 'data-epic-alias', 'hidden'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -56,13 +56,17 @@ class TaskCard extends HTMLElement {
             title,
             description,
             priority,
-            category
+            category,
+            epicName,
+            epicColor,
+            epicAlias
         } = this.dataset;
 
         const titleEl = this.shadowRoot.querySelector('.js-title');
         const descEl = this.shadowRoot.querySelector('.js-desc');
         const badgeEl = this.shadowRoot.querySelector('.js-badge');
         const starEl = this.shadowRoot.querySelector('.taskCard__star');
+        const epicBarEl = this.shadowRoot.querySelector('.js-epicBar');
 
         if (titleEl) titleEl.textContent = title;
         if (descEl) descEl.textContent = description;
@@ -79,6 +83,17 @@ class TaskCard extends HTMLElement {
             if (badgeEl) badgeEl.textContent = CATEGORIES[categoryId] || 'Unknown';
         } else {
             badgeEl.style.display = 'none';
+        }
+
+        // Epic bar
+        if (epicBarEl) {
+            if (epicName && epicColor) {
+                epicBarEl.style.display = 'block';
+                epicBarEl.style.backgroundColor = epicColor;
+                epicBarEl.textContent = epicName;
+            } else {
+                epicBarEl.style.display = 'none';
+            }
         }
     }
 }

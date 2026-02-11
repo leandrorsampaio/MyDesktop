@@ -9,7 +9,8 @@
       "Bash(curl:*)",
       "Bash(chmod:*)",
       "Bash(ls:*)",
-      "Bash(npm run test:unit:*)"
+      "Bash(npm run test:unit:*)",
+      "Bash(node:*)"
     ]
   }
 }

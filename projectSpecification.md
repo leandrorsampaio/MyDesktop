@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.17.0
-**Last Updated:** 2026-02-08
+**Version:** 2.18.0
+**Last Updated:** 2026-02-12
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.18.0  | 2026-02-12 | Feature: Epic Tickets — tasks can be assigned to epics; epic bar on task cards with color; epic management modal (CRUD) via hamburger menu; epic filter dropdown in toolbar (AND logic with existing filters); epic name in reports beside task ID; max 20 epics with 20 unique rainbow colors; epic alias (camelCase) as CSS class on cards; `epics.json` data file; API endpoints for CRUD epics |
 | 2.17.0  | 2026-02-08 | Security: Added server-side input validation for all API endpoints; validates title/description lengths, category values (1-6), status values, position integers; reusable validation helpers with clear error messages |
 | 2.16.0  | 2026-02-08 | Reliability: Added simple lock (`isMoving` flag) to `moveTask` function to prevent race conditions when user drags multiple cards quickly; uses `finally` block to ensure lock is always released |
 | 2.15.0  | 2026-02-08 | Reliability: Added `disconnectedCallback` lifecycle method to components for proper cleanup; modal-dialog cleans up ESC key listener; notes-widget clears debounce timeout; toast-notification clears auto-dismiss timeouts; prevents memory leaks |
@@ -58,6 +59,7 @@ A local web-based task management tool that serves as a browser homepage. It fea
   - `archived-tasks.json` — Archived tasks (append-only)
   - `reports.json` — Generated report snapshots
   - `notes.json` — User notes (free-form text, `{ content: string }`)
+  - `epics.json` — Epics (array of epic objects)
 - **Client-side Storage:** `localStorage` for recurrent tasks config and checked state
 - **Favicon:** `public/favicon.png` (star icon)
 - **Font:** Montserrat via Google Fonts CDN
@@ -147,8 +149,10 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
     - `DEBOUNCE_DELAY_MS` — Debounce delay for auto-save (500ms)
     - `MAX_GRADIENT_STEPS` — Maximum gradient color steps (20)
     - `LIGHT_TEXT_THRESHOLD` — Gradient index threshold for light text (12)
+    - `MAX_EPICS` — Maximum number of epics allowed (20)
+    - `EPIC_COLORS` — Array of 20 predefined epic colors (name + hex)
 -   **`/public/js/utils.js`:** Shared utility functions (escapeHtml, getWeekNumber, formatDate). Imported where needed.
--   **`/public/js/state.js`:** Centralized application state (tasks array, editing state, filter states, crisis mode state). Provides getter/setter functions for state mutations. Also provides optimistic UI helpers: `createTasksSnapshot()`, `restoreTasksFromSnapshot()`, `replaceTask()`, `generateTempId()`.
+-   **`/public/js/state.js`:** Centralized application state (tasks array, epics array, editing state, filter states, crisis mode state, epic filter state). Provides getter/setter functions for state mutations. Also provides optimistic UI helpers: `createTasksSnapshot()`, `restoreTasksFromSnapshot()`, `replaceTask()`, `generateTempId()`.
 -   **`/public/js/api.js`:** HTTP API functions for communicating with the server. Pure functions that return data without side effects.
 -   **`/public/js/filters.js`:** Category and priority filtering logic. Manages filter button rendering and applies filters to task cards.
 -   **`/public/js/crisis-mode.js`:** Crisis mode functionality including favicon generation and visual state changes.
@@ -551,6 +555,9 @@ const VALIDATION = {
 | `newPosition` | Non-negative integer |
 | `notes.content` | String, max 10000 chars |
 | `report.title` | String, max 200 chars |
+| `epic.name` | Required, string, max 200 chars |
+| `epic.color` | Required, must be one of 20 predefined hex values |
+| `task.epicId` | Optional, string (epic ID) or null |
 
 **Error responses:**
 ```javascript
@@ -597,6 +604,10 @@ PUT    /api/reports/:id         - Update report title (body: { title })
 DELETE /api/reports/:id         - Delete a report permanently
 GET    /api/notes               - Get notes object ({ content: string })
 POST   /api/notes               - Save notes (body: { content })
+GET    /api/epics               - Get all epics
+POST   /api/epics               - Create new epic (body: { name, color })
+PUT    /api/epics/:id           - Update epic (body: { name?, color? })
+DELETE /api/epics/:id           - Delete epic (also removes epicId from all tasks)
 ```
 
 **Key design decision (v1.7.0):** Report generation and archiving are **independent operations**. You can generate a report without archiving, and archive without generating a report. The old combined `/api/archive` endpoint was removed.
@@ -614,12 +625,31 @@ POST   /api/notes               - Save notes (body: { content })
   description: string,   // Optional, default: ""
   priority: boolean,     // true = show ★ star icon, default: false
   category: number,      // 1-6, default: 1. See Category Definitions.
+  epicId: string|null,   // ID of assigned epic, or null if none
   status: string,        // "todo" | "wait" | "inprogress" | "done" | "archived"
   position: number,      // 0-based index within column (used for ordering)
   log: array,            // Activity log entries (see below)
   createdDate: string    // ISO 8601 datetime string
 }
 ```
+
+### Epic Object
+
+```javascript
+{
+  id: string,            // Unique ID (timestamp-based)
+  name: string,          // Epic display name (required)
+  color: string,         // Hex color from predefined 20-color palette
+  alias: string          // Auto-generated camelCase alias (from name)
+}
+```
+
+**Epic constraints:**
+- Maximum 20 epics
+- Each epic must have a unique color (from 20 predefined rainbow colors)
+- Alias is automatically computed as camelCase of the name
+- When an epic is deleted, all tasks referencing it lose their `epicId` (set to null)
+- Epic changes do NOT create log entries on tasks
 
 ### Log Entry
 
@@ -636,6 +666,7 @@ POST   /api/notes               - Save notes (body: { content })
 
 **What does NOT get logged:**
 - Title/description/priority edits
+- Epic assignment/removal/changes
 - Reordering within the same column
 - Privacy toggle
 
@@ -680,7 +711,7 @@ POST   /api/notes               - Save notes (body: { content })
 }
 ```
 
-Each task in the report content arrays contains: `{ id, title, description, category }`.
+Each task in the report content arrays contains: `{ id, title, description, category, epicId }`.
 
 **Report display groups tasks by category** within each status section (e.g., all "Development" tasks together under "Completed Tasks").
 
@@ -886,7 +917,50 @@ The category selector uses styled radio buttons that look like selectable pills.
 - Default state: unblurred (Hide button shown)
 - When active: button shows "Show" with accent color background
 
-### 15. Color System
+### 15. Epic Tickets (v2.18.0)
+
+**Overview:** Epics are optional groupings for tasks. A task can have zero or one epic at a time.
+
+**Epic Management (Hamburger Menu → Manage Epics):**
+- Opens a `<modal-dialog size="large">` with CRUD interface
+- **Create:** Name input + color dropdown (20 predefined rainbow colors) + Add button
+- Alias (camelCase) shown automatically below the name input
+- Color dropdown shows color names; taken colors are disabled with "(taken)" suffix
+- **Edit:** Inline name editing (blur saves) + color select per epic item
+- **Delete:** × button per epic, with confirmation; removes epicId from all tasks referencing the deleted epic
+- Maximum 20 epics allowed
+
+**Task Modal Integration:**
+- Epic dropdown (`<select>`) added to the task add/edit form, after category selector
+- Default: "Choose an epic" (no epic assigned)
+- Can select or deselect (back to "Choose an epic") an epic for any task
+- Epic changes do NOT create log entries
+
+**Task Card Display:**
+- When a task has an epic, a colored bar appears at the top of the task card
+- Bar shows epic name in small uppercase white text with the epic's color as background
+- Card gets CSS class `epic-{alias}` (e.g., `epic-myEpicName`) for custom styling
+- Cards without an epic get CSS class `epic-none`
+
+**Epic Filter (Toolbar):**
+- `<select>` dropdown in toolbar, between category filters and priority filter
+- First option: "Epics" (clears filter when selected)
+- Only shows epics that have at least one task in the current board columns
+- Works with AND logic alongside category and priority filters
+- Filter state stored in memory (resets on page reload)
+
+**Reports:**
+- Epic name shown beside task ID in report detail views: `[abc12345 | MyEpic]`
+
+**Predefined Colors (20 rainbow-inspired):**
+Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunflower (#F1C40F), Lime (#A8D84E), Emerald (#2ECC71), Jade (#00B894), Teal (#1ABC9C), Cyan (#00CEC9), Sky Blue (#54A0FF), Ocean (#2E86DE), Royal Blue (#3742FA), Indigo (#5758BB), Purple (#8E44AD), Orchid (#B24BDB), Magenta (#E84393), Rose (#FD79A8), Slate (#636E72), Charcoal (#2D3436)
+
+**Data:**
+- Stored in `data/epics.json` (array of epic objects)
+- Tasks reference epics via `epicId` field (string or null)
+- Existing tasks without `epicId` treated as having no epic (no migration needed)
+
+### 16. Color System
 
 **Position-based gradients** — color is tied to card position, not the task itself.
 
@@ -981,6 +1055,10 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `openChecklistModal()`      | Opens the Edit Daily Checklist modal             |
 | `renderChecklistEditor()`   | Renders editable checklist items in modal        |
 | `saveChecklist()`           | Saves checklist config to localStorage and refreshes component |
+| `openEpicsModal()`          | Opens epic management modal with CRUD interface        |
+| `populateTaskEpicSelect()`  | Populates epic dropdown in task add/edit modal         |
+| `renderEpicFilter()`        | Renders epic filter dropdown with epics that have tasks |
+| `handleEpicFilterChange()`  | Handles epic filter selection change                    |
 
 ### Key Constants in `app.js`
 
@@ -1026,6 +1104,7 @@ const statusNames = { 'todo': 'To Do', 'wait': 'Wait', 'inprogress': 'In Progres
 | `archived-tasks.json` | Archive operation                                | Array of tasks |
 | `reports.json`        | Report generation                                | Array of reports |
 | `notes.json`          | Notes auto-save (debounced 500ms)                | `{ content }` |
+| `epics.json`          | Epic create/update/delete                        | Array of epics |
 
 All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()` helper functions in server.js.
 
@@ -1039,6 +1118,7 @@ All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()
 | `.js-reportsModal`     | View reports list & detail   | Hamburger menu → View Reports        | `<modal-dialog size="large">` component |
 | `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks | `<modal-dialog size="large">` component |
 | `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      | `<modal-dialog size="small">` component |
+| `.js-epicsModal`       | Manage epics (CRUD)          | Hamburger menu → Manage Epics         | `<modal-dialog size="large">` component |
 | `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist | `<modal-dialog size="large">` component |
 
 **Modal implementation:**
