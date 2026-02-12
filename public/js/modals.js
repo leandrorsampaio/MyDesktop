@@ -4,7 +4,7 @@
  */
 
 import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS } from './constants.js';
-import { escapeHtml, formatDate } from './utils.js';
+import { escapeHtml, formatDate, toCamelCase } from './utils.js';
 import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics } from './state.js';
 import {
     createTaskApi,
@@ -606,22 +606,8 @@ export function populateTaskEpicSelect(selectEl, selectedEpicId) {
     });
 }
 
-/**
- * Converts a string to camelCase for epic alias preview.
- * @param {string} str - The string to convert
- * @returns {string} camelCase version
- */
-function toCamelCase(str) {
-    return str
-        .replace(/[^a-zA-Z0-9\s]/g, '')
-        .split(/\s+/)
-        .filter(w => w.length > 0)
-        .map((word, i) => i === 0
-            ? word.toLowerCase()
-            : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        )
-        .join('');
-}
+/** @type {{epicId: string, elements: Object, onEpicsChanged: Function}|null} */
+let pendingEpicDelete = null;
 
 // ==========================================
 // Epic Management Modal Functions
@@ -813,29 +799,44 @@ function renderEpicsList(elements, onEpicsChanged) {
         });
     });
 
-    // Delete buttons
+    // Delete buttons — open confirm modal instead of using confirm()
     elements.epicsList.querySelectorAll('.js-epicDeleteBtn').forEach(btn => {
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', () => {
             const epicId = btn.dataset.epicId;
             const epic = epics.find(e => e.id === epicId);
-            if (!confirm(`Delete epic "${epic?.name || ''}"? Tasks with this epic will lose it.`)) return;
-
-            const result = await deleteEpicApi(epicId);
-            if (result.ok) {
-                // Remove epicId from local task state
-                tasks.forEach(t => {
-                    if (t.epicId === epicId) t.epicId = null;
-                });
-                const fetchedEpics = await fetchEpicsApi();
-                setEpics(fetchedEpics);
-                renderEpicsEditor(elements, onEpicsChanged);
-                onEpicsChanged();
-                elements.toaster.success('Epic deleted');
-            } else {
-                elements.toaster.error(result.error);
-            }
+            pendingEpicDelete = { epicId, elements, onEpicsChanged };
+            elements.epicConfirmMessage.textContent = `Delete epic "${epic?.name || ''}"? Tasks with this epic will lose it.`;
+            elements.epicConfirmModal.open();
         });
     });
+}
+
+/**
+ * Confirms and executes the pending epic deletion.
+ * Called by the epic confirm modal's delete button.
+ * @param {Object} elements - DOM element references
+ */
+export async function confirmDeleteEpic(elements) {
+    if (!pendingEpicDelete) return;
+
+    const { epicId, onEpicsChanged } = pendingEpicDelete;
+    pendingEpicDelete = null;
+    elements.epicConfirmModal.close();
+
+    const result = await deleteEpicApi(epicId);
+    if (result.ok) {
+        // Remove epicId from local task state
+        tasks.forEach(t => {
+            if (t.epicId === epicId) t.epicId = null;
+        });
+        const fetchedEpics = await fetchEpicsApi();
+        setEpics(fetchedEpics);
+        renderEpicsEditor(elements, onEpicsChanged);
+        onEpicsChanged();
+        elements.toaster.success('Epic deleted');
+    } else {
+        elements.toaster.error(result.error);
+    }
 }
 
 /**

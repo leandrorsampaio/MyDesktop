@@ -1029,7 +1029,7 @@
     "priority": false,
     "category": 2,
     "status": "inprogress",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-02-03",
@@ -1288,19 +1288,20 @@
   },
   {
     "id": "mlic8o62neocju3jq",
-    "title": "Ping Mikael aboutemails EUVIC",
+    "title": "Ping Mikael aboutemails EUVIC (and IA)",
     "description": "@contractor.solenis.com emails to EUVIC: Any feedback from IT?​",
     "priority": false,
     "category": 6,
     "status": "inprogress",
-    "position": 1,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-11",
         "action": "Moved from To Do to In Progress"
       }
     ],
-    "createdDate": "2026-02-11T18:03:10.298Z"
+    "createdDate": "2026-02-11T18:03:10.298Z",
+    "epicId": null
   },
   {
     "id": "mlicltt1teb19t9be",

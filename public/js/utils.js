@@ -1,9 +1,9 @@
 /**
  * Shared utility functions for the Task Tracker application.
  *
- * Note: server.js has its own copy of getWeekNumber because it runs
- * in Node.js and cannot import ES modules from /public.
- * If you modify getWeekNumber here, also update server.js.
+ * Note: server.js has its own copies of getWeekNumber and toCamelCase
+ * because it runs in Node.js and cannot import ES modules from /public.
+ * If you modify getWeekNumber or toCamelCase here, also update server.js.
  */
 
 /**
@@ -44,4 +44,22 @@ export function formatDate(isoString) {
         hour: '2-digit',
         minute: '2-digit'
     });
+}
+
+/**
+ * Converts a string to camelCase.
+ * Used for epic alias generation.
+ * @param {string} str - The string to convert
+ * @returns {string} camelCase version
+ */
+export function toCamelCase(str) {
+    return str
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length > 0)
+        .map((word, i) => i === 0
+            ? word.toLowerCase()
+            : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join('');
 }

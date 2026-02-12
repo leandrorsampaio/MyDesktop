@@ -282,6 +282,8 @@ const EPIC_COLORS_SERVER = [
 
 /**
  * Converts a string to camelCase for epic alias.
+ * Source of truth: /public/js/utils.js — duplicated here because
+ * server.js runs in Node.js and cannot import ES modules from /public.
  * @param {string} str - The string to convert
  * @returns {string} camelCase version
  */

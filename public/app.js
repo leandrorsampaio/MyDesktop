@@ -46,7 +46,8 @@ import {
     openChecklistModal,
     addChecklistItem,
     saveChecklist,
-    openEpicsModal
+    openEpicsModal,
+    confirmDeleteEpic
 } from './js/modals.js';
 
 (function() {
@@ -101,6 +102,12 @@ import {
         categoryFilters: document.querySelector('.js-categoryFilters'),
         priorityFilterBtn: document.querySelector('.js-priorityFilterBtn'),
         epicFilter: document.querySelector('.js-epicFilter'),
+
+        // Epic Delete Confirmation
+        epicConfirmModal: document.querySelector('.js-epicConfirmModal'),
+        epicConfirmMessage: document.querySelector('.js-epicConfirmMessage'),
+        epicConfirmCancel: document.querySelector('.js-epicConfirmCancel'),
+        epicConfirmDelete: document.querySelector('.js-epicConfirmDelete'),
 
         // Epic Management
         manageEpicsBtn: document.querySelector('.js-manageEpicsBtn'),
@@ -293,10 +300,15 @@ import {
     // Render Functions
     // ==========================================
 
+    /** @type {Map<string, Object>} Pre-built epic lookup for O(1) access in createTaskCard */
+    let epicLookup = new Map();
+
     /**
      * Re-renders all kanban columns and applies active filters.
      */
     function renderAllColumns() {
+        // Build epic lookup once per render cycle for O(1) access in createTaskCard
+        epicLookup = new Map(epics.map(e => [e.id, e]));
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
         renderEpicFilter(elements.epicFilter);
         applyAllFilters();
@@ -336,8 +348,8 @@ import {
         card.dataset.description = task.description || '';
         card.dataset.epicId = task.epicId || '';
 
-        // Epic data for the card
-        const epic = task.epicId ? epics.find(e => e.id === task.epicId) : null;
+        // Epic data for the card (O(1) lookup via pre-built Map)
+        const epic = task.epicId ? epicLookup.get(task.epicId) || null : null;
         if (epic) {
             card.dataset.epicName = epic.name;
             card.dataset.epicColor = epic.color;
@@ -521,12 +533,20 @@ import {
             saveChecklist(elements);
         });
 
-        // Confirm Delete Modal
+        // Confirm Delete Modal (task)
         elements.confirmCancel.addEventListener('click', () => {
             elements.confirmModal.close();
         });
         elements.confirmDelete.addEventListener('click', () => {
             confirmDeleteTask(elements, renderAllColumns, removeTask);
+        });
+
+        // Confirm Delete Modal (epic)
+        elements.epicConfirmCancel.addEventListener('click', () => {
+            elements.epicConfirmModal.close();
+        });
+        elements.epicConfirmDelete.addEventListener('click', () => {
+            confirmDeleteEpic(elements);
         });
 
         // Listen for edit requests from task-card components

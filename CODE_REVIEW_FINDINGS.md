@@ -2292,4 +2292,86 @@ No npm install. No configuration. Just write tests and run them.
 
 ---
 
+## 10. AI Agent Coding Checklist
+
+> **Purpose:** This section captures recurring mistakes made by AI code assistants when working on this codebase. Future AI interactions MUST consult this checklist before submitting code.
+
+---
+
+### 10.1 No `confirm()` or `alert()` — Use `<modal-dialog>`
+
+**Rule:** Never use `window.confirm()` or `window.alert()`. Always use the `<modal-dialog>` component with custom buttons.
+
+**Pattern:**
+1. Add a `<modal-dialog>` to `index.html` with cancel/confirm buttons
+2. Store the pending action context in a module-level variable
+3. Open the modal and set its message dynamically
+4. Wire the confirm button to execute the pending action
+5. Wire the cancel button to close the modal
+
+**Known remaining violations (pre-epic, to be fixed):**
+- `app.js` — `handleGenerateReport()` uses `confirm()`
+- `app.js` — `handleArchive()` uses `confirm()`
+- `modals.js` — report delete handler uses `confirm()`
+
+---
+
+### 10.2 No code duplication without documentation
+
+**Rule:** If a function must be duplicated between server.js (Node.js) and client-side ES modules, the server copy MUST include a JSDoc comment stating:
+```
+Source of truth: /public/js/<file>.js — duplicated here because
+server.js runs in Node.js and cannot import ES modules from /public.
+```
+
+**Currently documented duplications:**
+- `getWeekNumber` — source in `utils.js`, copy in `server.js`
+- `toCamelCase` — source in `utils.js`, copy in `server.js`
+
+---
+
+### 10.3 Shared client utilities go in `utils.js`
+
+**Rule:** Reusable pure functions used across multiple client modules MUST be placed in `/public/js/utils.js`, not duplicated in individual modules.
+
+---
+
+### 10.4 Use lookup Maps for repeated collection searches
+
+**Rule:** When iterating over a list and looking up items from another list inside the loop, build a `Map` before the loop for O(1) lookups instead of using `.find()` (O(n)) per iteration.
+
+**Example:**
+```javascript
+// BAD — O(n*m)
+tasks.forEach(task => {
+    const epic = epics.find(e => e.id === task.epicId);
+});
+
+// GOOD — O(n+m)
+const epicLookup = new Map(epics.map(e => [e.id, e]));
+tasks.forEach(task => {
+    const epic = epicLookup.get(task.epicId);
+});
+```
+
+---
+
+### 10.5 No `window` functions — Use event delegation
+
+**Rule:** Never expose functions on `window`. Never use inline `onclick` handlers in generated HTML. Use event delegation with `js-` prefixed class hooks.
+
+---
+
+### 10.6 Components vs editor patterns
+
+**Rule:** Not everything needs to be a Web Component. Editor UIs rendered inside `<modal-dialog>` (like the checklist editor or epics editor) should follow the existing pattern: render HTML directly into a container, attach event listeners via `js-` hooks. Only create a Web Component when the element is reused across different contexts with its own Shadow DOM.
+
+---
+
+### 10.7 Toast notifications for user feedback
+
+**Rule:** All user-facing success/error/warning messages MUST use `elements.toaster.success()`, `.error()`, `.warning()`, or `.info()`. Never use `alert()`.
+
+---
+
 *End of Code Review Findings*

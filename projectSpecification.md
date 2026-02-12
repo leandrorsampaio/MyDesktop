@@ -1148,6 +1148,97 @@ elements.toaster.info('No completed tasks to archive');
 
 ---
 
+## AI Agent Coding Checklist
+
+This section captures recurring mistakes made by AI code assistants when working on this codebase. AI agents MUST consult this checklist before writing or submitting code. See also `CODE_REVIEW_FINDINGS.md` Section 10 for additional context and examples.
+
+### Rule 1: No `confirm()` or `alert()` — Use `<modal-dialog>`
+
+Never use `window.confirm()` or `window.alert()`. Always use the `<modal-dialog>` component with custom buttons for confirmations.
+
+**Pattern for confirmation dialogs:**
+1. Add a `<modal-dialog>` in `index.html` with cancel/action buttons and a `js-` message element
+2. Store the pending action context in a module-level variable (e.g., `let pendingDelete = null`)
+3. Open the modal and set its message dynamically via `textContent`
+4. Wire the action button to execute the pending operation, then clear the pending state
+5. Wire the cancel button to close the modal and clear the pending state
+
+### Rule 2: No code duplication without documentation
+
+If a function must exist in both `server.js` (Node.js) and client-side ES modules, the server copy MUST include a JSDoc comment:
+```javascript
+/**
+ * Source of truth: /public/js/<file>.js — duplicated here because
+ * server.js runs in Node.js and cannot import ES modules from /public.
+ */
+```
+
+**Currently documented duplications:**
+- `getWeekNumber` — source in `utils.js`, copy in `server.js`
+- `toCamelCase` — source in `utils.js`, copy in `server.js`
+
+### Rule 3: Shared client utilities belong in `utils.js`
+
+Reusable pure functions used across multiple client modules MUST be placed in `/public/js/utils.js` and imported where needed. Never define helper functions locally in a module if they could be shared.
+
+### Rule 4: Use Map lookups for repeated collection searches
+
+When iterating over a list and looking up items from another collection inside the loop, build a `Map` before the loop for O(1) lookups. Never use `.find()` inside a loop when the outer collection is large.
+
+```javascript
+// BAD — O(n * m)
+tasks.forEach(task => {
+    const epic = epics.find(e => e.id === task.epicId);
+});
+
+// GOOD — O(n + m)
+const epicLookup = new Map(epics.map(e => [e.id, e]));
+tasks.forEach(task => {
+    const epic = epicLookup.get(task.epicId);
+});
+```
+
+### Rule 5: No `window` functions — Use event delegation
+
+Never expose functions on `window`. Never use inline `onclick`/`onblur`/etc. handlers in generated HTML. Always use event delegation with `js-` prefixed class hooks and `addEventListener`.
+
+### Rule 6: Components vs editor patterns
+
+Not everything needs to be a Web Component. Editor UIs rendered inside `<modal-dialog>` (like the checklist editor or epics editor) should follow the existing pattern: render HTML directly into a container element, attach event listeners via `js-` hooks. Only create a Web Component when the element is reused across different contexts with its own Shadow DOM encapsulation.
+
+### Rule 7: Toast notifications for all user feedback
+
+All user-facing success/error/warning messages MUST use the toaster component:
+- `elements.toaster.success(msg)` — green, for completed operations
+- `elements.toaster.error(msg)` — red, for failures
+- `elements.toaster.warning(msg)` — yellow, for validation issues
+- `elements.toaster.info(msg)` — beige, for informational messages
+
+### Rule 8: Always read existing patterns before writing code
+
+Before implementing a new feature, read at least:
+1. This specification document (especially Code Guidelines and this checklist)
+2. `CODE_REVIEW_FINDINGS.md` Section 10
+3. The existing module where the feature will be added (to follow its patterns)
+4. Related modules that implement similar features (e.g., checklist editor for a new editor)
+
+### Rule 9: Follow the existing module architecture
+
+| Module | Responsibility |
+|--------|---------------|
+| `constants.js` | All shared constants (categories, colors, limits) |
+| `state.js` | Centralized state with getter/setter functions |
+| `api.js` | Pure HTTP API functions that return data |
+| `utils.js` | Shared pure utility functions |
+| `filters.js` | Filtering logic (category, priority, epic) |
+| `modals.js` | All modal dialog logic |
+| `crisis-mode.js` | Crisis mode functionality |
+| `app.js` | Main entry point — wires modules, DOM refs, event listeners |
+
+New features should fit into this architecture. Add new modules only when a feature is large enough to warrant its own file and doesn't fit existing modules.
+
+---
+
 ## Future Considerations (Out of Scope)
 
 - Export reports to PDF or formatted HTML file

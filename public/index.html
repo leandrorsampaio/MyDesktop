@@ -175,6 +175,18 @@
         </div>
     </modal-dialog>
 
+    <!-- Epic Delete Confirmation Modal -->
+    <modal-dialog class="js-epicConfirmModal" size="small">
+        <span slot="title">Delete Epic</span>
+        <div class="confirmDialog">
+            <p class="confirmDialog__message js-epicConfirmMessage">Are you sure?</p>
+            <div class="confirmDialog__actions">
+                <button type="button" class="btn --cancel js-epicConfirmCancel">Cancel</button>
+                <button type="button" class="btn --delete js-epicConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </modal-dialog>
+
     <!-- Manage Epics Modal -->
     <modal-dialog class="js-epicsModal" size="large">
         <span slot="title">Manage Epics</span>
