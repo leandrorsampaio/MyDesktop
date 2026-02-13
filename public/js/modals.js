@@ -3,9 +3,9 @@
  * Handles all modal dialogs: task add/edit, reports, archived tasks, checklist, and confirmations.
  */
 
-import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS } from './constants.js';
+import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS, MAX_PROFILES } from './constants.js';
 import { escapeHtml, formatDate, toCamelCase } from './utils.js';
-import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics } from './state.js';
+import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics, profiles, setProfiles, activeProfile } from './state.js';
 import {
     createTaskApi,
     updateTaskApi,
@@ -17,7 +17,11 @@ import {
     fetchEpicsApi,
     createEpicApi,
     updateEpicApi,
-    deleteEpicApi
+    deleteEpicApi,
+    fetchProfilesApi,
+    createProfileApi,
+    updateProfileApi,
+    deleteProfileApi
 } from './api.js';
 
 // ==========================================
@@ -520,14 +524,24 @@ export function renderArchivedTasks(archivedTasks, elements) {
 let checklistItems = [];
 
 /**
+ * Gets the profile alias from the current URL for localStorage scoping.
+ * @returns {string} The profile alias
+ */
+function getProfileAlias() {
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    return segments[0] || 'default';
+}
+
+/**
  * Opens the daily checklist editor modal.
  * @param {Object} elements - DOM element references
  * @param {Function} closeMenu - Function to close dropdown menu
  */
 export function openChecklistModal(elements, closeMenu) {
     closeMenu();
-    // Load current config from localStorage
-    const stored = localStorage.getItem('checklistConfig');
+    // Load current config from localStorage (profile-scoped)
+    const alias = getProfileAlias();
+    const stored = localStorage.getItem(`${alias}:checklistConfig`);
     if (stored) {
         try {
             checklistItems = JSON.parse(stored);
@@ -854,8 +868,9 @@ export function saveChecklist(elements) {
         }
     });
 
-    // Save to localStorage
-    localStorage.setItem('checklistConfig', JSON.stringify(items));
+    // Save to localStorage (profile-scoped)
+    const alias = getProfileAlias();
+    localStorage.setItem(`${alias}:checklistConfig`, JSON.stringify(items));
 
     // Refresh the daily-checklist component
     const checklistComponent = document.querySelector('daily-checklist');
@@ -865,4 +880,285 @@ export function saveChecklist(elements) {
     }
 
     elements.checklistModal.close();
+}
+
+// ==========================================
+// Profile Management Modal Functions
+// ==========================================
+
+/** @type {{profileId: string, elements: Object, onProfilesChanged: Function}|null} */
+let pendingProfileDelete = null;
+
+/**
+ * Opens the profiles management modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} closeMenu - Function to close dropdown menu
+ * @param {Function} onProfilesChanged - Callback when profiles are modified
+ */
+export async function openProfilesModal(elements, closeMenu, onProfilesChanged) {
+    closeMenu();
+    try {
+        const fetchedProfiles = await fetchProfilesApi();
+        setProfiles(fetchedProfiles);
+        renderProfilesEditor(elements, onProfilesChanged);
+        elements.profilesModal.open();
+    } catch (error) {
+        console.error('Error fetching profiles:', error);
+        elements.toaster.error('Failed to load profiles');
+    }
+}
+
+/**
+ * Populates the color select dropdown with available colors for profiles.
+ * @param {HTMLSelectElement} selectEl - The select element
+ * @param {Array<Object>} currentProfiles - Current profiles to check used colors
+ * @param {string} [excludeProfileId] - Profile ID to exclude from used colors check (for editing)
+ */
+function populateProfileColorSelect(selectEl, currentProfiles, excludeProfileId) {
+    const usedColors = new Set(
+        currentProfiles
+            .filter(p => p.id !== excludeProfileId)
+            .map(p => p.color)
+    );
+
+    selectEl.innerHTML = '<option value="">Select color</option>';
+    EPIC_COLORS.forEach(color => {
+        const option = document.createElement('option');
+        option.value = color.hex;
+        const taken = usedColors.has(color.hex);
+        option.textContent = taken ? `${color.name} (taken)` : color.name;
+        option.disabled = taken;
+        option.style.color = color.hex;
+        selectEl.appendChild(option);
+    });
+}
+
+/**
+ * Renders the profiles editor (form + list) in the modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} onProfilesChanged - Callback when profiles are modified
+ */
+function renderProfilesEditor(elements, onProfilesChanged) {
+    // Populate color dropdown for add form
+    populateProfileColorSelect(elements.profileColorSelect, profiles);
+
+    // Clear form
+    elements.profileNameInput.value = '';
+    elements.profileLettersInput.value = '';
+    elements.profileColorSelect.value = '';
+    elements.profileAliasPreview.textContent = '';
+    elements.profileError.style.display = 'none';
+
+    // Name input: live alias preview
+    elements.profileNameInput.oninput = () => {
+        const name = elements.profileNameInput.value.trim();
+        if (name) {
+            elements.profileAliasPreview.textContent = `Alias: ${toCamelCase(name)}`;
+        } else {
+            elements.profileAliasPreview.textContent = '';
+        }
+    };
+
+    // Letters input: force uppercase
+    elements.profileLettersInput.oninput = () => {
+        elements.profileLettersInput.value = elements.profileLettersInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+    };
+
+    // Color select: clear error
+    elements.profileColorSelect.onchange = () => {
+        elements.profileError.style.display = 'none';
+    };
+
+    // Add button handler
+    elements.profileAddBtn.onclick = async () => {
+        const name = elements.profileNameInput.value.trim();
+        const letters = elements.profileLettersInput.value.trim().toUpperCase();
+        const color = elements.profileColorSelect.value;
+
+        if (!name) {
+            elements.toaster.warning('Profile name is required');
+            return;
+        }
+        if (!letters) {
+            elements.toaster.warning('Profile letters are required');
+            return;
+        }
+        if (!color) {
+            elements.toaster.warning('Please select a color');
+            return;
+        }
+
+        if (profiles.length >= MAX_PROFILES) {
+            elements.toaster.warning(`Maximum of ${MAX_PROFILES} profiles allowed`);
+            return;
+        }
+
+        const result = await createProfileApi({ name, letters, color });
+        if (result.ok) {
+            const fetchedProfiles = await fetchProfilesApi();
+            setProfiles(fetchedProfiles);
+            renderProfilesEditor(elements, onProfilesChanged);
+            onProfilesChanged();
+            elements.toaster.success(`Profile "${name}" created`);
+        } else {
+            elements.profileError.textContent = result.error;
+            elements.profileError.style.display = 'block';
+        }
+    };
+
+    // Render profile list
+    renderProfilesList(elements, onProfilesChanged);
+}
+
+/**
+ * Renders the list of existing profiles with edit/delete controls.
+ * @param {Object} elements - DOM element references
+ * @param {Function} onProfilesChanged - Callback when profiles are modified
+ */
+function renderProfilesList(elements, onProfilesChanged) {
+    if (profiles.length === 0) {
+        elements.profilesList.innerHTML = '<div class="emptyState">No profiles created yet</div>';
+        return;
+    }
+
+    elements.profilesList.innerHTML = profiles.map(profile => `
+        <div class="profilesEditor__item" data-profile-id="${profile.id}">
+            <div class="profilesEditor__itemColor" style="background-color: ${profile.color};">${escapeHtml(profile.letters)}</div>
+            <div class="profilesEditor__itemInfo">
+                <input type="text" class="profilesEditor__itemName js-profileItemName" value="${escapeHtml(profile.name)}" data-profile-id="${profile.id}" />
+                <span class="profilesEditor__itemAlias">Alias: ${escapeHtml(profile.alias)}</span>
+            </div>
+            <input type="text" class="profilesEditor__itemLetters js-profileItemLetters" value="${escapeHtml(profile.letters)}" data-profile-id="${profile.id}" maxlength="3" />
+            <select class="profilesEditor__itemColorSelect js-profileItemColor" data-profile-id="${profile.id}">
+                <!-- colors populated via JS -->
+            </select>
+            <button class="profilesEditor__deleteBtn js-profileDeleteBtn" data-profile-id="${profile.id}" title="Delete profile">&times;</button>
+        </div>
+    `).join('');
+
+    // Populate color selects for each item
+    elements.profilesList.querySelectorAll('.js-profileItemColor').forEach(select => {
+        const profileId = select.dataset.profileId;
+        const profile = profiles.find(p => p.id === profileId);
+        populateProfileColorSelect(select, profiles, profileId);
+        if (profile) select.value = profile.color;
+    });
+
+    // Name edit (blur to save)
+    elements.profilesList.querySelectorAll('.js-profileItemName').forEach(input => {
+        input.addEventListener('blur', async () => {
+            const profileId = input.dataset.profileId;
+            const name = input.value.trim();
+            if (!name) {
+                elements.toaster.warning('Profile name cannot be empty');
+                const profile = profiles.find(p => p.id === profileId);
+                if (profile) input.value = profile.name;
+                return;
+            }
+            const result = await updateProfileApi(profileId, { name });
+            if (result.ok) {
+                const fetchedProfiles = await fetchProfilesApi();
+                setProfiles(fetchedProfiles);
+                renderProfilesList(elements, onProfilesChanged);
+                onProfilesChanged();
+            } else {
+                elements.toaster.error(result.error);
+            }
+        });
+    });
+
+    // Letters edit (blur to save)
+    elements.profilesList.querySelectorAll('.js-profileItemLetters').forEach(input => {
+        input.addEventListener('input', () => {
+            input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+        });
+        input.addEventListener('blur', async () => {
+            const profileId = input.dataset.profileId;
+            const letters = input.value.trim().toUpperCase();
+            if (!letters) {
+                elements.toaster.warning('Profile letters cannot be empty');
+                const profile = profiles.find(p => p.id === profileId);
+                if (profile) input.value = profile.letters;
+                return;
+            }
+            const result = await updateProfileApi(profileId, { letters });
+            if (result.ok) {
+                const fetchedProfiles = await fetchProfilesApi();
+                setProfiles(fetchedProfiles);
+                renderProfilesList(elements, onProfilesChanged);
+                onProfilesChanged();
+            } else {
+                elements.toaster.error(result.error);
+            }
+        });
+    });
+
+    // Color change
+    elements.profilesList.querySelectorAll('.js-profileItemColor').forEach(select => {
+        select.addEventListener('change', async () => {
+            const profileId = select.dataset.profileId;
+            const color = select.value;
+            if (!color) return;
+            const result = await updateProfileApi(profileId, { color });
+            if (result.ok) {
+                const fetchedProfiles = await fetchProfilesApi();
+                setProfiles(fetchedProfiles);
+                renderProfilesEditor(elements, onProfilesChanged);
+                onProfilesChanged();
+            } else {
+                elements.toaster.error(result.error);
+                const profile = profiles.find(p => p.id === profileId);
+                if (profile) select.value = profile.color;
+            }
+        });
+    });
+
+    // Delete buttons — open confirm modal
+    elements.profilesList.querySelectorAll('.js-profileDeleteBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const profileId = btn.dataset.profileId;
+            const profile = profiles.find(p => p.id === profileId);
+
+            if (profiles.length <= 1) {
+                elements.toaster.warning('Cannot delete the last profile');
+                return;
+            }
+
+            pendingProfileDelete = { profileId, elements, onProfilesChanged };
+            elements.profileConfirmMessage.textContent = `Delete profile "${profile?.name || ''}"? All tasks, reports, and data for this profile will be permanently deleted.`;
+            elements.profileConfirmModal.open();
+        });
+    });
+}
+
+/**
+ * Confirms and executes the pending profile deletion.
+ * Called by the profile confirm modal's delete button.
+ * @param {Object} elements - DOM element references
+ */
+export async function confirmDeleteProfile(elements) {
+    if (!pendingProfileDelete) return;
+
+    const { profileId, onProfilesChanged } = pendingProfileDelete;
+    const deletedProfile = profiles.find(p => p.id === profileId);
+    pendingProfileDelete = null;
+    elements.profileConfirmModal.close();
+
+    const result = await deleteProfileApi(profileId);
+    if (result.ok) {
+        const fetchedProfiles = await fetchProfilesApi();
+        setProfiles(fetchedProfiles);
+        renderProfilesEditor(elements, onProfilesChanged);
+        onProfilesChanged();
+        elements.toaster.success('Profile deleted');
+
+        // If we deleted the active profile, navigate to first remaining profile
+        if (deletedProfile && activeProfile && deletedProfile.id === activeProfile.id) {
+            if (fetchedProfiles.length > 0) {
+                window.location.href = '/' + fetchedProfiles[0].alias;
+            }
+        }
+    } else {
+        elements.toaster.error(result.error);
+    }
 }

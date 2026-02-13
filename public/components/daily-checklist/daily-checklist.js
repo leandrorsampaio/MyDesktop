@@ -30,14 +30,20 @@ class DailyChecklist extends HTMLElement {
         this.init();
     }
 
+    getStoragePrefix() {
+        const segments = window.location.pathname.split('/').filter(Boolean);
+        return (segments[0] || 'default') + ':';
+    }
+
     init() {
+        this.storagePrefix = this.getStoragePrefix();
         this.loadRecurrentTasks();
         this.checkDailyReset();
         this.render();
     }
 
     loadRecurrentTasks() {
-        const stored = localStorage.getItem('checklistConfig');
+        const stored = localStorage.getItem(this.storagePrefix + 'checklistConfig');
         if (stored) {
             try {
                 this.recurrentTasks = JSON.parse(stored);
@@ -50,7 +56,7 @@ class DailyChecklist extends HTMLElement {
     }
 
     getRecurrentTasksState() {
-        const stored = localStorage.getItem('recurrentTasksChecked');
+        const stored = localStorage.getItem(this.storagePrefix + 'recurrentTasksChecked');
         if (!stored) return {};
         try {
             return JSON.parse(stored);
@@ -62,11 +68,11 @@ class DailyChecklist extends HTMLElement {
     toggleRecurrentTask(index, checked) {
         const state = this.getRecurrentTasksState();
         state[index] = checked;
-        localStorage.setItem('recurrentTasksChecked', JSON.stringify(state));
+        localStorage.setItem(this.storagePrefix + 'recurrentTasksChecked', JSON.stringify(state));
     }
 
     checkDailyReset() {
-        const lastResetStr = localStorage.getItem('lastRecurrentReset');
+        const lastResetStr = localStorage.getItem(this.storagePrefix + 'lastRecurrentReset');
         const now = new Date();
         const todayAtResetHour = new Date(now);
         todayAtResetHour.setHours(CHECKLIST_RESET_HOUR, 0, 0, 0);
@@ -86,8 +92,8 @@ class DailyChecklist extends HTMLElement {
         }
 
         if (shouldReset) {
-            localStorage.removeItem('recurrentTasksChecked');
-            localStorage.setItem('lastRecurrentReset', now.toISOString());
+            localStorage.removeItem(this.storagePrefix + 'recurrentTasksChecked');
+            localStorage.setItem(this.storagePrefix + 'lastRecurrentReset', now.toISOString());
         }
     }
 

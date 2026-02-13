@@ -36,6 +36,11 @@
                 <div class="toolbar__divider"></div>
                 <button class="toolbar__privacyBtn js-privacyToggleBtn">Hide</button>
             </div>
+            <div class="profileSelector js-profileSelector">
+                <button class="profileSelector__btn js-profileBtn" aria-label="Switch profile"></button>
+                <span class="profileSelector__name js-profileName"></span>
+                <div class="profileSelector__dropdown js-profileDropdown"></div>
+            </div>
             <button class="navMenu__trigger js-menuBtn" aria-label="Menu">
                 <span></span>
                 <span></span>
@@ -50,6 +55,9 @@
                 </button>
                 <button class="navMenu__item js-manageEpicsBtn">
                     <span class="navMenu__icon">🏷️</span> Manage Epics
+                </button>
+                <button class="navMenu__item js-manageProfilesBtn">
+                    <span class="navMenu__icon">👤</span> Manage Profiles
                 </button>
                 <button class="navMenu__item js-editChecklistBtn">
                     <span class="navMenu__icon">📝</span> Edit Daily Checklist
@@ -223,6 +231,41 @@
                     <button type="button" class="btn --cancel js-checklistCancelBtn">Cancel</button>
                     <button type="button" class="btn --save js-checklistSaveBtn">Save Checklist</button>
                 </div>
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Manage Profiles Modal -->
+    <modal-dialog class="js-profilesModal" size="large">
+        <span slot="title">Manage Profiles</span>
+        <div class="profilesEditor">
+            <p class="profilesEditor__hint">Create and manage profiles to separate your data (e.g., Work vs Personal). Each profile has its own tasks, epics, notes, and reports. Maximum 20 profiles.</p>
+            <div class="profilesEditor__form js-profileForm">
+                <div class="profilesEditor__formRow">
+                    <input type="text" class="profilesEditor__nameInput js-profileNameInput" placeholder="Profile name" />
+                    <input type="text" class="profilesEditor__lettersInput js-profileLettersInput" placeholder="AB" maxlength="3" />
+                    <select class="profilesEditor__colorSelect js-profileColorSelect">
+                        <option value="">Select color</option>
+                    </select>
+                    <button type="button" class="btn --save js-profileAddBtn">Add Profile</button>
+                </div>
+                <div class="profilesEditor__alias js-profileAliasPreview"></div>
+                <div class="profilesEditor__error js-profileError" style="display: none;"></div>
+            </div>
+            <div class="profilesEditor__list js-profilesList">
+                <!-- Profiles list rendered by JS -->
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Profile Delete Confirmation Modal -->
+    <modal-dialog class="js-profileConfirmModal" size="small">
+        <span slot="title">Delete Profile</span>
+        <div class="confirmDialog">
+            <p class="confirmDialog__message js-profileConfirmMessage">Are you sure?</p>
+            <div class="confirmDialog__actions">
+                <button type="button" class="btn --cancel js-profileConfirmCancel">Cancel</button>
+                <button type="button" class="btn --delete js-profileConfirmDelete">Delete</button>
             </div>
         </div>
     </modal-dialog>

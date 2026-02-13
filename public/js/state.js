@@ -25,6 +25,12 @@ export let epics = [];
 /** @type {string|null} Active epic filter ID (null = no filter) */
 export let activeEpicFilter = null;
 
+/** @type {Array<Object>} All profiles */
+export let profiles = [];
+
+/** @type {Object|null} Currently active profile */
+export let activeProfile = null;
+
 /** @type {string} Original page title (saved when entering crisis mode) */
 export let originalTitle = '';
 
@@ -157,4 +163,20 @@ export function setEpics(newEpics) {
  */
 export function setActiveEpicFilter(epicId) {
     activeEpicFilter = epicId;
+}
+
+/**
+ * Updates the profiles array with new data.
+ * @param {Array<Object>} newProfiles - The new profiles array
+ */
+export function setProfiles(newProfiles) {
+    profiles = newProfiles;
+}
+
+/**
+ * Sets the active profile.
+ * @param {Object|null} profile - The active profile object
+ */
+export function setActiveProfile(profile) {
+    activeProfile = profile;
 }

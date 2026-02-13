@@ -13,11 +13,16 @@ const PORT = process.env.PORT || 3001;
 
 // Data file paths
 const DATA_DIR = path.join(__dirname, 'data');
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
-const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
-const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
-const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
-const EPICS_FILE = path.join(DATA_DIR, 'epics.json');
+const PROFILES_FILE = path.join(DATA_DIR, 'profiles.json');
+
+/**
+ * Maximum number of profiles allowed.
+ * Source of truth: /public/js/constants.js
+ */
+const MAX_PROFILES = 20;
+
+/** Regex for valid profile letters (1-3 uppercase) */
+const PROFILE_LETTERS_REGEX = /^[A-Z]{1,3}$/;
 
 // Middleware
 app.use(express.json());
@@ -207,6 +212,15 @@ async function ensureDataDir() {
     }
 }
 
+async function fileExists(filePath) {
+    try {
+        await fs.access(filePath);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 async function readJsonFile(filePath, defaultValue = []) {
     try {
         const data = await fs.readFile(filePath, 'utf8');
@@ -220,7 +234,8 @@ async function readJsonFile(filePath, defaultValue = []) {
 }
 
 async function writeJsonFile(filePath, data) {
-    await ensureDataDir();
+    const dir = path.dirname(filePath);
+    await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
 }
 
@@ -332,12 +347,328 @@ function formatDateRange(date) {
     }
 }
 
-// API Routes
+// ===========================================
+// Profile Management
+// ===========================================
+
+/**
+ * Creates empty data files in a profile directory.
+ * @param {string} profileDir - The profile directory path
+ */
+async function createEmptyProfileData(profileDir) {
+    await fs.mkdir(profileDir, { recursive: true });
+    await writeJsonFile(path.join(profileDir, 'tasks.json'), []);
+    await writeJsonFile(path.join(profileDir, 'archived-tasks.json'), []);
+    await writeJsonFile(path.join(profileDir, 'reports.json'), []);
+    await writeJsonFile(path.join(profileDir, 'notes.json'), { content: '' });
+    await writeJsonFile(path.join(profileDir, 'epics.json'), []);
+}
+
+/**
+ * Ensures a default profile exists. Called before app.listen().
+ * - If profiles.json doesn't exist AND legacy files exist in data/ → migrate to data/work/
+ * - If profiles.json doesn't exist AND no legacy data → create data/user1/
+ */
+async function ensureDefaultProfile() {
+    await ensureDataDir();
+
+    if (await fileExists(PROFILES_FILE)) return;
+
+    const legacyTasksFile = path.join(DATA_DIR, 'tasks.json');
+    const hasLegacyData = await fileExists(legacyTasksFile);
+
+    if (hasLegacyData) {
+        // Migrate existing data to data/work/
+        const workDir = path.join(DATA_DIR, 'work');
+        await fs.mkdir(workDir, { recursive: true });
+
+        const filesToMove = ['tasks.json', 'archived-tasks.json', 'reports.json', 'notes.json', 'epics.json'];
+        for (const file of filesToMove) {
+            const src = path.join(DATA_DIR, file);
+            const dest = path.join(workDir, file);
+            if (await fileExists(src)) {
+                await fs.rename(src, dest);
+            } else {
+                // Create empty file if it didn't exist
+                const defaultVal = file === 'notes.json' ? { content: '' } : [];
+                await writeJsonFile(dest, defaultVal);
+            }
+        }
+
+        const profiles = [{
+            id: generateId(),
+            name: 'Work',
+            color: '#54A0FF',
+            letters: 'WK',
+            alias: 'work'
+        }];
+        await writeJsonFile(PROFILES_FILE, profiles);
+        console.log('Migrated existing data to "Work" profile (data/work/)');
+    } else {
+        // Fresh install — create default profile
+        const user1Dir = path.join(DATA_DIR, 'user1');
+        await createEmptyProfileData(user1Dir);
+
+        const profiles = [{
+            id: generateId(),
+            name: 'User1',
+            color: '#54A0FF',
+            letters: 'U1',
+            alias: 'user1'
+        }];
+        await writeJsonFile(PROFILES_FILE, profiles);
+        console.log('Created default "User1" profile (data/user1/)');
+    }
+}
+
+/**
+ * Validates profile input data.
+ * @param {Object} data - The input data to validate
+ * @param {Object} options - Validation options
+ * @param {boolean} options.requireAll - Whether all fields are required (true for create)
+ * @returns {{valid: boolean, errors: string[]}} Validation result
+ */
+function validateProfileInput(data, { requireAll = false } = {}) {
+    const errors = [];
+
+    if (requireAll) {
+        if (!data.name || (typeof data.name === 'string' && data.name.trim() === '')) {
+            errors.push('Profile name is required');
+        }
+        if (!data.color) errors.push('Profile color is required');
+        if (!data.letters) errors.push('Profile letters are required');
+    }
+
+    if (data.name !== undefined) {
+        if (typeof data.name !== 'string') {
+            errors.push('Name must be a string');
+        } else if (data.name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+            errors.push(`Name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less`);
+        }
+    }
+
+    if (data.color !== undefined) {
+        if (typeof data.color !== 'string') {
+            errors.push('Color must be a string');
+        } else {
+            const validColor = EPIC_COLORS_SERVER.find(c => c.hex === data.color);
+            if (!validColor) errors.push('Invalid color selection');
+        }
+    }
+
+    if (data.letters !== undefined) {
+        if (typeof data.letters !== 'string') {
+            errors.push('Letters must be a string');
+        } else if (!PROFILE_LETTERS_REGEX.test(data.letters)) {
+            errors.push('Letters must be 1-3 uppercase characters');
+        }
+    }
+
+    return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Middleware that resolves a profile alias from :profile param.
+ * Attaches req.profileFiles with paths to the profile's data files.
+ */
+async function resolveProfile(req, res, next) {
+    const alias = req.params.profile;
+
+    if (!alias || typeof alias !== 'string' || !/^[a-zA-Z0-9]+$/.test(alias)) {
+        return res.status(400).json({ error: 'Invalid profile alias' });
+    }
+
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const profile = profiles.find(p => p.alias === alias);
+
+        if (!profile) {
+            return res.status(404).json({ error: 'Profile not found' });
+        }
+
+        const profileDir = path.join(DATA_DIR, alias);
+        req.profileFiles = {
+            tasks: path.join(profileDir, 'tasks.json'),
+            archived: path.join(profileDir, 'archived-tasks.json'),
+            reports: path.join(profileDir, 'reports.json'),
+            notes: path.join(profileDir, 'notes.json'),
+            epics: path.join(profileDir, 'epics.json')
+        };
+        req.profile = profile;
+
+        next();
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to resolve profile' });
+    }
+}
+
+// ===========================================
+// Profile CRUD API Routes
+// ===========================================
+
+// GET all profiles
+app.get('/api/profiles', async (req, res) => {
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        res.json(profiles);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read profiles' });
+    }
+});
+
+// POST create new profile
+app.post('/api/profiles', writeLimiter, async (req, res) => {
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+
+        if (profiles.length >= MAX_PROFILES) {
+            return res.status(400).json({ error: `Maximum of ${MAX_PROFILES} profiles allowed` });
+        }
+
+        const validation = validateProfileInput(req.body, { requireAll: true });
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
+        const { name, color, letters } = req.body;
+        const alias = toCamelCase(name.trim());
+
+        if (!alias) {
+            return res.status(400).json({ error: 'Profile name must contain at least one alphanumeric character' });
+        }
+
+        // Check uniqueness
+        if (profiles.find(p => p.alias === alias)) {
+            return res.status(400).json({ error: `A profile with alias "${alias}" already exists` });
+        }
+        if (profiles.find(p => p.color === color)) {
+            const colorName = EPIC_COLORS_SERVER.find(c => c.hex === color)?.name || color;
+            return res.status(400).json({ error: `Color "${colorName}" is already used by another profile` });
+        }
+        if (profiles.find(p => p.letters === letters.toUpperCase())) {
+            return res.status(400).json({ error: `Letters "${letters.toUpperCase()}" are already used by another profile` });
+        }
+
+        const newProfile = {
+            id: generateId(),
+            name: name.trim(),
+            color,
+            letters: letters.toUpperCase(),
+            alias
+        };
+
+        // Create profile data directory with empty files
+        await createEmptyProfileData(path.join(DATA_DIR, alias));
+
+        profiles.push(newProfile);
+        await writeJsonFile(PROFILES_FILE, profiles);
+        res.status(201).json(newProfile);
+    } catch (error) {
+        console.error('Error creating profile:', error);
+        res.status(500).json({ error: 'Failed to create profile' });
+    }
+});
+
+// PUT update profile
+app.put('/api/profiles/:id', writeLimiter, async (req, res) => {
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const profileIndex = profiles.findIndex(p => p.id === req.params.id);
+
+        if (profileIndex === -1) {
+            return res.status(404).json({ error: 'Profile not found' });
+        }
+
+        const validation = validateProfileInput(req.body);
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
+        const { name, color, letters } = req.body;
+        const oldAlias = profiles[profileIndex].alias;
+
+        if (name !== undefined) {
+            const newAlias = toCamelCase(name.trim());
+            if (!newAlias) {
+                return res.status(400).json({ error: 'Profile name must contain at least one alphanumeric character' });
+            }
+            // Check alias uniqueness (excluding self)
+            if (newAlias !== oldAlias && profiles.find(p => p.alias === newAlias)) {
+                return res.status(400).json({ error: `A profile with alias "${newAlias}" already exists` });
+            }
+            profiles[profileIndex].name = name.trim();
+            profiles[profileIndex].alias = newAlias;
+
+            // Rename directory if alias changed
+            if (newAlias !== oldAlias) {
+                const oldDir = path.join(DATA_DIR, oldAlias);
+                const newDir = path.join(DATA_DIR, newAlias);
+                await fs.rename(oldDir, newDir);
+            }
+        }
+
+        if (color !== undefined) {
+            const colorTaken = profiles.find(p => p.color === color && p.id !== req.params.id);
+            if (colorTaken) {
+                const colorName = EPIC_COLORS_SERVER.find(c => c.hex === color)?.name || color;
+                return res.status(400).json({ error: `Color "${colorName}" is already used by profile "${colorTaken.name}"` });
+            }
+            profiles[profileIndex].color = color;
+        }
+
+        if (letters !== undefined) {
+            const lettersTaken = profiles.find(p => p.letters === letters.toUpperCase() && p.id !== req.params.id);
+            if (lettersTaken) {
+                return res.status(400).json({ error: `Letters "${letters.toUpperCase()}" are already used by profile "${lettersTaken.name}"` });
+            }
+            profiles[profileIndex].letters = letters.toUpperCase();
+        }
+
+        await writeJsonFile(PROFILES_FILE, profiles);
+        res.json(profiles[profileIndex]);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
+// DELETE profile
+app.delete('/api/profiles/:id', writeLimiter, async (req, res) => {
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const profileIndex = profiles.findIndex(p => p.id === req.params.id);
+
+        if (profileIndex === -1) {
+            return res.status(404).json({ error: 'Profile not found' });
+        }
+
+        if (profiles.length <= 1) {
+            return res.status(400).json({ error: 'Cannot delete the last profile' });
+        }
+
+        const alias = profiles[profileIndex].alias;
+        profiles.splice(profileIndex, 1);
+        await writeJsonFile(PROFILES_FILE, profiles);
+
+        // Remove profile data directory
+        const profileDir = path.join(DATA_DIR, alias);
+        await fs.rm(profileDir, { recursive: true, force: true });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting profile:', error);
+        res.status(500).json({ error: 'Failed to delete profile' });
+    }
+});
+
+// ===========================================
+// Profile-Scoped API Routes
+// ===========================================
 
 // GET all active tasks
-app.get('/api/tasks', async (req, res) => {
+app.get('/api/:profile/tasks', resolveProfile, async (req, res) => {
     try {
-        const tasks = await readJsonFile(TASKS_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
         res.json(tasks);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read tasks' });
@@ -345,7 +676,7 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 // POST create new task
-app.post('/api/tasks', writeLimiter, async (req, res) => {
+app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) => {
     try {
         // Validate input
         const validation = validateTaskInput(req.body, { requireTitle: true });
@@ -353,7 +684,7 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
 
-        const tasks = await readJsonFile(TASKS_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const { title, description = '', priority = false } = req.body;
 
         // Get max position in todo column
@@ -379,7 +710,7 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
         };
 
         tasks.push(newTask);
-        await writeJsonFile(TASKS_FILE, tasks);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
         res.status(201).json(newTask);
     } catch (error) {
         res.status(500).json({ error: 'Failed to create task' });
@@ -387,7 +718,7 @@ app.post('/api/tasks', writeLimiter, async (req, res) => {
 });
 
 // PUT update task
-app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
+app.put('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
         // Validate input (title not required for updates)
         const validation = validateTaskInput(req.body, { requireTitle: false });
@@ -395,7 +726,7 @@ app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
 
-        const tasks = await readJsonFile(TASKS_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
 
         if (taskIndex === -1) {
@@ -430,7 +761,7 @@ app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
             tasks[taskIndex].category = newCategory;
         }
 
-        await writeJsonFile(TASKS_FILE, tasks);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
         res.json(tasks[taskIndex]);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update task' });
@@ -438,9 +769,9 @@ app.put('/api/tasks/:id', writeLimiter, async (req, res) => {
 });
 
 // DELETE task
-app.delete('/api/tasks/:id', writeLimiter, async (req, res) => {
+app.delete('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const tasks = await readJsonFile(TASKS_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
 
         if (taskIndex === -1) {
@@ -448,7 +779,7 @@ app.delete('/api/tasks/:id', writeLimiter, async (req, res) => {
         }
 
         tasks.splice(taskIndex, 1);
-        await writeJsonFile(TASKS_FILE, tasks);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete task' });
@@ -456,7 +787,7 @@ app.delete('/api/tasks/:id', writeLimiter, async (req, res) => {
 });
 
 // POST move task between columns or reorder
-app.post('/api/tasks/:id/move', writeLimiter, async (req, res) => {
+app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (req, res) => {
     try {
         // Validate input
         const validation = validateMoveInput(req.body);
@@ -464,7 +795,7 @@ app.post('/api/tasks/:id/move', writeLimiter, async (req, res) => {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
 
-        const tasks = await readJsonFile(TASKS_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const taskIndex = tasks.findIndex(t => t.id === req.params.id);
 
         if (taskIndex === -1) {
@@ -512,7 +843,7 @@ app.post('/api/tasks/:id/move', writeLimiter, async (req, res) => {
             }
         }
 
-        await writeJsonFile(TASKS_FILE, tasks);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
         res.json(task);
     } catch (error) {
         res.status(500).json({ error: 'Failed to move task' });
@@ -520,11 +851,11 @@ app.post('/api/tasks/:id/move', writeLimiter, async (req, res) => {
 });
 
 // POST generate report (snapshot only, no archiving)
-app.post('/api/reports/generate', writeLimiter, async (req, res) => {
+app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const tasks = await readJsonFile(TASKS_FILE, []);
-        const reports = await readJsonFile(REPORTS_FILE, []);
-        const notes = await readJsonFile(NOTES_FILE, { content: '' });
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const reports = await readJsonFile(req.profileFiles.reports, []);
+        const notes = await readJsonFile(req.profileFiles.notes, { content: '' });
 
         const doneTasks = tasks.filter(t => t.status === 'done');
         const inProgressTasks = tasks.filter(t => t.status === 'inprogress');
@@ -553,7 +884,7 @@ app.post('/api/reports/generate', writeLimiter, async (req, res) => {
         };
 
         reports.push(report);
-        await writeJsonFile(REPORTS_FILE, reports);
+        await writeJsonFile(req.profileFiles.reports, reports);
 
         res.json(report);
     } catch (error) {
@@ -563,10 +894,10 @@ app.post('/api/reports/generate', writeLimiter, async (req, res) => {
 });
 
 // POST archive completed tasks (no report generation)
-app.post('/api/tasks/archive', writeLimiter, async (req, res) => {
+app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const tasks = await readJsonFile(TASKS_FILE, []);
-        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
 
         const doneTasks = tasks.filter(t => t.status === 'done');
 
@@ -581,8 +912,8 @@ app.post('/api/tasks/archive', writeLimiter, async (req, res) => {
 
         const activeTasks = tasks.filter(t => t.status !== 'done');
 
-        await writeJsonFile(TASKS_FILE, activeTasks);
-        await writeJsonFile(ARCHIVED_FILE, archivedTasks);
+        await writeJsonFile(req.profileFiles.tasks, activeTasks);
+        await writeJsonFile(req.profileFiles.archived, archivedTasks);
 
         res.json({ success: true, archivedCount: doneTasks.length });
     } catch (error) {
@@ -592,9 +923,9 @@ app.post('/api/tasks/archive', writeLimiter, async (req, res) => {
 });
 
 // GET all archived tasks
-app.get('/api/archived', async (req, res) => {
+app.get('/api/:profile/archived', resolveProfile, async (req, res) => {
     try {
-        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
+        const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
         res.json(archivedTasks);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read archived tasks' });
@@ -602,9 +933,9 @@ app.get('/api/archived', async (req, res) => {
 });
 
 // GET all reports
-app.get('/api/reports', async (req, res) => {
+app.get('/api/:profile/reports', resolveProfile, async (req, res) => {
     try {
-        const reports = await readJsonFile(REPORTS_FILE, []);
+        const reports = await readJsonFile(req.profileFiles.reports, []);
         res.json(reports);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read reports' });
@@ -612,9 +943,9 @@ app.get('/api/reports', async (req, res) => {
 });
 
 // GET specific report
-app.get('/api/reports/:id', async (req, res) => {
+app.get('/api/:profile/reports/:id', resolveProfile, async (req, res) => {
     try {
-        const reports = await readJsonFile(REPORTS_FILE, []);
+        const reports = await readJsonFile(req.profileFiles.reports, []);
         const report = reports.find(r => r.id === req.params.id);
 
         if (!report) {
@@ -628,7 +959,7 @@ app.get('/api/reports/:id', async (req, res) => {
 });
 
 // PUT update report title
-app.put('/api/reports/:id', writeLimiter, async (req, res) => {
+app.put('/api/:profile/reports/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
         const { title } = req.body;
 
@@ -642,7 +973,7 @@ app.put('/api/reports/:id', writeLimiter, async (req, res) => {
             }
         }
 
-        const reports = await readJsonFile(REPORTS_FILE, []);
+        const reports = await readJsonFile(req.profileFiles.reports, []);
         const reportIndex = reports.findIndex(r => r.id === req.params.id);
 
         if (reportIndex === -1) {
@@ -653,7 +984,7 @@ app.put('/api/reports/:id', writeLimiter, async (req, res) => {
             reports[reportIndex].title = title.trim();
         }
 
-        await writeJsonFile(REPORTS_FILE, reports);
+        await writeJsonFile(req.profileFiles.reports, reports);
         res.json(reports[reportIndex]);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update report' });
@@ -661,9 +992,9 @@ app.put('/api/reports/:id', writeLimiter, async (req, res) => {
 });
 
 // DELETE report
-app.delete('/api/reports/:id', writeLimiter, async (req, res) => {
+app.delete('/api/:profile/reports/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const reports = await readJsonFile(REPORTS_FILE, []);
+        const reports = await readJsonFile(req.profileFiles.reports, []);
         const reportIndex = reports.findIndex(r => r.id === req.params.id);
 
         if (reportIndex === -1) {
@@ -671,7 +1002,7 @@ app.delete('/api/reports/:id', writeLimiter, async (req, res) => {
         }
 
         reports.splice(reportIndex, 1);
-        await writeJsonFile(REPORTS_FILE, reports);
+        await writeJsonFile(req.profileFiles.reports, reports);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete report' });
@@ -679,9 +1010,9 @@ app.delete('/api/reports/:id', writeLimiter, async (req, res) => {
 });
 
 // GET notes
-app.get('/api/notes', async (req, res) => {
+app.get('/api/:profile/notes', resolveProfile, async (req, res) => {
     try {
-        const notes = await readJsonFile(NOTES_FILE, { content: '' });
+        const notes = await readJsonFile(req.profileFiles.notes, { content: '' });
         res.json(notes);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read notes' });
@@ -689,7 +1020,7 @@ app.get('/api/notes', async (req, res) => {
 });
 
 // POST save notes
-app.post('/api/notes', writeLimiter, async (req, res) => {
+app.post('/api/:profile/notes', resolveProfile, writeLimiter, async (req, res) => {
     try {
         const { content } = req.body;
 
@@ -699,7 +1030,7 @@ app.post('/api/notes', writeLimiter, async (req, res) => {
         }
 
         const notes = { content: typeof content === 'string' ? content : '' };
-        await writeJsonFile(NOTES_FILE, notes);
+        await writeJsonFile(req.profileFiles.notes, notes);
         res.json(notes);
     } catch (error) {
         res.status(500).json({ error: 'Failed to save notes' });
@@ -711,9 +1042,9 @@ app.post('/api/notes', writeLimiter, async (req, res) => {
 // ===========================================
 
 // GET all epics
-app.get('/api/epics', async (req, res) => {
+app.get('/api/:profile/epics', resolveProfile, async (req, res) => {
     try {
-        const epics = await readJsonFile(EPICS_FILE, []);
+        const epics = await readJsonFile(req.profileFiles.epics, []);
         res.json(epics);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read epics' });
@@ -721,9 +1052,9 @@ app.get('/api/epics', async (req, res) => {
 });
 
 // POST create new epic
-app.post('/api/epics', writeLimiter, async (req, res) => {
+app.post('/api/:profile/epics', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const epics = await readJsonFile(EPICS_FILE, []);
+        const epics = await readJsonFile(req.profileFiles.epics, []);
 
         if (epics.length >= MAX_EPICS) {
             return res.status(400).json({ error: `Maximum of ${MAX_EPICS} epics allowed` });
@@ -765,7 +1096,7 @@ app.post('/api/epics', writeLimiter, async (req, res) => {
         };
 
         epics.push(newEpic);
-        await writeJsonFile(EPICS_FILE, epics);
+        await writeJsonFile(req.profileFiles.epics, epics);
         res.status(201).json(newEpic);
     } catch (error) {
         res.status(500).json({ error: 'Failed to create epic' });
@@ -773,9 +1104,9 @@ app.post('/api/epics', writeLimiter, async (req, res) => {
 });
 
 // PUT update epic
-app.put('/api/epics/:id', writeLimiter, async (req, res) => {
+app.put('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const epics = await readJsonFile(EPICS_FILE, []);
+        const epics = await readJsonFile(req.profileFiles.epics, []);
         const epicIndex = epics.findIndex(e => e.id === req.params.id);
 
         if (epicIndex === -1) {
@@ -811,7 +1142,7 @@ app.put('/api/epics/:id', writeLimiter, async (req, res) => {
             epics[epicIndex].color = color;
         }
 
-        await writeJsonFile(EPICS_FILE, epics);
+        await writeJsonFile(req.profileFiles.epics, epics);
         res.json(epics[epicIndex]);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update epic' });
@@ -819,9 +1150,9 @@ app.put('/api/epics/:id', writeLimiter, async (req, res) => {
 });
 
 // DELETE epic (removes epicId from all tasks that have it)
-app.delete('/api/epics/:id', writeLimiter, async (req, res) => {
+app.delete('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const epics = await readJsonFile(EPICS_FILE, []);
+        const epics = await readJsonFile(req.profileFiles.epics, []);
         const epicIndex = epics.findIndex(e => e.id === req.params.id);
 
         if (epicIndex === -1) {
@@ -830,10 +1161,10 @@ app.delete('/api/epics/:id', writeLimiter, async (req, res) => {
 
         const epicId = req.params.id;
         epics.splice(epicIndex, 1);
-        await writeJsonFile(EPICS_FILE, epics);
+        await writeJsonFile(req.profileFiles.epics, epics);
 
         // Remove epicId from all tasks that reference this epic
-        const tasks = await readJsonFile(TASKS_FILE, []);
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
         let tasksUpdated = false;
         for (const task of tasks) {
             if (task.epicId === epicId) {
@@ -842,11 +1173,11 @@ app.delete('/api/epics/:id', writeLimiter, async (req, res) => {
             }
         }
         if (tasksUpdated) {
-            await writeJsonFile(TASKS_FILE, tasks);
+            await writeJsonFile(req.profileFiles.tasks, tasks);
         }
 
         // Also clean archived tasks
-        const archivedTasks = await readJsonFile(ARCHIVED_FILE, []);
+        const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
         let archivedUpdated = false;
         for (const task of archivedTasks) {
             if (task.epicId === epicId) {
@@ -855,7 +1186,7 @@ app.delete('/api/epics/:id', writeLimiter, async (req, res) => {
             }
         }
         if (archivedUpdated) {
-            await writeJsonFile(ARCHIVED_FILE, archivedTasks);
+            await writeJsonFile(req.profileFiles.archived, archivedTasks);
         }
 
         res.json({ success: true });
@@ -864,7 +1195,55 @@ app.delete('/api/epics/:id', writeLimiter, async (req, res) => {
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Task Tracker server running at http://localhost:${PORT}`);
+// ===========================================
+// SPA URL Routing
+// ===========================================
+
+// Root redirect: go to first profile
+app.get('/', async (req, res) => {
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        if (profiles.length > 0) {
+            res.redirect('/' + profiles[0].alias);
+        } else {
+            res.redirect('/user1');
+        }
+    } catch (error) {
+        res.status(500).send('Server error');
+    }
 });
+
+// Profile URL: serve index.html if profile exists, else redirect to first profile
+app.get('/:alias', async (req, res) => {
+    const alias = req.params.alias;
+
+    // Skip non-profile routes (static files, etc.)
+    if (alias.includes('.')) {
+        return res.status(404).send('Not found');
+    }
+
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const profile = profiles.find(p => p.alias === alias);
+
+        if (profile) {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        } else if (profiles.length > 0) {
+            res.redirect('/' + profiles[0].alias);
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        res.status(500).send('Server error');
+    }
+});
+
+// Start server
+async function startServer() {
+    await ensureDefaultProfile();
+    app.listen(PORT, () => {
+        console.log(`Task Tracker server running at http://localhost:${PORT}`);
+    });
+}
+
+startServer();

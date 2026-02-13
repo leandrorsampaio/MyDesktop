@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.19.0  | 2026-02-13 | Feature: Profiles — support multiple profiles (e.g., Work vs Personal) with separate data folders; profile selector in header; profile management modal (CRUD) via hamburger menu; profile-scoped API routes (`/api/:profile/...`); SPA URL routing (`/:alias`); auto-migration of existing data to "Work" profile; profile-scoped localStorage keys for checklist; max 20 profiles with unique color, letters, and alias; `profiles.json` global data file |
 | 2.18.0  | 2026-02-12 | Feature: Epic Tickets — tasks can be assigned to epics; epic bar on task cards with color; epic management modal (CRUD) via hamburger menu; epic filter dropdown in toolbar (AND logic with existing filters); epic name in reports beside task ID; max 20 epics with 20 unique rainbow colors; epic alias (camelCase) as CSS class on cards; `epics.json` data file; API endpoints for CRUD epics |
 | 2.17.0  | 2026-02-08 | Security: Added server-side input validation for all API endpoints; validates title/description lengths, category values (1-6), status values, position integers; reusable validation helpers with clear error messages |
 | 2.16.0  | 2026-02-08 | Reliability: Added simple lock (`isMoving` flag) to `moveTask` function to prevent race conditions when user drags multiple cards quickly; uses `finally` block to ensure lock is always released |
@@ -54,7 +55,7 @@ A local web-based task management tool that serves as a browser homepage. It fea
 - **Frontend:** HTML5, Vanilla CSS, Vanilla JavaScript (single-page, no framework)
 - **Backend:** Node.js + Express
 - **Server Port:** 3001 (port 3000 is used by another application)
-- **Data Storage:** JSON files in `./data/` directory
+- **Data Storage:** JSON files in `./data/{profileAlias}/` directories (profile-scoped); `./data/profiles.json` (global)
   - `tasks.json` — Active tasks (all statuses except archived)
   - `archived-tasks.json` — Archived tasks (append-only)
   - `reports.json` — Generated report snapshots
@@ -80,7 +81,15 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 ├── projectSpecification.md    # This file
 ├── package.json
 ├── data/
-│   └── ... (data files)
+│   ├── profiles.json          # Global profiles list
+│   ├── work/                  # Profile data directory (one per profile)
+│   │   ├── tasks.json
+│   │   ├── archived-tasks.json
+│   │   ├── reports.json
+│   │   ├── notes.json
+│   │   └── epics.json
+│   └── personal/              # Another profile directory (example)
+│       └── ... (same structure)
 ├── tests/                     # Vanilla Node.js tests (node:test)
 │   ├── unit/
 │   │   ├── utils.test.js      # Tests for utility functions
@@ -589,25 +598,40 @@ Before submitting code, verify:
 
 ## API Endpoints
 
+### Profile Management (global, not profile-scoped)
 ```
-GET    /api/tasks               - Retrieve all active tasks
-POST   /api/tasks               - Create new task (body: { title, description, priority, category })
-PUT    /api/tasks/:id           - Update existing task (body: any subset of { title, description, priority, category })
-DELETE /api/tasks/:id           - Delete a task permanently
-POST   /api/tasks/:id/move      - Move task between columns or reorder (body: { newStatus, newPosition })
-POST   /api/tasks/archive       - Archive completed tasks only (moves done → archived-tasks.json, no report)
-POST   /api/reports/generate    - Generate report snapshot of all columns + notes (no archiving, tasks stay in place)
-GET    /api/archived            - Get all archived/completed tasks
-GET    /api/reports             - Get list of all reports
-GET    /api/reports/:id         - Get specific report by ID
-PUT    /api/reports/:id         - Update report title (body: { title })
-DELETE /api/reports/:id         - Delete a report permanently
-GET    /api/notes               - Get notes object ({ content: string })
-POST   /api/notes               - Save notes (body: { content })
-GET    /api/epics               - Get all epics
-POST   /api/epics               - Create new epic (body: { name, color })
-PUT    /api/epics/:id           - Update epic (body: { name?, color? })
-DELETE /api/epics/:id           - Delete epic (also removes epicId from all tasks)
+GET    /api/profiles             - Get all profiles
+POST   /api/profiles             - Create new profile (body: { name, color, letters })
+PUT    /api/profiles/:id         - Update profile (body: { name?, color?, letters? })
+DELETE /api/profiles/:id         - Delete profile (removes data directory)
+```
+
+### Profile-Scoped Data (`:profile` = profile alias)
+```
+GET    /api/:profile/tasks               - Retrieve all active tasks
+POST   /api/:profile/tasks               - Create new task (body: { title, description, priority, category })
+PUT    /api/:profile/tasks/:id           - Update existing task
+DELETE /api/:profile/tasks/:id           - Delete a task permanently
+POST   /api/:profile/tasks/:id/move      - Move task between columns or reorder (body: { newStatus, newPosition })
+POST   /api/:profile/tasks/archive       - Archive completed tasks
+POST   /api/:profile/reports/generate    - Generate report snapshot
+GET    /api/:profile/archived            - Get all archived/completed tasks
+GET    /api/:profile/reports             - Get list of all reports
+GET    /api/:profile/reports/:id         - Get specific report by ID
+PUT    /api/:profile/reports/:id         - Update report title (body: { title })
+DELETE /api/:profile/reports/:id         - Delete a report permanently
+GET    /api/:profile/notes               - Get notes object ({ content: string })
+POST   /api/:profile/notes               - Save notes (body: { content })
+GET    /api/:profile/epics               - Get all epics
+POST   /api/:profile/epics               - Create new epic (body: { name, color })
+PUT    /api/:profile/epics/:id           - Update epic (body: { name?, color? })
+DELETE /api/:profile/epics/:id           - Delete epic (also removes epicId from all tasks)
+```
+
+### SPA URL Routing
+```
+GET    /                         - Redirect to first profile's URL
+GET    /:alias                   - Serve index.html if profile exists, else redirect
 ```
 
 **Key design decision (v1.7.0):** Report generation and archiving are **independent operations**. You can generate a report without archiving, and archive without generating a report. The old combined `/api/archive` endpoint was removed.
@@ -650,6 +674,26 @@ DELETE /api/epics/:id           - Delete epic (also removes epicId from all task
 - Alias is automatically computed as camelCase of the name
 - When an epic is deleted, all tasks referencing it lose their `epicId` (set to null)
 - Epic changes do NOT create log entries on tasks
+
+### Profile Object
+
+```javascript
+{
+  id: string,            // Unique ID (timestamp-based)
+  name: string,          // Profile display name (required, max 200 chars)
+  color: string,         // Hex color from predefined 20-color palette (unique per profile)
+  letters: string,       // 1-3 uppercase letters (unique per profile)
+  alias: string          // Auto-generated camelCase alias (from name, used as folder name + URL)
+}
+```
+
+**Profile constraints:**
+- Maximum 20 profiles
+- Each profile must have a unique color, letters, and alias
+- Alias is automatically computed as camelCase of the name
+- Cannot delete the last profile
+- Folder structure: `data/{alias}/` contains `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`
+- On first run, existing data is migrated to a "Work" profile; fresh installs get a "User1" profile
 
 ### Log Entry
 
@@ -721,7 +765,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Welcome, Leandro                              [Hide] [≡]  │
+│ Welcome, Leandro                      [Hide] (WK) Work [≡] │
 │ January 31, 2026 • Friday • Week 5                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  Left Sidebar (560px)  │     Main Kanban Board (remaining)     │
@@ -737,10 +781,10 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 │  ┌──────────────────┐  │  Hamburger Menu [≡]:                  │
 │  │ Notes   Saved at │  │   - View Reports                      │
 │  │         2:30 PM  │  │   - All Completed Tasks               │
-│  │ ┌──────────────┐ │  │   - Edit Daily Checklist              │
-│  │ │              │ │  │   - Crisis Mode                       │
-│  │ │ Free-form    │ │  │                                       │
-│  │ │ textarea...  │ │  │                                       │
+│  │ ┌──────────────┐ │  │   - Manage Epics                      │
+│  │ │              │ │  │   - Manage Profiles                   │
+│  │ │ Free-form    │ │  │   - Edit Daily Checklist              │
+│  │ │ textarea...  │ │  │   - Crisis Mode                       │
 │  │ └──────────────┘ │  │                                       │
 │  └──────────────────┘  │                                       │
 └─────────────────────────────────────────────────────────────────┘
@@ -974,6 +1018,27 @@ Each column has 20 gradient levels defined as CSS custom properties:
 
 **Gradient assignment:** `getTaskGradient(status, position, totalInColumn)` — if column has ≤20 tasks, gradient index = position. If >20, distributes evenly across the 20 levels.
 
+### 17. Profiles
+
+Multiple profiles allow separating data (e.g., Work vs Personal). Each profile has its own folder with independent tasks, epics, notes, reports, and archived tasks.
+
+**Data model:** See Profile Object in Data Model section.
+
+**UI components:**
+- **Profile selector** (header, between toolbar and hamburger menu): Circle button with profile color/letters + profile name. Click opens dropdown to switch profiles (navigates to `/{alias}` URL).
+- **Manage Profiles** (hamburger menu item): Opens modal with profile CRUD — name input, letters input (1-3 uppercase), color select, alias preview. Mirrors the Manage Epics modal pattern.
+- **Profile delete confirmation modal**: Warning that all data will be permanently deleted.
+
+**URL routing:**
+- `/` redirects to first profile's alias
+- `/{alias}` serves `index.html` if profile exists
+- API calls use `/api/{alias}/...` for profile-scoped data
+- `body` element gets CSS class `profile-{alias}`
+
+**Migration:** On first server start, existing data files in `data/` are moved to `data/work/` and a "Work" profile is created. Fresh installs get a "User1" profile.
+
+**localStorage scoping:** Checklist config and state are prefixed with `{alias}:` (e.g., `work:checklistConfig`).
+
 ---
 
 ## Design System
@@ -1059,6 +1124,11 @@ Each column has 20 gradient levels defined as CSS custom properties:
 | `populateTaskEpicSelect()`  | Populates epic dropdown in task add/edit modal         |
 | `renderEpicFilter()`        | Renders epic filter dropdown with epics that have tasks |
 | `handleEpicFilterChange()`  | Handles epic filter selection change                    |
+| `openProfilesModal()`       | Opens profile management modal with CRUD interface     |
+| `confirmDeleteProfile()`    | Confirms and executes pending profile deletion         |
+| `renderProfileSelector()`   | Renders profile button and name in header              |
+| `renderProfileDropdown()`   | Renders profile switcher dropdown                      |
+| `getProfileAliasFromUrl()`  | Extracts profile alias from URL pathname               |
 
 ### Key Constants in `app.js`
 
@@ -1067,10 +1137,19 @@ const STATUS_COLUMNS = { 'todo': 'kanban-column[data-status="todo"]', 'wait': 'k
 const CATEGORIES = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
 ```
 
+### Key Constants in `constants.js`
+
+```javascript
+const MAX_PROFILES = 20;
+const PROFILE_LETTERS_MAX = 3;
+```
+
 ### Key Constants in `server.js`
 
 ```javascript
 const CATEGORY_LABELS = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
+const MAX_PROFILES = 20;  // Source of truth: /public/js/constants.js
+const PROFILE_LETTERS_REGEX = /^[A-Z]{1,3}$/;
 ```
 
 ### Category Change Logging (server.js)

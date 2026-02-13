@@ -58,6 +58,12 @@ export const STATUS_COLUMNS = {
 /** Maximum number of epics allowed */
 export const MAX_EPICS = 20;
 
+/** Maximum number of profiles allowed */
+export const MAX_PROFILES = 20;
+
+/** Maximum length for profile letters */
+export const PROFILE_LETTERS_MAX = 3;
+
 /**
  * Pre-defined epic colors (20 rainbow-inspired colors).
  * Each entry has a name and hex value.

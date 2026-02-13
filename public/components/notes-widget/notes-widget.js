@@ -34,9 +34,15 @@ class NotesWidget extends HTMLElement {
         this.fetchNotes();
     }
 
+    getApiBase() {
+        const segments = window.location.pathname.split('/').filter(Boolean);
+        const alias = segments[0] || 'default';
+        return '/api/' + alias;
+    }
+
     async fetchNotes() {
         try {
-            const response = await fetch('/api/notes');
+            const response = await fetch(this.getApiBase() + '/notes');
             const data = await response.json();
             if (data.content !== undefined) {
                 this.notes = data;
@@ -52,7 +58,7 @@ class NotesWidget extends HTMLElement {
     async saveNotes() {
         try {
             this.showNotesSaveStatus('saving');
-            await fetch('/api/notes', {
+            await fetch(this.getApiBase() + '/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.notes)

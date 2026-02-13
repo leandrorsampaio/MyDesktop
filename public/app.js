@@ -10,7 +10,7 @@
  */
 
 import { STATUS_COLUMNS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD } from './js/constants.js';
-import { getWeekNumber } from './js/utils.js';
+import { getWeekNumber, escapeHtml } from './js/utils.js';
 import {
     tasks,
     setTasks,
@@ -23,9 +23,13 @@ import {
     restoreTasksFromSnapshot,
     findTask,
     epics,
-    setEpics
+    setEpics,
+    profiles,
+    setProfiles,
+    activeProfile,
+    setActiveProfile
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi, fetchProfilesApi, setApiBase } from './js/api.js';
 import {
     renderCategoryFilters,
     toggleCategoryFilter,
@@ -47,7 +51,9 @@ import {
     addChecklistItem,
     saveChecklist,
     openEpicsModal,
-    confirmDeleteEpic
+    confirmDeleteEpic,
+    openProfilesModal,
+    confirmDeleteProfile
 } from './js/modals.js';
 
 (function() {
@@ -119,6 +125,29 @@ import {
         epicColorError: document.querySelector('.js-epicColorError'),
         epicsList: document.querySelector('.js-epicsList'),
 
+        // Profile Selector
+        profileSelector: document.querySelector('.js-profileSelector'),
+        profileBtn: document.querySelector('.js-profileBtn'),
+        profileName: document.querySelector('.js-profileName'),
+        profileDropdown: document.querySelector('.js-profileDropdown'),
+
+        // Profile Management
+        manageProfilesBtn: document.querySelector('.js-manageProfilesBtn'),
+        profilesModal: document.querySelector('.js-profilesModal'),
+        profileNameInput: document.querySelector('.js-profileNameInput'),
+        profileLettersInput: document.querySelector('.js-profileLettersInput'),
+        profileColorSelect: document.querySelector('.js-profileColorSelect'),
+        profileAddBtn: document.querySelector('.js-profileAddBtn'),
+        profileAliasPreview: document.querySelector('.js-profileAliasPreview'),
+        profileError: document.querySelector('.js-profileError'),
+        profilesList: document.querySelector('.js-profilesList'),
+
+        // Profile Delete Confirmation
+        profileConfirmModal: document.querySelector('.js-profileConfirmModal'),
+        profileConfirmMessage: document.querySelector('.js-profileConfirmMessage'),
+        profileConfirmCancel: document.querySelector('.js-profileConfirmCancel'),
+        profileConfirmDelete: document.querySelector('.js-profileConfirmDelete'),
+
         // Crisis Mode
         crisisModeBtn: document.querySelector('.js-crisisModeBtn'),
         headerToolbar: document.querySelector('.toolbar'),
@@ -183,6 +212,70 @@ import {
     function closeMenu() {
         elements.menuBtn.classList.remove('--active');
         elements.dropdownMenu.classList.remove('--active');
+    }
+
+    // ==========================================
+    // Profile Selector
+    // ==========================================
+
+    /**
+     * Gets the profile alias from the current URL pathname.
+     * @returns {string} The alias portion of the path (e.g., 'work' from '/work')
+     */
+    function getProfileAliasFromUrl() {
+        const path = window.location.pathname;
+        // Remove leading slash and get first segment
+        const segments = path.split('/').filter(Boolean);
+        return segments[0] || '';
+    }
+
+    /**
+     * Renders the profile selector button and name.
+     */
+    function renderProfileSelector() {
+        if (!activeProfile) return;
+        elements.profileBtn.textContent = activeProfile.letters;
+        elements.profileBtn.style.backgroundColor = activeProfile.color;
+        elements.profileName.textContent = activeProfile.name;
+    }
+
+    /**
+     * Renders the profile dropdown with all available profiles.
+     */
+    function renderProfileDropdown() {
+        elements.profileDropdown.innerHTML = profiles.map(p => `
+            <button class="profileSelector__dropdownItem ${p.id === activeProfile?.id ? '--active' : ''}"
+                    data-alias="${escapeHtml(p.alias)}">
+                <span class="profileSelector__dropdownIcon" style="background-color: ${p.color};">${escapeHtml(p.letters)}</span>
+                ${escapeHtml(p.name)}
+            </button>
+        `).join('');
+
+        // Add click handlers via event delegation
+        elements.profileDropdown.querySelectorAll('.profileSelector__dropdownItem').forEach(item => {
+            item.addEventListener('click', () => {
+                const alias = item.dataset.alias;
+                if (alias !== activeProfile?.alias) {
+                    window.location.href = '/' + alias;
+                } else {
+                    closeProfileDropdown();
+                }
+            });
+        });
+    }
+
+    /**
+     * Toggles the profile dropdown open/closed.
+     */
+    function toggleProfileDropdown() {
+        elements.profileDropdown.classList.toggle('--active');
+    }
+
+    /**
+     * Closes the profile dropdown.
+     */
+    function closeProfileDropdown() {
+        elements.profileDropdown.classList.remove('--active');
     }
 
     // ==========================================
@@ -456,13 +549,55 @@ import {
             updateTaskInState
         );
 
+        // Profile Selector
+        elements.profileBtn.addEventListener('click', () => {
+            renderProfileDropdown();
+            toggleProfileDropdown();
+        });
+        elements.profileName.addEventListener('click', () => {
+            renderProfileDropdown();
+            toggleProfileDropdown();
+        });
+
+        // Manage Profiles
+        elements.manageProfilesBtn.addEventListener('click', () => {
+            openProfilesModal(elements, closeMenu, async () => {
+                // Re-fetch profiles after changes
+                const fetchedProfiles = await fetchProfilesApi();
+                setProfiles(fetchedProfiles);
+                // Update active profile in case it was renamed
+                const current = fetchedProfiles.find(p => p.id === activeProfile?.id);
+                if (current) {
+                    setActiveProfile(current);
+                    setApiBase(current.alias);
+                    renderProfileSelector();
+                    // If alias changed, navigate to new URL
+                    if (current.alias !== getProfileAliasFromUrl()) {
+                        window.location.href = '/' + current.alias;
+                        return;
+                    }
+                }
+            });
+        });
+
+        // Profile Confirm Delete Modal
+        elements.profileConfirmCancel.addEventListener('click', () => {
+            elements.profileConfirmModal.close();
+        });
+        elements.profileConfirmDelete.addEventListener('click', () => {
+            confirmDeleteProfile(elements);
+        });
+
         // Hamburger Menu
         elements.menuBtn.addEventListener('click', toggleMenu);
 
-        // Close menu when clicking outside
+        // Close menu and profile dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!elements.menuBtn.contains(e.target) && !elements.dropdownMenu.contains(e.target)) {
                 closeMenu();
+            }
+            if (!elements.profileSelector.contains(e.target)) {
+                closeProfileDropdown();
             }
         });
 
@@ -564,10 +699,11 @@ import {
             moveTask(taskId, newStatus, newPosition);
         });
 
-        // Close menu on ESC key
+        // Close menu and profile dropdown on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeMenu();
+                closeProfileDropdown();
             }
         });
     }
@@ -588,6 +724,30 @@ import {
             toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
         });
         initEventListeners();
+
+        // Fetch profiles and determine active profile from URL
+        try {
+            const fetchedProfiles = await fetchProfilesApi();
+            setProfiles(fetchedProfiles);
+
+            const alias = getProfileAliasFromUrl();
+            const matchedProfile = fetchedProfiles.find(p => p.alias === alias);
+
+            if (!matchedProfile) {
+                // No matching profile — redirect to first profile
+                if (fetchedProfiles.length > 0) {
+                    window.location.href = '/' + fetchedProfiles[0].alias;
+                }
+                return;
+            }
+
+            setActiveProfile(matchedProfile);
+            setApiBase(matchedProfile.alias);
+            document.body.classList.add('profile-' + matchedProfile.alias);
+            renderProfileSelector();
+        } catch (error) {
+            console.error('Error fetching profiles:', error);
+        }
 
         // Fetch data (epics first so cards can reference them)
         try {
