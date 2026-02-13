@@ -46,7 +46,7 @@
 
 A local web-based task management tool that serves as a browser homepage. It features a kanban-style board with drag-and-drop functionality to track tasks across different stages of completion, along with note-taking, daily recurring task checklist, task categorization, report generation, and a sidebar privacy mode.
 
-**Single user, local only.** No authentication, no multi-user support. Data stored as JSON files on the local filesystem.
+**Single user, local only.** No authentication. Supports multiple profiles (e.g., Work vs Personal) with separate data. Data stored as JSON files on the local filesystem in per-profile directories.
 
 ---
 
@@ -842,7 +842,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 ### 4. Generate Report (v1.7.0)
 
 - **Trigger:** Click [Report] button in Done column header
-- **API:** `POST /api/reports/generate`
+- **API:** `POST /api/:profile/reports/generate`
 - **Behavior:**
   1. Takes a snapshot of ALL columns (todo, wait, inprogress, done) + notes
   2. Creates a report object with week number and date range
@@ -854,7 +854,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 ### 5. Archive Tasks (v1.7.0)
 
 - **Trigger:** Click [Archive] button in Done column header
-- **API:** `POST /api/tasks/archive`
+- **API:** `POST /api/:profile/tasks/archive`
 - **Behavior:**
   1. Moves all tasks with `status: "done"` to `archived-tasks.json` (sets status to `"archived"`)
   2. Removes them from `tasks.json`
@@ -865,8 +865,8 @@ The category selector uses styled radio buttons that look like selectable pills.
 ### 6. View Reports (via Hamburger Menu)
 
 - Opens a modal with all reports sorted newest first
-- Each report title is inline-editable (blur saves via `PUT /api/reports/:id`)
-- Each report row has a × delete button (right side) — deletes via `DELETE /api/reports/:id` and re-renders list
+- Each report title is inline-editable (blur saves via `PUT /api/:profile/reports/:id`)
+- Each report row has a × delete button (right side) — deletes via `DELETE /api/:profile/reports/:id` and re-renders list
 - Click a report row to view its full content
 - Report view shows: Completed Tasks, In Progress, Waiting/Blocked, To Do, Notes
 - Within each section, tasks are **sub-grouped by category** with a label header
@@ -881,7 +881,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 ### 8. Notes
 
 - Free-form textarea in left sidebar
-- **Debounced auto-save:** 500ms after last keystroke → `POST /api/notes`
+- **Debounced auto-save:** 500ms after last keystroke → `POST /api/:profile/notes`
 - Visual status: "Saving..." then "Saved at [time]"
 - Stored in `notes.json` as `{ content: string }`
 - Included in reports but **never cleared** by report generation
@@ -1000,7 +1000,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunflower (#F1C40F), Lime (#A8D84E), Emerald (#2ECC71), Jade (#00B894), Teal (#1ABC9C), Cyan (#00CEC9), Sky Blue (#54A0FF), Ocean (#2E86DE), Royal Blue (#3742FA), Indigo (#5758BB), Purple (#8E44AD), Orchid (#B24BDB), Magenta (#E84393), Rose (#FD79A8), Slate (#636E72), Charcoal (#2D3436)
 
 **Data:**
-- Stored in `data/epics.json` (array of epic objects)
+- Stored in `data/{profileAlias}/epics.json` (array of epic objects)
 - Tasks reference epics via `epicId` field (string or null)
 - Existing tasks without `epicId` treated as having no epic (no migration needed)
 
@@ -1091,14 +1091,14 @@ Multiple profiles allow separating data (e.g., Work vs Personal). Each profile h
 
 | Function                    | Purpose                                          |
 |-----------------------------|--------------------------------------------------|
-| `fetchTasks()`              | GET /api/tasks → renders all columns             |
-| `createTask(data)`          | POST /api/tasks                                  |
-| `updateTask(id, data)`      | PUT /api/tasks/:id (includes category log logic) |
-| `deleteTask(id)`            | DELETE /api/tasks/:id                            |
-| `deleteReport(id)`          | DELETE /api/reports/:id, re-renders report list   |
-| `moveTask(id, status, pos)` | POST /api/tasks/:id/move                         |
-| `generateReport()`          | POST /api/reports/generate                       |
-| `archiveTasks()`            | POST /api/tasks/archive                          |
+| `fetchTasks()`              | GET /api/:profile/tasks → renders all columns    |
+| `createTask(data)`          | POST /api/:profile/tasks                         |
+| `updateTask(id, data)`      | PUT /api/:profile/tasks/:id (includes category log logic) |
+| `deleteTask(id)`            | DELETE /api/:profile/tasks/:id                   |
+| `deleteReport(id)`          | DELETE /api/:profile/reports/:id, re-renders report list |
+| `moveTask(id, status, pos)` | POST /api/:profile/tasks/:id/move                |
+| `generateReport()`          | POST /api/:profile/reports/generate              |
+| `archiveTasks()`            | POST /api/:profile/tasks/archive                 |
 | `createTaskCard(task, pos, total)` | Creates DOM element for a task card        |
 | `getTaskGradient(status, pos, total)` | Returns CSS gradient variable           |
 | `shouldUseLightText(status, pos, total)` | Returns boolean for text color        |
@@ -1154,7 +1154,7 @@ const PROFILE_LETTERS_REGEX = /^[A-Z]{1,3}$/;
 
 ### Category Change Logging (server.js)
 
-When `PUT /api/tasks/:id` receives a `category` field that differs from the current value, the server automatically appends a log entry:
+When `PUT /api/:profile/tasks/:id` receives a `category` field that differs from the current value, the server automatically appends a log entry:
 ```javascript
 { date: "2026-01-31", action: "Category changed from Development to Planning" }
 ```
@@ -1198,6 +1198,9 @@ All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()
 | `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks | `<modal-dialog size="large">` component |
 | `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      | `<modal-dialog size="small">` component |
 | `.js-epicsModal`       | Manage epics (CRUD)          | Hamburger menu → Manage Epics         | `<modal-dialog size="large">` component |
+| `.js-profilesModal`   | Manage profiles (CRUD)       | Hamburger menu → Manage Profiles      | `<modal-dialog size="large">` component |
+| `.js-profileConfirmModal` | Profile delete confirmation | Delete button inside profiles modal  | `<modal-dialog size="small">` component |
+| `.js-epicConfirmModal` | Epic delete confirmation     | Delete button inside epics modal      | `<modal-dialog size="small">` component |
 | `.js-checklistModal`   | Edit daily checklist config  | Hamburger menu → Edit Daily Checklist | `<modal-dialog size="large">` component |
 
 **Modal implementation:**
