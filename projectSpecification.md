@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.18.0
-**Last Updated:** 2026-02-12
+**Version:** 2.21.0
+**Last Updated:** 2026-02-14
 
 ---
 
@@ -9,6 +9,8 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.21.0  | 2026-02-14 | Feature: SVG Icon Component — new `<svg-icon>` Web Component for centralized SVG icon management; inline Shadow DOM (no external HTML/CSS files); static `ICONS` Map for O(1) lookup; `icon` and `size` attributes; uses `currentColor` for automatic color inheritance; ships with placeholder icons (star, newTab, edit, trash, plus, close) |
+| 2.20.0  | 2026-02-14 | Feature: Default Profile & Open-in-New-Tab — `isDefault` field on Profile Object; default profile toggle (star) in Manage Profiles modal; `GET /api/profiles/default` endpoint; root `/` redirects to default profile; profile dropdown shows "open in new tab" icon per non-active profile; `StartDesktop.command` opens default profile URL; auto-normalization ensures one profile is always default |
 | 2.19.0  | 2026-02-13 | Feature: Profiles — support multiple profiles (e.g., Work vs Personal) with separate data folders; profile selector in header; profile management modal (CRUD) via hamburger menu; profile-scoped API routes (`/api/:profile/...`); SPA URL routing (`/:alias`); auto-migration of existing data to "Work" profile; profile-scoped localStorage keys for checklist; max 20 profiles with unique color, letters, and alias; `profiles.json` global data file |
 | 2.18.0  | 2026-02-12 | Feature: Epic Tickets — tasks can be assigned to epics; epic bar on task cards with color; epic management modal (CRUD) via hamburger menu; epic filter dropdown in toolbar (AND logic with existing filters); epic name in reports beside task ID; max 20 epics with 20 unique rainbow colors; epic alias (camelCase) as CSS class on cards; `epics.json` data file; API endpoints for CRUD epics |
 | 2.17.0  | 2026-02-08 | Security: Added server-side input validation for all API endpoints; validates title/description lengths, category values (1-6), status values, position integers; reusable validation helpers with clear error messages |
@@ -78,6 +80,7 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 ```
 /
 ├── server.js                  # Express backend (API + static serving)
+├── StartDesktop.command       # macOS launcher — starts server and opens default profile in browser
 ├── projectSpecification.md    # This file
 ├── package.json
 ├── data/
@@ -137,6 +140,8 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
         │   ├── kanban-column.js
         │   ├── kanban-column.html
         │   └── kanban-column.css
+        ├── svg-icon/
+        │   └── svg-icon.js           # Inline component (no .html/.css files)
         └── toast-notification/
             ├── toast-notification.js
             ├── toast-notification.html
@@ -147,6 +152,7 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 -   **Structure:** Each component resides in its own directory (e.g., `public/components/button/`).
 -   **Encapsulation:** Components use the **Shadow DOM** for true HTML and CSS encapsulation.
 -   **Loading:** The component's `.js` file is its entry point. It uses the `fetch()` API at runtime to load its own `.html` and `.css` files as text. It then injects this content into its Shadow DOM.
+-   **Inline components:** Simple components (e.g., `svg-icon`) with minimal markup can define HTML/CSS inline in the JS file instead of using separate `.html`/`.css` files. This avoids extra HTTP requests for trivially small templates.
 
 **Shared Modules:**
 -   **`/public/js/constants.js`:** Single source of truth for shared constants:
@@ -363,9 +369,9 @@ export function escapeHtml(text) { ... }
 ### 8. Component Patterns
 
 **Every new component should:**
-1. Reside in `/public/components/[name]/` with `.js`, `.html`, `.css` files
+1. Reside in `/public/components/[name]/` with `.js`, `.html`, `.css` files (or `.js` only for inline components)
 2. Use Shadow DOM for encapsulation
-3. Cache templates at class level to avoid repeated fetches (see Performance section)
+3. Cache templates at class level to avoid repeated fetches (see Performance section). Inline components (e.g., `svg-icon`) with trivially small templates can skip external files and define HTML/CSS directly in the JS file.
 4. Clean up event listeners and timers in `disconnectedCallback()`
 
 **Template caching pattern:**
@@ -567,6 +573,7 @@ const VALIDATION = {
 | `epic.name` | Required, string, max 200 chars |
 | `epic.color` | Required, must be one of 20 predefined hex values |
 | `task.epicId` | Optional, string (epic ID) or null |
+| `profile.isDefault` | Optional, boolean (only `true` triggers toggle behavior) |
 
 **Error responses:**
 ```javascript
@@ -600,10 +607,11 @@ Before submitting code, verify:
 
 ### Profile Management (global, not profile-scoped)
 ```
-GET    /api/profiles             - Get all profiles
-POST   /api/profiles             - Create new profile (body: { name, color, letters })
-PUT    /api/profiles/:id         - Update profile (body: { name?, color?, letters? })
-DELETE /api/profiles/:id         - Delete profile (removes data directory)
+GET    /api/profiles             - Get all profiles (normalizes isDefault on read)
+GET    /api/profiles/default     - Get the default profile
+POST   /api/profiles             - Create new profile (body: { name, color, letters }) — isDefault: false
+PUT    /api/profiles/:id         - Update profile (body: { name?, color?, letters?, isDefault? }) — setting isDefault: true unsets all others
+DELETE /api/profiles/:id         - Delete profile (removes data directory; if default, first remaining becomes default)
 ```
 
 ### Profile-Scoped Data (`:profile` = profile alias)
@@ -630,7 +638,7 @@ DELETE /api/:profile/epics/:id           - Delete epic (also removes epicId from
 
 ### SPA URL Routing
 ```
-GET    /                         - Redirect to first profile's URL
+GET    /                         - Redirect to default profile's URL (fallback: first profile)
 GET    /:alias                   - Serve index.html if profile exists, else redirect
 ```
 
@@ -683,7 +691,8 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
   name: string,          // Profile display name (required, max 200 chars)
   color: string,         // Hex color from predefined 20-color palette (unique per profile)
   letters: string,       // 1-3 uppercase letters (unique per profile)
-  alias: string          // Auto-generated camelCase alias (from name, used as folder name + URL)
+  alias: string,         // Auto-generated camelCase alias (from name, used as folder name + URL)
+  isDefault: boolean     // Whether this is the default profile (exactly one must be true)
 }
 ```
 
@@ -692,8 +701,13 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
 - Each profile must have a unique color, letters, and alias
 - Alias is automatically computed as camelCase of the name
 - Cannot delete the last profile
+- Exactly one profile must have `isDefault: true` at all times
+  - Setting `isDefault: true` on one profile automatically sets all others to `false`
+  - New profiles are created with `isDefault: false`
+  - If no profile has `isDefault: true` (legacy data), the first profile is normalized to default on read
+  - Deleting the default profile transfers default to the first remaining profile
 - Folder structure: `data/{alias}/` contains `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`
-- On first run, existing data is migrated to a "Work" profile; fresh installs get a "User1" profile
+- On first run, existing data is migrated to a "Work" profile; fresh installs get a "User1" profile (both with `isDefault: true`)
 
 ### Log Entry
 
@@ -1004,7 +1018,35 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 - Tasks reference epics via `epicId` field (string or null)
 - Existing tasks without `epicId` treated as having no epic (no migration needed)
 
-### 16. Color System
+### 16. SVG Icon Component (v2.21.0)
+
+**Overview:** Centralized SVG icon management via a `<svg-icon>` Web Component. All SVG markup is stored in a static `ICONS` Map inside the component's JS file — no external HTML/CSS files needed.
+
+**Usage:**
+```html
+<svg-icon icon="star"></svg-icon>
+<svg-icon icon="newTab" size="16"></svg-icon>
+```
+
+**Attributes:**
+- `icon` — Icon name (key in the `ICONS` Map). Required.
+- `size` — Icon size in px (default: 24). Sets both width and height.
+
+**Design:**
+- All SVGs use `fill="currentColor"` or `stroke="currentColor"` so they inherit the parent element's text color automatically
+- Shadow DOM encapsulation — no style leakage
+- `observedAttributes` for `icon` and `size` — reactive re-rendering on attribute change
+- Single JS file (`svg-icon.js`) with inline styles — no `.html`/`.css` files (avoids extra HTTP requests for trivially small templates)
+
+**Available icons (placeholder set, expand as needed):**
+`star`, `newTab`, `edit`, `trash`, `plus`, `close`
+
+**Adding a new icon:** Add one line to the `ICONS` object in `svg-icon.js`:
+```javascript
+myIcon: `<svg viewBox="0 0 24 24" ...>...</svg>`,
+```
+
+### 17. Color System
 
 **Position-based gradients** — color is tied to card position, not the task itself.
 
@@ -1018,19 +1060,19 @@ Each column has 20 gradient levels defined as CSS custom properties:
 
 **Gradient assignment:** `getTaskGradient(status, position, totalInColumn)` — if column has ≤20 tasks, gradient index = position. If >20, distributes evenly across the 20 levels.
 
-### 17. Profiles
+### 18. Profiles
 
 Multiple profiles allow separating data (e.g., Work vs Personal). Each profile has its own folder with independent tasks, epics, notes, reports, and archived tasks.
 
 **Data model:** See Profile Object in Data Model section.
 
 **UI components:**
-- **Profile selector** (header, between toolbar and hamburger menu): Circle button with profile color/letters + profile name. Click opens dropdown to switch profiles (navigates to `/{alias}` URL).
-- **Manage Profiles** (hamburger menu item): Opens modal with profile CRUD — name input, letters input (1-3 uppercase), color select, alias preview. Mirrors the Manage Epics modal pattern.
+- **Profile selector** (header, between toolbar and hamburger menu): Circle button with profile color/letters + profile name. Click opens dropdown to switch profiles (navigates to `/{alias}` URL). Each non-active profile in the dropdown has an "open in new tab" icon (↗) that opens that profile in a new browser tab.
+- **Manage Profiles** (hamburger menu item): Opens modal with profile CRUD — name input, letters input (1-3 uppercase), color select, alias preview. Each profile item has a star (★) toggle to set it as the default profile. The active default has a filled gold star; others have a muted star. Mirrors the Manage Epics modal pattern.
 - **Profile delete confirmation modal**: Warning that all data will be permanently deleted.
 
 **URL routing:**
-- `/` redirects to first profile's alias
+- `/` redirects to default profile's alias (fallback: first profile)
 - `/{alias}` serves `index.html` if profile exists
 - API calls use `/api/{alias}/...` for profile-scoped data
 - `body` element gets CSS class `profile-{alias}`
