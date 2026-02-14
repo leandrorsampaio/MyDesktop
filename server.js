@@ -400,7 +400,8 @@ async function ensureDefaultProfile() {
             name: 'Work',
             color: '#54A0FF',
             letters: 'WK',
-            alias: 'work'
+            alias: 'work',
+            isDefault: true
         }];
         await writeJsonFile(PROFILES_FILE, profiles);
         console.log('Migrated existing data to "Work" profile (data/work/)');
@@ -414,7 +415,8 @@ async function ensureDefaultProfile() {
             name: 'User1',
             color: '#54A0FF',
             letters: 'U1',
-            alias: 'user1'
+            alias: 'user1',
+            isDefault: true
         }];
         await writeJsonFile(PROFILES_FILE, profiles);
         console.log('Created default "User1" profile (data/user1/)');
@@ -506,13 +508,47 @@ async function resolveProfile(req, res, next) {
 // Profile CRUD API Routes
 // ===========================================
 
+/**
+ * Ensures profiles have a valid isDefault field.
+ * If no profile has isDefault: true, the first profile becomes default.
+ * @param {Array<Object>} profiles - Array of profile objects
+ * @returns {boolean} Whether profiles were modified
+ */
+function normalizeProfileDefaults(profiles) {
+    if (profiles.length === 0) return false;
+    const hasDefault = profiles.some(p => p.isDefault === true);
+    if (!hasDefault) {
+        profiles[0].isDefault = true;
+        return true;
+    }
+    return false;
+}
+
 // GET all profiles
 app.get('/api/profiles', async (req, res) => {
     try {
         const profiles = await readJsonFile(PROFILES_FILE, []);
+        if (normalizeProfileDefaults(profiles)) {
+            await writeJsonFile(PROFILES_FILE, profiles);
+        }
         res.json(profiles);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read profiles' });
+    }
+});
+
+// GET default profile
+app.get('/api/profiles/default', async (req, res) => {
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        normalizeProfileDefaults(profiles);
+        const defaultProfile = profiles.find(p => p.isDefault === true) || profiles[0];
+        if (!defaultProfile) {
+            return res.status(404).json({ error: 'No profiles found' });
+        }
+        res.json(defaultProfile);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read default profile' });
     }
 });
 
@@ -554,7 +590,8 @@ app.post('/api/profiles', writeLimiter, async (req, res) => {
             name: name.trim(),
             color,
             letters: letters.toUpperCase(),
-            alias
+            alias,
+            isDefault: false
         };
 
         // Create profile data directory with empty files
@@ -584,8 +621,14 @@ app.put('/api/profiles/:id', writeLimiter, async (req, res) => {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
 
-        const { name, color, letters } = req.body;
+        const { name, color, letters, isDefault } = req.body;
         const oldAlias = profiles[profileIndex].alias;
+
+        // Handle isDefault toggle — only one profile can be default
+        if (isDefault === true) {
+            profiles.forEach(p => { p.isDefault = false; });
+            profiles[profileIndex].isDefault = true;
+        }
 
         if (name !== undefined) {
             const newAlias = toCamelCase(name.trim());
@@ -646,8 +689,15 @@ app.delete('/api/profiles/:id', writeLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Cannot delete the last profile' });
         }
 
+        const wasDefault = profiles[profileIndex].isDefault;
         const alias = profiles[profileIndex].alias;
         profiles.splice(profileIndex, 1);
+
+        // If we deleted the default profile, make the first remaining one default
+        if (wasDefault && profiles.length > 0) {
+            profiles[0].isDefault = true;
+        }
+
         await writeJsonFile(PROFILES_FILE, profiles);
 
         // Remove profile data directory
@@ -1199,12 +1249,14 @@ app.delete('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, 
 // SPA URL Routing
 // ===========================================
 
-// Root redirect: go to first profile
+// Root redirect: go to default profile
 app.get('/', async (req, res) => {
     try {
         const profiles = await readJsonFile(PROFILES_FILE, []);
         if (profiles.length > 0) {
-            res.redirect('/' + profiles[0].alias);
+            normalizeProfileDefaults(profiles);
+            const defaultProfile = profiles.find(p => p.isDefault === true) || profiles[0];
+            res.redirect('/' + defaultProfile.alias);
         } else {
             res.redirect('/user1');
         }

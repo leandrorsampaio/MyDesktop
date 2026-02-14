@@ -377,6 +377,29 @@ body {
     flex-shrink: 0;
 }
 
+.profileSelector__dropdownName {
+    flex: 1;
+    text-align: left;
+}
+
+.profileSelector__dropdownNewTab {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.2s, background 0.2s;
+}
+
+.profileSelector__dropdownNewTab:hover {
+    color: var(--accent-color);
+    background: rgba(196, 164, 132, 0.15);
+}
+
 /* ==========================================
    Block: navMenu
    ========================================== */
@@ -1786,6 +1809,30 @@ body {
     outline: none;
     background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+}
+
+.profilesEditor__defaultBtn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.2s, transform 0.2s;
+    opacity: 0.4;
+}
+
+.profilesEditor__defaultBtn:hover {
+    color: #E8B923;
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.profilesEditor__defaultBtn.--active {
+    color: #E8B923;
+    opacity: 1;
 }
 
 .profilesEditor__deleteBtn {

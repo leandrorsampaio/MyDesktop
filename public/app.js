@@ -243,13 +243,29 @@ import {
      * Renders the profile dropdown with all available profiles.
      */
     function renderProfileDropdown() {
-        elements.profileDropdown.innerHTML = profiles.map(p => `
-            <button class="profileSelector__dropdownItem ${p.id === activeProfile?.id ? '--active' : ''}"
-                    data-alias="${escapeHtml(p.alias)}">
-                <span class="profileSelector__dropdownIcon" style="background-color: ${p.color};">${escapeHtml(p.letters)}</span>
-                ${escapeHtml(p.name)}
-            </button>
-        `).join('');
+        elements.profileDropdown.innerHTML = profiles.map(p => {
+            const isActive = p.id === activeProfile?.id;
+            const newTabBtn = !isActive
+                ? `<button class="profileSelector__dropdownNewTab" data-alias="${escapeHtml(p.alias)}" title="Open in new tab">&#8599;</button>`
+                : '';
+            return `
+                <button class="profileSelector__dropdownItem ${isActive ? '--active' : ''}"
+                        data-alias="${escapeHtml(p.alias)}">
+                    <span class="profileSelector__dropdownIcon" style="background-color: ${p.color};">${escapeHtml(p.letters)}</span>
+                    <span class="profileSelector__dropdownName">${escapeHtml(p.name)}</span>
+                    ${newTabBtn}
+                </button>
+            `;
+        }).join('');
+
+        // New tab buttons — open profile in new tab
+        elements.profileDropdown.querySelectorAll('.profileSelector__dropdownNewTab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.open('/' + btn.dataset.alias, '_blank');
+                closeProfileDropdown();
+            });
+        });
 
         // Add click handlers via event delegation
         elements.profileDropdown.querySelectorAll('.profileSelector__dropdownItem').forEach(item => {

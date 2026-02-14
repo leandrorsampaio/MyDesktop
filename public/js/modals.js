@@ -1023,6 +1023,8 @@ function renderProfilesList(elements, onProfilesChanged) {
 
     elements.profilesList.innerHTML = profiles.map(profile => `
         <div class="profilesEditor__item" data-profile-id="${profile.id}">
+            <button class="profilesEditor__defaultBtn js-profileDefaultBtn ${profile.isDefault ? '--active' : ''}"
+                    data-profile-id="${profile.id}" title="${profile.isDefault ? 'Default profile' : 'Set as default'}">&#9733;</button>
             <div class="profilesEditor__itemColor" style="background-color: ${profile.color};">${escapeHtml(profile.letters)}</div>
             <div class="profilesEditor__itemInfo">
                 <input type="text" class="profilesEditor__itemName js-profileItemName" value="${escapeHtml(profile.name)}" data-profile-id="${profile.id}" />
@@ -1109,6 +1111,25 @@ function renderProfilesList(elements, onProfilesChanged) {
                 elements.toaster.error(result.error);
                 const profile = profiles.find(p => p.id === profileId);
                 if (profile) select.value = profile.color;
+            }
+        });
+    });
+
+    // Default toggle buttons
+    elements.profilesList.querySelectorAll('.js-profileDefaultBtn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const profileId = btn.dataset.profileId;
+            const profile = profiles.find(p => p.id === profileId);
+            if (profile?.isDefault) return; // Already default
+            const result = await updateProfileApi(profileId, { isDefault: true });
+            if (result.ok) {
+                const fetchedProfiles = await fetchProfilesApi();
+                setProfiles(fetchedProfiles);
+                renderProfilesList(elements, onProfilesChanged);
+                onProfilesChanged();
+                elements.toaster.success(`"${profile?.name}" set as default profile`);
+            } else {
+                elements.toaster.error(result.error);
             }
         });
     });
