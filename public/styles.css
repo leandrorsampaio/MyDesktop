@@ -1545,26 +1545,6 @@ body {
     padding-left: 12px;
 }
 
-.epicsEditor__itemColorSelect {
-    width: 140px;
-    padding: 8px 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    flex-shrink: 0;
-    appearance: auto;
-}
-
-.epicsEditor__itemColorSelect:focus {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
-}
-
 .epicsEditor__deleteBtn {
     display: flex;
     align-items: center;
@@ -1659,16 +1639,6 @@ body {
     border-radius: 12px;
 }
 
-.categoriesEditor__itemIcon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: var(--text-secondary);
-}
-
 .categoriesEditor__itemInfo {
     flex: 1;
     display: flex;
@@ -1689,26 +1659,6 @@ body {
 }
 
 .categoriesEditor__itemName:focus {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
-}
-
-.categoriesEditor__itemIconSelect {
-    width: 120px;
-    padding: 8px 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    flex-shrink: 0;
-    appearance: auto;
-}
-
-.categoriesEditor__itemIconSelect:focus {
     outline: none;
     background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
@@ -1909,26 +1859,6 @@ body {
 }
 
 .profilesEditor__itemLetters:focus {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
-}
-
-.profilesEditor__itemColorSelect {
-    width: 140px;
-    padding: 8px 10px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    flex-shrink: 0;
-    appearance: auto;
-}
-
-.profilesEditor__itemColorSelect:focus {
     outline: none;
     background-color: rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);

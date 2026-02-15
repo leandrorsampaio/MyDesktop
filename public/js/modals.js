@@ -803,19 +803,24 @@ function renderEpicsList(elements, onEpicsChanged) {
                 <input type="text" class="epicsEditor__itemName js-epicItemName" value="${escapeHtml(epic.name)}" data-epic-id="${epic.id}" />
                 <span class="epicsEditor__itemAlias">Alias: ${escapeHtml(epic.alias)}</span>
             </div>
-            <select class="epicsEditor__itemColorSelect js-epicItemColor" data-epic-id="${epic.id}">
-                <!-- colors populated via JS -->
-            </select>
+            <span class="js-epicItemColorSlot" data-epic-id="${epic.id}"></span>
             <button class="epicsEditor__deleteBtn js-epicDeleteBtn" data-epic-id="${epic.id}" title="Delete epic">&times;</button>
         </div>
     `).join('');
 
-    // Populate color selects for each item
-    elements.epicsList.querySelectorAll('.js-epicItemColor').forEach(select => {
-        const epicId = select.dataset.epicId;
+    // Create grid-picker for each item's color
+    elements.epicsList.querySelectorAll('.js-epicItemColorSlot').forEach(slot => {
+        const epicId = slot.dataset.epicId;
         const epic = epics.find(e => e.id === epicId);
-        populateColorSelect(select, epics, epicId);
-        if (epic) select.value = epic.color;
+        const picker = document.createElement('grid-picker');
+        picker.setAttribute('type', 'color');
+        picker.setAttribute('placeholder', 'Select color');
+        picker.setAttribute('columns', '5');
+        picker.classList.add('js-epicItemColor');
+        picker.dataset.epicId = epicId;
+        slot.replaceWith(picker);
+        populateColorSelect(picker, epics, epicId);
+        if (epic) picker.value = epic.color;
     });
 
     // Name edit (blur to save)
@@ -1034,14 +1039,11 @@ function renderCategoriesList(elements, onCategoriesChanged) {
 
     elements.categoriesList.innerHTML = categories.map(cat => `
         <div class="categoriesEditor__item" data-category-id="${cat.id}">
-            <div class="categoriesEditor__itemIcon js-categoryItemIconPreview" data-category-id="${cat.id}"></div>
             <div class="categoriesEditor__itemInfo">
                 <input type="text" class="categoriesEditor__itemName js-categoryItemName" value="${escapeHtml(cat.name)}" data-category-id="${cat.id}" />
                 ${cat.id === DEFAULT_CATEGORY_ID ? '<span class="categoriesEditor__undeletable">Default (cannot be deleted)</span>' : ''}
             </div>
-            <select class="categoriesEditor__itemIconSelect js-categoryItemIcon" data-category-id="${cat.id}">
-                <!-- icons populated via JS -->
-            </select>
+            <span class="js-categoryItemIconSlot" data-category-id="${cat.id}"></span>
             ${cat.id !== DEFAULT_CATEGORY_ID ?
                 `<button class="categoriesEditor__deleteBtn js-categoryDeleteBtn" data-category-id="${cat.id}" title="Delete category">&times;</button>` :
                 '<div style="width: 36px;"></div>'
@@ -1049,16 +1051,18 @@ function renderCategoriesList(elements, onCategoriesChanged) {
         </div>
     `).join('');
 
-    // Populate icon selects and previews for each item
-    elements.categoriesList.querySelectorAll('.js-categoryItemIcon').forEach(select => {
-        const catId = Number(select.dataset.categoryId);
+    // Create grid-picker for each item's icon
+    elements.categoriesList.querySelectorAll('.js-categoryItemIconSlot').forEach(slot => {
+        const catId = Number(slot.dataset.categoryId);
         const cat = categories.find(c => c.id === catId);
-        populateIconSelect(select, cat?.icon);
-    });
-    elements.categoriesList.querySelectorAll('.js-categoryItemIconPreview').forEach(container => {
-        const catId = Number(container.dataset.categoryId);
-        const cat = categories.find(c => c.id === catId);
-        renderIconPreview(container, cat?.icon || '');
+        const picker = document.createElement('grid-picker');
+        picker.setAttribute('type', 'icon');
+        picker.setAttribute('placeholder', 'Select icon');
+        picker.setAttribute('columns', '7');
+        picker.classList.add('js-categoryItemIcon');
+        picker.dataset.categoryId = String(catId);
+        slot.replaceWith(picker);
+        populateIconSelect(picker, cat?.icon);
     });
 
     // Name edit (blur to save)
@@ -1331,19 +1335,24 @@ function renderProfilesList(elements, onProfilesChanged) {
                 <span class="profilesEditor__itemAlias">Alias: ${escapeHtml(profile.alias)}</span>
             </div>
             <input type="text" class="profilesEditor__itemLetters js-profileItemLetters" value="${escapeHtml(profile.letters)}" data-profile-id="${profile.id}" maxlength="3" />
-            <select class="profilesEditor__itemColorSelect js-profileItemColor" data-profile-id="${profile.id}">
-                <!-- colors populated via JS -->
-            </select>
+            <span class="js-profileItemColorSlot" data-profile-id="${profile.id}"></span>
             <button class="profilesEditor__deleteBtn js-profileDeleteBtn" data-profile-id="${profile.id}" title="Delete profile">&times;</button>
         </div>
     `).join('');
 
-    // Populate color selects for each item
-    elements.profilesList.querySelectorAll('.js-profileItemColor').forEach(select => {
-        const profileId = select.dataset.profileId;
+    // Create grid-picker for each item's color
+    elements.profilesList.querySelectorAll('.js-profileItemColorSlot').forEach(slot => {
+        const profileId = slot.dataset.profileId;
         const profile = profiles.find(p => p.id === profileId);
-        populateProfileColorSelect(select, profiles, profileId);
-        if (profile) select.value = profile.color;
+        const picker = document.createElement('grid-picker');
+        picker.setAttribute('type', 'color');
+        picker.setAttribute('placeholder', 'Select color');
+        picker.setAttribute('columns', '5');
+        picker.classList.add('js-profileItemColor');
+        picker.dataset.profileId = profileId;
+        slot.replaceWith(picker);
+        populateProfileColorSelect(picker, profiles, profileId);
+        if (profile) picker.value = profile.color;
     });
 
     // Name edit (blur to save)
