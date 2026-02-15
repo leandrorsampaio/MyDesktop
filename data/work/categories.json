@@ -2,36 +2,31 @@
   {
     "id": 1,
     "name": "Non categorized",
-    "icon": "umbrella"
+    "icon": "inbox"
   },
   {
     "id": 2,
     "name": "Development",
-    "icon": "edit"
+    "icon": "code-slash"
   },
   {
     "id": 3,
     "name": "Communication",
-    "icon": "newTab"
+    "icon": "chat-text"
   },
   {
     "id": 4,
     "name": "To Remember",
-    "icon": "star"
+    "icon": "pin-angle"
   },
   {
     "id": 5,
     "name": "Planning",
-    "icon": "plus"
+    "icon": "lightning"
   },
   {
     "id": 6,
     "name": "Generic Task",
-    "icon": "close"
-  },
-  {
-    "id": 7,
-    "name": "Test",
     "icon": "box-seam"
   }
 ]

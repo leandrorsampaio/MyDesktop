@@ -484,7 +484,7 @@
     "description": "https://solenis.atlassian.net/browse/ESB-559",
     "priority": false,
     "status": "wait",
-    "position": 5,
+    "position": 3,
     "log": [
       {
         "date": "2026-01-26",
@@ -1331,58 +1331,5 @@
       }
     ],
     "createdDate": "2026-02-11T18:13:24.133Z"
-  },
-  {
-    "id": "mll169xul9x4jgb40",
-    "title": "Test task",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": "mlinl22lxnkra6pjt",
-    "status": "todo",
-    "position": 2,
-    "log": [],
-    "createdDate": "2026-02-13T15:16:41.298Z"
-  },
-  {
-    "id": "mll16hho2vje9kxgi",
-    "title": "zfdszfds",
-    "description": "",
-    "priority": false,
-    "category": 4,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 4,
-    "log": [
-      {
-        "date": "2026-02-15",
-        "action": "Category changed from Non categorized to To Remember"
-      }
-    ],
-    "createdDate": "2026-02-13T15:16:51.084Z"
-  },
-  {
-    "id": "mll1783s83lidrans",
-    "title": "dwqwdwqdqw",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": "mlinl22lxnkra6pjt",
-    "status": "todo",
-    "position": 3,
-    "log": [],
-    "createdDate": "2026-02-13T15:17:25.576Z"
-  },
-  {
-    "id": "mlnmzk61ujlucnkhd",
-    "title": "eeerererer",
-    "description": "",
-    "priority": false,
-    "category": 7,
-    "epicId": null,
-    "status": "todo",
-    "position": 5,
-    "log": [],
-    "createdDate": "2026-02-15T11:02:51.865Z"
   }
 ]
