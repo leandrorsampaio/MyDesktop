@@ -127,7 +127,6 @@ import {
         categoriesModal: document.querySelector('.js-categoriesModal'),
         categoryNameInput: document.querySelector('.js-categoryNameInput'),
         categoryIconSelect: document.querySelector('.js-categoryIconSelect'),
-        categoryIconPreview: document.querySelector('.js-categoryIconPreview'),
         categoryAddBtn: document.querySelector('.js-categoryAddBtn'),
         categoryError: document.querySelector('.js-categoryError'),
         categoriesList: document.querySelector('.js-categoriesList'),

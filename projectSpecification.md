@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.23.0
+**Version:** 2.24.0
 **Last Updated:** 2026-02-15
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.24.0  | 2026-02-15 | UX: `<grid-picker>` Component — new inline Web Component replacing native `<select>` dropdowns in "add new" forms for epic color, profile color, and category icon; grid-based popover with visual swatches (colored circles for colors, `<svg-icon>` elements for icons); attributes: `type` (color/icon), `placeholder`, `columns`; JS API: `setItems()`, `value` getter/setter, `clear()`; fires `change` CustomEvent; click-outside-to-close with `disconnectedCallback` cleanup; per-item edit selects in lists still use native `<select>` (dual-path populate functions) |
 | 2.23.0  | 2026-02-15 | UX: Drag-and-Drop Indicator Line — visual drop position indicator when dragging task cards; accent-colored horizontal line appears between cards at the calculated insertion point during `dragover`; indicator follows cursor in real-time; smooth fade-in animation; reusable indicator element per column (no DOM thrashing); cleanup on `dragend`/`dragleave`/`drop`; `removeDropIndicator()` public method on `kanban-column` component |
 | 2.22.0  | 2026-02-15 | Feature: Dynamic Category Management — categories are now dynamic (stored in `categories.json` per profile) instead of hardcoded; category CRUD via Manage Categories modal (hamburger menu); each category has a name and SVG icon; icon picker using `<svg-icon>` component; category badge on task cards shows icon + name; max 20 categories; category 1 ("Non categorized") undeletable but renamable; deleting a category reassigns active tasks to category 1; `categoryName` stored on archived tasks for persistence; dynamic category validation on server; removed hardcoded `CATEGORIES`/`CATEGORY_LABELS` constants |
 | 2.21.0  | 2026-02-14 | Feature: SVG Icon Component — new `<svg-icon>` Web Component for centralized SVG icon management; inline Shadow DOM (no external HTML/CSS files); static `ICONS` Map for O(1) lookup; `icon` and `size` attributes; uses `currentColor` for automatic color inheritance; ships with placeholder icons (star, newTab, edit, trash, plus, close) |
@@ -144,6 +145,8 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
         │   ├── kanban-column.js
         │   ├── kanban-column.html
         │   └── kanban-column.css
+        ├── grid-picker/
+        │   └── grid-picker.js        # Inline component (no .html/.css files)
         ├── svg-icon/
         │   └── svg-icon.js           # Inline component (no .html/.css files)
         └── toast-notification/
@@ -1015,9 +1018,9 @@ The category selector uses styled radio buttons that look like selectable pills.
 
 **Epic Management (Hamburger Menu → Manage Epics):**
 - Opens a `<modal-dialog size="large">` with CRUD interface
-- **Create:** Name input + color dropdown (20 predefined rainbow colors) + Add button
+- **Create:** Name input + `<grid-picker type="color">` (20 predefined rainbow colors shown as colored circles in a 5-column grid) + Add button
 - Alias (camelCase) shown automatically below the name input
-- Color dropdown shows color names; taken colors are disabled with "(taken)" suffix
+- Color grid shows colored swatches; taken colors are dimmed (40% opacity); selected color has accent ring border
 - **Edit:** Inline name editing (blur saves) + color select per epic item
 - **Delete:** × button per epic, with confirmation; removes epicId from all tasks referencing the deleted epic
 - Maximum 20 epics allowed
@@ -1058,7 +1061,7 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 
 **Category Management (Hamburger Menu → Manage Categories):**
 - Opens a `<modal-dialog size="large">` with CRUD interface
-- **Create:** Name input + icon dropdown (populated from `svg-icon` component's `availableIcons`) + icon preview + Add button
+- **Create:** Name input + `<grid-picker type="icon">` (populated from `svg-icon` component's `availableIcons`, shown as icon tiles in a 7-column grid; trigger shows selected icon preview) + Add button
 - **Edit:** Inline name editing (blur saves) + icon select per category item
 - **Delete:** × button per category, with confirmation modal; reassigns active tasks with that category to category 1 ("Non categorized"); archived tasks keep their old category ID
 - Category 1 ("Non categorized") cannot be deleted (shown with muted "Default" badge)
@@ -1120,7 +1123,42 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 myIcon: `<svg viewBox="0 0 24 24" ...>...</svg>`,
 ```
 
-### 18. Color System
+### 18. Grid Picker Component (v2.24.0)
+
+**Overview:** Visual grid-based picker replacing native `<select>` dropdowns in "add new" forms with a popover showing colored circle swatches (for colors) or `<svg-icon>` tiles (for icons). Inline Web Component with Shadow DOM (no external .html/.css files). Per-item edit selects in existing lists still use native `<select>`.
+
+**Usage:**
+```html
+<grid-picker type="color" placeholder="Select color" columns="5"></grid-picker>
+<grid-picker type="icon" placeholder="Select icon" columns="7"></grid-picker>
+```
+
+**Attributes:**
+- `type` — `"color"` or `"icon"` (determines item rendering)
+- `placeholder` — trigger button text when nothing selected (default: "Select")
+- `columns` — number of grid columns (default: 5)
+
+**JS API:**
+- `setItems(items)` — array of `{value, label, disabled}`. For colors, `value` = hex. For icons, `value` = icon name.
+- `value` getter/setter — current selected value (string or empty)
+- `clear()` — reset selection
+
+**Events:**
+- `change` — `CustomEvent` with `detail: {value, label}`, bubbles + composed
+
+**Behavior:**
+- Click trigger toggles panel open/close (fade+translate animation)
+- Click grid item (not disabled) selects it, closes panel, fires `change`
+- Click outside closes panel (document-level listener, cleaned up in `disconnectedCallback`)
+- Color mode: 32px colored circles, selected = accent ring border, disabled = 40% opacity, hover = scale(1.15) + tooltip
+- Icon mode: 40px square cells with `<svg-icon size="20">`, selected = accent background, hover = light background + tooltip
+
+**Used in:**
+- Manage Epics modal (add form): `<grid-picker type="color" columns="5">`
+- Manage Categories modal (add form): `<grid-picker type="icon" columns="7">`
+- Manage Profiles modal (add form): `<grid-picker type="color" columns="5">`
+
+### 19. Color System
 
 **Position-based gradients** — color is tied to card position, not the task itself.
 
@@ -1134,7 +1172,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 
 **Gradient assignment:** `getTaskGradient(status, position, totalInColumn)` — if column has ≤20 tasks, gradient index = position. If >20, distributes evenly across the 20 levels.
 
-### 19. Profiles
+### 20. Profiles
 
 Multiple profiles allow separating data (e.g., Work vs Personal). Each profile has its own folder with independent tasks, epics, notes, reports, and archived tasks.
 
@@ -1142,7 +1180,7 @@ Multiple profiles allow separating data (e.g., Work vs Personal). Each profile h
 
 **UI components:**
 - **Profile selector** (header, between toolbar and hamburger menu): Circle button with profile color/letters + profile name. Click opens dropdown to switch profiles (navigates to `/{alias}` URL). Each non-active profile in the dropdown has an "open in new tab" icon (↗) that opens that profile in a new browser tab.
-- **Manage Profiles** (hamburger menu item): Opens modal with profile CRUD — name input, letters input (1-3 uppercase), color select, alias preview. Each profile item has a star (★) toggle to set it as the default profile. The active default has a filled gold star; others have a muted star. Mirrors the Manage Epics modal pattern.
+- **Manage Profiles** (hamburger menu item): Opens modal with profile CRUD — name input, letters input (1-3 uppercase), `<grid-picker type="color">` (5-column color grid), alias preview. Each profile item has a star (★) toggle to set it as the default profile. The active default has a filled gold star; others have a muted star. Per-item color edits still use native `<select>`. Mirrors the Manage Epics modal pattern.
 - **Profile delete confirmation modal**: Warning that all data will be permanently deleted.
 
 **URL routing:**

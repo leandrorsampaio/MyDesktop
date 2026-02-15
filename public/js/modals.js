@@ -697,6 +697,16 @@ function populateColorSelect(selectEl, currentEpics, excludeEpicId) {
             .map(e => e.color)
     );
 
+    if (selectEl.tagName === 'GRID-PICKER') {
+        const items = EPIC_COLORS.map(color => ({
+            value: color.hex,
+            label: color.name,
+            disabled: usedColors.has(color.hex)
+        }));
+        selectEl.setItems(items);
+        return;
+    }
+
     selectEl.innerHTML = '<option value="">Select color</option>';
     EPIC_COLORS.forEach(color => {
         const option = document.createElement('option');
@@ -720,7 +730,7 @@ function renderEpicsEditor(elements, onEpicsChanged) {
 
     // Clear form
     elements.epicNameInput.value = '';
-    elements.epicColorSelect.value = '';
+    elements.epicColorSelect.clear();
     elements.epicAliasPreview.textContent = '';
     elements.epicColorError.style.display = 'none';
 
@@ -926,6 +936,16 @@ function populateIconSelect(selectEl, selectedIcon) {
     const SvgIconClass = customElements.get('svg-icon');
     const icons = SvgIconClass ? SvgIconClass.availableIcons : [];
 
+    if (selectEl.tagName === 'GRID-PICKER') {
+        const items = icons.map(iconName => ({
+            value: iconName,
+            label: iconName
+        }));
+        selectEl.setItems(items);
+        if (selectedIcon) selectEl.value = selectedIcon;
+        return;
+    }
+
     selectEl.innerHTML = '<option value="">Select icon</option>';
     icons.forEach(iconName => {
         const option = document.createElement('option');
@@ -962,14 +982,8 @@ function renderCategoriesEditor(elements, onCategoriesChanged) {
 
     // Clear form
     elements.categoryNameInput.value = '';
-    elements.categoryIconSelect.value = '';
+    elements.categoryIconSelect.clear();
     elements.categoryError.style.display = 'none';
-    renderIconPreview(elements.categoryIconPreview, '');
-
-    // Icon select: live preview
-    elements.categoryIconSelect.onchange = () => {
-        renderIconPreview(elements.categoryIconPreview, elements.categoryIconSelect.value);
-    };
 
     // Add button handler
     elements.categoryAddBtn.onclick = async () => {
@@ -1197,6 +1211,16 @@ function populateProfileColorSelect(selectEl, currentProfiles, excludeProfileId)
             .map(p => p.color)
     );
 
+    if (selectEl.tagName === 'GRID-PICKER') {
+        const items = EPIC_COLORS.map(color => ({
+            value: color.hex,
+            label: color.name,
+            disabled: usedColors.has(color.hex)
+        }));
+        selectEl.setItems(items);
+        return;
+    }
+
     selectEl.innerHTML = '<option value="">Select color</option>';
     EPIC_COLORS.forEach(color => {
         const option = document.createElement('option');
@@ -1221,7 +1245,7 @@ function renderProfilesEditor(elements, onProfilesChanged) {
     // Clear form
     elements.profileNameInput.value = '';
     elements.profileLettersInput.value = '';
-    elements.profileColorSelect.value = '';
+    elements.profileColorSelect.clear();
     elements.profileAliasPreview.textContent = '';
     elements.profileError.style.display = 'none';
 
