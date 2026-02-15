@@ -26,7 +26,7 @@
         <div class="appHeader__actions">
             <div class="toolbar js-toolbar">
                 <div class="toolbar__filters js-categoryFilters">
-                    <!-- Filter buttons rendered by JS from CATEGORIES -->
+                    <!-- Filter buttons rendered dynamically from categories state -->
                 </div>
                 <select class="toolbar__epicFilter js-epicFilter">
                     <option value="">Epics</option>
@@ -52,6 +52,9 @@
                 </button>
                 <button class="navMenu__item js-viewArchivedBtn">
                     <span class="navMenu__icon">📦</span> All Completed Tasks
+                </button>
+                <button class="navMenu__item js-manageCategoriesBtn">
+                    <span class="navMenu__icon">📂</span> Manage Categories
                 </button>
                 <button class="navMenu__item js-manageEpicsBtn">
                     <span class="navMenu__icon">🏷️</span> Manage Epics
@@ -123,13 +126,8 @@
 
             <div class="taskForm__group">
                 <label>Category</label>
-                <div class="taskForm__categorySelector">
-                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="1" checked /><span>Non categorized</span></label>
-                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="2" /><span>Development</span></label>
-                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="3" /><span>Communication</span></label>
-                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="4" /><span>To Remember</span></label>
-                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="5" /><span>Planning</span></label>
-                    <label class="taskForm__categoryPill"><input type="radio" name="task-category" value="6" /><span>Generic Task</span></label>
+                <div class="taskForm__categorySelector js-categoryPills">
+                    <!-- Category pills rendered dynamically by JS -->
                 </div>
             </div>
 
@@ -213,6 +211,40 @@
             </div>
             <div class="epicsEditor__list js-epicsList">
                 <!-- Epics list rendered by JS -->
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Manage Categories Modal -->
+    <modal-dialog class="js-categoriesModal" size="large">
+        <span slot="title">Manage Categories</span>
+        <div class="categoriesEditor">
+            <p class="categoriesEditor__hint">Create and manage categories to organize your tasks. Each category has an icon. Maximum 20 categories.</p>
+            <div class="categoriesEditor__form js-categoryForm">
+                <div class="categoriesEditor__formRow">
+                    <input type="text" class="categoriesEditor__nameInput js-categoryNameInput" placeholder="Category name" />
+                    <select class="categoriesEditor__iconSelect js-categoryIconSelect">
+                        <option value="">Select icon</option>
+                    </select>
+                    <div class="categoriesEditor__iconPreview js-categoryIconPreview"></div>
+                    <button type="button" class="btn --save js-categoryAddBtn">Add Category</button>
+                </div>
+                <div class="categoriesEditor__error js-categoryError" style="display: none;"></div>
+            </div>
+            <div class="categoriesEditor__list js-categoriesList">
+                <!-- Categories list rendered by JS -->
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Category Delete Confirmation Modal -->
+    <modal-dialog class="js-categoryConfirmModal" size="small">
+        <span slot="title">Delete Category</span>
+        <div class="confirmDialog">
+            <p class="confirmDialog__message js-categoryConfirmMessage">Are you sure?</p>
+            <div class="confirmDialog__actions">
+                <button type="button" class="btn --cancel js-categoryConfirmCancel">Cancel</button>
+                <button type="button" class="btn --delete js-categoryConfirmDelete">Delete</button>
             </div>
         </div>
     </modal-dialog>

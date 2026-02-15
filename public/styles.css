@@ -1601,6 +1601,191 @@ body {
 }
 
 /* ==========================================
+   Block: categoriesEditor
+   ========================================== */
+.categoriesEditor {
+    padding: 0 32px 32px 32px;
+}
+
+.categoriesEditor__hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.categoriesEditor__form {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--bg-color);
+    border-radius: 12px;
+}
+
+.categoriesEditor__formRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.categoriesEditor__nameInput {
+    flex: 1;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.categoriesEditor__nameInput:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+}
+
+.categoriesEditor__nameInput::placeholder {
+    color: var(--text-muted);
+}
+
+.categoriesEditor__iconSelect {
+    width: 140px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.categoriesEditor__iconSelect:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+}
+
+.categoriesEditor__iconPreview {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.categoriesEditor__error {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--danger-color);
+    font-weight: 500;
+}
+
+.categoriesEditor__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.categoriesEditor__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg-color);
+    border-radius: 12px;
+}
+
+.categoriesEditor__itemIcon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.categoriesEditor__itemInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.categoriesEditor__itemName {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.categoriesEditor__itemName:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+}
+
+.categoriesEditor__itemIconSelect {
+    width: 120px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    appearance: auto;
+}
+
+.categoriesEditor__itemIconSelect:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+}
+
+.categoriesEditor__deleteBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(201, 112, 101, 0.1);
+    border: none;
+    border-radius: 10px;
+    color: var(--danger-color);
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.categoriesEditor__deleteBtn:hover {
+    background: rgba(201, 112, 101, 0.2);
+    transform: scale(1.05);
+}
+
+.categoriesEditor__undeletable {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding-left: 12px;
+}
+
+/* ==========================================
    Block: profilesEditor
    ========================================== */
 .profilesEditor {

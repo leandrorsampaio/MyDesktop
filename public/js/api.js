@@ -165,6 +165,78 @@ export async function deleteReportApi(id) {
 }
 
 // ===========================================
+// Category API Functions
+// ===========================================
+
+/**
+ * Fetches all categories from the server.
+ * @returns {Promise<Array<Object>>} Array of category objects
+ */
+export async function fetchCategoriesApi() {
+    const response = await fetch(`${apiBase}/categories`);
+    return await response.json();
+}
+
+/**
+ * Creates a new category via the API.
+ * @param {Object} categoryData - The category data { name, icon }
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function createCategoryApi(categoryData) {
+    const response = await fetch(`${apiBase}/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryData)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to create category' };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+}
+
+/**
+ * Updates an existing category via the API.
+ * @param {number} id - The category ID to update
+ * @param {Object} categoryData - The fields to update { name?, icon? }
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function updateCategoryApi(id, categoryData) {
+    const response = await fetch(`${apiBase}/categories/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryData)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to update category' };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+}
+
+/**
+ * Deletes a category via the API.
+ * @param {number} id - The category ID to delete
+ * @returns {Promise<{ok: boolean, error?: string}>} Result object
+ */
+export async function deleteCategoryApi(id) {
+    const response = await fetch(`${apiBase}/categories/${id}`, { method: 'DELETE' });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to delete category' };
+    }
+
+    return { ok: true };
+}
+
+// ===========================================
 // Epic API Functions
 // ===========================================
 

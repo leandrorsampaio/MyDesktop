@@ -3,9 +3,9 @@
  * Handles all modal dialogs: task add/edit, reports, archived tasks, checklist, and confirmations.
  */
 
-import { CATEGORIES, DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS, MAX_PROFILES } from './constants.js';
+import { DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS, MAX_PROFILES, MAX_CATEGORIES, DEFAULT_CATEGORY_ID } from './constants.js';
 import { escapeHtml, formatDate, toCamelCase } from './utils.js';
-import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics, profiles, setProfiles, activeProfile } from './state.js';
+import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile } from './state.js';
 import {
     createTaskApi,
     updateTaskApi,
@@ -18,6 +18,10 @@ import {
     createEpicApi,
     updateEpicApi,
     deleteEpicApi,
+    fetchCategoriesApi,
+    createCategoryApi,
+    updateCategoryApi,
+    deleteCategoryApi,
     fetchProfilesApi,
     createProfileApi,
     updateProfileApi,
@@ -67,6 +71,28 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit) 
 }
 
 /**
+ * Renders dynamic category pills in the task modal.
+ * @param {HTMLElement} container - The container element (.js-categoryPills)
+ */
+export function renderCategoryPills(container) {
+    container.innerHTML = '';
+    categories.forEach(cat => {
+        const label = document.createElement('label');
+        label.className = 'taskForm__categoryPill';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'task-category';
+        radio.value = cat.id;
+        if (cat.id === DEFAULT_CATEGORY_ID) radio.checked = true;
+        const span = document.createElement('span');
+        span.textContent = cat.name;
+        label.appendChild(radio);
+        label.appendChild(span);
+        container.appendChild(label);
+    });
+}
+
+/**
  * Sets the category radio button selection.
  * @param {number} value - Category ID to select
  */
@@ -81,7 +107,7 @@ export function setCategorySelection(value) {
  */
 export function getSelectedCategory() {
     const selected = document.querySelector('input[name="task-category"]:checked');
-    return selected ? Number(selected.value) : 1;
+    return selected ? Number(selected.value) : DEFAULT_CATEGORY_ID;
 }
 
 /**
@@ -94,7 +120,8 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     setEditingTaskId(null);
     elements.modalTitle.textContent = 'Add Task';
     elements.taskForm.reset();
-    setCategorySelection(1);
+    renderCategoryPills(elements.categoryPills);
+    setCategorySelection(DEFAULT_CATEGORY_ID);
     populateTaskEpicSelect(elements.taskEpic, '');
     elements.taskLogSection.style.display = 'none';
 
@@ -120,7 +147,8 @@ export function openEditModal(taskId, elements, onDelete, onSubmit) {
     elements.taskTitle.value = task.title;
     elements.taskDescription.value = task.description || '';
     elements.taskPriority.checked = task.priority || false;
-    setCategorySelection(task.category || 1);
+    renderCategoryPills(elements.categoryPills);
+    setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
     populateTaskEpicSelect(elements.taskEpic, task.epicId || '');
 
     // Render task log
@@ -423,9 +451,13 @@ export function renderReportSection(title, taskList) {
     // Sort category keys numerically
     const sortedKeys = Object.keys(grouped).map(Number).sort((a, b) => a - b);
 
+    // Build category lookup from state
+    const categoryLookup = new Map(categories.map(c => [c.id, c.name]));
+
     const taskHtml = sortedKeys.map(catKey => {
-        const catLabel = CATEGORIES[catKey] || 'Non categorized';
+        // Prefer categoryName stored on tasks (for reports with snapshot data), else use dynamic lookup
         const catTasks = grouped[catKey];
+        const catLabel = catTasks[0]?.categoryName || categoryLookup.get(catKey) || 'Unknown';
         return `
             <div class="reportDetail__categoryGroup">
                 <div class="reportDetail__categoryLabel">${escapeHtml(catLabel)}</div>
@@ -848,6 +880,244 @@ export async function confirmDeleteEpic(elements) {
         renderEpicsEditor(elements, onEpicsChanged);
         onEpicsChanged();
         elements.toaster.success('Epic deleted');
+    } else {
+        elements.toaster.error(result.error);
+    }
+}
+
+// ==========================================
+// Category Management Modal Functions
+// ==========================================
+
+/** @type {{categoryId: number, elements: Object, onCategoriesChanged: Function}|null} */
+let pendingCategoryDelete = null;
+
+/**
+ * Opens the categories management modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} closeMenu - Function to close dropdown menu
+ * @param {Function} onCategoriesChanged - Callback when categories are modified
+ */
+export async function openCategoriesModal(elements, closeMenu, onCategoriesChanged) {
+    closeMenu();
+    try {
+        const fetchedCategories = await fetchCategoriesApi();
+        setCategories(fetchedCategories);
+        renderCategoriesEditor(elements, onCategoriesChanged);
+        elements.categoriesModal.open();
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        elements.toaster.error('Failed to load categories');
+    }
+}
+
+/**
+ * Populates the icon select dropdown with available icons.
+ * @param {HTMLSelectElement} selectEl - The select element
+ * @param {string} [selectedIcon] - Currently selected icon name
+ */
+function populateIconSelect(selectEl, selectedIcon) {
+    const SvgIconClass = customElements.get('svg-icon');
+    const icons = SvgIconClass ? SvgIconClass.availableIcons : [];
+
+    selectEl.innerHTML = '<option value="">Select icon</option>';
+    icons.forEach(iconName => {
+        const option = document.createElement('option');
+        option.value = iconName;
+        option.textContent = iconName;
+        if (iconName === selectedIcon) option.selected = true;
+        selectEl.appendChild(option);
+    });
+}
+
+/**
+ * Renders an icon preview in a container element.
+ * @param {HTMLElement} container - The preview container
+ * @param {string} iconName - The icon name to preview
+ */
+function renderIconPreview(container, iconName) {
+    container.innerHTML = '';
+    if (iconName) {
+        const icon = document.createElement('svg-icon');
+        icon.setAttribute('icon', iconName);
+        icon.setAttribute('size', '24');
+        container.appendChild(icon);
+    }
+}
+
+/**
+ * Renders the categories editor (form + list) in the modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} onCategoriesChanged - Callback when categories are modified
+ */
+function renderCategoriesEditor(elements, onCategoriesChanged) {
+    // Populate icon dropdown for add form
+    populateIconSelect(elements.categoryIconSelect);
+
+    // Clear form
+    elements.categoryNameInput.value = '';
+    elements.categoryIconSelect.value = '';
+    elements.categoryError.style.display = 'none';
+    renderIconPreview(elements.categoryIconPreview, '');
+
+    // Icon select: live preview
+    elements.categoryIconSelect.onchange = () => {
+        renderIconPreview(elements.categoryIconPreview, elements.categoryIconSelect.value);
+    };
+
+    // Add button handler
+    elements.categoryAddBtn.onclick = async () => {
+        const name = elements.categoryNameInput.value.trim();
+        const icon = elements.categoryIconSelect.value;
+
+        if (!name) {
+            elements.toaster.warning('Category name is required');
+            return;
+        }
+        if (!icon) {
+            elements.toaster.warning('Please select an icon');
+            return;
+        }
+
+        if (categories.length >= MAX_CATEGORIES) {
+            elements.toaster.warning(`Maximum of ${MAX_CATEGORIES} categories allowed`);
+            return;
+        }
+
+        const result = await createCategoryApi({ name, icon });
+        if (result.ok) {
+            const fetchedCategories = await fetchCategoriesApi();
+            setCategories(fetchedCategories);
+            renderCategoriesEditor(elements, onCategoriesChanged);
+            onCategoriesChanged();
+            elements.toaster.success(`Category "${name}" created`);
+        } else {
+            elements.categoryError.textContent = result.error;
+            elements.categoryError.style.display = 'block';
+        }
+    };
+
+    // Render category list
+    renderCategoriesList(elements, onCategoriesChanged);
+}
+
+/**
+ * Renders the list of existing categories with edit/delete controls.
+ * @param {Object} elements - DOM element references
+ * @param {Function} onCategoriesChanged - Callback when categories are modified
+ */
+function renderCategoriesList(elements, onCategoriesChanged) {
+    if (categories.length === 0) {
+        elements.categoriesList.innerHTML = '<div class="emptyState">No categories created yet</div>';
+        return;
+    }
+
+    elements.categoriesList.innerHTML = categories.map(cat => `
+        <div class="categoriesEditor__item" data-category-id="${cat.id}">
+            <div class="categoriesEditor__itemIcon js-categoryItemIconPreview" data-category-id="${cat.id}"></div>
+            <div class="categoriesEditor__itemInfo">
+                <input type="text" class="categoriesEditor__itemName js-categoryItemName" value="${escapeHtml(cat.name)}" data-category-id="${cat.id}" />
+                ${cat.id === DEFAULT_CATEGORY_ID ? '<span class="categoriesEditor__undeletable">Default (cannot be deleted)</span>' : ''}
+            </div>
+            <select class="categoriesEditor__itemIconSelect js-categoryItemIcon" data-category-id="${cat.id}">
+                <!-- icons populated via JS -->
+            </select>
+            ${cat.id !== DEFAULT_CATEGORY_ID ?
+                `<button class="categoriesEditor__deleteBtn js-categoryDeleteBtn" data-category-id="${cat.id}" title="Delete category">&times;</button>` :
+                '<div style="width: 36px;"></div>'
+            }
+        </div>
+    `).join('');
+
+    // Populate icon selects and previews for each item
+    elements.categoriesList.querySelectorAll('.js-categoryItemIcon').forEach(select => {
+        const catId = Number(select.dataset.categoryId);
+        const cat = categories.find(c => c.id === catId);
+        populateIconSelect(select, cat?.icon);
+    });
+    elements.categoriesList.querySelectorAll('.js-categoryItemIconPreview').forEach(container => {
+        const catId = Number(container.dataset.categoryId);
+        const cat = categories.find(c => c.id === catId);
+        renderIconPreview(container, cat?.icon || '');
+    });
+
+    // Name edit (blur to save)
+    elements.categoriesList.querySelectorAll('.js-categoryItemName').forEach(input => {
+        input.addEventListener('blur', async () => {
+            const catId = Number(input.dataset.categoryId);
+            const name = input.value.trim();
+            if (!name) {
+                elements.toaster.warning('Category name cannot be empty');
+                const cat = categories.find(c => c.id === catId);
+                if (cat) input.value = cat.name;
+                return;
+            }
+            const result = await updateCategoryApi(catId, { name });
+            if (result.ok) {
+                const fetchedCategories = await fetchCategoriesApi();
+                setCategories(fetchedCategories);
+                renderCategoriesList(elements, onCategoriesChanged);
+                onCategoriesChanged();
+            } else {
+                elements.toaster.error(result.error);
+            }
+        });
+    });
+
+    // Icon change
+    elements.categoriesList.querySelectorAll('.js-categoryItemIcon').forEach(select => {
+        select.addEventListener('change', async () => {
+            const catId = Number(select.dataset.categoryId);
+            const icon = select.value;
+            if (!icon) return;
+            const result = await updateCategoryApi(catId, { icon });
+            if (result.ok) {
+                const fetchedCategories = await fetchCategoriesApi();
+                setCategories(fetchedCategories);
+                renderCategoriesList(elements, onCategoriesChanged);
+                onCategoriesChanged();
+            } else {
+                elements.toaster.error(result.error);
+                const cat = categories.find(c => c.id === catId);
+                if (cat) select.value = cat.icon;
+            }
+        });
+    });
+
+    // Delete buttons — open confirm modal
+    elements.categoriesList.querySelectorAll('.js-categoryDeleteBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const catId = Number(btn.dataset.categoryId);
+            const cat = categories.find(c => c.id === catId);
+            pendingCategoryDelete = { categoryId: catId, elements, onCategoriesChanged };
+            elements.categoryConfirmMessage.textContent = `Delete category "${cat?.name || ''}"? Active tasks with this category will be reassigned to "Non categorized".`;
+            elements.categoryConfirmModal.open();
+        });
+    });
+}
+
+/**
+ * Confirms and executes the pending category deletion.
+ * @param {Object} elements - DOM element references
+ */
+export async function confirmDeleteCategory(elements) {
+    if (!pendingCategoryDelete) return;
+
+    const { categoryId, onCategoriesChanged } = pendingCategoryDelete;
+    pendingCategoryDelete = null;
+    elements.categoryConfirmModal.close();
+
+    const result = await deleteCategoryApi(categoryId);
+    if (result.ok) {
+        // Reassign category in local task state
+        tasks.forEach(t => {
+            if (t.category === categoryId) t.category = DEFAULT_CATEGORY_ID;
+        });
+        const fetchedCategories = await fetchCategoriesApi();
+        setCategories(fetchedCategories);
+        renderCategoriesEditor(elements, onCategoriesChanged);
+        onCategoriesChanged();
+        elements.toaster.success('Category deleted');
     } else {
         elements.toaster.error(result.error);
     }

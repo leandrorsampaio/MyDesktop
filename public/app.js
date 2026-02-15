@@ -9,7 +9,7 @@
  * - modals.js: Modal dialog handling
  */
 
-import { STATUS_COLUMNS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD } from './js/constants.js';
+import { STATUS_COLUMNS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_CATEGORY_ID } from './js/constants.js';
 import { getWeekNumber, escapeHtml } from './js/utils.js';
 import {
     tasks,
@@ -24,12 +24,14 @@ import {
     findTask,
     epics,
     setEpics,
+    categories,
+    setCategories,
     profiles,
     setProfiles,
     activeProfile,
     setActiveProfile
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi, fetchProfilesApi, setApiBase } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase } from './js/api.js';
 import {
     renderCategoryFilters,
     toggleCategoryFilter,
@@ -52,6 +54,8 @@ import {
     saveChecklist,
     openEpicsModal,
     confirmDeleteEpic,
+    openCategoriesModal,
+    confirmDeleteCategory,
     openProfilesModal,
     confirmDeleteProfile
 } from './js/modals.js';
@@ -104,6 +108,9 @@ import {
         // Task Epic dropdown
         taskEpic: document.querySelector('.js-taskEpic'),
 
+        // Category pills in task modal
+        categoryPills: document.querySelector('.js-categoryPills'),
+
         // Category Filters
         categoryFilters: document.querySelector('.js-categoryFilters'),
         priorityFilterBtn: document.querySelector('.js-priorityFilterBtn'),
@@ -114,6 +121,22 @@ import {
         epicConfirmMessage: document.querySelector('.js-epicConfirmMessage'),
         epicConfirmCancel: document.querySelector('.js-epicConfirmCancel'),
         epicConfirmDelete: document.querySelector('.js-epicConfirmDelete'),
+
+        // Category Management
+        manageCategoriesBtn: document.querySelector('.js-manageCategoriesBtn'),
+        categoriesModal: document.querySelector('.js-categoriesModal'),
+        categoryNameInput: document.querySelector('.js-categoryNameInput'),
+        categoryIconSelect: document.querySelector('.js-categoryIconSelect'),
+        categoryIconPreview: document.querySelector('.js-categoryIconPreview'),
+        categoryAddBtn: document.querySelector('.js-categoryAddBtn'),
+        categoryError: document.querySelector('.js-categoryError'),
+        categoriesList: document.querySelector('.js-categoriesList'),
+
+        // Category Delete Confirmation
+        categoryConfirmModal: document.querySelector('.js-categoryConfirmModal'),
+        categoryConfirmMessage: document.querySelector('.js-categoryConfirmMessage'),
+        categoryConfirmCancel: document.querySelector('.js-categoryConfirmCancel'),
+        categoryConfirmDelete: document.querySelector('.js-categoryConfirmDelete'),
 
         // Epic Management
         manageEpicsBtn: document.querySelector('.js-manageEpicsBtn'),
@@ -412,12 +435,17 @@ import {
     /** @type {Map<string, Object>} Pre-built epic lookup for O(1) access in createTaskCard */
     let epicLookup = new Map();
 
+    /** @type {Map<number, Object>} Pre-built category lookup for O(1) access in createTaskCard */
+    let categoryLookup = new Map();
+
     /**
      * Re-renders all kanban columns and applies active filters.
      */
     function renderAllColumns() {
         // Build epic lookup once per render cycle for O(1) access in createTaskCard
         epicLookup = new Map(epics.map(e => [e.id, e]));
+        // Build category lookup once per render cycle
+        categoryLookup = new Map(categories.map(c => [c.id, c]));
         Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
         renderEpicFilter(elements.epicFilter);
         applyAllFilters();
@@ -451,11 +479,18 @@ import {
 
         card.dataset.taskId = task.id;
         card.dataset.status = task.status;
-        card.dataset.category = String(task.category || 1);
+        card.dataset.category = String(task.category || DEFAULT_CATEGORY_ID);
         card.dataset.priority = task.priority ? 'true' : 'false';
         card.dataset.title = task.title;
         card.dataset.description = task.description || '';
         card.dataset.epicId = task.epicId || '';
+
+        // Category data for the card (O(1) lookup via pre-built Map)
+        const cat = categoryLookup.get(task.category || DEFAULT_CATEGORY_ID);
+        if (cat) {
+            card.dataset.categoryName = cat.name;
+            card.dataset.categoryIcon = cat.icon;
+        }
 
         // Epic data for the card (O(1) lookup via pre-built Map)
         const epic = task.epicId ? epicLookup.get(task.epicId) || null : null;
@@ -627,6 +662,24 @@ import {
             handleEpicFilterChange(elements.epicFilter, applyAllFilters);
         });
 
+        // Manage Categories
+        elements.manageCategoriesBtn.addEventListener('click', () => {
+            openCategoriesModal(elements, closeMenu, () => {
+                renderCategoryFilters(elements.categoryFilters, (categoryId) => {
+                    toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
+                });
+                renderAllColumns();
+            });
+        });
+
+        // Category Confirm Delete Modal
+        elements.categoryConfirmCancel.addEventListener('click', () => {
+            elements.categoryConfirmModal.close();
+        });
+        elements.categoryConfirmDelete.addEventListener('click', () => {
+            confirmDeleteCategory(elements);
+        });
+
         // Manage Epics
         elements.manageEpicsBtn.addEventListener('click', () => {
             openEpicsModal(elements, closeMenu, () => {
@@ -765,13 +818,25 @@ import {
             console.error('Error fetching profiles:', error);
         }
 
-        // Fetch data (epics first so cards can reference them)
+        // Fetch data (categories and epics first so cards can reference them)
+        try {
+            const fetchedCategories = await fetchCategoriesApi();
+            setCategories(fetchedCategories);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
         try {
             const fetchedEpics = await fetchEpicsApi();
             setEpics(fetchedEpics);
         } catch (error) {
             console.error('Error fetching epics:', error);
         }
+
+        // Re-render category filters now that dynamic categories are loaded
+        renderCategoryFilters(elements.categoryFilters, (categoryId) => {
+            toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
+        });
+
         await fetchTasks();
     }
 

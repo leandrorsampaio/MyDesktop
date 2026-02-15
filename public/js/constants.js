@@ -2,9 +2,8 @@
  * Shared constants for the Task Tracker application.
  * This is the single source of truth for these values.
  *
- * Note: server.js has its own copy of CATEGORIES (as CATEGORY_LABELS)
- * because it runs in Node.js and cannot import ES modules from /public.
- * If you modify CATEGORIES here, also update server.js.
+ * Note: Categories are now dynamic and stored in categories.json per profile.
+ * See server.js DEFAULT_CATEGORIES for the initial defaults.
  */
 
 // ===========================================
@@ -30,14 +29,11 @@ export const LIGHT_TEXT_THRESHOLD = 12;
 // Data Constants
 // ===========================================
 
-export const CATEGORIES = {
-    1: 'Non categorized',
-    2: 'Development',
-    3: 'Communication',
-    4: 'To Remember',
-    5: 'Planning',
-    6: 'Generic Task'
-};
+/** Maximum number of categories allowed */
+export const MAX_CATEGORIES = 20;
+
+/** Default category ID (Non categorized — cannot be deleted) */
+export const DEFAULT_CATEGORY_ID = 1;
 
 export const DEFAULT_CHECKLIST_ITEMS = [
     { text: 'Check email', url: '' },

@@ -125,7 +125,9 @@
 }
 
 .taskCard__badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     margin-top: 6px;
     padding: 2px 8px;
     font-size: 10px;

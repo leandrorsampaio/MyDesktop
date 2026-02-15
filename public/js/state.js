@@ -19,6 +19,9 @@ export let priorityFilterActive = false;
 /** @type {boolean} Whether crisis mode is active */
 export let crisisModeActive = false;
 
+/** @type {Array<Object>} All categories */
+export let categories = [];
+
 /** @type {Array<Object>} All epics */
 export let epics = [];
 
@@ -147,6 +150,14 @@ export function setCrisisModeActive(active) {
  */
 export function setOriginalTitle(title) {
     originalTitle = title;
+}
+
+/**
+ * Updates the categories array with new data.
+ * @param {Array<Object>} newCategories - The new categories array
+ */
+export function setCategories(newCategories) {
+    categories = newCategories;
 }
 
 /**

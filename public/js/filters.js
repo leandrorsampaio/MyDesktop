@@ -3,8 +3,7 @@
  * Handles category and priority filtering of task cards.
  */
 
-import { CATEGORIES } from './constants.js';
-import { activeCategoryFilters, priorityFilterActive, setPriorityFilterActive, activeEpicFilter, setActiveEpicFilter, epics, tasks } from './state.js';
+import { activeCategoryFilters, priorityFilterActive, setPriorityFilterActive, activeEpicFilter, setActiveEpicFilter, epics, tasks, categories } from './state.js';
 
 /**
  * Renders category filter buttons in the toolbar.
@@ -14,15 +13,15 @@ import { activeCategoryFilters, priorityFilterActive, setPriorityFilterActive, a
 export function renderCategoryFilters(container, onToggle) {
     container.innerHTML = '';
 
-    Object.entries(CATEGORIES).forEach(([id, label]) => {
+    categories.forEach(cat => {
         const btn = document.createElement('button');
         btn.className = 'toolbar__categoryBtn js-categoryFilterBtn';
-        btn.dataset.category = id;
-        btn.textContent = label;
-        if (activeCategoryFilters.has(Number(id))) {
+        btn.dataset.category = cat.id;
+        btn.textContent = cat.name;
+        if (activeCategoryFilters.has(cat.id)) {
             btn.classList.add('--active');
         }
-        btn.addEventListener('click', () => onToggle(Number(id)));
+        btn.addEventListener('click', () => onToggle(cat.id));
         container.appendChild(btn);
     });
 }

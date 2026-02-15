@@ -1,5 +1,3 @@
-import { CATEGORIES } from '../../js/constants.js';
-
 class TaskCard extends HTMLElement {
     /** @type {[string, string]|null} Cached [html, css] templates */
     static templateCache = null;
@@ -37,7 +35,7 @@ class TaskCard extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['data-task-id', 'data-status', 'data-category', 'data-priority', 'data-title', 'data-description', 'data-epic-name', 'data-epic-color', 'data-epic-alias', 'hidden'];
+        return ['data-task-id', 'data-status', 'data-category', 'data-category-name', 'data-category-icon', 'data-priority', 'data-title', 'data-description', 'data-epic-name', 'data-epic-color', 'data-epic-alias', 'hidden'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -57,6 +55,8 @@ class TaskCard extends HTMLElement {
             description,
             priority,
             category,
+            categoryName,
+            categoryIcon,
             epicName,
             epicColor,
             epicAlias
@@ -78,9 +78,18 @@ class TaskCard extends HTMLElement {
         }
 
         const categoryId = Number(category);
-        if (category && categoryId !== 1) {
-            badgeEl.style.display = 'inline-block';
-            if (badgeEl) badgeEl.textContent = CATEGORIES[categoryId] || 'Unknown';
+        if (category && categoryId !== 1 && categoryName) {
+            badgeEl.style.display = 'inline-flex';
+            badgeEl.innerHTML = '';
+            if (categoryIcon) {
+                const icon = document.createElement('svg-icon');
+                icon.setAttribute('icon', categoryIcon);
+                icon.setAttribute('size', '12');
+                badgeEl.appendChild(icon);
+            }
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = categoryName;
+            badgeEl.appendChild(nameSpan);
         } else {
             badgeEl.style.display = 'none';
         }

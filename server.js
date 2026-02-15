@@ -124,7 +124,6 @@ const VALIDATION = {
     DESCRIPTION_MAX_LENGTH: 2000,
     NOTES_MAX_LENGTH: 10000,
     REPORT_TITLE_MAX_LENGTH: 200,
-    VALID_CATEGORIES: [1, 2, 3, 4, 5, 6],
     VALID_STATUSES: ['todo', 'wait', 'inprogress', 'done']
 };
 
@@ -135,7 +134,7 @@ const VALIDATION = {
  * @param {boolean} options.requireTitle - Whether title is required (true for create, false for update)
  * @returns {{valid: boolean, errors: string[]}} Validation result
  */
-function validateTaskInput(data, { requireTitle = false } = {}) {
+function validateTaskInput(data, { requireTitle = false, validCategoryIds = null } = {}) {
     const errors = [];
 
     // Title validation
@@ -164,8 +163,10 @@ function validateTaskInput(data, { requireTitle = false } = {}) {
     // Category validation
     if (data.category !== undefined) {
         const category = Number(data.category);
-        if (isNaN(category) || !VALIDATION.VALID_CATEGORIES.includes(category)) {
-            errors.push(`Category must be one of: ${VALIDATION.VALID_CATEGORIES.join(', ')}`);
+        if (isNaN(category) || !Number.isInteger(category) || category < 1) {
+            errors.push('Category must be a positive integer');
+        } else if (validCategoryIds && !validCategoryIds.has(category)) {
+            errors.push('Invalid category ID');
         }
     }
 
@@ -244,23 +245,23 @@ function generateId() {
 }
 
 /**
- * Category labels mapping (numeric ID → display label)
- *
- * NOTE: This is a copy of CATEGORIES from /public/js/constants.js.
- * The source of truth is /public/js/constants.js. If you modify
- * categories, update both files to keep them in sync.
- *
- * This duplication exists because Node.js cannot directly import
- * ES modules from the /public directory without additional setup.
+ * Default categories created when a profile is first loaded.
+ * Categories are stored in categories.json per profile and managed dynamically.
  */
-const CATEGORY_LABELS = {
-    1: 'Non categorized',
-    2: 'Development',
-    3: 'Communication',
-    4: 'To Remember',
-    5: 'Planning',
-    6: 'Generic Task'
-};
+const DEFAULT_CATEGORIES = [
+    { id: 1, name: 'Non categorized', icon: 'close' },
+    { id: 2, name: 'Development', icon: 'edit' },
+    { id: 3, name: 'Communication', icon: 'newTab' },
+    { id: 4, name: 'To Remember', icon: 'star' },
+    { id: 5, name: 'Planning', icon: 'plus' },
+    { id: 6, name: 'Generic Task', icon: 'close' }
+];
+
+/** Maximum number of categories allowed per profile */
+const MAX_CATEGORIES = 20;
+
+/** Category ID that cannot be deleted (Non categorized) */
+const DEFAULT_CATEGORY_ID = 1;
 
 /**
  * Maximum number of epics allowed.
@@ -362,6 +363,7 @@ async function createEmptyProfileData(profileDir) {
     await writeJsonFile(path.join(profileDir, 'reports.json'), []);
     await writeJsonFile(path.join(profileDir, 'notes.json'), { content: '' });
     await writeJsonFile(path.join(profileDir, 'epics.json'), []);
+    await writeJsonFile(path.join(profileDir, 'categories.json'), DEFAULT_CATEGORIES);
 }
 
 /**
@@ -494,9 +496,15 @@ async function resolveProfile(req, res, next) {
             archived: path.join(profileDir, 'archived-tasks.json'),
             reports: path.join(profileDir, 'reports.json'),
             notes: path.join(profileDir, 'notes.json'),
-            epics: path.join(profileDir, 'epics.json')
+            epics: path.join(profileDir, 'epics.json'),
+            categories: path.join(profileDir, 'categories.json')
         };
         req.profile = profile;
+
+        // Auto-create categories.json with defaults if missing (migration for existing profiles)
+        if (!(await fileExists(req.profileFiles.categories))) {
+            await writeJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        }
 
         next();
     } catch (error) {
@@ -728,8 +736,12 @@ app.get('/api/:profile/tasks', resolveProfile, async (req, res) => {
 // POST create new task
 app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) => {
     try {
+        // Load categories for validation
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const validCategoryIds = new Set(categories.map(c => c.id));
+
         // Validate input
-        const validation = validateTaskInput(req.body, { requireTitle: true });
+        const validation = validateTaskInput(req.body, { requireTitle: true, validCategoryIds });
         if (!validation.valid) {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
@@ -770,8 +782,13 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
 // PUT update task
 app.put('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
+        // Load categories for validation and logging
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const validCategoryIds = new Set(categories.map(c => c.id));
+        const categoryLookup = new Map(categories.map(c => [c.id, c.name]));
+
         // Validate input (title not required for updates)
-        const validation = validateTaskInput(req.body, { requireTitle: false });
+        const validation = validateTaskInput(req.body, { requireTitle: false, validCategoryIds });
         if (!validation.valid) {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
@@ -800,8 +817,8 @@ app.put('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res
             const oldCategory = tasks[taskIndex].category || 1;
             if (newCategory !== oldCategory) {
                 const today = new Date().toISOString().split('T')[0];
-                const oldLabel = CATEGORY_LABELS[oldCategory] || 'Non categorized';
-                const newLabel = CATEGORY_LABELS[newCategory] || 'Non categorized';
+                const oldLabel = categoryLookup.get(oldCategory) || 'Non categorized';
+                const newLabel = categoryLookup.get(newCategory) || 'Non categorized';
                 if (!tasks[taskIndex].log) tasks[taskIndex].log = [];
                 tasks[taskIndex].log.push({
                     date: today,
@@ -906,6 +923,8 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const reports = await readJsonFile(req.profileFiles.reports, []);
         const notes = await readJsonFile(req.profileFiles.notes, { content: '' });
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const categoryLookup = new Map(categories.map(c => [c.id, c.name]));
 
         const doneTasks = tasks.filter(t => t.status === 'done');
         const inProgressTasks = tasks.filter(t => t.status === 'inprogress');
@@ -916,7 +935,14 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
         const weekNumber = getWeekNumber(now);
         const dateRange = formatDateRange(now);
 
-        const mapTask = t => ({ id: t.id, title: t.title, description: t.description, category: t.category || 1, epicId: t.epicId || null });
+        const mapTask = t => ({
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            category: t.category || 1,
+            categoryName: categoryLookup.get(t.category || 1) || 'Non categorized',
+            epicId: t.epicId || null
+        });
 
         const report = {
             id: generateId(),
@@ -948,6 +974,8 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
     try {
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const categoryLookup = new Map(categories.map(c => [c.id, c.name]));
 
         const doneTasks = tasks.filter(t => t.status === 'done');
 
@@ -957,6 +985,8 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
 
         for (const task of doneTasks) {
             task.status = 'archived';
+            // Store category name so it persists even if category is later deleted
+            task.categoryName = categoryLookup.get(task.category || 1) || 'Non categorized';
             archivedTasks.push(task);
         }
 
@@ -1242,6 +1272,136 @@ app.delete('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, 
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete epic' });
+    }
+});
+
+// ===========================================
+// Category API Routes
+// ===========================================
+
+// GET all categories
+app.get('/api/:profile/categories', resolveProfile, async (req, res) => {
+    try {
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        res.json(categories);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read categories' });
+    }
+});
+
+// POST create new category
+app.post('/api/:profile/categories', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+
+        if (categories.length >= MAX_CATEGORIES) {
+            return res.status(400).json({ error: `Maximum of ${MAX_CATEGORIES} categories allowed` });
+        }
+
+        const { name, icon } = req.body;
+
+        if (!name || typeof name !== 'string' || name.trim() === '') {
+            return res.status(400).json({ error: 'Category name is required' });
+        }
+
+        if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Category name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
+        }
+
+        if (!icon || typeof icon !== 'string') {
+            return res.status(400).json({ error: 'Category icon is required' });
+        }
+
+        // Auto-increment ID
+        const maxId = categories.reduce((max, c) => Math.max(max, c.id), 0);
+        const newCategory = {
+            id: maxId + 1,
+            name: name.trim(),
+            icon
+        };
+
+        categories.push(newCategory);
+        await writeJsonFile(req.profileFiles.categories, categories);
+        res.status(201).json(newCategory);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create category' });
+    }
+});
+
+// PUT update category
+app.put('/api/:profile/categories/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const categoryId = Number(req.params.id);
+        const categoryIndex = categories.findIndex(c => c.id === categoryId);
+
+        if (categoryIndex === -1) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        const { name, icon } = req.body;
+
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.trim() === '') {
+                return res.status(400).json({ error: 'Category name is required' });
+            }
+            if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+                return res.status(400).json({ error: `Category name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
+            }
+            categories[categoryIndex].name = name.trim();
+        }
+
+        if (icon !== undefined) {
+            if (typeof icon !== 'string') {
+                return res.status(400).json({ error: 'Icon must be a string' });
+            }
+            categories[categoryIndex].icon = icon;
+        }
+
+        await writeJsonFile(req.profileFiles.categories, categories);
+        res.json(categories[categoryIndex]);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update category' });
+    }
+});
+
+// DELETE category (reassign active tasks to category 1, leave archived untouched)
+app.delete('/api/:profile/categories/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const categoryId = Number(req.params.id);
+
+        if (categoryId === DEFAULT_CATEGORY_ID) {
+            return res.status(400).json({ error: 'Cannot delete the default category' });
+        }
+
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const categoryIndex = categories.findIndex(c => c.id === categoryId);
+
+        if (categoryIndex === -1) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        categories.splice(categoryIndex, 1);
+        await writeJsonFile(req.profileFiles.categories, categories);
+
+        // Reassign active tasks with deleted category to default
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        let tasksUpdated = false;
+        for (const task of tasks) {
+            if (task.category === categoryId) {
+                task.category = DEFAULT_CATEGORY_ID;
+                tasksUpdated = true;
+            }
+        }
+        if (tasksUpdated) {
+            await writeJsonFile(req.profileFiles.tasks, tasks);
+        }
+
+        // Archived tasks are left untouched (keep old category number)
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete category' });
     }
 });
 

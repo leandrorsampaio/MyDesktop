@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "Non categorized",
+    "icon": "umbrella"
+  },
+  {
+    "id": 2,
+    "name": "Development",
+    "icon": "edit"
+  },
+  {
+    "id": 3,
+    "name": "Communication",
+    "icon": "newTab"
+  },
+  {
+    "id": 4,
+    "name": "To Remember",
+    "icon": "star"
+  },
+  {
+    "id": 5,
+    "name": "Planning",
+    "icon": "plus"
+  },
+  {
+    "id": 6,
+    "name": "Generic Task",
+    "icon": "close"
+  },
+  {
+    "id": 7,
+    "name": "Test",
+    "icon": "box-seam"
+  }
+]
