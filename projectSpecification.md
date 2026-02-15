@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.22.0
+**Version:** 2.23.0
 **Last Updated:** 2026-02-15
 
 ---
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.23.0  | 2026-02-15 | UX: Drag-and-Drop Indicator Line — visual drop position indicator when dragging task cards; accent-colored horizontal line appears between cards at the calculated insertion point during `dragover`; indicator follows cursor in real-time; smooth fade-in animation; reusable indicator element per column (no DOM thrashing); cleanup on `dragend`/`dragleave`/`drop`; `removeDropIndicator()` public method on `kanban-column` component |
 | 2.22.0  | 2026-02-15 | Feature: Dynamic Category Management — categories are now dynamic (stored in `categories.json` per profile) instead of hardcoded; category CRUD via Manage Categories modal (hamburger menu); each category has a name and SVG icon; icon picker using `<svg-icon>` component; category badge on task cards shows icon + name; max 20 categories; category 1 ("Non categorized") undeletable but renamable; deleting a category reassigns active tasks to category 1; `categoryName` stored on archived tasks for persistence; dynamic category validation on server; removed hardcoded `CATEGORIES`/`CATEGORY_LABELS` constants |
 | 2.21.0  | 2026-02-14 | Feature: SVG Icon Component — new `<svg-icon>` Web Component for centralized SVG icon management; inline Shadow DOM (no external HTML/CSS files); static `ICONS` Map for O(1) lookup; `icon` and `size` attributes; uses `currentColor` for automatic color inheritance; ships with placeholder icons (star, newTab, edit, trash, plus, close) |
 | 2.20.0  | 2026-02-14 | Feature: Default Profile & Open-in-New-Tab — `isDefault` field on Profile Object; default profile toggle (star) in Manage Profiles modal; `GET /api/profiles/default` endpoint; root `/` redirects to default profile; profile dropdown shows "open in new tab" icon per non-active profile; `StartDesktop.command` opens default profile URL; auto-normalization ensures one profile is always default |
@@ -852,6 +853,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 - Tasks are ordered by `position` field within each column
 - Drag-and-drop between columns changes `status` and adds a log entry
 - Drag-and-drop within a column reorders `position` values (no log entry)
+- **Drop indicator line:** A 3px accent-colored horizontal line appears between cards during drag, showing exactly where the card will land. The indicator tracks the cursor position in real-time and animates in with a subtle scale/fade effect.
 - Each card shows a gradient background based on its position (see Color System)
 
 ### 2. Task Card

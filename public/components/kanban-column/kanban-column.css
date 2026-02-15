@@ -100,3 +100,23 @@
     background-color: rgba(196, 164, 132, 0.08);
     border-radius: 12px;
 }
+
+.column__dropIndicator {
+    height: 3px;
+    background-color: var(--accent-color);
+    border-radius: 2px;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(196, 164, 132, 0.5);
+    animation: indicatorFadeIn 0.15s ease-out;
+}
+
+@keyframes indicatorFadeIn {
+    from {
+        opacity: 0;
+        transform: scaleX(0.6);
+    }
+    to {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}

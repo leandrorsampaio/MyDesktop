@@ -353,7 +353,7 @@
     "description": "Mikael requested with IT. Waiting Feedback",
     "priority": false,
     "status": "wait",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-01-26",
@@ -464,7 +464,7 @@
     "description": "Waiting Mikael's feedback",
     "priority": false,
     "status": "wait",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-01-26",
@@ -520,7 +520,7 @@
     "description": "Waiting ticket from EUVIC to be done",
     "priority": false,
     "status": "wait",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-01-26",

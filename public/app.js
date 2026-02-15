@@ -519,6 +519,10 @@ import {
 
         card.addEventListener('dragend', (e) => {
             e.target.classList.remove('--dragging');
+            // Clean up drop indicators in all columns
+            document.querySelectorAll('kanban-column').forEach(col => {
+                col.removeDropIndicator();
+            });
         });
 
         return card;
