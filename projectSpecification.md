@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.21.0
-**Last Updated:** 2026-02-14
+**Version:** 2.22.0
+**Last Updated:** 2026-02-15
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Version | Date       | Changes                                                      |
 |---------|------------|--------------------------------------------------------------|
+| 2.22.0  | 2026-02-15 | Feature: Dynamic Category Management — categories are now dynamic (stored in `categories.json` per profile) instead of hardcoded; category CRUD via Manage Categories modal (hamburger menu); each category has a name and SVG icon; icon picker using `<svg-icon>` component; category badge on task cards shows icon + name; max 20 categories; category 1 ("Non categorized") undeletable but renamable; deleting a category reassigns active tasks to category 1; `categoryName` stored on archived tasks for persistence; dynamic category validation on server; removed hardcoded `CATEGORIES`/`CATEGORY_LABELS` constants |
 | 2.21.0  | 2026-02-14 | Feature: SVG Icon Component — new `<svg-icon>` Web Component for centralized SVG icon management; inline Shadow DOM (no external HTML/CSS files); static `ICONS` Map for O(1) lookup; `icon` and `size` attributes; uses `currentColor` for automatic color inheritance; ships with placeholder icons (star, newTab, edit, trash, plus, close) |
 | 2.20.0  | 2026-02-14 | Feature: Default Profile & Open-in-New-Tab — `isDefault` field on Profile Object; default profile toggle (star) in Manage Profiles modal; `GET /api/profiles/default` endpoint; root `/` redirects to default profile; profile dropdown shows "open in new tab" icon per non-active profile; `StartDesktop.command` opens default profile URL; auto-normalization ensures one profile is always default |
 | 2.19.0  | 2026-02-13 | Feature: Profiles — support multiple profiles (e.g., Work vs Personal) with separate data folders; profile selector in header; profile management modal (CRUD) via hamburger menu; profile-scoped API routes (`/api/:profile/...`); SPA URL routing (`/:alias`); auto-migration of existing data to "Work" profile; profile-scoped localStorage keys for checklist; max 20 profiles with unique color, letters, and alias; `profiles.json` global data file |
@@ -63,6 +64,7 @@ A local web-based task management tool that serves as a browser homepage. It fea
   - `reports.json` — Generated report snapshots
   - `notes.json` — User notes (free-form text, `{ content: string }`)
   - `epics.json` — Epics (array of epic objects)
+  - `categories.json` — Categories (array of category objects)
 - **Client-side Storage:** `localStorage` for recurrent tasks config and checked state
 - **Favicon:** `public/favicon.png` (star icon)
 - **Font:** Montserrat via Google Fonts CDN
@@ -90,7 +92,8 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 │   │   ├── archived-tasks.json
 │   │   ├── reports.json
 │   │   ├── notes.json
-│   │   └── epics.json
+│   │   ├── epics.json
+│   │   └── categories.json
 │   └── personal/              # Another profile directory (example)
 │       └── ... (same structure)
 ├── tests/                     # Vanilla Node.js tests (node:test)
@@ -108,7 +111,7 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
     ├── styles.css             # Global styles
     ├── favicon.png
     ├── js/
-    │   ├── constants.js       # Shared constants (CATEGORIES, STATUS_COLUMNS, etc.)
+    │   ├── constants.js       # Shared constants (MAX_CATEGORIES, STATUS_COLUMNS, etc.)
     │   ├── utils.js           # Shared utilities (escapeHtml, getWeekNumber, etc.)
     │   ├── state.js           # Shared application state management
     │   ├── api.js             # HTTP API functions for server communication
@@ -156,7 +159,6 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
 
 **Shared Modules:**
 -   **`/public/js/constants.js`:** Single source of truth for shared constants:
-    - `CATEGORIES` — Category ID to label mapping
     - `STATUS_COLUMNS` — Column status to CSS selector mapping
     - `DEFAULT_CHECKLIST_ITEMS` — Default daily checklist items
     - `DEFAULT_PORT` — Server port (3001)
@@ -164,15 +166,17 @@ The project uses a file-based component model with vanilla JavaScript (Web Compo
     - `DEBOUNCE_DELAY_MS` — Debounce delay for auto-save (500ms)
     - `MAX_GRADIENT_STEPS` — Maximum gradient color steps (20)
     - `LIGHT_TEXT_THRESHOLD` — Gradient index threshold for light text (12)
+    - `MAX_CATEGORIES` — Maximum number of categories allowed (20)
+    - `DEFAULT_CATEGORY_ID` — Default category ID (1, "Non categorized")
     - `MAX_EPICS` — Maximum number of epics allowed (20)
     - `EPIC_COLORS` — Array of 20 predefined epic colors (name + hex)
 -   **`/public/js/utils.js`:** Shared utility functions (escapeHtml, getWeekNumber, formatDate). Imported where needed.
--   **`/public/js/state.js`:** Centralized application state (tasks array, epics array, editing state, filter states, crisis mode state, epic filter state). Provides getter/setter functions for state mutations. Also provides optimistic UI helpers: `createTasksSnapshot()`, `restoreTasksFromSnapshot()`, `replaceTask()`, `generateTempId()`.
+-   **`/public/js/state.js`:** Centralized application state (tasks array, epics array, categories array, editing state, filter states, crisis mode state, epic filter state). Provides getter/setter functions for state mutations. Also provides optimistic UI helpers: `createTasksSnapshot()`, `restoreTasksFromSnapshot()`, `replaceTask()`, `generateTempId()`.
 -   **`/public/js/api.js`:** HTTP API functions for communicating with the server. Pure functions that return data without side effects.
 -   **`/public/js/filters.js`:** Category and priority filtering logic. Manages filter button rendering and applies filters to task cards.
 -   **`/public/js/crisis-mode.js`:** Crisis mode functionality including favicon generation and visual state changes.
--   **`/public/js/modals.js`:** Modal dialog handling for task add/edit, reports, archived tasks, checklist editor, and delete confirmation.
--   **Note:** `server.js` has its own copy of CATEGORIES and getWeekNumber (documented with comments) because Node.js cannot import ES modules from `/public` without additional setup.
+-   **`/public/js/modals.js`:** Modal dialog handling for task add/edit, reports, archived tasks, checklist editor, category management, and delete confirmation.
+-   **Note:** `server.js` has its own copy of getWeekNumber (documented with comments) because Node.js cannot import ES modules from `/public` without additional setup. Categories are now dynamic and loaded from `categories.json`.
 -   **Registration:** The `.js` file defines and registers a custom element (e.g., `<custom-button>`) using `customElements.define()`.
 -   **Usage:** Once a component's script is loaded in `index.html`, it can be used declaratively anywhere in the application's JavaScript via `document.createElement('custom-tag')`.
 
@@ -220,7 +224,7 @@ This section documents coding standards and patterns to maintain consistency and
 
 **Constants:**
 - Define shared constants ONCE in `/public/js/constants.js`
-- Import where needed: `import { CATEGORIES } from './js/constants.js';`
+- Import where needed: `import { MAX_CATEGORIES } from './js/constants.js';`
 - Never duplicate constant definitions across files
 - If server.js needs the same constants, document with a comment: `// Source of truth: /public/js/constants.js`
 
@@ -358,11 +362,11 @@ str.substring(2, 11)
 
 ```javascript
 // Importing
-import { CATEGORIES } from './js/constants.js';
+import { MAX_CATEGORIES, DEFAULT_CATEGORY_ID } from './js/constants.js';
 import { escapeHtml } from './js/utils.js';
 
 // Exporting (in constants.js, utils.js)
-export const CATEGORIES = { ... };
+export const MAX_CATEGORIES = 20;
 export function escapeHtml(text) { ... }
 ```
 
@@ -433,7 +437,7 @@ class MyComponent extends HTMLElement {
 
 **JavaScript:**
 - Functions: `camelCase` — `fetchTasks()`, `openEditModal()`
-- Constants: `UPPER_SNAKE_CASE` — `CATEGORIES`, `STATUS_COLUMNS`
+- Constants: `UPPER_SNAKE_CASE` — `MAX_CATEGORIES`, `STATUS_COLUMNS`
 - Private/internal: prefix with underscore — `_handleClick()`
 
 **Files:**
@@ -550,13 +554,12 @@ const VALIDATION = {
     DESCRIPTION_MAX_LENGTH: 2000,
     NOTES_MAX_LENGTH: 10000,
     REPORT_TITLE_MAX_LENGTH: 200,
-    VALID_CATEGORIES: [1, 2, 3, 4, 5, 6],
     VALID_STATUSES: ['todo', 'wait', 'inprogress', 'done']
 };
 ```
 
 **Validation helpers:**
-- `validateTaskInput(data, options)` — Validates task create/update data
+- `validateTaskInput(data, options)` — Validates task create/update data. Accepts `validCategoryIds` Set for dynamic category validation.
 - `validateMoveInput(data)` — Validates move operation data
 
 **What gets validated:**
@@ -564,7 +567,7 @@ const VALIDATION = {
 |-------|------------|
 | `title` | Required on create, string, max 200 chars |
 | `description` | Optional, string, max 2000 chars |
-| `category` | Optional, integer 1-6 |
+| `category` | Optional, integer, must exist in profile's `categories.json` |
 | `priority` | Optional, boolean |
 | `newStatus` | Must be: todo, wait, inprogress, done |
 | `newPosition` | Non-negative integer |
@@ -579,7 +582,7 @@ const VALIDATION = {
 ```javascript
 // 400 Bad Request with clear message
 { "error": "Title must be 200 characters or less" }
-{ "error": "Category must be one of: 1, 2, 3, 4, 5, 6" }
+{ "error": "Invalid category" }
 ```
 
 ### Quick Reference Checklist
@@ -630,6 +633,10 @@ PUT    /api/:profile/reports/:id         - Update report title (body: { title })
 DELETE /api/:profile/reports/:id         - Delete a report permanently
 GET    /api/:profile/notes               - Get notes object ({ content: string })
 POST   /api/:profile/notes               - Save notes (body: { content })
+GET    /api/:profile/categories           - Get all categories
+POST   /api/:profile/categories           - Create new category (body: { name, icon })
+PUT    /api/:profile/categories/:id       - Update category (body: { name?, icon? })
+DELETE /api/:profile/categories/:id       - Delete category (reassigns active tasks to category 1; cannot delete category 1)
 GET    /api/:profile/epics               - Get all epics
 POST   /api/:profile/epics               - Create new epic (body: { name, color })
 PUT    /api/:profile/epics/:id           - Update epic (body: { name?, color? })
@@ -656,7 +663,7 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
   title: string,         // Required
   description: string,   // Optional, default: ""
   priority: boolean,     // true = show ★ star icon, default: false
-  category: number,      // 1-6, default: 1. See Category Definitions.
+  category: number,      // Category ID (auto-incrementing integer), default: 1. See Category Object.
   epicId: string|null,   // ID of assigned epic, or null if none
   status: string,        // "todo" | "wait" | "inprogress" | "done" | "archived"
   position: number,      // 0-based index within column (used for ordering)
@@ -675,6 +682,37 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
   alias: string          // Auto-generated camelCase alias (from name)
 }
 ```
+
+### Category Object
+
+```javascript
+{
+  id: number,            // Auto-incrementing integer (1 = "Non categorized", undeletable)
+  name: string,          // Category display name (required, max 200 chars)
+  icon: string           // SVG icon name from svg-icon component (e.g., "star", "edit")
+}
+```
+
+**Category constraints:**
+- Maximum 20 categories per profile
+- Category 1 ("Non categorized") always exists and cannot be deleted, but CAN be renamed and have its icon changed
+- Multiple categories can share the same icon (no uniqueness validation)
+- When deleting a category: active tasks are reassigned to category 1; archived tasks are untouched (keep old category number)
+- When archiving tasks, `categoryName` is stored on each archived task so it persists even if the category is later deleted
+- New category IDs are auto-incremented (max existing ID + 1)
+- Stored in `data/{profileAlias}/categories.json` (array of category objects)
+- Auto-created with 6 default categories on first access if file doesn't exist
+
+**Default categories (created on first load):**
+
+| ID | Name             | Icon    |
+|----|------------------|---------|
+| 1  | Non categorized  | close   |
+| 2  | Development      | edit    |
+| 3  | Communication    | newTab  |
+| 4  | To Remember      | star    |
+| 5  | Planning         | plus    |
+| 6  | Generic Task     | close   |
 
 **Epic constraints:**
 - Maximum 20 epics
@@ -706,7 +744,7 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
   - New profiles are created with `isDefault: false`
   - If no profile has `isDefault: true` (legacy data), the first profile is normalized to default on read
   - Deleting the default profile transfers default to the first remaining profile
-- Folder structure: `data/{alias}/` contains `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`
+- Folder structure: `data/{alias}/` contains `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`, `categories.json`
 - On first run, existing data is migrated to a "Work" profile; fresh installs get a "User1" profile (both with `isDefault: true`)
 
 ### Log Entry
@@ -730,19 +768,13 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
 
 ### Category Definitions
 
-| ID | Label              | Notes                    |
-|----|--------------------|--------------------------|
-| 1  | Non categorized    | Default if none selected |
-| 2  | Development        |                          |
-| 3  | Communication      |                          |
-| 4  | To Remember        |                          |
-| 5  | Planning           |                          |
-| 6  | Generic Task       |                          |
+Categories are now **dynamic** (v2.22.0) and stored per profile in `categories.json`. See the Category Object in the Data Model section above for the full data model, constraints, and default values.
 
-- Stored as numeric IDs in the task object for extensibility (easy to add 7, 8, etc.)
-- Label mapping defined in both `server.js` (`CATEGORY_LABELS` object) and `app.js` (`CATEGORIES` object)
+- Stored as numeric IDs in the task object (auto-incrementing integers)
+- Category data loaded from `categories.json` at runtime — no hardcoded label mappings
 - Existing tasks without a `category` field are treated as `1` (Non categorized) at read time — no migration needed
 - Category badge is **not shown** on the card when category is 1 (Non categorized)
+- Archived tasks store `categoryName` for persistence after category deletion
 
 ### Notes Data
 
@@ -769,7 +801,7 @@ GET    /:alias                   - Serve index.html if profile exists, else redi
 }
 ```
 
-Each task in the report content arrays contains: `{ id, title, description, category, epicId }`.
+Each task in the report content arrays contains: `{ id, title, description, category, categoryName, epicId }`.
 
 **Report display groups tasks by category** within each status section (e.g., all "Development" tasks together under "Completed Tasks").
 
@@ -795,11 +827,11 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 │  ┌──────────────────┐  │  Hamburger Menu [≡]:                  │
 │  │ Notes   Saved at │  │   - View Reports                      │
 │  │         2:30 PM  │  │   - All Completed Tasks               │
-│  │ ┌──────────────┐ │  │   - Manage Epics                      │
-│  │ │              │ │  │   - Manage Profiles                   │
-│  │ │ Free-form    │ │  │   - Edit Daily Checklist              │
-│  │ │ textarea...  │ │  │   - Crisis Mode                       │
-│  │ └──────────────┘ │  │                                       │
+│  │ ┌──────────────┐ │  │   - Manage Categories                  │
+│  │ │              │ │  │   - Manage Epics                      │
+│  │ │ Free-form    │ │  │   - Manage Profiles                   │
+│  │ │ textarea...  │ │  │   - Edit Daily Checklist              │
+│  │ └──────────────┘ │  │   - Crisis Mode                       │
 │  └──────────────────┘  │                                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -837,7 +869,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 - **Priority star (★):** Gold (#E8B923), shown only when `priority: true`
 - **Title:** Font-weight 600, 14px (13px on compact)
 - **Description:** 12px (11px compact), max 2 lines with ellipsis
-- **Category badge:** Small rounded tag below description, semi-transparent background. Hidden when category is 1 (Non categorized)
+- **Category badge:** Small rounded tag below description with inline-flex layout, shows `<svg-icon>` + category name. Semi-transparent background. Hidden when category is 1 (Non categorized). Category name and icon passed via `data-category-name` and `data-category-icon` attributes.
 - **Edit button:** Appears on hover (opacity transition), top-right corner
 - **Entire card is draggable** for column moves
 
@@ -847,7 +879,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 1. **Title** — text input (required)
 2. **Description** — textarea (optional)
 3. **Priority Task** — checkbox toggle
-4. **Category** — horizontal row of pill/radio buttons (1-6), default: 1 "Non categorized"
+4. **Category** — horizontal row of pill/radio buttons (dynamically rendered from `categories` state), default: 1 "Non categorized"
 5. **Activity Log** — read-only list (edit mode only, hidden if empty)
 6. **Actions:** Delete (edit mode only) | Cancel | Save
 
@@ -924,7 +956,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 ### 11. Category Filters (v1.9.0)
 
 - **Location:** Inside `.toolbar`, to the left of the Priority filter button
-- **Buttons:** One `toolbar__categoryBtn` per category (1-6), rendered dynamically from `CATEGORIES` constant
+- **Buttons:** One `toolbar__categoryBtn` per category, rendered dynamically from `categories` state array
 - **Behavior:** Each button is an independent toggle. Clicking activates/deactivates that category filter.
   - When **no filters active**: all cards visible
   - When **one or more filters active**: only cards matching ANY active category are visible; non-matching cards are hidden
@@ -1018,9 +1050,45 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 - Tasks reference epics via `epicId` field (string or null)
 - Existing tasks without `epicId` treated as having no epic (no migration needed)
 
-### 16. SVG Icon Component (v2.21.0)
+### 16. Dynamic Category Management (v2.22.0)
 
-**Overview:** Centralized SVG icon management via a `<svg-icon>` Web Component. All SVG markup is stored in a static `ICONS` Map inside the component's JS file — no external HTML/CSS files needed.
+**Overview:** Categories are now dynamic and stored per profile in `categories.json`, replacing the former hardcoded `CATEGORIES` constant. Each category has a name and an SVG icon. Categories can be created, renamed, re-iconed, and deleted via the Manage Categories modal.
+
+**Category Management (Hamburger Menu → Manage Categories):**
+- Opens a `<modal-dialog size="large">` with CRUD interface
+- **Create:** Name input + icon dropdown (populated from `svg-icon` component's `availableIcons`) + icon preview + Add button
+- **Edit:** Inline name editing (blur saves) + icon select per category item
+- **Delete:** × button per category, with confirmation modal; reassigns active tasks with that category to category 1 ("Non categorized"); archived tasks keep their old category ID
+- Category 1 ("Non categorized") cannot be deleted (shown with muted "Default" badge)
+- Maximum 20 categories allowed
+
+**Task Modal Integration:**
+- Category pills in the add/edit task form are rendered dynamically from `categories` state
+- Selected pill has accent color background
+- Default selection: category 1 ("Non categorized")
+
+**Task Card Display:**
+- Category badge shows `<svg-icon>` element + category name text in an inline-flex layout
+- Badge hidden when category is 1 (Non categorized)
+- Category name and icon passed via `data-category-name` and `data-category-icon` attributes
+
+**Archived Task Enhancement:**
+- When archiving, `categoryName` is stored on each archived task
+- This ensures the correct category name displays even if the category is later deleted
+- For old archived tasks without `categoryName`, falls back to current category lookup, then to "Unknown"
+
+**Reports:**
+- Report generation includes `categoryName` on each task snapshot
+- Report display uses `categoryName` from task data with fallback to dynamic categories lookup
+
+**Data:**
+- Stored in `data/{profileAlias}/categories.json` (array of category objects)
+- Auto-created with 6 default categories on first access if file doesn't exist
+- See Category Object in Data Model section for full schema
+
+### 17. SVG Icon Component (v2.21.0)
+
+**Overview:** Centralized SVG icon management via a `<svg-icon>` Web Component. All SVG markup is stored in a static `SVGIcons` object inside the component's JS file — no external HTML/CSS files needed.
 
 **Usage:**
 ```html
@@ -1029,7 +1097,7 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 ```
 
 **Attributes:**
-- `icon` — Icon name (key in the `ICONS` Map). Required.
+- `icon` — Icon name (key in the `SVGIcons` object). Required.
 - `size` — Icon size in px (default: 24). Sets both width and height.
 
 **Design:**
@@ -1041,12 +1109,15 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 **Available icons (placeholder set, expand as needed):**
 `star`, `newTab`, `edit`, `trash`, `plus`, `close`
 
-**Adding a new icon:** Add one line to the `ICONS` object in `svg-icon.js`:
+**Static API:**
+- `SvgIcon.availableIcons` — Returns array of all icon name strings. Used by the category management modal to populate the icon picker dropdown.
+
+**Adding a new icon:** Add one line to the `SVGIcons` object in `svg-icon.js`:
 ```javascript
 myIcon: `<svg viewBox="0 0 24 24" ...>...</svg>`,
 ```
 
-### 17. Color System
+### 18. Color System
 
 **Position-based gradients** — color is tied to card position, not the task itself.
 
@@ -1060,7 +1131,7 @@ Each column has 20 gradient levels defined as CSS custom properties:
 
 **Gradient assignment:** `getTaskGradient(status, position, totalInColumn)` — if column has ≤20 tasks, gradient index = position. If >20, distributes evenly across the 20 levels.
 
-### 18. Profiles
+### 19. Profiles
 
 Multiple profiles allow separating data (e.g., Work vs Personal). Each profile has its own folder with independent tasks, epics, notes, reports, and archived tasks.
 
@@ -1147,7 +1218,7 @@ Multiple profiles allow separating data (e.g., Work vs Personal). Each profile h
 | `renderReportSection(title, taskList)` | Renders report section grouped by category |
 | `setCategorySelection(value)` | Sets radio button for category in modal       |
 | `getSelectedCategory()`     | Reads selected category from modal radios        |
-| `renderCategoryFilters()`   | Renders filter buttons in header toolbar from CATEGORIES |
+| `renderCategoryFilters()`   | Renders filter buttons in header toolbar from categories state |
 | `toggleCategoryFilter(id)`  | Toggles a category filter on/off, updates button state and cards |
 | `togglePriorityFilter()`    | Toggles priority-only filter on/off                      |
 | `applyAllFilters()`         | Applies all active filters (category + priority) via `hidden` attribute. Queries through kanban-column Shadow DOMs to find task-cards. |
@@ -1162,6 +1233,9 @@ Multiple profiles allow separating data (e.g., Work vs Personal). Each profile h
 | `openChecklistModal()`      | Opens the Edit Daily Checklist modal             |
 | `renderChecklistEditor()`   | Renders editable checklist items in modal        |
 | `saveChecklist()`           | Saves checklist config to localStorage and refreshes component |
+| `openCategoriesModal()`     | Opens category management modal with CRUD interface    |
+| `renderCategoryPills()`     | Renders dynamic category pills in task add/edit modal  |
+| `confirmDeleteCategory()`   | Confirms and executes pending category deletion        |
 | `openEpicsModal()`          | Opens epic management modal with CRUD interface        |
 | `populateTaskEpicSelect()`  | Populates epic dropdown in task add/edit modal         |
 | `renderEpicFilter()`        | Renders epic filter dropdown with epics that have tasks |
@@ -1172,24 +1246,22 @@ Multiple profiles allow separating data (e.g., Work vs Personal). Each profile h
 | `renderProfileDropdown()`   | Renders profile switcher dropdown                      |
 | `getProfileAliasFromUrl()`  | Extracts profile alias from URL pathname               |
 
-### Key Constants in `app.js`
-
-```javascript
-const STATUS_COLUMNS = { 'todo': 'kanban-column[data-status="todo"]', 'wait': 'kanban-column[data-status="wait"]', 'inprogress': 'kanban-column[data-status="inprogress"]', 'done': 'kanban-column[data-status="done"]' };
-const CATEGORIES = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
-```
-
 ### Key Constants in `constants.js`
 
 ```javascript
+const MAX_CATEGORIES = 20;
+const DEFAULT_CATEGORY_ID = 1;
 const MAX_PROFILES = 20;
 const PROFILE_LETTERS_MAX = 3;
+const MAX_EPICS = 20;
 ```
 
 ### Key Constants in `server.js`
 
 ```javascript
-const CATEGORY_LABELS = { 1: 'Non categorized', 2: 'Development', 3: 'Communication', 4: 'To Remember', 5: 'Planning', 6: 'Generic Task' };
+const DEFAULT_CATEGORIES = [ { id: 1, name: 'Non categorized', icon: 'close' }, ... ];
+const MAX_CATEGORIES = 20;
+const DEFAULT_CATEGORY_ID = 1;
 const MAX_PROFILES = 20;  // Source of truth: /public/js/constants.js
 const PROFILE_LETTERS_REGEX = /^[A-Z]{1,3}$/;
 ```
@@ -1200,7 +1272,7 @@ When `PUT /api/:profile/tasks/:id` receives a `category` field that differs from
 ```javascript
 { date: "2026-01-31", action: "Category changed from Development to Planning" }
 ```
-This happens server-side in the PUT handler — the frontend does not need to construct the log entry.
+This happens server-side in the PUT handler — the frontend does not need to construct the log entry. Category names are resolved dynamically from `categories.json` using a Map lookup.
 
 ### Status Name Mapping (server.js)
 
@@ -1226,6 +1298,7 @@ const statusNames = { 'todo': 'To Do', 'wait': 'Wait', 'inprogress': 'In Progres
 | `reports.json`        | Report generation                                | Array of reports |
 | `notes.json`          | Notes auto-save (debounced 500ms)                | `{ content }` |
 | `epics.json`          | Epic create/update/delete                        | Array of epics |
+| `categories.json`     | Category create/update/delete; auto-created on first access | Array of categories |
 
 All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()` helper functions in server.js.
 
@@ -1239,6 +1312,8 @@ All file I/O uses `readJsonFile()` (with fallback defaults) and `writeJsonFile()
 | `.js-reportsModal`     | View reports list & detail   | Hamburger menu → View Reports        | `<modal-dialog size="large">` component |
 | `.js-archivedModal`    | View all archived tasks      | Hamburger menu → All Completed Tasks | `<modal-dialog size="large">` component |
 | `.js-confirmModal`     | Delete confirmation          | Delete button inside edit modal      | `<modal-dialog size="small">` component |
+| `.js-categoriesModal`  | Manage categories (CRUD)     | Hamburger menu → Manage Categories    | `<modal-dialog size="large">` component |
+| `.js-categoryConfirmModal` | Category delete confirmation | Delete button inside categories modal | `<modal-dialog size="small">` component |
 | `.js-epicsModal`       | Manage epics (CRUD)          | Hamburger menu → Manage Epics         | `<modal-dialog size="large">` component |
 | `.js-profilesModal`   | Manage profiles (CRUD)       | Hamburger menu → Manage Profiles      | `<modal-dialog size="large">` component |
 | `.js-profileConfirmModal` | Profile delete confirmation | Delete button inside profiles modal  | `<modal-dialog size="small">` component |
@@ -1350,7 +1425,7 @@ Before implementing a new feature, read at least:
 
 | Module | Responsibility |
 |--------|---------------|
-| `constants.js` | All shared constants (categories, colors, limits) |
+| `constants.js` | All shared constants (limits, colors, defaults) |
 | `state.js` | Centralized state with getter/setter functions |
 | `api.js` | Pure HTTP API functions that return data |
 | `utils.js` | Shared pure utility functions |
