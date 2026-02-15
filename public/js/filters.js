@@ -17,7 +17,13 @@ export function renderCategoryFilters(container, onToggle) {
         const btn = document.createElement('button');
         btn.className = 'toolbar__categoryBtn js-categoryFilterBtn';
         btn.dataset.category = cat.id;
-        btn.textContent = cat.name;
+        if (cat.icon) {
+            const icon = document.createElement('svg-icon');
+            icon.setAttribute('icon', cat.icon);
+            icon.setAttribute('size', '12');
+            btn.appendChild(icon);
+        }
+        btn.appendChild(document.createTextNode(cat.name));
         if (activeCategoryFilters.has(cat.id)) {
             btn.classList.add('--active');
         }

@@ -879,7 +879,7 @@ Each task in the report content arrays contains: `{ id, title, description, cate
 1. **Title** — text input (required)
 2. **Description** — textarea (optional)
 3. **Priority Task** — checkbox toggle
-4. **Category** — horizontal row of pill/radio buttons (dynamically rendered from `categories` state), default: 1 "Non categorized"
+4. **Category** — horizontal row of pill/radio buttons (dynamically rendered from `categories` state), each showing a `<svg-icon>` (if icon exists) + name; default: 1 "Non categorized"
 5. **Activity Log** — read-only list (edit mode only, hidden if empty)
 6. **Actions:** Delete (edit mode only) | Cancel | Save
 
@@ -956,7 +956,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 ### 11. Category Filters (v1.9.0)
 
 - **Location:** Inside `.toolbar`, to the left of the Priority filter button
-- **Buttons:** One `toolbar__categoryBtn` per category, rendered dynamically from `categories` state array
+- **Buttons:** One `toolbar__categoryBtn` per category, rendered dynamically from `categories` state array. Each button shows a `<svg-icon>` (if the category has an icon) followed by the category name, using inline-flex layout with `gap: 4px`.
 - **Behavior:** Each button is an independent toggle. Clicking activates/deactivates that category filter.
   - When **no filters active**: all cards visible
   - When **one or more filters active**: only cards matching ANY active category are visible; non-matching cards are hidden
@@ -1064,6 +1064,7 @@ Ruby Red (#E74C3C), Coral (#FF6F61), Tangerine (#E67E22), Amber (#F5A623), Sunfl
 
 **Task Modal Integration:**
 - Category pills in the add/edit task form are rendered dynamically from `categories` state
+- Each pill shows a `<svg-icon>` (size 14, if icon exists) followed by the category name
 - Selected pill has accent color background
 - Default selection: category 1 ("Non categorized")
 

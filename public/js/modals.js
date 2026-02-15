@@ -85,7 +85,13 @@ export function renderCategoryPills(container) {
         radio.value = cat.id;
         if (cat.id === DEFAULT_CATEGORY_ID) radio.checked = true;
         const span = document.createElement('span');
-        span.textContent = cat.name;
+        if (cat.icon) {
+            const icon = document.createElement('svg-icon');
+            icon.setAttribute('icon', cat.icon);
+            icon.setAttribute('size', '14');
+            span.appendChild(icon);
+        }
+        span.appendChild(document.createTextNode(cat.name));
         label.appendChild(radio);
         label.appendChild(span);
         container.appendChild(label);

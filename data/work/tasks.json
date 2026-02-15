@@ -1349,11 +1349,16 @@
     "title": "zfdszfds",
     "description": "",
     "priority": false,
-    "category": 1,
+    "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
     "position": 4,
-    "log": [],
+    "log": [
+      {
+        "date": "2026-02-15",
+        "action": "Category changed from Non categorized to To Remember"
+      }
+    ],
     "createdDate": "2026-02-13T15:16:51.084Z"
   },
   {
