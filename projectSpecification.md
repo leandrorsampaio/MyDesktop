@@ -1040,7 +1040,7 @@ The category selector uses styled radio buttons that look like selectable pills.
 **Epic Filter (Toolbar):**
 - `<select>` dropdown in toolbar, between category filters and priority filter
 - First option: "Epics" (clears filter when selected)
-- Only shows epics that have at least one task in the current board columns
+- Shows all available epics
 - Works with AND logic alongside category and priority filters
 - Filter state stored in memory (resets on page reload)
 
