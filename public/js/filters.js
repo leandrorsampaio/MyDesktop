@@ -106,27 +106,30 @@ export function applyAllFilters() {
 }
 
 /**
- * Renders the epic filter dropdown with all available epics.
- * @param {HTMLSelectElement} selectEl - The epic filter select element
+ * Renders the epic filter picker with all available epics.
+ * @param {HTMLElement} pickerEl - The custom-picker element
  */
-export function renderEpicFilter(selectEl) {
-    selectEl.innerHTML = '<option value="">Epics</option>';
-    epics.forEach(epic => {
-        const option = document.createElement('option');
-        option.value = epic.id;
-        option.textContent = epic.name;
-        if (activeEpicFilter === epic.id) option.selected = true;
-        selectEl.appendChild(option);
-    });
+export function renderEpicFilter(pickerEl) {
+    const items = epics.map(epic => ({
+        value: epic.id,
+        label: epic.name,
+        color: epic.color
+    }));
+    pickerEl.setItems(items);
+    if (activeEpicFilter) {
+        pickerEl.value = activeEpicFilter;
+    } else {
+        pickerEl.clear();
+    }
 }
 
 /**
- * Handles epic filter dropdown change.
- * @param {HTMLSelectElement} selectEl - The epic filter select element
+ * Handles epic filter picker change.
+ * @param {HTMLElement} pickerEl - The custom-picker element
  * @param {Function} applyFilters - Function to apply all filters
  */
-export function handleEpicFilterChange(selectEl, applyFilters) {
-    const value = selectEl.value || null;
+export function handleEpicFilterChange(pickerEl, applyFilters) {
+    const value = pickerEl.value || null;
     setActiveEpicFilter(value);
     applyFilters();
 }

@@ -28,10 +28,7 @@
                 <div class="toolbar__filters js-categoryFilters">
                     <!-- Filter buttons rendered dynamically from categories state -->
                 </div>
-                <select class="toolbar__epicFilter js-epicFilter">
-                    <option value="">Epics</option>
-                    <!-- Epic options rendered dynamically -->
-                </select>
+                <custom-picker type="list" placeholder="Epics" size="compact" class="toolbar__epicFilter js-epicFilter"></custom-picker>
                 <button class="toolbar__priorityBtn js-priorityFilterBtn">★ Priority</button>
                 <div class="toolbar__divider"></div>
                 <button class="toolbar__privacyBtn js-privacyToggleBtn">Hide</button>
@@ -133,10 +130,7 @@
 
             <div class="taskForm__group">
                 <label>Epic</label>
-                <select class="taskForm__epicSelect js-taskEpic">
-                    <option value="">Choose an epic</option>
-                    <!-- Epic options rendered by JS -->
-                </select>
+                <custom-picker type="list" placeholder="Choose an epic" class="taskForm__epicPicker js-taskEpic"></custom-picker>
             </div>
 
             <!-- Task Log (only shown in edit mode) -->
@@ -201,7 +195,7 @@
             <div class="epicsEditor__form js-epicForm">
                 <div class="epicsEditor__formRow">
                     <input type="text" class="epicsEditor__nameInput js-epicNameInput" placeholder="Epic name" />
-                    <grid-picker type="color" placeholder="Select color" columns="5" class="js-epicColorSelect"></grid-picker>
+                    <custom-picker type="color" placeholder="Select color" columns="5" class="js-epicColorSelect"></custom-picker>
                     <button type="button" class="btn --save js-epicAddBtn">Add Epic</button>
                 </div>
                 <div class="epicsEditor__alias js-epicAliasPreview"></div>
@@ -221,7 +215,7 @@
             <div class="categoriesEditor__form js-categoryForm">
                 <div class="categoriesEditor__formRow">
                     <input type="text" class="categoriesEditor__nameInput js-categoryNameInput" placeholder="Category name" />
-                    <grid-picker type="icon" placeholder="Select icon" columns="7" class="js-categoryIconSelect"></grid-picker>
+                    <custom-picker type="icon" placeholder="Select icon" columns="7" class="js-categoryIconSelect"></custom-picker>
                     <button type="button" class="btn --save js-categoryAddBtn">Add Category</button>
                 </div>
                 <div class="categoriesEditor__error js-categoryError" style="display: none;"></div>
@@ -271,7 +265,7 @@
                 <div class="profilesEditor__formRow">
                     <input type="text" class="profilesEditor__nameInput js-profileNameInput" placeholder="Profile name" />
                     <input type="text" class="profilesEditor__lettersInput js-profileLettersInput" placeholder="AB" maxlength="3" />
-                    <grid-picker type="color" placeholder="Select color" columns="5" class="js-profileColorSelect"></grid-picker>
+                    <custom-picker type="color" placeholder="Select color" columns="5" class="js-profileColorSelect"></custom-picker>
                     <button type="button" class="btn --save js-profileAddBtn">Add Profile</button>
                 </div>
                 <div class="profilesEditor__alias js-profileAliasPreview"></div>
@@ -299,7 +293,7 @@
     <toast-notification class="js-toaster"></toast-notification>
 
     <script type="module" src="components/svg-icon/svg-icon.js"></script>
-    <script type="module" src="components/grid-picker/grid-picker.js"></script>
+    <script type="module" src="components/custom-picker/custom-picker.js"></script>
     <script type="module" src="components/toast-notification/toast-notification.js"></script>
     <script type="module" src="components/button/button.js"></script>
     <script type="module" src="components/task-card/task-card.js"></script>

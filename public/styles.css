@@ -1378,52 +1378,10 @@ body {
 }
 
 /* ==========================================
-   Block: taskForm - Epic Select
+   Block: taskForm - Epic Picker
    ========================================== */
-.taskForm__epicSelect {
+.taskForm__epicPicker {
     width: 100%;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.5);
-    color: var(--text-primary);
-    font-size: 14px;
-    font-family: inherit;
-    transition: background-color 0.3s, box-shadow 0.3s;
-    cursor: pointer;
-    appearance: auto;
-}
-
-.taskForm__epicSelect:focus {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
-}
-
-/* ==========================================
-   Block: toolbar - Epic Filter
-   ========================================== */
-.toolbar__epicFilter {
-    padding: 6px 10px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    appearance: auto;
-}
-
-.toolbar__epicFilter:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: var(--text-secondary);
-}
-
-.toolbar__epicFilter:focus {
-    outline: none;
 }
 
 /* ==========================================

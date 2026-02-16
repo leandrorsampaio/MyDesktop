@@ -643,19 +643,22 @@ export function addChecklistItem(elements) {
 // ==========================================
 
 /**
- * Populates the epic select dropdown in the task modal.
- * @param {HTMLSelectElement} selectEl - The select element
+ * Populates the epic picker in the task modal.
+ * @param {HTMLElement} pickerEl - The custom-picker element
  * @param {string} selectedEpicId - The currently selected epic ID
  */
-export function populateTaskEpicSelect(selectEl, selectedEpicId) {
-    selectEl.innerHTML = '<option value="">Choose an epic</option>';
-    epics.forEach(epic => {
-        const option = document.createElement('option');
-        option.value = epic.id;
-        option.textContent = epic.name;
-        if (epic.id === selectedEpicId) option.selected = true;
-        selectEl.appendChild(option);
-    });
+export function populateTaskEpicSelect(pickerEl, selectedEpicId) {
+    const items = epics.map(epic => ({
+        value: epic.id,
+        label: epic.name,
+        color: epic.color
+    }));
+    pickerEl.setItems(items);
+    if (selectedEpicId) {
+        pickerEl.value = selectedEpicId;
+    } else {
+        pickerEl.clear();
+    }
 }
 
 /** @type {{epicId: string, elements: Object, onEpicsChanged: Function}|null} */
@@ -697,26 +700,12 @@ function populateColorSelect(selectEl, currentEpics, excludeEpicId) {
             .map(e => e.color)
     );
 
-    if (selectEl.tagName === 'GRID-PICKER') {
-        const items = EPIC_COLORS.map(color => ({
-            value: color.hex,
-            label: color.name,
-            disabled: usedColors.has(color.hex)
-        }));
-        selectEl.setItems(items);
-        return;
-    }
-
-    selectEl.innerHTML = '<option value="">Select color</option>';
-    EPIC_COLORS.forEach(color => {
-        const option = document.createElement('option');
-        option.value = color.hex;
-        const taken = usedColors.has(color.hex);
-        option.textContent = taken ? `${color.name} (taken)` : color.name;
-        option.disabled = taken;
-        option.style.color = color.hex;
-        selectEl.appendChild(option);
-    });
+    const items = EPIC_COLORS.map(color => ({
+        value: color.hex,
+        label: color.name,
+        disabled: usedColors.has(color.hex)
+    }));
+    selectEl.setItems(items);
 }
 
 /**
@@ -808,11 +797,11 @@ function renderEpicsList(elements, onEpicsChanged) {
         </div>
     `).join('');
 
-    // Create grid-picker for each item's color
+    // Create custom-picker for each item's color
     elements.epicsList.querySelectorAll('.js-epicItemColorSlot').forEach(slot => {
         const epicId = slot.dataset.epicId;
         const epic = epics.find(e => e.id === epicId);
-        const picker = document.createElement('grid-picker');
+        const picker = document.createElement('custom-picker');
         picker.setAttribute('type', 'color');
         picker.setAttribute('placeholder', 'Select color');
         picker.setAttribute('columns', '5');
@@ -941,24 +930,12 @@ function populateIconSelect(selectEl, selectedIcon) {
     const SvgIconClass = customElements.get('svg-icon');
     const icons = SvgIconClass ? SvgIconClass.availableIcons : [];
 
-    if (selectEl.tagName === 'GRID-PICKER') {
-        const items = icons.map(iconName => ({
-            value: iconName,
-            label: iconName
-        }));
-        selectEl.setItems(items);
-        if (selectedIcon) selectEl.value = selectedIcon;
-        return;
-    }
-
-    selectEl.innerHTML = '<option value="">Select icon</option>';
-    icons.forEach(iconName => {
-        const option = document.createElement('option');
-        option.value = iconName;
-        option.textContent = iconName;
-        if (iconName === selectedIcon) option.selected = true;
-        selectEl.appendChild(option);
-    });
+    const items = icons.map(iconName => ({
+        value: iconName,
+        label: iconName
+    }));
+    selectEl.setItems(items);
+    if (selectedIcon) selectEl.value = selectedIcon;
 }
 
 /**
@@ -1051,11 +1028,11 @@ function renderCategoriesList(elements, onCategoriesChanged) {
         </div>
     `).join('');
 
-    // Create grid-picker for each item's icon
+    // Create custom-picker for each item's icon
     elements.categoriesList.querySelectorAll('.js-categoryItemIconSlot').forEach(slot => {
         const catId = Number(slot.dataset.categoryId);
         const cat = categories.find(c => c.id === catId);
-        const picker = document.createElement('grid-picker');
+        const picker = document.createElement('custom-picker');
         picker.setAttribute('type', 'icon');
         picker.setAttribute('placeholder', 'Select icon');
         picker.setAttribute('columns', '7');
@@ -1215,26 +1192,12 @@ function populateProfileColorSelect(selectEl, currentProfiles, excludeProfileId)
             .map(p => p.color)
     );
 
-    if (selectEl.tagName === 'GRID-PICKER') {
-        const items = EPIC_COLORS.map(color => ({
-            value: color.hex,
-            label: color.name,
-            disabled: usedColors.has(color.hex)
-        }));
-        selectEl.setItems(items);
-        return;
-    }
-
-    selectEl.innerHTML = '<option value="">Select color</option>';
-    EPIC_COLORS.forEach(color => {
-        const option = document.createElement('option');
-        option.value = color.hex;
-        const taken = usedColors.has(color.hex);
-        option.textContent = taken ? `${color.name} (taken)` : color.name;
-        option.disabled = taken;
-        option.style.color = color.hex;
-        selectEl.appendChild(option);
-    });
+    const items = EPIC_COLORS.map(color => ({
+        value: color.hex,
+        label: color.name,
+        disabled: usedColors.has(color.hex)
+    }));
+    selectEl.setItems(items);
 }
 
 /**
@@ -1340,11 +1303,11 @@ function renderProfilesList(elements, onProfilesChanged) {
         </div>
     `).join('');
 
-    // Create grid-picker for each item's color
+    // Create custom-picker for each item's color
     elements.profilesList.querySelectorAll('.js-profileItemColorSlot').forEach(slot => {
         const profileId = slot.dataset.profileId;
         const profile = profiles.find(p => p.id === profileId);
-        const picker = document.createElement('grid-picker');
+        const picker = document.createElement('custom-picker');
         picker.setAttribute('type', 'color');
         picker.setAttribute('placeholder', 'Select color');
         picker.setAttribute('columns', '5');
