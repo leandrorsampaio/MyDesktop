@@ -543,8 +543,8 @@
     "title": "<head> clean up",
     "description": "Static resource on production.\nAdd to <head>",
     "priority": true,
-    "status": "inprogress",
-    "position": 3,
+    "status": "todo",
+    "position": 2,
     "log": [
       {
         "date": "2026-01-26",
@@ -569,6 +569,10 @@
       {
         "date": "2026-02-11",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to To Do"
       }
     ],
     "createdDate": "2026-01-26T18:42:36.610Z",
@@ -978,6 +982,14 @@
       {
         "date": "2026-02-03",
         "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to To Do"
       }
     ],
     "createdDate": "2026-02-02T18:05:40.161Z"
@@ -1064,7 +1076,7 @@
     "description": "Branch B-0294\nFeature/ESB-558_Delivery_page_documents_only_showing_a_single_document\nDEPLOYED\n\nBranch: B-0293\nBranch Name: feature/Product_Export_CSS_Changes_for_printing_PDF\nDEPLOYED\n\nBranch: B-0295\nBranch Name: feature/Move_custom_css_and_js_from_the_builder_to_file\nDEPLOYED\n\nBranch: B-0296\nBranch Name: feature/ESB-548_Add_custom_label_for_the_link_of_the_certification_component\nDEPLOYED\n\nBranch: B-0297\nBranch Name: feature/ESB-543_Hero_banner_with_breadcrumbs_(v3)\nDEPLOYED",
     "priority": false,
     "category": 2,
-    "status": "done",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -1076,7 +1088,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-06T16:28:53.532Z"
+    "createdDate": "2026-02-06T16:28:53.532Z",
+    "categoryName": "Development"
   },
   {
     "id": "mlbj7px9771q1nybl",
@@ -1085,7 +1098,7 @@
     "priority": false,
     "category": 6,
     "status": "inprogress",
-    "position": 4,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-06",
@@ -1108,7 +1121,7 @@
     "description": "I could not found all the items on the design system site. Please send a link of the new stuffs.\nNot released yet. I can show locally",
     "priority": false,
     "category": 6,
-    "status": "done",
+    "status": "archived",
     "position": 7,
     "log": [
       {
@@ -1120,7 +1133,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-06T23:46:38.824Z"
+    "createdDate": "2026-02-06T23:46:38.824Z",
+    "categoryName": "Generic Task"
   },
   {
     "id": "mlbjbytq84316f6wv",
@@ -1128,7 +1142,7 @@
     "description": "Checked with Rob and Alex and he also dont have the meeting in their calendars. \nAsked Mikael to double check with Champeu about it.",
     "priority": false,
     "category": 6,
-    "status": "done",
+    "status": "archived",
     "position": 3,
     "log": [
       {
@@ -1149,7 +1163,8 @@
       }
     ],
     "createdDate": "2026-02-06T23:47:18.158Z",
-    "epicId": null
+    "epicId": null,
+    "categoryName": "Generic Task"
   },
   {
     "id": "mlbjg1q5r4oxfbb88",
@@ -1157,7 +1172,7 @@
     "description": "create variable to make it in rows instead of columns. No change necessary. Email sento to Max on 09.02 on how to correctly style it.",
     "priority": false,
     "category": 2,
-    "status": "done",
+    "status": "archived",
     "position": 6,
     "log": [
       {
@@ -1169,7 +1184,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-06T23:50:28.541Z"
+    "createdDate": "2026-02-06T23:50:28.541Z",
+    "categoryName": "Development"
   },
   {
     "id": "mlf5pfnf9chi34660",
@@ -1178,7 +1194,7 @@
     "priority": false,
     "category": 3,
     "status": "inprogress",
-    "position": 5,
+    "position": 3,
     "log": [
       {
         "date": "2026-02-09",
@@ -1197,7 +1213,7 @@
     "description": "I made 8 comments https://github.com/Solenis-LLC/design-system-lit/pull/468#pullrequestreview-3774035436",
     "priority": false,
     "category": 2,
-    "status": "done",
+    "status": "archived",
     "position": 4,
     "log": [
       {
@@ -1205,7 +1221,8 @@
         "action": "Moved from To Do to Done"
       }
     ],
-    "createdDate": "2026-02-09T15:56:28.447Z"
+    "createdDate": "2026-02-09T15:56:28.447Z",
+    "categoryName": "Development"
   },
   {
     "id": "mlfd41su5rx9zg7m1",
@@ -1213,7 +1230,7 @@
     "description": "https://projects.eo.pl/browse/SOL-400 - Remove diversay logo\nhttps://projects.eo.pl/browse/SOL-399 - Logo component",
     "priority": false,
     "category": 3,
-    "status": "done",
+    "status": "archived",
     "position": 5,
     "log": [
       {
@@ -1225,7 +1242,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-09T16:04:15.774Z"
+    "createdDate": "2026-02-09T16:04:15.774Z",
+    "categoryName": "Communication"
   },
   {
     "id": "mlh6blp5ix4zcbe3n",
@@ -1233,7 +1251,7 @@
     "description": "",
     "priority": false,
     "category": 3,
-    "status": "done",
+    "status": "archived",
     "position": 2,
     "log": [
       {
@@ -1245,7 +1263,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-10T22:29:43.193Z"
+    "createdDate": "2026-02-10T22:29:43.193Z",
+    "categoryName": "Communication"
   },
   {
     "id": "mlh6bzz2nxizx9hh8",
@@ -1253,7 +1272,7 @@
     "description": "Deelip will revert the change",
     "priority": false,
     "category": 2,
-    "status": "done",
+    "status": "archived",
     "position": 9,
     "log": [
       {
@@ -1269,7 +1288,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-10T22:30:01.694Z"
+    "createdDate": "2026-02-10T22:30:01.694Z",
+    "categoryName": "Development"
   },
   {
     "id": "mlial7w7vy8bacg0p",
@@ -1277,7 +1297,7 @@
     "description": "I had a talk with Deelip about frontend alignment. meeting made for Tuesdays and Thursdays",
     "priority": false,
     "category": 3,
-    "status": "done",
+    "status": "archived",
     "position": 8,
     "log": [
       {
@@ -1289,7 +1309,8 @@
         "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-11T17:16:56.503Z"
+    "createdDate": "2026-02-11T17:16:56.503Z",
+    "categoryName": "Communication"
   },
   {
     "id": "mlic8o62neocju3jq",
@@ -1297,7 +1318,7 @@
     "description": "@contractor.solenis.com emails to EUVIC: Any feedback from IT?​",
     "priority": false,
     "category": 6,
-    "status": "inprogress",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -1311,10 +1332,15 @@
       {
         "date": "2026-02-12",
         "action": "Moved from Done to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-02-11T18:03:10.298Z",
-    "epicId": null
+    "epicId": null,
+    "categoryName": "Generic Task"
   },
   {
     "id": "mlicltt1teb19t9be",
@@ -1331,5 +1357,22 @@
       }
     ],
     "createdDate": "2026-02-11T18:13:24.133Z"
+  },
+  {
+    "id": "mlof933ntaf4bu3j3",
+    "title": "Tickets to Quinton (OMS)",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": null,
+    "status": "inprogress",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-16T00:14:05.555Z"
   }
 ]

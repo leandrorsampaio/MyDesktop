@@ -1,26 +1,14 @@
 [
   {
     "id": "mlinl22lxnkra6pjt",
-    "name": "Test Epic 1",
+    "name": "SDS",
     "color": "#FF6F61",
-    "alias": "testEpic1"
+    "alias": "sds"
   },
   {
     "id": "mlinlecx6b1djaonv",
-    "name": "Test Epi 2",
-    "color": "#F1C40F",
-    "alias": "testEpi2"
-  },
-  {
-    "id": "mlinlkjr61tlz8tsm",
-    "name": "Test Epic 3",
-    "color": "#3742FA",
-    "alias": "testEpic3"
-  },
-  {
-    "id": "mlinlqqvc7b6ez4u7",
-    "name": "Test Epic 4",
-    "color": "#1ABC9C",
-    "alias": "testEpic4"
+    "name": "ECOM",
+    "color": "#F5A623",
+    "alias": "ecom"
   }
 ]

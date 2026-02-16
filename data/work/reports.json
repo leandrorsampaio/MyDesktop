@@ -337,5 +337,191 @@
       ]
     },
     "notes": "time report for the week 6\nCICD - 20% (communication / Operations)\nDesign System: 20%\nECOM Team:  40%\nEIPP: 10%\n"
+  },
+  {
+    "id": "mlof73yalgqen7vvd",
+    "title": "Week 8 (Feb 16-22)",
+    "generatedDate": "2026-02-16T00:12:33.346Z",
+    "weekNumber": 8,
+    "dateRange": "Feb 16-22",
+    "content": {
+      "archived": [
+        {
+          "id": "mlb3o61op8xirc59u",
+          "title": "Check Branches on Production",
+          "description": "Branch B-0294\nFeature/ESB-558_Delivery_page_documents_only_showing_a_single_document\nDEPLOYED\n\nBranch: B-0293\nBranch Name: feature/Product_Export_CSS_Changes_for_printing_PDF\nDEPLOYED\n\nBranch: B-0295\nBranch Name: feature/Move_custom_css_and_js_from_the_builder_to_file\nDEPLOYED\n\nBranch: B-0296\nBranch Name: feature/ESB-548_Add_custom_label_for_the_link_of_the_certification_component\nDEPLOYED\n\nBranch: B-0297\nBranch Name: feature/ESB-543_Hero_banner_with_breadcrumbs_(v3)\nDEPLOYED",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "mlbjb4h46efpyylw5",
+          "title": "Check with EUVIC the list of what has been deployed",
+          "description": "I could not found all the items on the design system site. Please send a link of the new stuffs.\nNot released yet. I can show locally",
+          "category": 6,
+          "categoryName": "Generic Task",
+          "epicId": null
+        },
+        {
+          "id": "mlbjbytq84316f6wv",
+          "title": "Follow up with Christoph Champeu over meetigns",
+          "description": "Checked with Rob and Alex and he also dont have the meeting in their calendars. \nAsked Mikael to double check with Champeu about it.",
+          "category": 6,
+          "categoryName": "Generic Task",
+          "epicId": null
+        },
+        {
+          "id": "mlbjg1q5r4oxfbb88",
+          "title": "EIPP - Product Details update",
+          "description": "create variable to make it in rows instead of columns. No change necessary. Email sento to Max on 09.02 on how to correctly style it.",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "mlfcu17j66rrnk3sd",
+          "title": "Check PR from EUVIC (LIT release 0.22)",
+          "description": "I made 8 comments https://github.com/Solenis-LLC/design-system-lit/pull/468#pullrequestreview-3774035436",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "mlfd41su5rx9zg7m1",
+          "title": "Create new component for LOGOs (Design system)",
+          "description": "https://projects.eo.pl/browse/SOL-400 - Remove diversay logo\nhttps://projects.eo.pl/browse/SOL-399 - Logo component",
+          "category": 3,
+          "categoryName": "Communication",
+          "epicId": null
+        },
+        {
+          "id": "mlh6blp5ix4zcbe3n",
+          "title": "Prepare PPT 1:1 Mikael",
+          "description": "",
+          "category": 3,
+          "categoryName": "Communication",
+          "epicId": null
+        },
+        {
+          "id": "mlh6bzz2nxizx9hh8",
+          "title": "Bug with Cart Delete",
+          "description": "Deelip will revert the change",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "mlial7w7vy8bacg0p",
+          "title": "Deelip daily creation",
+          "description": "I had a talk with Deelip about frontend alignment. meeting made for Tuesdays and Thursdays",
+          "category": 3,
+          "categoryName": "Communication",
+          "epicId": null
+        }
+      ],
+      "inProgress": [
+        {
+          "id": "mkvilrcyp01cdgxf4",
+          "title": "<head> clean up",
+          "description": "Static resource on production.\nAdd to <head>",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "ml78dhdfn9co4cm69",
+          "title": "Product PDF Export",
+          "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs. Necessary fix the Macros in the excell template. Need further investigation.\n--------\n\nNeed to solve now the \"Product Sales Sheet\" column. If more than one can be comma separated.",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "mlbj7px9771q1nybl",
+          "title": "Check with Ravi if we have Access to Marketing Cloud",
+          "description": "",
+          "category": 6,
+          "categoryName": "Generic Task",
+          "epicId": null
+        },
+        {
+          "id": "mlf5pfnf9chi34660",
+          "title": "Google Maps API to EUVIC",
+          "description": "Waiting Santosh answer",
+          "category": 3,
+          "categoryName": "Communication",
+          "epicId": null
+        },
+        {
+          "id": "mlic8o62neocju3jq",
+          "title": "Ping Mikael aboutemails EUVIC (and IA)",
+          "description": "@contractor.solenis.com emails to EUVIC: Any feedback from IT?​",
+          "category": 6,
+          "categoryName": "Generic Task",
+          "epicId": null
+        },
+        {
+          "id": "mlicltt1teb19t9be",
+          "title": "ESB-574 New Banners UI component",
+          "description": "https://solenis.atlassian.net/browse/ESB-574",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        }
+      ],
+      "waiting": [
+        {
+          "id": "mkvehdxyoigki3ybi",
+          "title": "@solenis emails to EUVIC",
+          "description": "Mikael requested with IT. Waiting Feedback",
+          "category": 6,
+          "categoryName": "Generic Task",
+          "epicId": null
+        },
+        {
+          "id": "mkvfx33rcb2griafj",
+          "title": "Solenis AI Account",
+          "description": "Waiting Mikael's feedback",
+          "category": 3,
+          "categoryName": "Communication",
+          "epicId": null
+        },
+        {
+          "id": "mkvi786b4rlrr3zhs",
+          "title": "ESB-559 - OMS Component bug fixing",
+          "description": "https://solenis.atlassian.net/browse/ESB-559",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        },
+        {
+          "id": "mkvil7bq998kqwi3l",
+          "title": "SDS HeroBanner with flag",
+          "description": "Waiting ticket from EUVIC to be done",
+          "category": 1,
+          "categoryName": "Non categorized",
+          "epicId": null
+        }
+      ],
+      "todo": [
+        {
+          "id": "mkvft4o6e43i4wy1x",
+          "title": "LIT-LWC: Radio Button + Checkbox",
+          "description": "SOL-183, 182, 121, 113, 73,41 -",
+          "category": 1,
+          "categoryName": "Non categorized",
+          "epicId": null
+        },
+        {
+          "id": "ml5hd7sxvn4aplch7",
+          "title": "ESB-544: Image not available link wrong in advic component",
+          "description": "",
+          "category": 2,
+          "categoryName": "Development",
+          "epicId": null
+        }
+      ]
+    },
+    "notes": ""
   }
 ]
