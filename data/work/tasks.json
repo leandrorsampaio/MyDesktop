@@ -352,8 +352,8 @@
     "title": "@solenis emails to EUVIC",
     "description": "Mikael requested with IT. Waiting Feedback",
     "priority": false,
-    "status": "wait",
-    "position": 1,
+    "status": "archived",
+    "position": 2,
     "log": [
       {
         "date": "2026-01-26",
@@ -366,10 +366,15 @@
       {
         "date": "2026-02-02",
         "action": "Category changed from Communication to Generic Task"
+      },
+      {
+        "date": "2026-02-22",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-26T16:47:14.134Z",
-    "category": 6
+    "category": 6,
+    "categoryName": "Generic Task"
   },
   {
     "id": "mkveixdsw4fy6yeje",
@@ -395,8 +400,8 @@
     "title": "LIT-LWC: Radio Button + Checkbox",
     "description": "SOL-183, 182, 121, 113, 73,41 -",
     "priority": false,
-    "status": "todo",
-    "position": 1,
+    "status": "archived",
+    "position": 6,
     "log": [
       {
         "date": "2026-02-05",
@@ -405,11 +410,28 @@
       {
         "date": "2026-02-06",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from Done to In Progress"
+      },
+      {
+        "date": "2026-02-22",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-26T17:24:21.606Z",
     "category": 1,
-    "epicId": null
+    "epicId": null,
+    "categoryName": "Non categorized"
   },
   {
     "id": "mkvfty0b5lagyp25b",
@@ -461,10 +483,10 @@
   {
     "id": "mkvfx33rcb2griafj",
     "title": "Solenis AI Account",
-    "description": "Waiting Mikael's feedback",
+    "description": "Mikael's feedback: oki so i actually think the easiest is you buy it for yourself and add it as an expense to your time reports until we find a different solution\n \nplease sync with your adepto contact how todo that, i already asked Victoria and she said its possible but of course billing etc have to check out\n------\n\nemail sent to Kris and Victoria on 16.02\n\n----\nVictoria told I can use my credit card",
     "priority": false,
-    "status": "wait",
-    "position": 2,
+    "status": "archived",
+    "position": 3,
     "log": [
       {
         "date": "2026-01-26",
@@ -473,18 +495,36 @@
       {
         "date": "2026-02-02",
         "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-02-22",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-01-26T17:27:26.199Z",
-    "category": 3
+    "category": 3,
+    "epicId": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mkvi786b4rlrr3zhs",
     "title": "ESB-559 - OMS Component bug fixing",
-    "description": "https://solenis.atlassian.net/browse/ESB-559",
+    "description": "https://solenis.atlassian.net/browse/ESB-559\nDeployed and tested on production. Ticket to Alex now",
     "priority": false,
-    "status": "wait",
-    "position": 3,
+    "status": "archived",
+    "position": 5,
     "log": [
       {
         "date": "2026-01-26",
@@ -509,18 +549,24 @@
       {
         "date": "2026-02-10",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-26T18:31:18.563Z",
-    "category": 2
+    "category": 2,
+    "epicId": null,
+    "categoryName": "Development"
   },
   {
     "id": "mkvil7bq998kqwi3l",
     "title": "SDS HeroBanner with flag",
     "description": "Waiting ticket from EUVIC to be done",
     "priority": false,
-    "status": "wait",
-    "position": 0,
+    "status": "archived",
+    "position": 1,
     "log": [
       {
         "date": "2026-01-26",
@@ -533,10 +579,20 @@
       {
         "date": "2026-01-30",
         "action": "Moved from Done to Wait"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-22",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-01-26T18:42:10.646Z",
-    "category": 1
+    "category": 2,
+    "epicId": null,
+    "categoryName": "Development"
   },
   {
     "id": "mkvilrcyp01cdgxf4",
@@ -544,7 +600,7 @@
     "description": "Static resource on production.\nAdd to <head>",
     "priority": true,
     "status": "todo",
-    "position": 2,
+    "position": 1,
     "log": [
       {
         "date": "2026-01-26",
@@ -1037,18 +1093,24 @@
   {
     "id": "ml78dhdfn9co4cm69",
     "title": "Product PDF Export",
-    "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs. Necessary fix the Macros in the excell template. Need further investigation.\n--------\n\nNeed to solve now the \"Product Sales Sheet\" column. If more than one can be comma separated.",
+    "description": "productExport LWC. Fix CSS. fix also the comments with the image tabs. Necessary fix the Macros in the excell template. Need further investigation.\n--------\nExcel Export function: Images download Macro working on Production.\nBug with the other column (PDFs) I created a new ticket\nNeed to solve now the \"Product Sales Sheet\" column. If more than one can be comma separated.",
     "priority": false,
     "category": 2,
-    "status": "inprogress",
-    "position": 1,
+    "status": "archived",
+    "position": 7,
     "log": [
       {
         "date": "2026-02-03",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-03T23:29:28.371Z"
+    "createdDate": "2026-02-03T23:29:28.371Z",
+    "epicId": null,
+    "categoryName": "Development"
   },
   {
     "id": "ml99zvzyvrg96be1v",
@@ -1094,11 +1156,11 @@
   {
     "id": "mlbj7px9771q1nybl",
     "title": "Check with Ravi if we have Access to Marketing Cloud",
-    "description": "",
+    "description": "Ravi: Gina Menicucci\nGMenicucci@solenis.com\n------\nMikael: um, please go through Marieke here. I know Gina wel and I do know she has a marketing cloud setup. what i do not know is who manages it for her.  or how it is connected to solenis",
     "priority": false,
     "category": 6,
-    "status": "inprogress",
-    "position": 0,
+    "status": "archived",
+    "position": 4,
     "log": [
       {
         "date": "2026-02-06",
@@ -1111,9 +1173,15 @@
       {
         "date": "2026-02-11",
         "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-02-06T23:43:59.997Z"
+    "createdDate": "2026-02-06T23:43:59.997Z",
+    "epicId": null,
+    "categoryName": "Generic Task"
   },
   {
     "id": "mlbjb4h46efpyylw5",
@@ -1190,11 +1258,11 @@
   {
     "id": "mlf5pfnf9chi34660",
     "title": "Google Maps API to EUVIC",
-    "description": "Waiting Santosh answer",
+    "description": "waiting Adrian create the Key. \nrequirements shared with Euvic",
     "priority": false,
     "category": 3,
-    "status": "inprogress",
-    "position": 3,
+    "status": "archived",
+    "position": 10,
     "log": [
       {
         "date": "2026-02-09",
@@ -1203,9 +1271,19 @@
       {
         "date": "2026-02-11",
         "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from Wait to Done"
       }
     ],
-    "createdDate": "2026-02-09T12:36:56.571Z"
+    "createdDate": "2026-02-09T12:36:56.571Z",
+    "epicId": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mlfcu17j66rrnk3sd",
@@ -1345,18 +1423,23 @@
   {
     "id": "mlicltt1teb19t9be",
     "title": "ESB-574 New Banners UI component",
-    "description": "https://solenis.atlassian.net/browse/ESB-574",
+    "description": "https://solenis.atlassian.net/browse/ESB-574\n---\nCR Created",
     "priority": false,
     "category": 2,
-    "status": "inprogress",
-    "position": 2,
+    "status": "wait",
+    "position": 5,
     "log": [
       {
         "date": "2026-02-11",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-17",
+        "action": "Moved from In Progress to Wait"
       }
     ],
-    "createdDate": "2026-02-11T18:13:24.133Z"
+    "createdDate": "2026-02-11T18:13:24.133Z",
+    "epicId": null
   },
   {
     "id": "mlof933ntaf4bu3j3",
@@ -1366,7 +1449,7 @@
     "category": 3,
     "epicId": null,
     "status": "inprogress",
-    "position": 4,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-16",
@@ -1374,5 +1457,217 @@
       }
     ],
     "createdDate": "2026-02-16T00:14:05.555Z"
+  },
+  {
+    "id": "mlpdja5gg25jozz9g",
+    "title": "Marketing Claude: contact Mareike",
+    "description": "Email talks between me and Gina Menicucci. \nAdvic will provide the access",
+    "priority": false,
+    "category": 3,
+    "epicId": null,
+    "status": "archived",
+    "position": 13,
+    "log": [
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-02-16T16:13:48.196Z",
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mlpdjwedei3asw8p2",
+    "title": "Wishlist: new header",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": null,
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-22",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-16T16:14:17.029Z",
+    "categoryName": "Development"
+  },
+  {
+    "id": "mlppmw0xkbv338lib",
+    "title": "ESB-571 No Image PDP (Quinton)",
+    "description": "Check if when to production",
+    "priority": false,
+    "category": 3,
+    "epicId": null,
+    "status": "archived",
+    "position": 12,
+    "log": [
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-02-16T21:52:31.906Z",
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mlqf23mndrhtueb36",
+    "title": "New PLP Design Discussion",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": null,
+    "status": "archived",
+    "position": 11,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-17T09:44:11.999Z",
+    "categoryName": "Planning"
+  },
+  {
+    "id": "mlqm987yv7nxezlcj",
+    "title": "ESB-593: News component",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": null,
+    "status": "todo",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-18",
+        "action": "Category changed from Generic Task to Development"
+      },
+      {
+        "date": "2026-02-18",
+        "action": "Moved from In Progress to To Do"
+      }
+    ],
+    "createdDate": "2026-02-17T13:05:41.854Z"
+  },
+  {
+    "id": "mlqm9qvwlas5glc3t",
+    "title": "New ticket: CMS news (check feseability)",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "inprogress",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-17T13:06:06.044Z"
+  },
+  {
+    "id": "mlqmukgtec9w39dgv",
+    "title": "Add Vacation",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "archived",
+    "position": 8,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-18",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-17T13:22:17.501Z",
+    "categoryName": "Non categorized"
+  },
+  {
+    "id": "mlqps2dz0ngsakkmm",
+    "title": "Wired examples for Balzac",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": null,
+    "status": "archived",
+    "position": 14,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-19",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-17T14:44:19.607Z",
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "mlqqgjexbm8aza8v0",
+    "title": "message Alex and Rob: use git",
+    "description": "good discussion. Rob made sure in the daily that we must do PRs",
+    "priority": false,
+    "category": 3,
+    "epicId": null,
+    "status": "archived",
+    "position": 9,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-18",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-17T15:03:21.417Z",
+    "categoryName": "Communication"
   }
 ]
