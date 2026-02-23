@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.25.0
+**Version:** 2.26.0
 **Last Updated:** 2026-02-23
 
 ---
@@ -70,7 +70,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── api.js                 # Pure HTTP functions, no side effects
     │   ├── filters.js             # Category, priority, epic filter logic
     │   ├── crisis-mode.js
-    │   └── modals.js              # All modal logic
+    │   ├── modals.js              # All modal logic
+    │   └── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
     └── components/
         ├── button/
         ├── task-card/
@@ -135,6 +136,11 @@ GET    /api/:profile/epics               - Get all epics
 POST   /api/:profile/epics               - Create epic (body: { name, color })
 PUT    /api/:profile/epics/:id           - Update epic (body: { name?, color? })
 DELETE /api/:profile/epics/:id           - Delete epic (removes epicId from all tasks)
+GET    /api/:profile/columns             - Get all columns (sorted by order)
+POST   /api/:profile/columns             - Create column (body: { name }); max 15
+PUT    /api/:profile/columns/:id         - Update column (body: { name?, hasArchive? })
+PUT    /api/:profile/columns             - Reorder all columns (body: { columns: [...] })
+DELETE /api/:profile/columns/:id         - Delete column; tasks moved to first column with log entry
 ```
 
 ### SPA Routing
@@ -156,14 +162,14 @@ GET    /:alias     - Serve index.html if profile exists, else redirect
   priority: boolean,   // default false
   category: number,    // Category ID (integer), default 1
   epicId: string|null, // Epic ID or null
-  status: string,      // "todo" | "wait" | "inprogress" | "done" | "archived"
+  status: string,      // Column ID (e.g. "todo", "done", or user-created IDs)
   position: number,    // 0-based index within column
   log: array,          // [{ date: "YYYY-MM-DD", action: string }]
   createdDate: string  // ISO 8601
 }
 ```
 
-**What gets logged:** moving between columns (`"Moved from To Do to In Progress"`), category changes (`"Category changed from X to Y"`).
+**What gets logged:** moving between columns (`"Moved from 'To Do' to 'In Progress'"`), category changes (`"Category changed from X to Y"`), column deletion (`"Column 'Wait' deleted – moved to 'To Do'"`).
 **Not logged:** title/description/priority edits, epic changes, reordering within same column.
 
 ### Epic Object
@@ -208,11 +214,24 @@ GET    /:alias     - Serve index.html if profile exists, else redirect
   color: string,     // hex from 20-color palette (unique per profile)
   letters: string,   // 1–3 uppercase letters (unique per profile)
   alias: string,     // auto-computed camelCase — used as folder name + URL segment
-  isDefault: boolean // exactly one must be true at all times
+  isDefault: boolean,// exactly one must be true at all times
+  columns: Array     // see Column Object below; stored inline on each profile
 }
 ```
 
-**Constraints:** max 20 profiles. Cannot delete the last profile. Alias must be unique. On first run, existing data migrates to a "Work" profile; fresh installs get "User1".
+**Constraints:** max 20 profiles. Cannot delete the last profile. Alias must be unique. On first run, existing data migrates to a "Work" profile; fresh installs get "User1". Profiles without a `columns` field are auto-migrated to `DEFAULT_COLUMNS` on first request.
+
+### Column Object
+```javascript
+{
+  id: string,         // auto-generated (default IDs: "todo", "wait", "inprogress", "done")
+  name: string,       // required, max 200 chars
+  order: number,      // 0-based sort index
+  hasArchive: boolean // if true, column gets an Archive button
+}
+```
+
+**Constraints:** max 15 columns per profile; min 1 (cannot delete last). First column (order 0) is the default — new tasks are created there; deleted-column tasks move there. Column IDs for the 4 default columns match legacy `task.status` values for zero-migration compatibility. Stored inside `profiles.json` (not a separate file).
 
 ### Notes
 ```javascript
@@ -228,7 +247,11 @@ GET    /:alias     - Serve index.html if profile exists, else redirect
   weekNumber: number,
   dateRange: string,
   content: {
-    archived: [],        // snapshot of done tasks
+    // NEW format (v2.26+): one entry per column in order
+    columns: [{ columnId, columnName, tasks }],
+
+    // LEGACY format (pre-v2.26): kept for backward compat
+    archived: [],
     inProgress: [],
     waiting: [],
     todo: []
@@ -238,6 +261,7 @@ GET    /:alias     - Serve index.html if profile exists, else redirect
 ```
 
 Each task in report content: `{ id, title, description, category, categoryName, epicId }`.
+`renderReportView` detects which format is present (`content.columns` array vs legacy keys) and renders accordingly.
 
 ---
 
@@ -267,9 +291,19 @@ These are behaviors not evident from reading the code. Know these before making 
 - Profile `alias` is used as both the **data folder name** (`data/{alias}/`) and the **URL segment** (`/{alias}`).
 - localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`.
 
+### Columns & Board Configuration
+- Columns are **per-profile**, stored inside each profile object in `profiles.json` (not a separate file).
+- The **first column** (order 0) is the default: new tasks are created there; tasks are moved there when a column is deleted.
+- Column deletion appends a log entry to each moved task: `"Column 'Wait' deleted – moved to 'To Do'"`.
+- Renaming a column does **not** change `task.status` (the column ID is immutable after creation). Existing task logs remain accurate.
+- The default four column IDs (`todo`, `wait`, `inprogress`, `done`) intentionally match legacy `task.status` values — no data migration needed for existing tasks.
+- `task.status` now equals a **column ID** (any string), not one of four hardcoded values.
+- Profiles without a `columns` field are auto-migrated to `DEFAULT_COLUMNS` by `resolveProfile` middleware on first request.
+- `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`).
+
 ### Reports & Archive (independent operations)
-- **Report generation** snapshots all columns + notes but does **not** move, archive, or delete any tasks.
-- **Archive** moves all `done` tasks to `archived-tasks.json` and removes them from `tasks.json`. Does **not** generate a report.
+- **Report generation** (`Hamburger → Generate Report`) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.
+- **Archive** (`Archive` button on a column with `hasArchive: true`) moves all tasks in that specific column to `archived-tasks.json`. Accepts a `columnId` in the body; falls back to the first `hasArchive: true` column. Does **not** generate a report.
 
 ### Crisis Mode & Privacy Toggle
 - Both are purely client-side CSS toggles — no server calls, no persistence.
@@ -336,19 +370,22 @@ elements.toaster.info('msg')     // beige
 
 ## Modals Reference
 
-| JS hook                   | Purpose                      | Size    | Trigger                              |
-|---------------------------|------------------------------|---------|--------------------------------------|
-| `.js-taskModal`           | Add / Edit task              | default | [+ Add Task] / [Edit] on card        |
-| `.js-reportsModal`        | View reports                 | large   | Hamburger → View Reports             |
-| `.js-archivedModal`       | View archived tasks          | large   | Hamburger → All Completed Tasks      |
-| `.js-confirmModal`        | Delete task confirmation     | small   | Delete button in edit modal          |
-| `.js-categoriesModal`     | Manage categories CRUD       | large   | Hamburger → Manage Categories        |
-| `.js-categoryConfirmModal`| Category delete confirmation | small   | Delete in categories modal           |
-| `.js-epicsModal`          | Manage epics CRUD            | large   | Hamburger → Manage Epics             |
-| `.js-epicConfirmModal`    | Epic delete confirmation     | small   | Delete in epics modal                |
-| `.js-profilesModal`       | Manage profiles CRUD         | large   | Hamburger → Manage Profiles          |
-| `.js-profileConfirmModal` | Profile delete confirmation  | small   | Delete in profiles modal             |
-| `.js-checklistModal`      | Edit daily checklist         | large   | Hamburger → Edit Daily Checklist     |
+| JS hook                          | Purpose                          | Size    | Trigger                                    |
+|----------------------------------|----------------------------------|---------|--------------------------------------------|
+| `.js-taskModal`                  | Add / Edit task                  | default | [+ Add Task] / [Edit] on card              |
+| `.js-reportsModal`               | View reports                     | large   | Hamburger → View Reports                   |
+| `.js-archivedModal`              | View archived tasks              | large   | Hamburger → All Completed Tasks            |
+| `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                |
+| `.js-categoriesModal`            | Manage categories CRUD           | large   | Hamburger → Manage Categories              |
+| `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in categories modal                 |
+| `.js-epicsModal`                 | Manage epics CRUD                | large   | Hamburger → Manage Epics                   |
+| `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in epics modal                      |
+| `.js-profilesModal`              | Manage profiles CRUD             | large   | Hamburger → Manage Profiles                |
+| `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in profiles modal                   |
+| `.js-checklistModal`             | Edit daily checklist             | large   | Hamburger → Edit Daily Checklist           |
+| `.js-generateReportConfirmModal` | Generate report confirmation     | small   | Hamburger → Generate Report                |
+| `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Hamburger → Board Configuration            |
+| `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal               |
 
 ---
 
@@ -539,7 +576,7 @@ All endpoints validate input. Validation constants in `server.js`:
 | `description` | Optional, string, max 2000 chars |
 | `category` | Optional integer, must exist in profile's `categories.json` |
 | `priority` | Optional boolean |
-| `newStatus` | Must be: `todo`, `wait`, `inprogress`, `done` |
+| `newStatus` | Must be a valid column ID from the profile's `columns` array (dynamic, not hardcoded) |
 | `newPosition` | Non-negative integer |
 | `notes.content` | String, max 10000 chars |
 | `epic.name` | Required, string, max 200 chars |
@@ -554,16 +591,17 @@ Error format: `{ "error": "descriptive message" }` with HTTP 400.
 
 New code must go into the correct existing module. Only create a new module if a feature is large and doesn't fit any existing one.
 
-| Module         | Responsibility                                         |
-|----------------|--------------------------------------------------------|
-| `constants.js` | All shared constants (limits, defaults, colors)        |
-| `state.js`     | Centralized state + optimistic UI helpers              |
-| `api.js`       | Pure HTTP functions — return data, no side effects     |
-| `utils.js`     | Shared pure utilities                                  |
-| `filters.js`   | Category, priority, epic filter logic                  |
-| `modals.js`    | All modal dialog logic                                 |
-| `crisis-mode.js` | Crisis mode (favicon, CSS class, filter activation)  |
-| `app.js`       | Entry point — DOM refs, event listeners, renders       |
+| Module           | Responsibility                                         |
+|------------------|--------------------------------------------------------|
+| `constants.js`   | All shared constants (limits, defaults, colors)        |
+| `state.js`       | Centralized state + optimistic UI helpers              |
+| `api.js`         | Pure HTTP functions — return data, no side effects     |
+| `utils.js`       | Shared pure utilities                                  |
+| `filters.js`     | Category, priority, epic filter logic                  |
+| `modals.js`      | All modal dialog logic                                 |
+| `crisis-mode.js` | Crisis mode (favicon, CSS class, filter activation)    |
+| `board-config.js`| Board Configuration modal (column CRUD + reorder)      |
+| `app.js`         | Entry point — DOM refs, event listeners, renders       |
 
 ---
 
