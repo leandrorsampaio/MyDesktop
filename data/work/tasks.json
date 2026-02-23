@@ -1569,8 +1569,8 @@
     "priority": false,
     "category": 2,
     "epicId": null,
-    "status": "todo",
-    "position": 2,
+    "status": "inprogress",
+    "position": 1,
     "log": [
       {
         "date": "2026-02-17",
@@ -1583,6 +1583,10 @@
       {
         "date": "2026-02-18",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Moved from To Do to In Progress"
       }
     ],
     "createdDate": "2026-02-17T13:05:41.854Z"
@@ -1590,16 +1594,24 @@
   {
     "id": "mlqm9qvwlas5glc3t",
     "title": "New ticket: CMS news (check feseability)",
-    "description": "",
+    "description": "not done",
     "priority": false,
-    "category": 1,
+    "category": 2,
     "epicId": null,
-    "status": "inprogress",
-    "position": 4,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-02-17",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-02-17T13:06:06.044Z"
@@ -1669,5 +1681,43 @@
     ],
     "createdDate": "2026-02-17T15:03:21.417Z",
     "categoryName": "Communication"
+  },
+  {
+    "id": "mlzcwm8z3a3c7z1l9",
+    "title": "Check Image problem",
+    "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077",
+    "priority": false,
+    "category": 2,
+    "epicId": null,
+    "status": "inprogress",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-02-23",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Category changed from Non categorized to Development"
+      }
+    ],
+    "createdDate": "2026-02-23T15:53:52.547Z"
+  },
+  {
+    "id": "mlzcyynpdrmgf4k62",
+    "title": "Solve Header Issue (Export Errro)",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": null,
+    "status": "inprogress",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-23",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-23T15:55:41.941Z"
   }
 ]
