@@ -5,7 +5,7 @@
 
 import { DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS, MAX_PROFILES, MAX_CATEGORIES, DEFAULT_CATEGORY_ID } from './constants.js';
 import { escapeHtml, formatDate, toCamelCase } from './utils.js';
-import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile } from './state.js';
+import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile, columns } from './state.js';
 import {
     createTaskApi,
     updateTaskApi,
@@ -222,6 +222,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             }
         } else {
             // CREATE: Optimistic UI with rollback
+            const defaultColumnId = columns[0]?.id || 'todo';
             const tempId = generateTempId();
             const tempTask = {
                 id: tempId,
@@ -230,7 +231,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
                 priority,
                 category,
                 epicId,
-                status: 'todo',
+                status: defaultColumnId,
                 position: 0, // Will be at top
                 log: [],
                 createdDate: new Date().toISOString()
@@ -238,18 +239,18 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
 
             // Optimistic add
             addTaskToState(tempTask);
-            renderColumn('todo');
+            renderColumn(defaultColumnId);
             elements.taskModal.close();
 
             try {
                 const newTask = await createTaskApi({ title, description, priority, category, epicId });
                 // Replace temp task with real one from server
                 replaceTask(tempId, newTask);
-                renderColumn('todo');
+                renderColumn(defaultColumnId);
             } catch (error) {
                 // Rollback on failure - remove temp task
                 removeTask(tempId);
-                renderColumn('todo');
+                renderColumn(defaultColumnId);
                 console.error('Error creating task:', error);
                 elements.toaster.error('Failed to create task. Changes have been reverted.');
             }
@@ -365,14 +366,14 @@ export function renderReportsList(reports, elements) {
     elements.reportsContainer.querySelectorAll('.js-reportDeleteBtn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            if (confirm('Delete this report?')) {
-                try {
-                    await deleteReportApi(btn.dataset.reportId);
-                    const updatedReports = await fetchReportsApi();
-                    renderReportsList(updatedReports, elements);
-                } catch (error) {
-                    console.error('Error deleting report:', error);
-                }
+            try {
+                await deleteReportApi(btn.dataset.reportId);
+                const updatedReports = await fetchReportsApi();
+                renderReportsList(updatedReports, elements);
+                elements.toaster.success('Report deleted');
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                elements.toaster.error('Failed to delete report');
             }
         });
     });
@@ -390,11 +391,27 @@ export function renderReportsList(reports, elements) {
 
 /**
  * Renders a single report view.
+ * Supports both the new format (content.columns array) and the legacy format
+ * (content.todo / content.inProgress / content.waiting / content.archived).
  * @param {Object} report - The report to display
  * @param {Array<Object>} allReports - All reports (for back navigation)
  * @param {Object} elements - DOM element references
  */
 export function renderReportView(report, allReports, elements) {
+    // Determine which format this report uses
+    const isNewFormat = Array.isArray(report.content?.columns);
+
+    const columnSectionsHtml = isNewFormat
+        ? report.content.columns.map(col =>
+            renderReportSection(escapeHtml(col.columnName), col.tasks)
+          ).join('')
+        : [
+            renderReportSection('Completed Tasks (Archived)', report.content.archived),
+            renderReportSection('In Progress', report.content.inProgress),
+            renderReportSection('Waiting/Blocked', report.content.waiting),
+            renderReportSection('To Do', report.content.todo)
+          ].join('');
+
     elements.reportsContainer.innerHTML = `
         <div class="reportDetail">
             <div class="reportDetail__header">
@@ -402,10 +419,7 @@ export function renderReportView(report, allReports, elements) {
                 <h3>${escapeHtml(report.title)}</h3>
             </div>
 
-            ${renderReportSection('Completed Tasks (Archived)', report.content.archived)}
-            ${renderReportSection('In Progress', report.content.inProgress)}
-            ${renderReportSection('Waiting/Blocked', report.content.waiting)}
-            ${renderReportSection('To Do', report.content.todo)}
+            ${columnSectionsHtml}
 
             <div class="reportDetail__section">
                 <h4>Notes</h4>

@@ -34,6 +34,9 @@ export let profiles = [];
 /** @type {Object|null} Currently active profile */
 export let activeProfile = null;
 
+/** @type {Array<Object>} Columns for the active profile, sorted by order */
+export let columns = [];
+
 /** @type {string} Original page title (saved when entering crisis mode) */
 export let originalTitle = '';
 
@@ -190,4 +193,12 @@ export function setProfiles(newProfiles) {
  */
 export function setActiveProfile(profile) {
     activeProfile = profile;
+}
+
+/**
+ * Updates the columns array with new data (sorted by order).
+ * @param {Array<Object>} newColumns - The new columns array
+ */
+export function setColumns(newColumns) {
+    columns = [...newColumns].sort((a, b) => a.order - b.order);
 }

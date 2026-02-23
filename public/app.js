@@ -9,7 +9,7 @@
  * - modals.js: Modal dialog handling
  */
 
-import { STATUS_COLUMNS, MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_CATEGORY_ID } from './js/constants.js';
+import { MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_CATEGORY_ID } from './js/constants.js';
 import { getWeekNumber, escapeHtml } from './js/utils.js';
 import {
     tasks,
@@ -29,9 +29,12 @@ import {
     profiles,
     setProfiles,
     activeProfile,
-    setActiveProfile
+    setActiveProfile,
+    columns,
+    setColumns
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi } from './js/api.js';
+import { openBoardConfigModal, confirmDeleteColumn } from './js/board-config.js';
 import {
     renderCategoryFilters,
     toggleCategoryFilter,
@@ -84,7 +87,6 @@ import {
         taskLogSection: document.querySelector('.js-taskLogSection'),
         taskLogList: document.querySelector('.js-taskLogList'),
         taskModalActions: document.querySelector('.js-taskModalActions'),
-        addTaskBtn: document.querySelector('.js-addTaskBtn'),
 
         // Reports Modal
         reportsModal: document.querySelector('.js-reportsModal'),
@@ -174,9 +176,25 @@ import {
         crisisModeBtn: document.querySelector('.js-crisisModeBtn'),
         headerToolbar: document.querySelector('.toolbar'),
 
-        // Archive & Report
-        archiveBtn: document.querySelector('.js-archiveBtn'),
-        reportBtn: document.querySelector('.js-reportBtn'),
+        // Generate Report (modal-based, in hamburger menu)
+        generateReportBtn: document.querySelector('.js-generateReportBtn'),
+        generateReportConfirmModal: document.querySelector('.js-generateReportConfirmModal'),
+        generateReportCancel: document.querySelector('.js-generateReportCancel'),
+        generateReportConfirm: document.querySelector('.js-generateReportConfirm'),
+
+        // Board Configuration
+        boardConfigBtn: document.querySelector('.js-boardConfigBtn'),
+        boardConfigModal: document.querySelector('.js-boardConfigModal'),
+        columnsList: document.querySelector('.js-columnsList'),
+        columnNameInput: document.querySelector('.js-columnNameInput'),
+        columnAddBtn: document.querySelector('.js-columnAddBtn'),
+        columnError: document.querySelector('.js-columnError'),
+
+        // Column Delete Confirmation
+        columnConfirmModal: document.querySelector('.js-columnConfirmModal'),
+        columnConfirmMessage: document.querySelector('.js-columnConfirmMessage'),
+        columnConfirmCancel: document.querySelector('.js-columnConfirmCancel'),
+        columnConfirmDelete: document.querySelector('.js-columnConfirmDelete'),
 
         // Kanban container
         kanban: document.querySelector('.kanban'),
@@ -438,6 +456,44 @@ import {
     let categoryLookup = new Map();
 
     /**
+     * Creates all kanban column elements dynamically from the columns config.
+     * The first column receives the "Add Task" button.
+     * Columns with hasArchive:true receive an "Archive" button.
+     * @param {Array<Object>} cols - The columns array (sorted by order)
+     */
+    function initKanban(cols) {
+        elements.kanban.innerHTML = '';
+        cols.forEach((col, idx) => {
+            const columnEl = document.createElement('kanban-column');
+            columnEl.dataset.status = col.id;
+
+            const title = document.createElement('span');
+            title.slot = 'title';
+            title.textContent = col.name;
+            columnEl.appendChild(title);
+
+            if (idx === 0) {
+                const addBtn = document.createElement('button');
+                addBtn.slot = 'actions';
+                addBtn.className = 'column__addBtn js-addTaskBtn';
+                addBtn.textContent = '+ Add Task';
+                columnEl.appendChild(addBtn);
+            }
+
+            if (col.hasArchive) {
+                const archiveBtn = document.createElement('button');
+                archiveBtn.slot = 'actions';
+                archiveBtn.className = 'column__archiveBtn js-archiveBtn';
+                archiveBtn.dataset.columnId = col.id;
+                archiveBtn.textContent = 'Archive';
+                columnEl.appendChild(archiveBtn);
+            }
+
+            elements.kanban.appendChild(columnEl);
+        });
+    }
+
+    /**
      * Re-renders all kanban columns and applies active filters.
      */
     function renderAllColumns() {
@@ -445,7 +501,7 @@ import {
         epicLookup = new Map(epics.map(e => [e.id, e]));
         // Build category lookup once per render cycle
         categoryLookup = new Map(categories.map(c => [c.id, c]));
-        Object.keys(STATUS_COLUMNS).forEach(status => renderColumn(status));
+        columns.forEach(col => renderColumn(col.id));
         renderEpicFilter(elements.epicFilter);
         applyAllFilters();
     }
@@ -453,12 +509,12 @@ import {
     /**
      * Renders a single kanban column with its tasks.
      * Note: Does not apply filters - caller should call applyAllFilters() if needed.
-     * @param {string} status - The column status to render (todo, wait, inprogress, done)
+     * @param {string} columnId - The column ID to render
      */
-    function renderColumn(status) {
-        const columnEl = document.querySelector(STATUS_COLUMNS[status]);
+    function renderColumn(columnId) {
+        const columnEl = document.querySelector(`kanban-column[data-status="${columnId}"]`);
         const columnTasks = tasks
-            .filter(t => t.status === status)
+            .filter(t => t.status === columnId)
             .sort((a, b) => a.position - b.position);
 
         if (columnEl) {
@@ -532,13 +588,18 @@ import {
     // ==========================================
 
     /**
-     * Handles the generate report button click.
+     * Opens the generate report confirmation modal.
      */
-    async function handleGenerateReport() {
-        if (!confirm('Generate a report snapshot of all current tasks?')) {
-            return;
-        }
+    function handleGenerateReport() {
+        closeMenu();
+        elements.generateReportConfirmModal.open();
+    }
 
+    /**
+     * Executes report generation after modal confirmation.
+     */
+    async function executeGenerateReport() {
+        elements.generateReportConfirmModal.close();
         try {
             const result = await generateReportApi();
             if (result.ok) {
@@ -553,22 +614,17 @@ import {
     }
 
     /**
-     * Handles the archive button click.
+     * Handles the archive button click for a specific column.
+     * @param {string} columnId - The column ID to archive tasks from
      */
-    async function handleArchive() {
-        const doneTasks = tasks.filter(t => t.status === 'done');
-        if (doneTasks.length === 0) {
-            elements.toaster.info('No completed tasks to archive');
-            return;
-        }
-
-        if (!confirm(`Archive ${doneTasks.length} completed task${doneTasks.length !== 1 ? 's' : ''}?`)) {
-            return;
-        }
-
+    async function handleArchive(columnId) {
         try {
-            const result = await archiveTasksApi();
+            const result = await archiveTasksApi(columnId);
             if (result.ok) {
+                if (result.data.archivedCount === 0) {
+                    elements.toaster.info('No tasks to archive in this column');
+                    return;
+                }
                 await fetchTasks();
                 elements.toaster.success(`${result.data.archivedCount} task${result.data.archivedCount !== 1 ? 's' : ''} archived`);
             } else {
@@ -703,18 +759,43 @@ import {
             elements.privacyToggleBtn.classList.toggle('--active', isHidden);
         });
 
-        // Add Task
-        elements.addTaskBtn.addEventListener('click', () => {
-            openAddTaskModal(
-                elements,
-                () => openDeleteConfirmation(elements),
-                handleTaskFormSubmit
-            );
+        // Add Task & Archive — event delegation on kanban container
+        // Buttons are dynamically created inside <kanban-column> by initKanban()
+        elements.kanban.addEventListener('click', (e) => {
+            if (e.target.classList.contains('js-addTaskBtn')) {
+                openAddTaskModal(
+                    elements,
+                    () => openDeleteConfirmation(elements),
+                    handleTaskFormSubmit
+                );
+            }
+            if (e.target.classList.contains('js-archiveBtn')) {
+                handleArchive(e.target.dataset.columnId);
+            }
         });
 
-        // Report & Archive
-        elements.reportBtn.addEventListener('click', handleGenerateReport);
-        elements.archiveBtn.addEventListener('click', handleArchive);
+        // Generate Report (hamburger menu item + confirm modal)
+        elements.generateReportBtn.addEventListener('click', handleGenerateReport);
+        elements.generateReportCancel.addEventListener('click', () => {
+            elements.generateReportConfirmModal.close();
+        });
+        elements.generateReportConfirm.addEventListener('click', executeGenerateReport);
+
+        // Board Configuration
+        elements.boardConfigBtn.addEventListener('click', () => {
+            openBoardConfigModal(elements, closeMenu, async () => {
+                initKanban(columns);
+                await fetchTasks();
+            });
+        });
+
+        // Column Delete Confirmation
+        elements.columnConfirmCancel.addEventListener('click', () => {
+            elements.columnConfirmModal.close();
+        });
+        elements.columnConfirmDelete.addEventListener('click', () => {
+            confirmDeleteColumn(elements);
+        });
 
         // Reports
         elements.viewReportsBtn.addEventListener('click', () => {
@@ -839,6 +920,15 @@ import {
         renderCategoryFilters(elements.categoryFilters, (categoryId) => {
             toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
         });
+
+        // Fetch columns and build kanban before rendering tasks
+        try {
+            const fetchedColumns = await fetchColumnsApi();
+            setColumns(fetchedColumns);
+            initKanban(columns);
+        } catch (error) {
+            console.error('Error fetching columns:', error);
+        }
 
         await fetchTasks();
     }

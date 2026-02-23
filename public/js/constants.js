@@ -60,6 +60,21 @@ export const MAX_PROFILES = 20;
 /** Maximum length for profile letters */
 export const PROFILE_LETTERS_MAX = 3;
 
+/** Maximum number of columns allowed per profile */
+export const MAX_COLUMNS = 15;
+
+/**
+ * Default columns created for every new profile.
+ * Column IDs match the legacy task status values for zero-migration compatibility.
+ * Source of truth: /public/js/constants.js
+ */
+export const DEFAULT_COLUMNS = [
+    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false },
+    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false },
+    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false },
+    { id: 'done',       name: 'Done',        order: 3, hasArchive: true  }
+];
+
 /**
  * Pre-defined epic colors (20 rainbow-inspired colors).
  * Each entry has a name and hex value.

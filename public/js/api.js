@@ -103,13 +103,15 @@ export async function generateReportApi() {
 }
 
 /**
- * Archives all completed tasks via the API.
+ * Archives tasks from a specific column via the API.
+ * @param {string} columnId - The column ID whose tasks should be archived
  * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
  */
-export async function archiveTasksApi() {
+export async function archiveTasksApi(columnId) {
     const response = await fetch(`${apiBase}/tasks/archive`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(columnId ? { columnId } : {})
     });
 
     if (!response.ok) {
@@ -378,4 +380,94 @@ export async function deleteProfileApi(id) {
     }
 
     return { ok: true };
+}
+
+// ===========================================
+// Column API Functions
+// ===========================================
+
+/**
+ * Fetches all columns for the active profile (sorted by order).
+ * @returns {Promise<Array<Object>>} Array of column objects
+ */
+export async function fetchColumnsApi() {
+    const response = await fetch(`${apiBase}/columns`);
+    return await response.json();
+}
+
+/**
+ * Creates a new column via the API.
+ * @param {Object} data - The column data { name }
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function createColumnApi(data) {
+    const response = await fetch(`${apiBase}/columns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to create column' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Updates a column via the API (rename / toggle hasArchive).
+ * @param {string} id - The column ID to update
+ * @param {Object} data - The fields to update { name?, hasArchive? }
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function updateColumnApi(id, data) {
+    const response = await fetch(`${apiBase}/columns/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to update column' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Saves the full reordered columns array via the API.
+ * @param {Array<Object>} columns - Full columns array in new order
+ * @returns {Promise<{ok: boolean, data?: Array<Object>, error?: string}>} Result object
+ */
+export async function reorderColumnsApi(columns) {
+    const response = await fetch(`${apiBase}/columns`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to reorder columns' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Deletes a column via the API (tasks are moved to the first column).
+ * @param {string} id - The column ID to delete
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function deleteColumnApi(id) {
+    const response = await fetch(`${apiBase}/columns/${id}`, { method: 'DELETE' });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to delete column' };
+    }
+
+    return { ok: true, data: await response.json() };
 }

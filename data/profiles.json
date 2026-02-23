@@ -5,7 +5,33 @@
     "color": "#54A0FF",
     "letters": "SOL",
     "alias": "work",
-    "isDefault": true
+    "isDefault": true,
+    "columns": [
+      {
+        "id": "todo",
+        "name": "To Do",
+        "order": 0,
+        "hasArchive": false
+      },
+      {
+        "id": "wait",
+        "name": "Wait",
+        "order": 1,
+        "hasArchive": false
+      },
+      {
+        "id": "inprogress",
+        "name": "In Progress",
+        "order": 2,
+        "hasArchive": false
+      },
+      {
+        "id": "done",
+        "name": "Done",
+        "order": 3,
+        "hasArchive": true
+      }
+    ]
   },
   {
     "id": "mlkompdz3kntoxmwf",
@@ -13,6 +39,20 @@
     "color": "#FF6F61",
     "letters": "LRS",
     "alias": "personal",
-    "isDefault": false
+    "isDefault": false,
+    "columns": [
+      {
+        "id": "todo",
+        "name": "To Do",
+        "order": 0,
+        "hasArchive": false
+      },
+      {
+        "id": "mlzpmyfqurwo2x06y",
+        "name": "TEst",
+        "order": 1,
+        "hasArchive": true
+      }
+    ]
   }
 ]

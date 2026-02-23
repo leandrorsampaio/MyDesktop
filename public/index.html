@@ -50,6 +50,12 @@
                 <button class="navMenu__item js-viewArchivedBtn">
                     <span class="navMenu__icon">📦</span> All Completed Tasks
                 </button>
+                <button class="navMenu__item js-generateReportBtn">
+                    <span class="navMenu__icon">📋</span> Generate Report
+                </button>
+                <button class="navMenu__item js-boardConfigBtn">
+                    <span class="navMenu__icon">⚙️</span> Board Configuration
+                </button>
                 <button class="navMenu__item js-manageCategoriesBtn">
                     <span class="navMenu__icon">📂</span> Manage Categories
                 </button>
@@ -79,27 +85,8 @@
             <notes-widget class="sidebar__section"></notes-widget>
         </aside>
 
-        <!-- Main Kanban Board -->
-        <main class="kanban">
-            <kanban-column data-status="todo" class="column js-todoList">
-                <span slot="title">To Do</span>
-                <button slot="actions" class="column__addBtn js-addTaskBtn">+ Add Task</button>
-            </kanban-column>
-
-            <kanban-column data-status="wait" class="column js-waitList">
-                <span slot="title">Wait</span>
-            </kanban-column>
-
-            <kanban-column data-status="inprogress" class="column js-inprogressList">
-                <span slot="title">In Progress</span>
-            </kanban-column>
-
-            <kanban-column data-status="done" class="column js-doneList">
-                <span slot="title">Done</span>
-                <button slot="actions" class="column__reportBtn js-reportBtn">Report</button>
-                <button slot="actions" class="column__archiveBtn js-archiveBtn">Archive</button>
-            </kanban-column>
-        </main>
+        <!-- Main Kanban Board — columns are created dynamically by app.js -->
+        <main class="kanban js-kanban"></main>
     </div>
 
     <!-- Add/Edit Task Modal -->
@@ -285,6 +272,48 @@
             <div class="confirmDialog__actions">
                 <button type="button" class="btn --cancel js-profileConfirmCancel">Cancel</button>
                 <button type="button" class="btn --delete js-profileConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Generate Report Confirmation Modal -->
+    <modal-dialog class="js-generateReportConfirmModal" size="small">
+        <span slot="title">Generate Report</span>
+        <div class="confirmDialog">
+            <p class="confirmDialog__message">Generate a report snapshot of all current tasks?</p>
+            <div class="confirmDialog__actions">
+                <button type="button" class="btn --cancel js-generateReportCancel">Cancel</button>
+                <button type="button" class="btn --save js-generateReportConfirm">Generate</button>
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Board Configuration Modal -->
+    <modal-dialog class="js-boardConfigModal" size="large">
+        <span slot="title">Board Configuration</span>
+        <div class="boardConfigEditor">
+            <p class="boardConfigEditor__hint">Manage your board columns. Drag to reorder. The first column is the default where new tasks are created. Maximum 15 columns.</p>
+            <div class="boardConfigEditor__form js-columnForm">
+                <div class="boardConfigEditor__formRow">
+                    <input type="text" class="boardConfigEditor__nameInput js-columnNameInput" placeholder="New column name" />
+                    <button type="button" class="btn --save js-columnAddBtn">Add Column</button>
+                </div>
+                <div class="boardConfigEditor__error js-columnError" style="display: none;"></div>
+            </div>
+            <div class="boardConfigEditor__list js-columnsList">
+                <!-- Column rows rendered by JS -->
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- Column Delete Confirmation Modal -->
+    <modal-dialog class="js-columnConfirmModal" size="small">
+        <span slot="title">Delete Column</span>
+        <div class="confirmDialog">
+            <p class="confirmDialog__message js-columnConfirmMessage">Are you sure?</p>
+            <div class="confirmDialog__actions">
+                <button type="button" class="btn --cancel js-columnConfirmCancel">Cancel</button>
+                <button type="button" class="btn --delete js-columnConfirmDelete">Delete</button>
             </div>
         </div>
     </modal-dialog>

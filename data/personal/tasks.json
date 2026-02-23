@@ -6,8 +6,8 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "done",
-    "position": 1,
+    "status": "todo",
+    "position": 3,
     "log": [
       {
         "date": "2026-02-16",
@@ -16,6 +16,10 @@
       {
         "date": "2026-02-16",
         "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Column 'Done' deleted – moved to 'To Do'"
       }
     ],
     "createdDate": "2026-02-16T16:00:34.142Z"
@@ -27,8 +31,8 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "done",
-    "position": 0,
+    "status": "todo",
+    "position": 4,
     "log": [
       {
         "date": "2026-02-16",
@@ -37,6 +41,10 @@
       {
         "date": "2026-02-16",
         "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Column 'Done' deleted – moved to 'To Do'"
       }
     ],
     "createdDate": "2026-02-16T16:01:06.050Z"
@@ -48,8 +56,8 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "done",
-    "position": 3,
+    "status": "todo",
+    "position": 5,
     "log": [
       {
         "date": "2026-02-16",
@@ -58,6 +66,10 @@
       {
         "date": "2026-02-16",
         "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Column 'Done' deleted – moved to 'To Do'"
       }
     ],
     "createdDate": "2026-02-16T16:01:20.410Z"
@@ -81,8 +93,8 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "done",
-    "position": 2,
+    "status": "todo",
+    "position": 6,
     "log": [
       {
         "date": "2026-02-16",
@@ -91,6 +103,10 @@
       {
         "date": "2026-02-16",
         "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Column 'Done' deleted – moved to 'To Do'"
       }
     ],
     "createdDate": "2026-02-16T16:01:46.255Z"
@@ -114,9 +130,14 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "todo",
-    "position": 2,
-    "log": [],
+    "status": "mlzpmyfqurwo2x06y",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-02-23",
+        "action": "Moved from To Do to TEst"
+      }
+    ],
     "createdDate": "2026-02-16T22:25:39.199Z"
   }
 ]

@@ -123,8 +123,7 @@ const VALIDATION = {
     TITLE_MAX_LENGTH: 200,
     DESCRIPTION_MAX_LENGTH: 2000,
     NOTES_MAX_LENGTH: 10000,
-    REPORT_TITLE_MAX_LENGTH: 200,
-    VALID_STATUSES: ['todo', 'wait', 'inprogress', 'done']
+    REPORT_TITLE_MAX_LENGTH: 200
 };
 
 /**
@@ -181,15 +180,16 @@ function validateTaskInput(data, { requireTitle = false, validCategoryIds = null
 /**
  * Validates move task input data
  * @param {Object} data - The input data to validate
+ * @param {Set<string>} validColumnIds - Set of valid column IDs for the profile
  * @returns {{valid: boolean, errors: string[]}} Validation result
  */
-function validateMoveInput(data) {
+function validateMoveInput(data, validColumnIds) {
     const errors = [];
 
-    // Status validation
+    // Status validation — any valid column ID for this profile
     if (data.newStatus !== undefined) {
-        if (typeof data.newStatus !== 'string' || !VALIDATION.VALID_STATUSES.includes(data.newStatus)) {
-            errors.push(`Status must be one of: ${VALIDATION.VALID_STATUSES.join(', ')}`);
+        if (typeof data.newStatus !== 'string' || !validColumnIds.has(data.newStatus)) {
+            errors.push('Status must be a valid column ID for this board');
         }
     }
 
@@ -268,6 +268,24 @@ const DEFAULT_CATEGORY_ID = 1;
  * Source of truth: /public/js/constants.js
  */
 const MAX_EPICS = 20;
+
+/**
+ * Maximum number of columns allowed per profile.
+ * Source of truth: /public/js/constants.js
+ */
+const MAX_COLUMNS = 15;
+
+/**
+ * Default columns for every new profile.
+ * IDs match legacy task status values so existing tasks need no migration.
+ * Source of truth: /public/js/constants.js
+ */
+const DEFAULT_COLUMNS = [
+    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false },
+    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false },
+    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false },
+    { id: 'done',       name: 'Done',        order: 3, hasArchive: true  }
+];
 
 /**
  * Pre-defined epic colors (20 rainbow-inspired colors).
@@ -403,7 +421,8 @@ async function ensureDefaultProfile() {
             color: '#54A0FF',
             letters: 'WK',
             alias: 'work',
-            isDefault: true
+            isDefault: true,
+            columns: DEFAULT_COLUMNS
         }];
         await writeJsonFile(PROFILES_FILE, profiles);
         console.log('Migrated existing data to "Work" profile (data/work/)');
@@ -418,7 +437,8 @@ async function ensureDefaultProfile() {
             color: '#54A0FF',
             letters: 'U1',
             alias: 'user1',
-            isDefault: true
+            isDefault: true,
+            columns: DEFAULT_COLUMNS
         }];
         await writeJsonFile(PROFILES_FILE, profiles);
         console.log('Created default "User1" profile (data/user1/)');
@@ -473,7 +493,8 @@ function validateProfileInput(data, { requireAll = false } = {}) {
 
 /**
  * Middleware that resolves a profile alias from :profile param.
- * Attaches req.profileFiles with paths to the profile's data files.
+ * Attaches req.profileFiles, req.profile, and req.columns (sorted by order).
+ * Auto-migrates: adds default columns if the profile has none.
  */
 async function resolveProfile(req, res, next) {
     const alias = req.params.profile;
@@ -484,10 +505,18 @@ async function resolveProfile(req, res, next) {
 
     try {
         const profiles = await readJsonFile(PROFILES_FILE, []);
-        const profile = profiles.find(p => p.alias === alias);
+        const profileIndex = profiles.findIndex(p => p.alias === alias);
 
-        if (!profile) {
+        if (profileIndex === -1) {
             return res.status(404).json({ error: 'Profile not found' });
+        }
+
+        const profile = profiles[profileIndex];
+
+        // Auto-migrate: add default columns if the profile has none
+        if (!profile.columns || profile.columns.length === 0) {
+            profile.columns = DEFAULT_COLUMNS;
+            await writeJsonFile(PROFILES_FILE, profiles);
         }
 
         const profileDir = path.join(DATA_DIR, alias);
@@ -500,6 +529,8 @@ async function resolveProfile(req, res, next) {
             categories: path.join(profileDir, 'categories.json')
         };
         req.profile = profile;
+        // Columns sorted by order for consistent use across handlers
+        req.columns = [...profile.columns].sort((a, b) => a.order - b.order);
 
         // Auto-create categories.json with defaults if missing (migration for existing profiles)
         if (!(await fileExists(req.profileFiles.categories))) {
@@ -599,7 +630,8 @@ app.post('/api/profiles', writeLimiter, async (req, res) => {
             color,
             letters: letters.toUpperCase(),
             alias,
-            isDefault: false
+            isDefault: false,
+            columns: DEFAULT_COLUMNS
         };
 
         // Create profile data directory with empty files
@@ -749,10 +781,13 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const { title, description = '', priority = false } = req.body;
 
-        // Get max position in todo column
-        const todoTasks = tasks.filter(t => t.status === 'todo');
-        const maxPosition = todoTasks.length > 0
-            ? Math.max(...todoTasks.map(t => t.position)) + 1
+        // Default status is the first column (order 0)
+        const defaultColumnId = req.columns[0].id;
+
+        // Get max position in default column
+        const defaultColTasks = tasks.filter(t => t.status === defaultColumnId);
+        const maxPosition = defaultColTasks.length > 0
+            ? Math.max(...defaultColTasks.map(t => t.position)) + 1
             : 0;
 
         const category = req.body.category !== undefined ? Number(req.body.category) : 1;
@@ -765,7 +800,7 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
             priority: Boolean(priority),
             category,
             epicId,
-            status: 'todo',
+            status: defaultColumnId,
             position: maxPosition,
             log: [],
             createdDate: new Date().toISOString()
@@ -856,8 +891,9 @@ app.delete('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, 
 // POST move task between columns or reorder
 app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        // Validate input
-        const validation = validateMoveInput(req.body);
+        // Validate input using dynamic column IDs from the profile
+        const validColumnIds = new Set(req.columns.map(c => c.id));
+        const validation = validateMoveInput(req.body, validColumnIds);
         if (!validation.valid) {
             return res.status(400).json({ error: validation.errors.join('; ') });
         }
@@ -873,20 +909,17 @@ app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (re
         const task = tasks[taskIndex];
         const oldStatus = task.status;
 
-        // Map status to display name for logging
-        const statusNames = {
-            'todo': 'To Do',
-            'wait': 'Wait',
-            'inprogress': 'In Progress',
-            'done': 'Done'
-        };
+        // Use column display names from the profile for the log entry
+        const columnNameMap = new Map(req.columns.map(c => [c.id, c.name]));
 
         // If moving to different column, add log entry
         if (newStatus && newStatus !== oldStatus) {
             const today = new Date().toISOString().split('T')[0];
+            const oldName = columnNameMap.get(oldStatus) || oldStatus;
+            const newName = columnNameMap.get(newStatus) || newStatus;
             task.log.push({
                 date: today,
-                action: `Moved from ${statusNames[oldStatus]} to ${statusNames[newStatus]}`
+                action: `Moved from ${oldName} to ${newName}`
             });
             task.status = newStatus;
         }
@@ -926,11 +959,6 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
         const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
         const categoryLookup = new Map(categories.map(c => [c.id, c.name]));
 
-        const doneTasks = tasks.filter(t => t.status === 'done');
-        const inProgressTasks = tasks.filter(t => t.status === 'inprogress');
-        const waitTasks = tasks.filter(t => t.status === 'wait');
-        const todoTasks = tasks.filter(t => t.status === 'todo');
-
         const now = new Date();
         const weekNumber = getWeekNumber(now);
         const dateRange = formatDateRange(now);
@@ -944,6 +972,13 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
             epicId: t.epicId || null
         });
 
+        // Snapshot all columns in board order, capturing current column names
+        const columnsSnapshot = req.columns.map(col => ({
+            columnId: col.id,
+            columnName: col.name,
+            tasks: tasks.filter(t => t.status === col.id).map(mapTask)
+        }));
+
         const report = {
             id: generateId(),
             title: `Week ${weekNumber} (${dateRange})`,
@@ -951,10 +986,7 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
             weekNumber,
             dateRange,
             content: {
-                archived: doneTasks.map(mapTask),
-                inProgress: inProgressTasks.map(mapTask),
-                waiting: waitTasks.map(mapTask),
-                todo: todoTasks.map(mapTask)
+                columns: columnsSnapshot
             },
             notes: notes.content || ''
         };
@@ -969,7 +1001,7 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
     }
 });
 
-// POST archive completed tasks (no report generation)
+// POST archive tasks from a specific column (no report generation)
 app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
@@ -977,10 +1009,22 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
         const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
         const categoryLookup = new Map(categories.map(c => [c.id, c.name]));
 
-        const doneTasks = tasks.filter(t => t.status === 'done');
+        // Resolve which column to archive from
+        let targetColumnId;
+        if (req.body.columnId) {
+            const col = req.columns.find(c => c.id === req.body.columnId);
+            if (!col) return res.status(400).json({ error: 'Invalid column ID' });
+            targetColumnId = col.id;
+        } else {
+            // Fallback: first column with hasArchive: true
+            const archiveCol = req.columns.find(c => c.hasArchive);
+            targetColumnId = archiveCol ? archiveCol.id : req.columns[req.columns.length - 1].id;
+        }
+
+        const doneTasks = tasks.filter(t => t.status === targetColumnId);
 
         if (doneTasks.length === 0) {
-            return res.status(400).json({ error: 'No completed tasks to archive' });
+            return res.status(400).json({ error: 'No tasks to archive in this column' });
         }
 
         for (const task of doneTasks) {
@@ -1272,6 +1316,196 @@ app.delete('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, 
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete epic' });
+    }
+});
+
+// ===========================================
+// Column API Routes
+// ===========================================
+
+// GET all columns for a profile (sorted by order)
+app.get('/api/:profile/columns', resolveProfile, async (req, res) => {
+    res.json(req.columns);
+});
+
+// POST create new column
+app.post('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const columns = req.profile.columns;
+
+        if (columns.length >= MAX_COLUMNS) {
+            return res.status(400).json({ error: `Maximum of ${MAX_COLUMNS} columns allowed` });
+        }
+
+        const { name } = req.body;
+        if (!name || typeof name !== 'string' || name.trim() === '') {
+            return res.status(400).json({ error: 'Column name is required' });
+        }
+        if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Column name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
+        }
+
+        const newColumn = {
+            id: generateId(),
+            name: name.trim(),
+            order: columns.length,
+            hasArchive: false
+        };
+
+        columns.push(newColumn);
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const idx = profiles.findIndex(p => p.alias === req.params.profile);
+        if (idx !== -1) {
+            profiles[idx].columns = columns;
+            await writeJsonFile(PROFILES_FILE, profiles);
+        }
+
+        res.status(201).json(newColumn);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create column' });
+    }
+});
+
+// PUT update a single column (rename / toggle hasArchive)
+app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const columns = req.profile.columns;
+        const colIndex = columns.findIndex(c => c.id === req.params.id);
+
+        if (colIndex === -1) {
+            return res.status(404).json({ error: 'Column not found' });
+        }
+
+        const { name, hasArchive } = req.body;
+
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.trim() === '') {
+                return res.status(400).json({ error: 'Column name cannot be empty' });
+            }
+            if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+                return res.status(400).json({ error: `Column name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
+            }
+            columns[colIndex].name = name.trim();
+        }
+
+        if (hasArchive !== undefined) {
+            columns[colIndex].hasArchive = Boolean(hasArchive);
+        }
+
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const idx = profiles.findIndex(p => p.alias === req.params.profile);
+        if (idx !== -1) {
+            profiles[idx].columns = columns;
+            await writeJsonFile(PROFILES_FILE, profiles);
+        }
+
+        res.json(columns[colIndex]);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update column' });
+    }
+});
+
+// PUT reorder all columns (send full array with updated order values)
+app.put('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const { columns: incomingColumns } = req.body;
+
+        if (!Array.isArray(incomingColumns)) {
+            return res.status(400).json({ error: 'columns must be an array' });
+        }
+
+        const existingIds = new Set(req.profile.columns.map(c => c.id));
+        for (const col of incomingColumns) {
+            if (!existingIds.has(col.id)) {
+                return res.status(400).json({ error: `Unknown column id: ${col.id}` });
+            }
+        }
+
+        // Rebuild columns from incoming order, preserving all fields
+        const colMap = new Map(req.profile.columns.map(c => [c.id, c]));
+        const reordered = incomingColumns.map((col, idx) => ({
+            ...colMap.get(col.id),
+            order: idx
+        }));
+
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const pIdx = profiles.findIndex(p => p.alias === req.params.profile);
+        if (pIdx !== -1) {
+            profiles[pIdx].columns = reordered;
+            await writeJsonFile(PROFILES_FILE, profiles);
+        }
+
+        res.json(reordered.sort((a, b) => a.order - b.order));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reorder columns' });
+    }
+});
+
+// DELETE a column — tasks in it are moved to the first (default) column
+app.delete('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const columns = req.profile.columns;
+
+        if (columns.length <= 1) {
+            return res.status(400).json({ error: 'Cannot delete the last column' });
+        }
+
+        const colIndex = columns.findIndex(c => c.id === req.params.id);
+        if (colIndex === -1) {
+            return res.status(404).json({ error: 'Column not found' });
+        }
+
+        const deletedColumn = columns[colIndex];
+        const sorted = [...columns].sort((a, b) => a.order - b.order);
+        // Default column is first (order 0), skip the one being deleted
+        const defaultColumn = sorted.find(c => c.id !== deletedColumn.id);
+
+        // Move all tasks in the deleted column to the default column
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const today = new Date().toISOString().split('T')[0];
+        let tasksUpdated = false;
+
+        // Get max position in default column for appending
+        const defaultColTasks = tasks.filter(t => t.status === defaultColumn.id);
+        let nextPosition = defaultColTasks.length > 0
+            ? Math.max(...defaultColTasks.map(t => t.position)) + 1
+            : 0;
+
+        for (const task of tasks) {
+            if (task.status === deletedColumn.id) {
+                task.status = defaultColumn.id;
+                task.position = nextPosition++;
+                if (!task.log) task.log = [];
+                task.log.push({
+                    date: today,
+                    action: `Column '${deletedColumn.name}' deleted – moved to '${defaultColumn.name}'`
+                });
+                tasksUpdated = true;
+            }
+        }
+
+        if (tasksUpdated) {
+            await writeJsonFile(req.profileFiles.tasks, tasks);
+        }
+
+        // Remove column and re-normalise order values
+        columns.splice(colIndex, 1);
+        columns.sort((a, b) => a.order - b.order).forEach((c, i) => { c.order = i; });
+
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const pIdx = profiles.findIndex(p => p.alias === req.params.profile);
+        if (pIdx !== -1) {
+            profiles[pIdx].columns = columns;
+            await writeJsonFile(PROFILES_FILE, profiles);
+        }
+
+        res.json({
+            success: true,
+            movedCount: tasksUpdated ? tasks.filter(t => t.status === defaultColumn.id).length : 0,
+            defaultColumnName: defaultColumn.name
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete column' });
     }
 });
 
