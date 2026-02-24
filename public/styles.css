@@ -469,6 +469,10 @@ body {
     box-shadow: var(--shadow-soft);
 }
 
+.sidebar__section.--hidden {
+    display: none;
+}
+
 .sidebar__section h3 {
     font-size: 12px;
     text-transform: uppercase;
@@ -1967,6 +1971,43 @@ body {
 .boardConfigEditor__deleteBtn:hover {
     background: rgba(201, 112, 101, 0.2);
     transform: scale(1.05);
+}
+
+/* ==========================================
+   Block: generalConfig
+   ========================================== */
+.generalConfig {
+    padding: 0 32px 32px 32px;
+}
+
+.generalConfig__hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.generalConfig__options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.generalConfig__option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.generalConfig__option input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent-color);
+    cursor: pointer;
 }
 
 /* ==========================================

@@ -56,6 +56,9 @@
                 <button class="navMenu__item js-boardConfigBtn">
                     <span class="navMenu__icon">⚙️</span> Board Configuration
                 </button>
+                <button class="navMenu__item js-generalConfigBtn">
+                    <span class="navMenu__icon">🔧</span> General Configuration
+                </button>
                 <button class="navMenu__item js-manageCategoriesBtn">
                     <span class="navMenu__icon">📂</span> Manage Categories
                 </button>
@@ -302,6 +305,30 @@
             </div>
             <div class="boardConfigEditor__list js-columnsList">
                 <!-- Column rows rendered by JS -->
+            </div>
+        </div>
+    </modal-dialog>
+
+    <!-- General Configuration Modal -->
+    <modal-dialog class="js-generalConfigModal" size="small">
+        <span slot="title">General Configuration</span>
+        <div class="generalConfig">
+            <p class="generalConfig__hint">Configure interface visibility for this profile. Changes are saved per profile.</p>
+            <div class="generalConfig__options">
+                <label class="generalConfig__option">
+                    <input type="checkbox" class="js-showDailyChecklist">
+                    <span>Show Daily Checklist</span>
+                </label>
+                <label class="generalConfig__option">
+                    <input type="checkbox" class="js-showNotes">
+                    <span>Show Notes</span>
+                </label>
+            </div>
+            <div class="modal__actions">
+                <div class="modal__actionsRight">
+                    <button type="button" class="btn --cancel js-generalConfigCancel">Cancel</button>
+                    <button type="button" class="btn --save js-generalConfigSave">Save</button>
+                </div>
             </div>
         </div>
     </modal-dialog>

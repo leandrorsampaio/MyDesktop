@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.26.0
-**Last Updated:** 2026-02-23
+**Version:** 2.27.0
+**Last Updated:** 2026-02-24
 
 ---
 
@@ -289,7 +289,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - Exactly one profile must have `isDefault: true`. Setting `isDefault: true` on one automatically clears all others.
 - Deleting the default profile transfers `isDefault` to the first remaining profile.
 - Profile `alias` is used as both the **data folder name** (`data/{alias}/`) and the **URL segment** (`/{alias}`).
-- localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`.
+- localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`, `{alias}:showDailyChecklist`, `{alias}:showNotes`.
 
 ### Columns & Board Configuration
 - Columns are **per-profile**, stored inside each profile object in `profiles.json` (not a separate file).
@@ -304,6 +304,13 @@ These are behaviors not evident from reading the code. Know these before making 
 ### Reports & Archive (independent operations)
 - **Report generation** (`Hamburger → Generate Report`) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.
 - **Archive** (`Archive` button on a column with `hasArchive: true`) moves all tasks in that specific column to `archived-tasks.json`. Accepts a `columnId` in the body; falls back to the first `hasArchive: true` column. Does **not** generate a report.
+
+### General Configuration
+- Accessed via Hamburger → General Configuration; opens a small modal with checkbox toggles.
+- Settings are **profile-scoped** and persisted in `localStorage` under `{alias}:showDailyChecklist` and `{alias}:showNotes` (string `"true"` / `"false"`).
+- Default is **visible** (true) when the key is not yet set — checked via `value !== 'false'`.
+- `loadGeneralConfig()` in `app.js` applies visibility by toggling `.--hidden` on the `<daily-checklist>` and `<notes-widget>` elements; it is called once during `init()` (after `setActiveProfile`) and again after saving the modal.
+- No server calls — purely client-side. Nothing is deleted from the data layer.
 
 ### Crisis Mode & Privacy Toggle
 - Both are purely client-side CSS toggles — no server calls, no persistence.
@@ -386,6 +393,7 @@ elements.toaster.info('msg')     // beige
 | `.js-generateReportConfirmModal` | Generate report confirmation     | small   | Hamburger → Generate Report                |
 | `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Hamburger → Board Configuration            |
 | `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal               |
+| `.js-generalConfigModal`         | Sidebar visibility toggles       | small   | Hamburger → General Configuration         |
 
 ---
 

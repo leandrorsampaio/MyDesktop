@@ -182,6 +182,16 @@ import {
         generateReportCancel: document.querySelector('.js-generateReportCancel'),
         generateReportConfirm: document.querySelector('.js-generateReportConfirm'),
 
+        // General Configuration
+        generalConfigBtn: document.querySelector('.js-generalConfigBtn'),
+        generalConfigModal: document.querySelector('.js-generalConfigModal'),
+        showDailyChecklistToggle: document.querySelector('.js-showDailyChecklist'),
+        showNotesToggle: document.querySelector('.js-showNotes'),
+        generalConfigCancel: document.querySelector('.js-generalConfigCancel'),
+        generalConfigSave: document.querySelector('.js-generalConfigSave'),
+        dailyChecklist: document.querySelector('daily-checklist'),
+        notesWidget: document.querySelector('notes-widget'),
+
         // Board Configuration
         boardConfigBtn: document.querySelector('.js-boardConfigBtn'),
         boardConfigModal: document.querySelector('.js-boardConfigModal'),
@@ -584,6 +594,46 @@ import {
     }
 
     // ==========================================
+    // General Configuration
+    // ==========================================
+
+    /**
+     * Reads the general config from profile-scoped localStorage and applies
+     * show/hide state to the sidebar sections.
+     */
+    function loadGeneralConfig() {
+        if (!activeProfile) return;
+        const showChecklist = localStorage.getItem(`${activeProfile.alias}:showDailyChecklist`);
+        const showNotes = localStorage.getItem(`${activeProfile.alias}:showNotes`);
+        // Default is true (visible) when key is not set
+        elements.dailyChecklist.classList.toggle('--hidden', showChecklist === 'false');
+        elements.notesWidget.classList.toggle('--hidden', showNotes === 'false');
+    }
+
+    /**
+     * Opens the General Configuration modal, pre-populated with current settings.
+     */
+    function openGeneralConfigModal() {
+        closeMenu();
+        const showChecklist = localStorage.getItem(`${activeProfile.alias}:showDailyChecklist`);
+        const showNotes = localStorage.getItem(`${activeProfile.alias}:showNotes`);
+        elements.showDailyChecklistToggle.checked = showChecklist !== 'false';
+        elements.showNotesToggle.checked = showNotes !== 'false';
+        elements.generalConfigModal.open();
+    }
+
+    /**
+     * Persists the general config to localStorage and applies visibility changes.
+     */
+    function saveGeneralConfig() {
+        localStorage.setItem(`${activeProfile.alias}:showDailyChecklist`, String(elements.showDailyChecklistToggle.checked));
+        localStorage.setItem(`${activeProfile.alias}:showNotes`, String(elements.showNotesToggle.checked));
+        loadGeneralConfig();
+        elements.generalConfigModal.close();
+        elements.toaster.success('Configuration saved');
+    }
+
+    // ==========================================
     // Report & Archive Handlers
     // ==========================================
 
@@ -781,6 +831,13 @@ import {
         });
         elements.generateReportConfirm.addEventListener('click', executeGenerateReport);
 
+        // General Configuration
+        elements.generalConfigBtn.addEventListener('click', openGeneralConfigModal);
+        elements.generalConfigCancel.addEventListener('click', () => {
+            elements.generalConfigModal.close();
+        });
+        elements.generalConfigSave.addEventListener('click', saveGeneralConfig);
+
         // Board Configuration
         elements.boardConfigBtn.addEventListener('click', () => {
             openBoardConfigModal(elements, closeMenu, async () => {
@@ -898,6 +955,7 @@ import {
             setApiBase(matchedProfile.alias);
             document.body.classList.add('profile-' + matchedProfile.alias);
             renderProfileSelector();
+            loadGeneralConfig();
         } catch (error) {
             console.error('Error fetching profiles:', error);
         }
