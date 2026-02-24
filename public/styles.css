@@ -1,92 +1,26 @@
 /* CSS Custom Properties - Color Gradients */
 :root {
-    /* To Do Column - Warm colors (dark red to light red/orange) */
-    --todo-gradient-0: linear-gradient(135deg, #5C0A0A 0%, #7A1212 100%);
-    --todo-gradient-1: linear-gradient(135deg, #6B0F0F 0%, #8A1818 100%);
-    --todo-gradient-2: linear-gradient(135deg, #7A1414 0%, #9A2020 100%);
-    --todo-gradient-3: linear-gradient(135deg, #891919 0%, #AA2828 100%);
-    --todo-gradient-4: linear-gradient(135deg, #981E1E 0%, #BA3030 100%);
-    --todo-gradient-5: linear-gradient(135deg, #A72323 0%, #CA3838 100%);
-    --todo-gradient-6: linear-gradient(135deg, #B62828 0%, #DA4040 100%);
-    --todo-gradient-7: linear-gradient(135deg, #C52D2D 0%, #E54848 100%);
-    --todo-gradient-8: linear-gradient(135deg, #D43232 0%, #EF5050 100%);
-    --todo-gradient-9: linear-gradient(135deg, #E03737 0%, #F55858 100%);
-    --todo-gradient-10: linear-gradient(135deg, #E84040 0%, #F86565 100%);
-    --todo-gradient-11: linear-gradient(135deg, #ED4D4D 0%, #FA7272 100%);
-    --todo-gradient-12: linear-gradient(135deg, #F05A5A 0%, #FB8080 100%);
-    --todo-gradient-13: linear-gradient(135deg, #F26767 0%, #FC8E8E 100%);
-    --todo-gradient-14: linear-gradient(135deg, #F47474 0%, #FD9C9C 100%);
-    --todo-gradient-15: linear-gradient(135deg, #F58181 0%, #FEAAAA 100%);
-    --todo-gradient-16: linear-gradient(135deg, #F78E8E 0%, #FEB8B8 100%);
-    --todo-gradient-17: linear-gradient(135deg, #F99B9B 0%, #FEC6C6 100%);
-    --todo-gradient-18: linear-gradient(135deg, #FAA8A8 0%, #FFD4D4 100%);
-    --todo-gradient-19: linear-gradient(135deg, #FBB5B5 0%, #FFE2E2 100%);
-
-    /* Wait Column - Cool/muted colors (dark gray/blue to light gray/blue) */
-    --wait-gradient-0: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
-    --wait-gradient-1: linear-gradient(135deg, #34495E 0%, #3D556D 100%);
-    --wait-gradient-2: linear-gradient(135deg, #3D556D 0%, #46617C 100%);
-    --wait-gradient-3: linear-gradient(135deg, #46617C 0%, #4F6D8B 100%);
-    --wait-gradient-4: linear-gradient(135deg, #4F6D8B 0%, #58799A 100%);
-    --wait-gradient-5: linear-gradient(135deg, #58799A 0%, #6185A9 100%);
-    --wait-gradient-6: linear-gradient(135deg, #6185A9 0%, #6A91B8 100%);
-    --wait-gradient-7: linear-gradient(135deg, #6A91B8 0%, #739DC7 100%);
-    --wait-gradient-8: linear-gradient(135deg, #739DC7 0%, #7CA9D0 100%);
-    --wait-gradient-9: linear-gradient(135deg, #7CA9D0 0%, #85B5D9 100%);
-    --wait-gradient-10: linear-gradient(135deg, #85B5D9 0%, #8EC1E2 100%);
-    --wait-gradient-11: linear-gradient(135deg, #8EC1E2 0%, #97CDEB 100%);
-    --wait-gradient-12: linear-gradient(135deg, #97CDEB 0%, #A3D5EE 100%);
-    --wait-gradient-13: linear-gradient(135deg, #A3D5EE 0%, #AFDDF1 100%);
-    --wait-gradient-14: linear-gradient(135deg, #AFDDF1 0%, #BBE5F4 100%);
-    --wait-gradient-15: linear-gradient(135deg, #BBE5F4 0%, #C7EDF7 100%);
-    --wait-gradient-16: linear-gradient(135deg, #C7EDF7 0%, #D3F5FA 100%);
-    --wait-gradient-17: linear-gradient(135deg, #D3F5FA 0%, #DFFAFC 100%);
-    --wait-gradient-18: linear-gradient(135deg, #DFFAFC 0%, #EBFDFE 100%);
-    --wait-gradient-19: linear-gradient(135deg, #EBFDFE 0%, #F5FEFF 100%);
-
-    /* In Progress Column - Energetic colors (dark green/teal to light green/teal) */
-    --inprogress-gradient-0: linear-gradient(135deg, #0D4D4D 0%, #106060 100%);
-    --inprogress-gradient-1: linear-gradient(135deg, #106060 0%, #137373 100%);
-    --inprogress-gradient-2: linear-gradient(135deg, #137373 0%, #168686 100%);
-    --inprogress-gradient-3: linear-gradient(135deg, #168686 0%, #199999 100%);
-    --inprogress-gradient-4: linear-gradient(135deg, #199999 0%, #1CACAC 100%);
-    --inprogress-gradient-5: linear-gradient(135deg, #1CACAC 0%, #1FBFBF 100%);
-    --inprogress-gradient-6: linear-gradient(135deg, #1FBFBF 0%, #22D2D2 100%);
-    --inprogress-gradient-7: linear-gradient(135deg, #22D2D2 0%, #2FDBDB 100%);
-    --inprogress-gradient-8: linear-gradient(135deg, #2FDBDB 0%, #3CE4E4 100%);
-    --inprogress-gradient-9: linear-gradient(135deg, #3CE4E4 0%, #49EDED 100%);
-    --inprogress-gradient-10: linear-gradient(135deg, #49EDED 0%, #56F0F0 100%);
-    --inprogress-gradient-11: linear-gradient(135deg, #56F0F0 0%, #66F2F2 100%);
-    --inprogress-gradient-12: linear-gradient(135deg, #66F2F2 0%, #76F4F4 100%);
-    --inprogress-gradient-13: linear-gradient(135deg, #76F4F4 0%, #86F6F6 100%);
-    --inprogress-gradient-14: linear-gradient(135deg, #86F6F6 0%, #96F8F8 100%);
-    --inprogress-gradient-15: linear-gradient(135deg, #96F8F8 0%, #A6FAFA 100%);
-    --inprogress-gradient-16: linear-gradient(135deg, #A6FAFA 0%, #B6FBFB 100%);
-    --inprogress-gradient-17: linear-gradient(135deg, #B6FBFB 0%, #C6FCFC 100%);
-    --inprogress-gradient-18: linear-gradient(135deg, #C6FCFC 0%, #D6FDFD 100%);
-    --inprogress-gradient-19: linear-gradient(135deg, #D6FDFD 0%, #E6FEFE 100%);
-
-    /* Done Column - Calming colors (dark purple/blue to light purple/blue) */
-    --done-gradient-0: linear-gradient(135deg, #2E1A47 0%, #3D2460 100%);
-    --done-gradient-1: linear-gradient(135deg, #3D2460 0%, #4C2E79 100%);
-    --done-gradient-2: linear-gradient(135deg, #4C2E79 0%, #5B3892 100%);
-    --done-gradient-3: linear-gradient(135deg, #5B3892 0%, #6A42AB 100%);
-    --done-gradient-4: linear-gradient(135deg, #6A42AB 0%, #794CC4 100%);
-    --done-gradient-5: linear-gradient(135deg, #794CC4 0%, #8856D6 100%);
-    --done-gradient-6: linear-gradient(135deg, #8856D6 0%, #9466DD 100%);
-    --done-gradient-7: linear-gradient(135deg, #9466DD 0%, #A076E4 100%);
-    --done-gradient-8: linear-gradient(135deg, #A076E4 0%, #AC86EB 100%);
-    --done-gradient-9: linear-gradient(135deg, #AC86EB 0%, #B896F2 100%);
-    --done-gradient-10: linear-gradient(135deg, #B896F2 0%, #C2A4F5 100%);
-    --done-gradient-11: linear-gradient(135deg, #C2A4F5 0%, #CCB2F8 100%);
-    --done-gradient-12: linear-gradient(135deg, #CCB2F8 0%, #D6C0FB 100%);
-    --done-gradient-13: linear-gradient(135deg, #D6C0FB 0%, #DECEFC 100%);
-    --done-gradient-14: linear-gradient(135deg, #DECEFC 0%, #E6DCFD 100%);
-    --done-gradient-15: linear-gradient(135deg, #E6DCFD 0%, #EEEAFE 100%);
-    --done-gradient-16: linear-gradient(135deg, #EEEAFE 0%, #F2EFFE 100%);
-    --done-gradient-17: linear-gradient(135deg, #F2EFFE 0%, #F6F4FE 100%);
-    --done-gradient-18: linear-gradient(135deg, #F6F4FE 0%, #FAF9FF 100%);
-    --done-gradient-19: linear-gradient(135deg, #FAF9FF 0%, #FDFCFF 100%);
+    /* Task card gradient — dark teal (position 0) to near-white (position 19) */
+    --card-gradient-0: linear-gradient(135deg, #0D4D4D 0%, #106060 100%);
+    --card-gradient-1: linear-gradient(135deg, #106060 0%, #137373 100%);
+    --card-gradient-2: linear-gradient(135deg, #137373 0%, #168686 100%);
+    --card-gradient-3: linear-gradient(135deg, #168686 0%, #199999 100%);
+    --card-gradient-4: linear-gradient(135deg, #199999 0%, #1CACAC 100%);
+    --card-gradient-5: linear-gradient(135deg, #1CACAC 0%, #1FBFBF 100%);
+    --card-gradient-6: linear-gradient(135deg, #1FBFBF 0%, #22D2D2 100%);
+    --card-gradient-7: linear-gradient(135deg, #22D2D2 0%, #2FDBDB 100%);
+    --card-gradient-8: linear-gradient(135deg, #2FDBDB 0%, #3CE4E4 100%);
+    --card-gradient-9: linear-gradient(135deg, #3CE4E4 0%, #49EDED 100%);
+    --card-gradient-10: linear-gradient(135deg, #49EDED 0%, #56F0F0 100%);
+    --card-gradient-11: linear-gradient(135deg, #56F0F0 0%, #66F2F2 100%);
+    --card-gradient-12: linear-gradient(135deg, #66F2F2 0%, #76F4F4 100%);
+    --card-gradient-13: linear-gradient(135deg, #76F4F4 0%, #86F6F6 100%);
+    --card-gradient-14: linear-gradient(135deg, #86F6F6 0%, #96F8F8 100%);
+    --card-gradient-15: linear-gradient(135deg, #96F8F8 0%, #A6FAFA 100%);
+    --card-gradient-16: linear-gradient(135deg, #A6FAFA 0%, #B6FBFB 100%);
+    --card-gradient-17: linear-gradient(135deg, #B6FBFB 0%, #C6FCFC 100%);
+    --card-gradient-18: linear-gradient(135deg, #C6FCFC 0%, #D6FDFD 100%);
+    --card-gradient-19: linear-gradient(135deg, #D6FDFD 0%, #E6FEFE 100%);
 
     /* Zen Theme - Light beige/sand palette */
     --bg-color: #F5F1EB;

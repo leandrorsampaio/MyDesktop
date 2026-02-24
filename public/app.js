@@ -340,13 +340,13 @@ import {
 
     /**
      * Calculates the color information for a task card based on its position.
-     * Returns both the CSS gradient variable and whether to use light text.
-     * @param {string} status - The task status (todo, wait, inprogress, done)
+     * All columns share the same --card-gradient-* palette, so color works
+     * for any column regardless of its ID (including user-created ones).
      * @param {number} position - Zero-based position of the task in its column
      * @param {number} totalInColumn - Total number of tasks in the column
      * @returns {{gradient: string, useLightText: boolean}} Color info object
      */
-    function getTaskColorInfo(status, position, totalInColumn) {
+    function getTaskColorInfo(position, totalInColumn) {
         let gradientIndex;
 
         if (totalInColumn <= MAX_GRADIENT_STEPS) {
@@ -359,7 +359,7 @@ import {
         gradientIndex = Math.min(gradientIndex, MAX_GRADIENT_STEPS - 1);
 
         return {
-            gradient: `var(--${status}-gradient-${gradientIndex})`,
+            gradient: `var(--card-gradient-${gradientIndex})`,
             useLightText: gradientIndex < LIGHT_TEXT_THRESHOLD
         };
     }
@@ -561,7 +561,7 @@ import {
         card.draggable = true;
 
         // Apply gradient background and text color
-        const colorInfo = getTaskColorInfo(task.status, position, totalInColumn);
+        const colorInfo = getTaskColorInfo(position, totalInColumn);
         card.style.background = colorInfo.gradient;
         card.classList.add(colorInfo.useLightText ? '--lightText' : '--darkText');
 
