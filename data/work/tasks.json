@@ -1427,7 +1427,7 @@
     "priority": false,
     "category": 2,
     "status": "inprogress",
-    "position": 4,
+    "position": 3,
     "log": [
       {
         "date": "2026-02-11",
@@ -1719,7 +1719,7 @@
     "category": 2,
     "epicId": null,
     "status": "inprogress",
-    "position": 3,
+    "position": 2,
     "log": [
       {
         "date": "2026-02-23",
@@ -1727,5 +1727,22 @@
       }
     ],
     "createdDate": "2026-02-23T15:55:41.941Z"
+  },
+  {
+    "id": "mm16ce59p0zkv1tng",
+    "title": "create list of LWC ready for DS",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "inprogress",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-02-24",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-02-24T22:25:43.581Z"
   }
 ]
