@@ -632,7 +632,10 @@
       }
     ],
     "createdDate": "2026-01-26T18:42:36.610Z",
-    "category": 2
+    "category": 2,
+    "epicId": null,
+    "deadline": "2026-02-04T00:36:00.000Z",
+    "snoozeUntil": null
   },
   {
     "id": "mkvirz2nimqhq351q",
@@ -1048,7 +1051,10 @@
         "action": "Moved from In Progress to To Do"
       }
     ],
-    "createdDate": "2026-02-02T18:05:40.161Z"
+    "createdDate": "2026-02-02T18:05:40.161Z",
+    "epicId": null,
+    "deadline": "2026-02-26T01:36:00.000Z",
+    "snoozeUntil": null
   },
   {
     "id": "ml5hgnv8fnxyzir8h",
@@ -1460,7 +1466,9 @@
         "action": "Moved from To Do to In Progress"
       }
     ],
-    "createdDate": "2026-02-16T00:14:05.555Z"
+    "createdDate": "2026-02-16T00:14:05.555Z",
+    "deadline": null,
+    "snoozeUntil": "2026-02-26T01:37:00.000Z"
   },
   {
     "id": "mlpdja5gg25jozz9g",

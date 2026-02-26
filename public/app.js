@@ -9,8 +9,8 @@
  * - modals.js: Modal dialog handling
  */
 
-import { MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_CATEGORY_ID } from './js/constants.js';
-import { getWeekNumber, escapeHtml } from './js/utils.js';
+import { MAX_GRADIENT_STEPS, LIGHT_TEXT_THRESHOLD, DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, SNOOZE_CHECK_INTERVAL_MS } from './js/constants.js';
+import { getWeekNumber, escapeHtml, formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue } from './js/utils.js';
 import {
     tasks,
     setTasks,
@@ -60,7 +60,8 @@ import {
     openCategoriesModal,
     confirmDeleteCategory,
     openProfilesModal,
-    confirmDeleteProfile
+    confirmDeleteProfile,
+    setQuickDateTime
 } from './js/modals.js';
 
 (function() {
@@ -218,7 +219,20 @@ import {
         checklistSaveBtn: document.querySelector('.js-checklistSaveBtn'),
 
         // Toast Notifications
-        toaster: document.querySelector('.js-toaster')
+        toaster: document.querySelector('.js-toaster'),
+
+        // Task form - schedule
+        taskDeadline:         document.querySelector('.js-taskDeadline'),
+        taskSnooze:           document.querySelector('.js-taskSnooze'),
+        deadlineHint:         document.querySelector('.js-deadlineHint'),
+        snoozeHint:           document.querySelector('.js-snoozeHint'),
+
+        // Toolbar - snooze toggle
+        snoozeToggleBtn:      document.querySelector('.js-snoozeToggleBtn'),
+
+        // General config - deadline thresholds
+        deadlineUrgentHours:  document.querySelector('.js-deadlineUrgentHours'),
+        deadlineWarningHours: document.querySelector('.js-deadlineWarningHours')
     };
 
     // ==========================================
@@ -514,6 +528,7 @@ import {
         columns.forEach(col => renderColumn(col.id));
         renderEpicFilter(elements.epicFilter);
         applyAllFilters();
+        updateSnoozeButton();
     }
 
     /**
@@ -568,6 +583,19 @@ import {
             card.classList.add('epic-none');
         }
 
+        // Deadline chip data
+        if (task.deadline) {
+            card.dataset.deadline      = task.deadline;
+            const thresholds           = getDeadlineThresholds(activeProfile.alias);
+            card.dataset.deadlineLevel = getDeadlineLevel(task.deadline, thresholds);
+            card.dataset.deadlineText  = formatRelativeTime(task.deadline);
+        }
+
+        // Snooze state — apply class for CSS-driven visibility
+        if (task.snoozeUntil && new Date(task.snoozeUntil) > new Date()) {
+            card.classList.add('--snoozed');
+        }
+
         card.draggable = true;
 
         // Apply gradient background and text color
@@ -599,15 +627,63 @@ import {
 
     /**
      * Reads the general config from profile-scoped localStorage and applies
-     * show/hide state to the sidebar sections.
+     * show/hide state to the sidebar sections and snooze display mode.
      */
     function loadGeneralConfig() {
         if (!activeProfile) return;
-        const showChecklist = localStorage.getItem(`${activeProfile.alias}:showDailyChecklist`);
-        const showNotes = localStorage.getItem(`${activeProfile.alias}:showNotes`);
+        const alias = activeProfile.alias;
+        const showChecklist = localStorage.getItem(`${alias}:showDailyChecklist`);
+        const showNotes     = localStorage.getItem(`${alias}:showNotes`);
         // Default is true (visible) when key is not set
         elements.dailyChecklist.classList.toggle('--hidden', showChecklist === 'false');
-        elements.notesWidget.classList.toggle('--hidden', showNotes === 'false');
+        elements.notesWidget.classList.toggle('--hidden',    showNotes     === 'false');
+
+        // Snooze display mode
+        const snoozeMode = localStorage.getItem(`${alias}:snoozeVisibility`) || 'hidden';
+        document.body.classList.toggle('--snoozeTransparent', snoozeMode === 'transparent');
+    }
+
+    /**
+     * Returns the deadline urgency thresholds [urgentHours, warningHours]
+     * from profile-scoped localStorage, falling back to defaults.
+     * @param {string} alias - Profile alias
+     * @returns {number[]}
+     */
+    function getDeadlineThresholds(alias) {
+        const stored = localStorage.getItem(`${alias}:deadlineThresholds`);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length === 2) return parsed;
+            } catch {}
+        }
+        return [DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS];
+    }
+
+    /**
+     * Shows/hides the snooze toggle button based on whether any tasks are currently snoozed.
+     * Also resets the toggle state if no snoozed tasks remain.
+     */
+    function updateSnoozeButton() {
+        const now = new Date();
+        const snoozedTasks = tasks.filter(t => t.snoozeUntil && new Date(t.snoozeUntil) > now);
+        if (snoozedTasks.length > 0) {
+            elements.snoozeToggleBtn.style.display = '';
+            elements.snoozeToggleBtn.textContent   = `💤 Snoozed (${snoozedTasks.length})`;
+        } else {
+            elements.snoozeToggleBtn.style.display = 'none';
+            elements.kanban.classList.remove('--showSnoozed');
+            elements.snoozeToggleBtn.classList.remove('--active');
+        }
+    }
+
+    /**
+     * Updates the relative-time hint below a datetime input.
+     * @param {HTMLElement} hintEl - The hint container element
+     * @param {string} value - The datetime-local input value
+     */
+    function updateDateHint(hintEl, value) {
+        hintEl.textContent = value ? formatRelativeTime(new Date(value).toISOString()) : '';
     }
 
     /**
@@ -615,10 +691,22 @@ import {
      */
     function openGeneralConfigModal() {
         closeMenu();
-        const showChecklist = localStorage.getItem(`${activeProfile.alias}:showDailyChecklist`);
-        const showNotes = localStorage.getItem(`${activeProfile.alias}:showNotes`);
-        elements.showDailyChecklistToggle.checked = showChecklist !== 'false';
-        elements.showNotesToggle.checked = showNotes !== 'false';
+        const alias = activeProfile.alias;
+
+        // Existing toggles
+        elements.showDailyChecklistToggle.checked = localStorage.getItem(`${alias}:showDailyChecklist`) !== 'false';
+        elements.showNotesToggle.checked          = localStorage.getItem(`${alias}:showNotes`)          !== 'false';
+
+        // Snooze visibility
+        const snoozeMode  = localStorage.getItem(`${alias}:snoozeVisibility`) || 'hidden';
+        const snoozeRadio = document.querySelector(`input[name="snoozeVisibility"][value="${snoozeMode}"]`);
+        if (snoozeRadio) snoozeRadio.checked = true;
+
+        // Deadline thresholds
+        const thresholds = getDeadlineThresholds(alias);
+        elements.deadlineUrgentHours.value  = thresholds[0];
+        elements.deadlineWarningHours.value = thresholds[1];
+
         elements.generalConfigModal.open();
     }
 
@@ -626,9 +714,26 @@ import {
      * Persists the general config to localStorage and applies visibility changes.
      */
     function saveGeneralConfig() {
-        localStorage.setItem(`${activeProfile.alias}:showDailyChecklist`, String(elements.showDailyChecklistToggle.checked));
-        localStorage.setItem(`${activeProfile.alias}:showNotes`, String(elements.showNotesToggle.checked));
+        const alias = activeProfile.alias;
+
+        localStorage.setItem(`${alias}:showDailyChecklist`, String(elements.showDailyChecklistToggle.checked));
+        localStorage.setItem(`${alias}:showNotes`,          String(elements.showNotesToggle.checked));
+
+        // Snooze visibility mode
+        const snoozeMode = document.querySelector('input[name="snoozeVisibility"]:checked')?.value || 'hidden';
+        localStorage.setItem(`${alias}:snoozeVisibility`, snoozeMode);
+
+        // Deadline thresholds — validate before saving
+        const urgentHours  = parseInt(elements.deadlineUrgentHours.value)  || DEFAULT_DEADLINE_URGENT_HOURS;
+        const warningHours = parseInt(elements.deadlineWarningHours.value) || DEFAULT_DEADLINE_WARNING_HOURS;
+        if (urgentHours >= warningHours) {
+            elements.toaster.warning('Urgent threshold must be less than Warning threshold');
+            return;
+        }
+        localStorage.setItem(`${alias}:deadlineThresholds`, JSON.stringify([urgentHours, warningHours]));
+
         loadGeneralConfig();
+        renderAllColumns(); // Re-render to refresh deadline chips with new thresholds
         elements.generalConfigModal.close();
         elements.toaster.success('Configuration saved');
     }
@@ -838,6 +943,33 @@ import {
         });
         elements.generalConfigSave.addEventListener('click', saveGeneralConfig);
 
+        // Snooze toggle button
+        elements.snoozeToggleBtn.addEventListener('click', () => {
+            const isActive = elements.kanban.classList.toggle('--showSnoozed');
+            elements.snoozeToggleBtn.classList.toggle('--active', isActive);
+        });
+
+        // Task form: quick datetime buttons + clear buttons (event delegation)
+        elements.taskForm.addEventListener('click', (e) => {
+            if (e.target.classList.contains('js-quickDeadline')) {
+                setQuickDateTime(elements.taskDeadline, e.target.dataset.offset);
+                updateDateHint(elements.deadlineHint, elements.taskDeadline.value);
+            } else if (e.target.classList.contains('js-quickSnooze')) {
+                setQuickDateTime(elements.taskSnooze, e.target.dataset.offset);
+                updateDateHint(elements.snoozeHint, elements.taskSnooze.value);
+            } else if (e.target.classList.contains('js-clearDeadline')) {
+                elements.taskDeadline.value       = '';
+                elements.deadlineHint.textContent = '';
+            } else if (e.target.classList.contains('js-clearSnooze')) {
+                elements.taskSnooze.value       = '';
+                elements.snoozeHint.textContent = '';
+            }
+        });
+
+        // Task form: manual datetime input → update hints
+        elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
+        elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
+
         // Board Configuration
         elements.boardConfigBtn.addEventListener('click', () => {
             openBoardConfigModal(elements, closeMenu, async () => {
@@ -989,6 +1121,24 @@ import {
         }
 
         await fetchTasks();
+
+        // Snooze expiry scheduler — re-render when snoozed tasks wake up
+        let _snoozedIds = new Set(
+            tasks.filter(t => t.snoozeUntil && new Date(t.snoozeUntil) > new Date()).map(t => t.id)
+        );
+
+        setInterval(() => {
+            const now = new Date();
+            const currentSnoozedIds = new Set(
+                tasks.filter(t => t.snoozeUntil && new Date(t.snoozeUntil) > now).map(t => t.id)
+            );
+            const anyWokeUp = [..._snoozedIds].some(id => !currentSnoozedIds.has(id));
+            _snoozedIds = currentSnoozedIds;
+            if (anyWokeUp) {
+                renderAllColumns();
+                elements.toaster.info('A snoozed task is back on the board');
+            }
+        }, SNOOZE_CHECK_INTERVAL_MS);
     }
 
     // Start the application

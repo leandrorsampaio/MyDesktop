@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.27.0
-**Last Updated:** 2026-02-24
+**Version:** 2.28.0
+**Last Updated:** 2026-02-26
 
 ---
 
@@ -165,9 +165,13 @@ GET    /:alias     - Serve index.html if profile exists, else redirect
   status: string,      // Column ID (e.g. "todo", "done", or user-created IDs)
   position: number,    // 0-based index within column
   log: array,          // [{ date: "YYYY-MM-DD", action: string }]
-  createdDate: string  // ISO 8601
+  createdDate: string, // ISO 8601
+  deadline: string|null,    // ISO 8601 datetime — optional, default null
+  snoozeUntil: string|null  // ISO 8601 datetime — optional, default null
 }
 ```
+
+Existing tasks without `deadline` or `snoozeUntil` behave as `null` (no chip, not snoozed) — zero migration needed.
 
 **What gets logged:** moving between columns (`"Moved from 'To Do' to 'In Progress'"`), category changes (`"Category changed from X to Y"`), column deletion (`"Column 'Wait' deleted – moved to 'To Do'"`).
 **Not logged:** title/description/priority edits, epic changes, reordering within same column.
@@ -289,7 +293,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - Exactly one profile must have `isDefault: true`. Setting `isDefault: true` on one automatically clears all others.
 - Deleting the default profile transfers `isDefault` to the first remaining profile.
 - Profile `alias` is used as both the **data folder name** (`data/{alias}/`) and the **URL segment** (`/{alias}`).
-- localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`, `{alias}:showDailyChecklist`, `{alias}:showNotes`.
+- localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`, `{alias}:showDailyChecklist`, `{alias}:showNotes`, `{alias}:snoozeVisibility`, `{alias}:deadlineThresholds`.
 
 ### Columns & Board Configuration
 - Columns are **per-profile**, stored inside each profile object in `profiles.json` (not a separate file).
@@ -306,10 +310,12 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Archive** (`Archive` button on a column with `hasArchive: true`) moves all tasks in that specific column to `archived-tasks.json`. Accepts a `columnId` in the body; falls back to the first `hasArchive: true` column. Does **not** generate a report.
 
 ### General Configuration
-- Accessed via Hamburger → General Configuration; opens a small modal with checkbox toggles.
-- Settings are **profile-scoped** and persisted in `localStorage` under `{alias}:showDailyChecklist` and `{alias}:showNotes` (string `"true"` / `"false"`).
-- Default is **visible** (true) when the key is not yet set — checked via `value !== 'false'`.
-- `loadGeneralConfig()` in `app.js` applies visibility by toggling `.--hidden` on the `<daily-checklist>` and `<notes-widget>` elements; it is called once during `init()` (after `setActiveProfile`) and again after saving the modal.
+- Accessed via Hamburger → General Configuration; opens a default-size modal with three sections.
+- Settings are **profile-scoped** and persisted in `localStorage`.
+- **Interface Visibility:** `{alias}:showDailyChecklist` and `{alias}:showNotes` (string `"true"` / `"false"`). Default is visible when key is not yet set — checked via `value !== 'false'`.
+- **Snoozed Tasks Display:** `{alias}:snoozeVisibility` (`"hidden"` | `"transparent"`). Default `"hidden"` — snoozed cards are invisible until the toolbar toggle is pressed. `"transparent"` — always visible at 50% opacity; toggle button is hidden.
+- **Deadline Urgency Thresholds:** `{alias}:deadlineThresholds` (JSON `[urgentHours, warningHours]`). Defaults `[24, 72]`. Urgent must be less than Warning.
+- `loadGeneralConfig()` in `app.js` applies all settings (visibility toggles + `body.--snoozeTransparent`); called once during `init()` and again after saving.
 - No server calls — purely client-side. Nothing is deleted from the data layer.
 
 ### Crisis Mode & Privacy Toggle
@@ -393,7 +399,7 @@ elements.toaster.info('msg')     // beige
 | `.js-generateReportConfirmModal` | Generate report confirmation     | small   | Hamburger → Generate Report                |
 | `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Hamburger → Board Configuration            |
 | `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal               |
-| `.js-generalConfigModal`         | Sidebar visibility toggles       | small   | Hamburger → General Configuration         |
+| `.js-generalConfigModal`         | Sidebar visibility, snooze mode, deadline thresholds | default | Hamburger → General Configuration         |
 
 ---
 
@@ -590,6 +596,8 @@ All endpoints validate input. Validation constants in `server.js`:
 | `epic.name` | Required, string, max 200 chars |
 | `epic.color` | Required, must be one of the 20 predefined hex values |
 | `task.epicId` | Optional string or null |
+| `task.deadline` | Optional ISO 8601 datetime string or null |
+| `task.snoozeUntil` | Optional ISO 8601 datetime string or null |
 
 Error format: `{ "error": "descriptive message" }` with HTTP 400.
 

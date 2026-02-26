@@ -63,3 +63,60 @@ export function toCamelCase(str) {
         )
         .join('');
 }
+
+/**
+ * Converts a Date object to the value format required by <input type="datetime-local">.
+ * Uses LOCAL time (not UTC).
+ * @param {Date} date
+ * @returns {string} e.g. "2026-03-01T08:00"
+ */
+export function toDatetimeLocalValue(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/**
+ * Returns a human-readable relative time string for an ISO datetime.
+ * Positive diff (future): "in 2d 3h" / "in 45m"
+ * Negative diff (past):   "expired 4h ago" / "expired 2d ago"
+ * @param {string} isoString - ISO 8601 datetime
+ * @returns {string}
+ */
+export function formatRelativeTime(isoString) {
+    const diffMs = new Date(isoString) - new Date();
+    const past = diffMs < 0;
+    const abs = Math.abs(diffMs);
+
+    const totalMinutes = Math.floor(abs / 60000);
+    const totalHours   = Math.floor(abs / 3600000);
+    const totalDays    = Math.floor(abs / 86400000);
+
+    let label;
+    if (abs < 60000) {
+        label = 'just now';
+    } else if (abs < 3600000) {
+        label = `${totalMinutes}m`;
+    } else if (abs < 86400000) {
+        const remainingMins = totalMinutes % 60;
+        label = remainingMins > 0 ? `${totalHours}h ${remainingMins}m` : `${totalHours}h`;
+    } else {
+        const remainingHours = totalHours % 24;
+        label = remainingHours > 0 ? `${totalDays}d ${remainingHours}h` : `${totalDays}d`;
+    }
+
+    return past ? `expired ${label} ago` : `in ${label}`;
+}
+
+/**
+ * Returns the urgency level of a deadline based on configurable hour thresholds.
+ * @param {string} isoString - ISO 8601 deadline datetime
+ * @param {number[]} thresholds - [urgentHours, warningHours]
+ * @returns {'overdue'|'urgent'|'warning'|'upcoming'}
+ */
+export function getDeadlineLevel(isoString, thresholds) {
+    const diffHours = (new Date(isoString) - new Date()) / 3600000;
+    if (diffHours <= 0)             return 'overdue';
+    if (diffHours <= thresholds[0]) return 'urgent';
+    if (diffHours <= thresholds[1]) return 'warning';
+    return 'upcoming';
+}

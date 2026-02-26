@@ -36,8 +36,8 @@
 .modal__content {
     background-color: #FFFFFF;
     border-radius: 24px;
-    width: 90%;
-    max-width: 500px;
+    width: 92%;
+    max-width: clamp(480px, 50vw, 680px);
     max-height: 90vh;
     overflow-y: auto;
     animation: modalSlideIn 0.4s ease-out;
@@ -45,11 +45,11 @@
 }
 
 :host([size="large"]) .modal__content {
-    max-width: 700px;
+    max-width: clamp(640px, 72vw, 960px);
 }
 
 :host([size="small"]) .modal__content {
-    max-width: 420px;
+    max-width: clamp(360px, 38vw, 540px);
 }
 
 @keyframes modalSlideIn {

@@ -216,6 +216,25 @@ body {
     background: var(--accent-hover);
 }
 
+.toolbar__snoozeBtn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: none;
+    background: var(--column-bg);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.toolbar__snoozeBtn.--active {
+    background: var(--accent-color);
+    color: var(--text-light);
+}
+
 /* ==========================================
    Block: profileSelector
    ========================================== */
@@ -1323,6 +1342,103 @@ body {
 }
 
 /* ==========================================
+   Block: taskForm - Schedule Section
+   ========================================== */
+.taskForm__scheduleRow {
+    margin-bottom: 20px;
+}
+
+.taskForm__scheduleRow:last-child {
+    margin-bottom: 0;
+}
+
+.taskForm__scheduleLabel {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+}
+
+.taskForm__scheduleControls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.taskForm__datetimeInput {
+    flex: 1;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 12px;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    transition: box-shadow 0.3s, background-color 0.3s;
+}
+
+.taskForm__datetimeInput:focus {
+    outline: none;
+    background-color: #EDE9E3;
+    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.2);
+}
+
+.taskForm__clearBtn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    background: var(--bg-color);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.taskForm__clearBtn:hover {
+    background: var(--danger-color);
+    color: #fff;
+}
+
+.taskForm__quickBtns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.taskForm__quickBtn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.taskForm__quickBtn:hover {
+    background: var(--accent-color);
+    color: var(--text-light);
+}
+
+.taskForm__timeHint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    min-height: 18px;
+}
+
+/* ==========================================
    Block: epicsEditor
    ========================================== */
 .epicsEditor {
@@ -2010,6 +2126,68 @@ body {
     cursor: pointer;
 }
 
+.generalConfig__option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-color);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.generalConfig__section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--bg-color);
+}
+
+.generalConfig__section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.generalConfig__sectionTitle {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 14px 0;
+}
+
+.generalConfig__thresholds {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.generalConfig__thresholdRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.generalConfig__thresholdLabel {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.generalConfig__thresholdLabel.--urgent  { color: #C0392B; }
+.generalConfig__thresholdLabel.--warning { color: #9A7100; }
+
+.generalConfig__thresholds input[type="number"] {
+    width: 70px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    font-size: 14px;
+    text-align: center;
+    font-family: inherit;
+}
+
 /* ==========================================
    Crisis Mode
    ========================================== */
@@ -2028,6 +2206,32 @@ body.--crisisMode kanban-column[data-status="done"] {
 
 body.--crisisMode daily-checklist {
     visibility: hidden;
+}
+
+/* ==============================================
+   Snooze Visibility
+   ============================================== */
+
+/* Default (hidden mode): snoozed task-cards are invisible */
+task-card.--snoozed {
+    display: none;
+}
+
+/* "Show Snoozed" button is toggled on — reveal snoozed cards dimmed */
+.kanban.--showSnoozed task-card.--snoozed {
+    display: flex;
+    opacity: 0.5;
+}
+
+/* Transparent mode: always show snoozed cards at 50% opacity */
+body.--snoozeTransparent task-card.--snoozed {
+    display: flex;
+    opacity: 0.5;
+}
+
+/* In transparent mode the snooze toggle button is irrelevant — hide it */
+body.--snoozeTransparent .js-snoozeToggleBtn {
+    display: none !important;
 }
 
 /* ==========================================

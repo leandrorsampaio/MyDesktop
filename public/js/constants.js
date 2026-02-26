@@ -103,3 +103,20 @@ export const EPIC_COLORS = [
     { name: 'Slate', hex: '#636E72' },
     { name: 'Charcoal', hex: '#2D3436' }
 ];
+
+// ===========================================
+// Deadline Configuration
+// ===========================================
+
+/** Default threshold in hours below which deadline chip turns red/urgent */
+export const DEFAULT_DEADLINE_URGENT_HOURS = 24;
+
+/** Default threshold in hours below which deadline chip turns yellow/warning */
+export const DEFAULT_DEADLINE_WARNING_HOURS = 72;
+
+// ===========================================
+// Snooze Configuration
+// ===========================================
+
+/** Interval in ms between snooze expiry checks */
+export const SNOOZE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes

@@ -30,6 +30,7 @@
                 </div>
                 <custom-picker type="list" placeholder="Epics" size="compact" class="toolbar__epicFilter js-epicFilter"></custom-picker>
                 <button class="toolbar__priorityBtn js-priorityFilterBtn">★ Priority</button>
+                <button class="toolbar__snoozeBtn js-snoozeToggleBtn" style="display:none;"></button>
                 <div class="toolbar__divider"></div>
                 <button class="toolbar__privacyBtn js-privacyToggleBtn">Hide</button>
             </div>
@@ -121,6 +122,45 @@
             <div class="taskForm__group">
                 <label>Epic</label>
                 <custom-picker type="list" placeholder="Choose an epic" class="taskForm__epicPicker js-taskEpic"></custom-picker>
+            </div>
+
+            <!-- Schedule: Deadline + Snooze -->
+            <div class="taskForm__group taskForm__scheduleSection">
+                <label>Schedule</label>
+
+                <!-- Deadline -->
+                <div class="taskForm__scheduleRow">
+                    <span class="taskForm__scheduleLabel">Deadline</span>
+                    <div class="taskForm__scheduleControls">
+                        <input type="datetime-local" class="taskForm__datetimeInput js-taskDeadline" />
+                        <button type="button" class="taskForm__clearBtn js-clearDeadline">Clear</button>
+                    </div>
+                    <div class="taskForm__quickBtns">
+                        <button type="button" class="taskForm__quickBtn js-quickDeadline" data-offset="+1h">+1h</button>
+                        <button type="button" class="taskForm__quickBtn js-quickDeadline" data-offset="+3h">+3h</button>
+                        <button type="button" class="taskForm__quickBtn js-quickDeadline" data-offset="+1d">+1 day</button>
+                        <button type="button" class="taskForm__quickBtn js-quickDeadline" data-offset="morning">Next morning</button>
+                        <button type="button" class="taskForm__quickBtn js-quickDeadline" data-offset="monday">Next Monday</button>
+                    </div>
+                    <div class="taskForm__timeHint js-deadlineHint"></div>
+                </div>
+
+                <!-- Snooze -->
+                <div class="taskForm__scheduleRow">
+                    <span class="taskForm__scheduleLabel">Snooze until</span>
+                    <div class="taskForm__scheduleControls">
+                        <input type="datetime-local" class="taskForm__datetimeInput js-taskSnooze" />
+                        <button type="button" class="taskForm__clearBtn js-clearSnooze">Clear</button>
+                    </div>
+                    <div class="taskForm__quickBtns">
+                        <button type="button" class="taskForm__quickBtn js-quickSnooze" data-offset="+1h">+1h</button>
+                        <button type="button" class="taskForm__quickBtn js-quickSnooze" data-offset="+3h">+3h</button>
+                        <button type="button" class="taskForm__quickBtn js-quickSnooze" data-offset="+1d">+1 day</button>
+                        <button type="button" class="taskForm__quickBtn js-quickSnooze" data-offset="morning">Next morning</button>
+                        <button type="button" class="taskForm__quickBtn js-quickSnooze" data-offset="monday">Next Monday</button>
+                    </div>
+                    <div class="taskForm__timeHint js-snoozeHint"></div>
+                </div>
             </div>
 
             <!-- Task Log (only shown in edit mode) -->
@@ -310,20 +350,59 @@
     </modal-dialog>
 
     <!-- General Configuration Modal -->
-    <modal-dialog class="js-generalConfigModal" size="small">
+    <modal-dialog class="js-generalConfigModal">
         <span slot="title">General Configuration</span>
         <div class="generalConfig">
-            <p class="generalConfig__hint">Configure interface visibility for this profile. Changes are saved per profile.</p>
-            <div class="generalConfig__options">
-                <label class="generalConfig__option">
-                    <input type="checkbox" class="js-showDailyChecklist">
-                    <span>Show Daily Checklist</span>
-                </label>
-                <label class="generalConfig__option">
-                    <input type="checkbox" class="js-showNotes">
-                    <span>Show Notes</span>
-                </label>
+            <p class="generalConfig__hint">Settings are saved per profile.</p>
+
+            <!-- Interface Visibility -->
+            <div class="generalConfig__section">
+                <h4 class="generalConfig__sectionTitle">Interface Visibility</h4>
+                <div class="generalConfig__options">
+                    <label class="generalConfig__option">
+                        <input type="checkbox" class="js-showDailyChecklist">
+                        <span>Show Daily Checklist</span>
+                    </label>
+                    <label class="generalConfig__option">
+                        <input type="checkbox" class="js-showNotes">
+                        <span>Show Notes</span>
+                    </label>
+                </div>
             </div>
+
+            <!-- Snoozed Tasks -->
+            <div class="generalConfig__section">
+                <h4 class="generalConfig__sectionTitle">Snoozed Tasks Display</h4>
+                <div class="generalConfig__options">
+                    <label class="generalConfig__option">
+                        <input type="radio" name="snoozeVisibility" value="hidden" class="js-snoozeHidden">
+                        <span>Hidden — use "Show Snoozed" button to reveal</span>
+                    </label>
+                    <label class="generalConfig__option">
+                        <input type="radio" name="snoozeVisibility" value="transparent" class="js-snoozeTransparent">
+                        <span>Semi-transparent (50% opacity, always visible)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Deadline Thresholds -->
+            <div class="generalConfig__section">
+                <h4 class="generalConfig__sectionTitle">Deadline Urgency Thresholds</h4>
+                <p class="generalConfig__hint">Deadline chip changes color when the task is due within these hours.</p>
+                <div class="generalConfig__thresholds">
+                    <div class="generalConfig__thresholdRow">
+                        <span class="generalConfig__thresholdLabel --urgent">Urgent (red)</span>
+                        <input type="number" class="js-deadlineUrgentHours" min="1" max="999" />
+                        <span>hours</span>
+                    </div>
+                    <div class="generalConfig__thresholdRow">
+                        <span class="generalConfig__thresholdLabel --warning">Warning (yellow)</span>
+                        <input type="number" class="js-deadlineWarningHours" min="1" max="999" />
+                        <span>hours</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal__actions">
                 <div class="modal__actionsRight">
                     <button type="button" class="btn --cancel js-generalConfigCancel">Cancel</button>

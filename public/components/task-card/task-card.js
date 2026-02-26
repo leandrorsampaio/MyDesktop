@@ -35,7 +35,13 @@ class TaskCard extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['data-task-id', 'data-status', 'data-category', 'data-category-name', 'data-category-icon', 'data-priority', 'data-title', 'data-description', 'data-epic-name', 'data-epic-color', 'data-epic-alias', 'hidden'];
+        return [
+            'data-task-id', 'data-status', 'data-category', 'data-category-name',
+            'data-category-icon', 'data-priority', 'data-title', 'data-description',
+            'data-epic-name', 'data-epic-color', 'data-epic-alias',
+            'data-deadline', 'data-deadline-level', 'data-deadline-text',
+            'hidden'
+        ];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -102,6 +108,21 @@ class TaskCard extends HTMLElement {
                 epicBarEl.textContent = epicName;
             } else {
                 epicBarEl.style.display = 'none';
+            }
+        }
+
+        // Deadline chip
+        const deadlineEl = this.shadowRoot.querySelector('.js-deadline');
+        if (deadlineEl) {
+            const deadlineText  = this.dataset.deadlineText;
+            const deadlineLevel = this.dataset.deadlineLevel;
+            if (deadlineText) {
+                deadlineEl.style.display = '';
+                deadlineEl.textContent   = deadlineText;
+                deadlineEl.className     = `taskCard__deadline js-deadline --${deadlineLevel}`;
+            } else {
+                deadlineEl.style.display = 'none';
+                deadlineEl.textContent   = '';
             }
         }
     }

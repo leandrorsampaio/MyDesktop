@@ -4,7 +4,7 @@
  */
 
 import { DEFAULT_CHECKLIST_ITEMS, EPIC_COLORS, MAX_EPICS, MAX_PROFILES, MAX_CATEGORIES, DEFAULT_CATEGORY_ID } from './constants.js';
-import { escapeHtml, formatDate, toCamelCase } from './utils.js';
+import { escapeHtml, formatDate, toCamelCase, formatRelativeTime, toDatetimeLocalValue } from './utils.js';
 import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, findTask, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile, columns } from './state.js';
 import {
     createTaskApi,
@@ -27,6 +27,42 @@ import {
     updateProfileApi,
     deleteProfileApi
 } from './api.js';
+
+// ==========================================
+// Schedule Helper Functions
+// ==========================================
+
+/**
+ * Sets an <input type="datetime-local"> to a quick preset time relative to now.
+ * Exported so app.js can call it via delegated task form click events.
+ * @param {HTMLInputElement} inputEl
+ * @param {string} offsetType - '+1h'|'+3h'|'+1d'|'morning'|'monday'
+ */
+export function setQuickDateTime(inputEl, offsetType) {
+    const now = new Date();
+    let target;
+    switch (offsetType) {
+        case '+1h':    target = new Date(now.getTime() + 3600000);     break;
+        case '+3h':    target = new Date(now.getTime() + 3 * 3600000); break;
+        case '+1d':    target = new Date(now.getTime() + 86400000);    break;
+        case 'morning': {
+            target = new Date(now);
+            target.setDate(target.getDate() + 1);
+            target.setHours(8, 0, 0, 0);
+            break;
+        }
+        case 'monday': {
+            target = new Date(now);
+            const day = target.getDay(); // 0=Sun … 6=Sat
+            // If today is Monday (1), go 7 days forward; otherwise go to next Monday
+            const daysUntil = day === 1 ? 7 : (8 - day) % 7;
+            target.setDate(target.getDate() + daysUntil);
+            target.setHours(8, 0, 0, 0);
+            break;
+        }
+    }
+    if (target) inputEl.value = toDatetimeLocalValue(target);
+}
 
 // ==========================================
 // Task Modal Functions
@@ -131,6 +167,11 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     populateTaskEpicSelect(elements.taskEpic, '');
     elements.taskLogSection.style.display = 'none';
 
+    elements.taskDeadline.value       = '';
+    elements.taskSnooze.value         = '';
+    elements.deadlineHint.textContent = '';
+    elements.snoozeHint.textContent   = '';
+
     renderTaskModalActions(false, elements, onDelete, onSubmit);
 
     elements.taskModal.open();
@@ -167,6 +208,25 @@ export function openEditModal(taskId, elements, onDelete, onSubmit) {
         elements.taskLogSection.style.display = 'none';
     }
 
+    // Deadline
+    if (task.deadline) {
+        elements.taskDeadline.value       = toDatetimeLocalValue(new Date(task.deadline));
+        elements.deadlineHint.textContent = formatRelativeTime(task.deadline);
+    } else {
+        elements.taskDeadline.value       = '';
+        elements.deadlineHint.textContent = '';
+    }
+
+    // Snooze — Option B: show only if snooze is still in the future
+    const snoozeActive = task.snoozeUntil && new Date(task.snoozeUntil) > new Date();
+    if (snoozeActive) {
+        elements.taskSnooze.value       = toDatetimeLocalValue(new Date(task.snoozeUntil));
+        elements.snoozeHint.textContent = formatRelativeTime(task.snoozeUntil);
+    } else {
+        elements.taskSnooze.value       = '';
+        elements.snoozeHint.textContent = '';
+    }
+
     renderTaskModalActions(true, elements, onDelete, onSubmit);
 
     elements.taskModal.open();
@@ -192,6 +252,8 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
         const priority = elements.taskPriority.checked;
         const category = getSelectedCategory();
         const epicId = elements.taskEpic.value || null;
+        const deadline    = elements.taskDeadline.value ? new Date(elements.taskDeadline.value).toISOString() : null;
+        const snoozeUntil = elements.taskSnooze.value   ? new Date(elements.taskSnooze.value).toISOString()   : null;
 
         if (!title) {
             elements.toaster.warning('Title is required');
@@ -204,12 +266,12 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             const taskId = editingTaskId;
 
             // Optimistic update
-            updateTaskInState(taskId, { title, description, priority, category, epicId });
+            updateTaskInState(taskId, { title, description, priority, category, epicId, deadline, snoozeUntil });
             renderAllColumns();
             elements.taskModal.close();
 
             try {
-                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category, epicId });
+                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category, epicId, deadline, snoozeUntil });
                 // Replace with server response (includes updated log, etc.)
                 updateTaskInState(taskId, updatedTask);
                 renderAllColumns();
@@ -231,6 +293,8 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
                 priority,
                 category,
                 epicId,
+                deadline,
+                snoozeUntil,
                 status: defaultColumnId,
                 position: 0, // Will be at top
                 log: [],
@@ -243,7 +307,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             elements.taskModal.close();
 
             try {
-                const newTask = await createTaskApi({ title, description, priority, category, epicId });
+                const newTask = await createTaskApi({ title, description, priority, category, epicId, deadline, snoozeUntil });
                 // Replace temp task with real one from server
                 replaceTask(tempId, newTask);
                 renderColumn(defaultColumnId);

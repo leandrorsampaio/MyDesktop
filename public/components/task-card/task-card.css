@@ -162,3 +162,31 @@
 .taskCard__editBtn:hover {
     background: rgba(255, 255, 255, 0.4);
 }
+
+/* Deadline urgency chip */
+.taskCard__deadline {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.taskCard__deadline.--overdue,
+.taskCard__deadline.--urgent {
+    background: rgba(231, 76, 60, 0.15);
+    color: #C0392B;
+}
+
+.taskCard__deadline.--warning {
+    background: rgba(241, 196, 15, 0.2);
+    color: #9A7100;
+}
+
+.taskCard__deadline.--upcoming {
+    background: rgba(100, 100, 100, 0.12);
+    color: var(--text-muted, #8A8A8A);
+}

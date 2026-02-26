@@ -174,6 +174,24 @@ function validateTaskInput(data, { requireTitle = false, validCategoryIds = null
         errors.push('Priority must be a boolean');
     }
 
+    // Deadline validation
+    if (data.deadline !== undefined) {
+        if (data.deadline !== null) {
+            if (typeof data.deadline !== 'string' || isNaN(Date.parse(data.deadline))) {
+                errors.push('deadline must be a valid ISO datetime string or null');
+            }
+        }
+    }
+
+    // snoozeUntil validation
+    if (data.snoozeUntil !== undefined) {
+        if (data.snoozeUntil !== null) {
+            if (typeof data.snoozeUntil !== 'string' || isNaN(Date.parse(data.snoozeUntil))) {
+                errors.push('snoozeUntil must be a valid ISO datetime string or null');
+            }
+        }
+    }
+
     return { valid: errors.length === 0, errors };
 }
 
@@ -803,7 +821,9 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
             status: defaultColumnId,
             position: maxPosition,
             log: [],
-            createdDate: new Date().toISOString()
+            createdDate: new Date().toISOString(),
+            deadline:    req.body.deadline    || null,
+            snoozeUntil: req.body.snoozeUntil || null
         };
 
         tasks.push(newTask);
@@ -845,6 +865,10 @@ app.put('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res
         if (epicId !== undefined) {
             tasks[taskIndex].epicId = epicId || null;
         }
+
+        const { deadline, snoozeUntil } = req.body;
+        if (deadline    !== undefined) tasks[taskIndex].deadline    = deadline    || null;
+        if (snoozeUntil !== undefined) tasks[taskIndex].snoozeUntil = snoozeUntil || null;
 
         // Handle category change with logging
         if (category !== undefined) {
