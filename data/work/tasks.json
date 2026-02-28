@@ -1468,7 +1468,7 @@
     ],
     "createdDate": "2026-02-16T00:14:05.555Z",
     "deadline": null,
-    "snoozeUntil": "2026-02-26T01:37:00.000Z"
+    "snoozeUntil": "2026-02-27T09:48:00.000Z"
   },
   {
     "id": "mlpdja5gg25jozz9g",
@@ -1752,5 +1752,19 @@
       }
     ],
     "createdDate": "2026-02-24T22:25:43.581Z"
+  },
+  {
+    "id": "mm5kz7899tywcxdmt",
+    "title": "Check with Deelip: global classes for text complience",
+    "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "todo",
+    "position": 2,
+    "log": [],
+    "createdDate": "2026-02-28T00:26:27.033Z",
+    "deadline": null,
+    "snoozeUntil": null
   }
 ]
