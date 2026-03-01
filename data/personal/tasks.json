@@ -139,5 +139,33 @@
       }
     ],
     "createdDate": "2026-02-16T22:25:39.199Z"
+  },
+  {
+    "id": "mm6wptu3oxufw5hk8",
+    "title": "read",
+    "description": "https://claude.com/blog/cowork-plugins-across-enterprise",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "todo",
+    "position": 7,
+    "log": [],
+    "createdDate": "2026-02-28T22:42:51.339Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mm6wq309f8jq8m48f",
+    "title": "read",
+    "description": "https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "todo",
+    "position": 8,
+    "log": [],
+    "createdDate": "2026-02-28T22:43:03.225Z",
+    "deadline": null,
+    "snoozeUntil": null
   }
 ]

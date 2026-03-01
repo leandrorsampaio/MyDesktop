@@ -2212,9 +2212,26 @@ body.--crisisMode daily-checklist {
    Snooze Visibility
    ============================================== */
 
-/* Note: snoozed task-card display/opacity is controlled via JS (applySnoozeVisibility)
-   because task-card elements live inside kanban-column Shadow DOM and cannot
-   be targeted by global CSS selectors. */
+/* CSS custom properties for snoozed card visibility.
+   These inherit through Shadow DOM boundaries, so task-card's :host(.--snoozed)
+   rule picks them up without any JS traversal. */
+
+:root {
+    --snoozed-card-display: none;
+    --snoozed-card-opacity: 1;
+}
+
+/* Transparent mode: always show snoozed cards at 50% opacity */
+body.--snoozeTransparent {
+    --snoozed-card-display: flex;
+    --snoozed-card-opacity: 0.5;
+}
+
+/* "Show Snoozed" toggle active: reveal snoozed cards at 50% opacity */
+.kanban.--showSnoozed {
+    --snoozed-card-display: flex;
+    --snoozed-card-opacity: 0.5;
+}
 
 /* In transparent mode the snooze toggle button is irrelevant — hide it */
 body.--snoozeTransparent .js-snoozeToggleBtn {

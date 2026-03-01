@@ -26,6 +26,15 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
+:host([hidden]) {
+    display: none !important;
+}
+
+:host(.--snoozed) {
+    display: var(--snoozed-card-display, none);
+    opacity: var(--snoozed-card-opacity, 1);
+}
+
 :host(.--dragging) {
     opacity: 0.5;
     cursor: grabbing;

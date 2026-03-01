@@ -528,7 +528,6 @@ import {
         columns.forEach(col => renderColumn(col.id));
         renderEpicFilter(elements.epicFilter);
         applyAllFilters();
-        applySnoozeVisibility();
         updateSnoozeButton();
     }
 
@@ -679,33 +678,6 @@ import {
     }
 
     /**
-     * Applies snooze visibility to task cards via inline styles.
-     * Must run after applyAllFilters() — it overrides the filter display state for snoozed cards.
-     * CSS rules in styles.css cannot reach task-card elements because they live inside
-     * kanban-column's Shadow DOM, so JS traversal through shadowRoot is required.
-     */
-    function applySnoozeVisibility() {
-        const showSnoozed   = elements.kanban.classList.contains('--showSnoozed');
-        const isTransparent = document.body.classList.contains('--snoozeTransparent');
-
-        document.querySelectorAll('kanban-column').forEach(col => {
-            col.shadowRoot?.querySelectorAll('task-card').forEach(card => {
-                if (!card.classList.contains('--snoozed')) {
-                    card.style.opacity = '';
-                    return;
-                }
-                if (showSnoozed || isTransparent) {
-                    card.style.display = 'flex';
-                    card.style.opacity = '0.5';
-                } else {
-                    card.style.display = 'none';
-                    card.style.opacity = '';
-                }
-            });
-        });
-    }
-
-    /**
      * Updates the relative-time hint below a datetime input.
      * @param {HTMLElement} hintEl - The hint container element
      * @param {string} value - The datetime-local input value
@@ -831,6 +803,7 @@ import {
         const renderColumnWithFilters = (status) => {
             renderColumn(status);
             applyAllFilters();
+            updateSnoozeButton();
         };
 
         // Create the task form submit handler
@@ -976,7 +949,6 @@ import {
             const isActive = elements.kanban.classList.toggle('--showSnoozed');
             elements.snoozeToggleBtn.classList.toggle('--active', isActive);
             applyAllFilters();
-            applySnoozeVisibility();
         });
 
         // Task form: quick datetime buttons + clear buttons (event delegation)

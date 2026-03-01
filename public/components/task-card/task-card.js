@@ -46,7 +46,7 @@ class TaskCard extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (name === 'hidden') {
-            this.style.display = newValue === '' ? 'none' : 'flex';
+            // display handled by :host([hidden]) CSS rule in task-card.css
             return;
         }
 

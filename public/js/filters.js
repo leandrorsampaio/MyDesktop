@@ -110,17 +110,12 @@ export function applyAllFilters() {
  * @param {HTMLElement} pickerEl - The custom-picker element
  */
 export function renderEpicFilter(pickerEl) {
-    const items = epics.map(epic => ({
-        value: epic.id,
-        label: epic.name,
-        color: epic.color
-    }));
+    const items = [
+        { value: '', label: 'All epics' },
+        ...epics.map(epic => ({ value: epic.id, label: epic.name, color: epic.color }))
+    ];
     pickerEl.setItems(items);
-    if (activeEpicFilter) {
-        pickerEl.value = activeEpicFilter;
-    } else {
-        pickerEl.clear();
-    }
+    pickerEl.value = activeEpicFilter || '';
 }
 
 /**
