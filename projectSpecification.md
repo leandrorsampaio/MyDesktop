@@ -277,6 +277,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Positions are server-managed:** on every move or reorder, the server recalculates positions for all tasks in the affected column. Frontend sorts by `position` field on render.
 - **Drag cross-column** changes `status` and appends a log entry. **Drag within column** reorders `position` only — no log entry.
 - **`applyAllFilters()`** uses AND logic across active filters: cards must match ANY active category AND the priority filter AND the selected epic. Queries through `kanban-column` shadow roots to reach `task-card` elements. All filter state is in-memory — resets on page reload.
+- **Epic filter picker** always includes "All epics" as its first item (value `''`). Selecting it clears the active epic filter. `renderEpicFilter()` sets `pickerEl.value = activeEpicFilter || ''` so the picker always reflects current state.
 
 ### Categories
 - **Category 1 cannot be deleted.** Deleting any other category reassigns its active tasks to category 1. Archived tasks are untouched.
@@ -317,6 +318,8 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Deadline Urgency Thresholds:** `{alias}:deadlineThresholds` (JSON `[urgentHours, warningHours]`). Defaults `[24, 72]`. Urgent must be less than Warning.
 - `loadGeneralConfig()` in `app.js` applies all settings (visibility toggles + `body.--snoozeTransparent`); called once during `init()` and again after saving.
 - No server calls — purely client-side. Nothing is deleted from the data layer.
+
+**Snoze visibility is CSS-driven (not JS):** snoozed `task-card` elements receive the class `--snoozed` from `createTaskCard()`. The `task-card.css` `:host(.--snoozed)` rule reads CSS custom properties `--snoozed-card-display` and `--snoozed-card-opacity` that are defined on `:root` and overridden by `.kanban.--showSnoozed` (toggle active) and `body.--snoozeTransparent` (transparent mode). These custom properties inherit through Shadow DOM boundaries, so no JS traversal is needed. `task-card.css` also has `:host([hidden]) { display: none !important }` to keep filter-hidden cards hidden regardless of snooze state.
 
 ### Crisis Mode & Privacy Toggle
 - Both are purely client-side CSS toggles — no server calls, no persistence.
