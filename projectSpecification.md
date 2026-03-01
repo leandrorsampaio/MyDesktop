@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.28.0
-**Last Updated:** 2026-02-26
+**Version:** 2.28.1
+**Last Updated:** 2026-03-01
 
 ---
 
