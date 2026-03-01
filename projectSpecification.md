@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.28.1
+**Version:** 2.29.0
 **Last Updated:** 2026-03-01
 
 ---
@@ -278,6 +278,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Drag cross-column** changes `status` and appends a log entry. **Drag within column** reorders `position` only — no log entry.
 - **`applyAllFilters()`** uses AND logic across active filters: cards must match ANY active category AND the priority filter AND the selected epic. Queries through `kanban-column` shadow roots to reach `task-card` elements. All filter state is in-memory — resets on page reload.
 - **Epic filter picker** always includes "All epics" as its first item (value `''`). Selecting it clears the active epic filter. `renderEpicFilter()` sets `pickerEl.value = activeEpicFilter || ''` so the picker always reflects current state.
+- **Clone Task:** the edit modal has a "Clone" button (indigo, `modifier="clone"`) between Cancel and Save. Clicking it calls `openCloneTaskModal()` which closes the edit modal and reopens in Add mode with all task fields copied except `log`; title is prefixed with `"(Clone) "`; snooze is copied only if still in the future. The resulting form submits as a new task creation.
 
 ### Categories
 - **Category 1 cannot be deleted.** Deleting any other category reassigns its active tasks to category 1. Archived tasks are untouched.
@@ -388,7 +389,7 @@ elements.toaster.info('msg')     // beige
 
 | JS hook                          | Purpose                          | Size    | Trigger                                    |
 |----------------------------------|----------------------------------|---------|--------------------------------------------|
-| `.js-taskModal`                  | Add / Edit task                  | default | [+ Add Task] / [Edit] on card              |
+| `.js-taskModal`                  | Add / Edit / Clone task          | default | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add |
 | `.js-reportsModal`               | View reports                     | large   | Hamburger → View Reports                   |
 | `.js-archivedModal`              | View archived tasks              | large   | Hamburger → All Completed Tasks            |
 | `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                |

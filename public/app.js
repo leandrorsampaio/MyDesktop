@@ -47,6 +47,7 @@ import { toggleCrisisMode } from './js/crisis-mode.js';
 import {
     openAddTaskModal,
     openEditModal,
+    openCloneTaskModal,
     openDeleteConfirmation,
     confirmDeleteTask,
     createTaskFormSubmitHandler,
@@ -1030,11 +1031,13 @@ import {
 
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
+            const taskId = e.detail.taskId;
             openEditModal(
-                e.detail.taskId,
+                taskId,
                 elements,
                 () => openDeleteConfirmation(elements),
-                handleTaskFormSubmit
+                handleTaskFormSubmit,
+                () => openCloneTaskModal(taskId, elements, () => openDeleteConfirmation(elements), handleTaskFormSubmit)
             );
         });
 

@@ -75,7 +75,7 @@ export function setQuickDateTime(inputEl, offsetType) {
  * @param {Function} onDelete - Callback for delete button click
  * @param {Function} onSubmit - Form submit handler
  */
-export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit) {
+export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, onClone) {
     elements.taskModalActions.innerHTML = '';
 
     const rightActions = document.createElement('div');
@@ -93,6 +93,15 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit) 
     elements.taskForm.onsubmit = onSubmit;
 
     rightActions.appendChild(cancelBtn);
+
+    if (isEditing && onClone) {
+        const cloneBtn = document.createElement('custom-button');
+        cloneBtn.setAttribute('label', 'Clone');
+        cloneBtn.setAttribute('modifier', 'clone');
+        cloneBtn.addEventListener('click', onClone);
+        rightActions.appendChild(cloneBtn);
+    }
+
     rightActions.appendChild(saveBtn);
 
     if (isEditing) {
@@ -185,7 +194,7 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
  * @param {Function} onDelete - Callback for delete button
  * @param {Function} onSubmit - Form submit handler
  */
-export function openEditModal(taskId, elements, onDelete, onSubmit) {
+export function openEditModal(taskId, elements, onDelete, onSubmit, onClone) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -227,10 +236,62 @@ export function openEditModal(taskId, elements, onDelete, onSubmit) {
         elements.snoozeHint.textContent = '';
     }
 
-    renderTaskModalActions(true, elements, onDelete, onSubmit);
+    renderTaskModalActions(true, elements, onDelete, onSubmit, onClone);
 
     elements.taskModal.open();
     elements.taskTitle.focus();
+}
+
+/**
+ * Opens the task modal pre-filled with a clone of an existing task.
+ * Closes the current modal, updates the form with copied data (no logs),
+ * prefixes the title with "(Clone) ", then reopens in Add mode.
+ * @param {string} taskId - The ID of the task to clone
+ * @param {Object} elements - DOM element references
+ * @param {Function} onDelete - Callback for delete button (unused in add mode, kept for consistency)
+ * @param {Function} onSubmit - Form submit handler
+ */
+export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // Close first so content updates are invisible during the transition
+    elements.taskModal.close();
+
+    setEditingTaskId(null);
+    elements.modalTitle.textContent = 'Clone Task';
+    elements.taskForm.reset();
+    elements.taskTitle.value = `(Clone) ${task.title}`;
+    elements.taskDescription.value = task.description || '';
+    elements.taskPriority.checked = task.priority || false;
+    renderCategoryPills(elements.categoryPills);
+    setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
+    populateTaskEpicSelect(elements.taskEpic, task.epicId || '');
+    elements.taskLogSection.style.display = 'none';
+
+    if (task.deadline) {
+        elements.taskDeadline.value       = toDatetimeLocalValue(new Date(task.deadline));
+        elements.deadlineHint.textContent = formatRelativeTime(task.deadline);
+    } else {
+        elements.taskDeadline.value       = '';
+        elements.deadlineHint.textContent = '';
+    }
+
+    const snoozeActive = task.snoozeUntil && new Date(task.snoozeUntil) > new Date();
+    if (snoozeActive) {
+        elements.taskSnooze.value       = toDatetimeLocalValue(new Date(task.snoozeUntil));
+        elements.snoozeHint.textContent = formatRelativeTime(task.snoozeUntil);
+    } else {
+        elements.taskSnooze.value       = '';
+        elements.snoozeHint.textContent = '';
+    }
+
+    renderTaskModalActions(false, elements, onDelete, onSubmit);
+
+    requestAnimationFrame(() => {
+        elements.taskModal.open();
+        elements.taskTitle.focus();
+    });
 }
 
 /**

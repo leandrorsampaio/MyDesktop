@@ -37,6 +37,18 @@
     box-shadow: 0 4px 12px rgba(196, 164, 132, 0.4);
 }
 
+/* Clone Style */
+.btn[modifier="clone"] {
+    background-color: #5758BB;
+    color: #FFFFFF;
+    padding: 14px 20px;
+}
+
+.btn[modifier="clone"]:hover {
+    background-color: #4A4AA8;
+    transform: translateY(-1px);
+}
+
 /* Delete Style */
 .btn[modifier="delete"] {
     background-color: #C97065; /* --danger-color */
