@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layout Demo V2</title>
+<style>
+
+/* ─── TOKENS ──────────────────────────────────────── */
+:root {
+  /* sidebar — dark panel */
+  --sb-bg:      #111120;
+  --sb-br:      #1b1b2e;
+  --sb-text:    #c0bcda;
+  --sb-muted:   #424260;
+  --sb-hover:   #18182a;
+  --sb-active:  #1e1e32;
+  --accent:     #6060e0;
+
+  /* board — warm light */
+  --bg:         #edeae3;
+  --surface:    #ffffff;
+  --br:         #dbd7ce;
+  --br2:        #c5c0b4;
+
+  /* ink */
+  --ink:        #17151f;
+  --ink-2:      #6a667e;
+  --ink-3:      #a8a4b8;
+
+  /* status colours */
+  --red:        #d64040;
+  --amber:      #b87320;
+  --gold:       #d4960e;
+
+  --sb-w:       232px;
+  --bar-h:      46px;
+  --r:          10px;
+  --rs:         6px;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── SIDEBAR ─────────────────────────────────────── */
+.sidebar {
+  width: var(--sb-w);
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-br);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sb-brand {
+  padding: 22px 16px 20px;
+  border-bottom: 1px solid var(--sb-br);
+}
+
+.sb-logo {
+  font-size: 19px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+}
+
+.sb-sub {
+  font-size: 10px;
+  color: var(--sb-muted);
+  margin-top: 3px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sb-nav {
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 8px;
+  border-radius: var(--rs);
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  color: var(--sb-text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sb-link:hover { background: var(--sb-hover); }
+
+.sb-link.active {
+  background: var(--sb-active);
+  border-left-color: var(--accent);
+  color: #fff;
+}
+
+.sb-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+.sb-link:hover .sb-icon { opacity: 0.65; }
+.sb-link.active .sb-icon { opacity: 0.85; }
+
+/* epic summary */
+.sb-epics {
+  margin: 4px 8px 0;
+  border-top: 1px solid var(--sb-br);
+  padding-top: 14px;
+}
+
+.sb-epics__label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sb-muted);
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+
+.epic-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: var(--rs);
+  cursor: pointer;
+}
+
+.epic-row:hover { background: var(--sb-hover); }
+
+.epic-pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.epic-row__name {
+  font-size: 12px;
+  color: var(--sb-text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.epic-row__n {
+  font-size: 10px;
+  color: var(--sb-muted);
+}
+
+/* sidebar bottom */
+.sb-bottom {
+  padding: 8px;
+  border-top: 1px solid var(--sb-br);
+  margin-top: auto;
+}
+
+.sb-settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 8px;
+  border-radius: var(--rs);
+  font-size: 13px;
+  color: var(--sb-muted);
+  cursor: pointer;
+}
+
+.sb-settings:hover { background: var(--sb-hover); color: var(--sb-text); }
+.sb-settings:hover .sb-icon { opacity: 0.6; }
+
+/* ─── MAIN ────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── TOP BAR ─────────────────────────────────────── */
+.topbar {
+  height: var(--bar-h);
+  border-bottom: 1px solid var(--br);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  flex-shrink: 0;
+}
+
+.topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar__page {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.topbar__sep {
+  width: 1px;
+  height: 14px;
+  background: var(--br2);
+}
+
+.topbar__filters {
+  display: flex;
+  gap: 5px;
+}
+
+.pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--br2);
+  color: var(--ink-2);
+  cursor: pointer;
+  background: transparent;
+}
+
+.pill:hover { border-color: var(--ink-3); color: var(--ink); }
+
+.pill.on {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghost-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--rs);
+  border: 1px solid var(--br2);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.ghost-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+
+.profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid var(--br2);
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.profile-chip:hover { border-color: var(--ink-3); }
+
+.avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.profile-chip__name { font-size: 12px; color: var(--ink-2); }
+
+/* ─── BOARD ───────────────────────────────────────── */
+.board {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  padding: 24px 22px;
+  overflow-x: auto;
+}
+
+/* ─── COLUMN ──────────────────────────────────────── */
+.col {
+  width: 264px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.col__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 3px 16px;
+}
+
+/* The big typographic column header — this is the bold design move */
+.col__name {
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--br2);
+  line-height: 1;
+}
+
+.col__count {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.col.done .col__name { color: #ccc8bc; }
+
+.col__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+}
+
+/* ─── CARD ────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--br);
+  border-left: 3px solid var(--br); /* default: no epic */
+  border-radius: var(--r);
+  padding: 12px 13px;
+  box-shadow: 0 1px 3px rgba(20,18,30,0.07), 0 4px 14px rgba(20,18,30,0.04);
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow 0.15s, transform 0.12s;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px rgba(20,18,30,0.11), 0 10px 28px rgba(20,18,30,0.07);
+  transform: translateY(-2px);
+}
+
+/* epic left stripe — the bold card design move */
+.card[data-epic="blue"]   { border-left-color: #2E86DE; }
+.card[data-epic="purple"] { border-left-color: #8E44AD; }
+.card[data-epic="green"]  { border-left-color: #2ECC71; }
+
+/* done state */
+.col.done .card {
+  opacity: 0.38;
+  box-shadow: none;
+  transform: none;
+}
+
+.col.done .card__title {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-3);
+}
+
+/* priority star */
+.card__star {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: var(--gold);
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* epic name — colored hint above title */
+.card__epic {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+.card[data-epic="blue"]   .card__epic { color: #2E86DE; }
+.card[data-epic="purple"] .card__epic { color: #8E44AD; }
+.card[data-epic="green"]  .card__epic { color: #2ECC71; }
+
+.card__title {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.card__foot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #f0ece3;
+  color: var(--ink-2);
+  border: 1px solid var(--br);
+}
+
+.chip {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  margin-left: auto;
+}
+
+.chip.urgent {
+  color: var(--red);
+  border-color: rgba(214,64,64,0.22);
+  background: rgba(214,64,64,0.07);
+}
+
+.chip.warning {
+  color: var(--amber);
+  border-color: rgba(184,115,32,0.22);
+  background: rgba(184,115,32,0.07);
+}
+
+/* dashed add-task ghost */
+.add-ghost {
+  border: 1.5px dashed var(--br2);
+  border-radius: var(--r);
+  padding: 9px 13px;
+  font-size: 12px;
+  color: var(--ink-3);
+  cursor: pointer;
+  margin-top: 3px;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.add-ghost:hover { border-color: var(--ink-3); color: var(--ink-2); }
+
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ════════════════════════════════════════ -->
+<aside class="sidebar">
+
+  <div class="sb-brand">
+    <div class="sb-logo">Helm</div>
+    <div class="sb-sub">Work profile</div>
+  </div>
+
+  <nav class="sb-nav">
+
+    <div class="sb-link active">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1.5" y="1.5" width="5" height="13" rx="1.2"/>
+        <rect x="9.5" y="1.5" width="5" height="5.5" rx="1.2"/>
+        <rect x="9.5" y="9" width="5" height="5.5" rx="1.2"/>
+      </svg>
+      Board
+    </div>
+
+    <div class="sb-link">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <rect x="1.5" y="8" width="3" height="6.5" rx="0.8"/>
+        <rect x="6.5" y="5" width="3" height="9.5" rx="0.8"/>
+        <rect x="11.5" y="1.5" width="3" height="13" rx="0.8"/>
+      </svg>
+      Dashboard
+    </div>
+
+    <div class="sb-link">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <path d="M2 4h12M2 8h9M2 12h6"/>
+      </svg>
+      Backlog
+    </div>
+
+    <div class="sb-link">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 5.5h12v8a1 1 0 01-1 1H3a1 1 0 01-1-1V5.5z"/>
+        <path d="M1 3a1 1 0 011-1h12a1 1 0 011 1v2.5H1V3z"/>
+        <path d="M6 9.5h4"/>
+      </svg>
+      Archive
+    </div>
+
+    <div class="sb-link">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <rect x="2" y="1.5" width="12" height="13" rx="1.5"/>
+        <path d="M5 5.5h6M5 8.5h6M5 11.5h3"/>
+      </svg>
+      Reports
+    </div>
+
+    <div class="sb-link">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12l3.5-3.5 2.5 2.5L13 4"/>
+        <path d="M10 4h3v3"/>
+        <circle cx="3.5" cy="12.5" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+      AI
+    </div>
+
+  </nav>
+
+  <!-- Epic summary — previews the future dashboard -->
+  <div class="sb-epics">
+    <div class="sb-epics__label">Epics</div>
+    <div class="epic-row">
+      <div class="epic-pip" style="background:#2E86DE"></div>
+      <span class="epic-row__name">Website Redesign</span>
+      <span class="epic-row__n">3</span>
+    </div>
+    <div class="epic-row">
+      <div class="epic-pip" style="background:#8E44AD"></div>
+      <span class="epic-row__name">Mobile App</span>
+      <span class="epic-row__n">2</span>
+    </div>
+    <div class="epic-row">
+      <div class="epic-pip" style="background:#2ECC71"></div>
+      <span class="epic-row__name">Q1 Launch</span>
+      <span class="epic-row__n">2</span>
+    </div>
+  </div>
+
+  <div class="sb-bottom">
+    <div class="sb-settings">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="8" cy="8" r="2.2"/>
+        <path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M12.6 3.4l-1.3 1.3M4.7 11.3l-1.3 1.3"/>
+      </svg>
+      Settings
+    </div>
+  </div>
+
+</aside>
+
+<!-- ══ MAIN ══════════════════════════════════════════ -->
+<main class="main">
+
+  <div class="topbar">
+    <div class="topbar__left">
+      <span class="topbar__page">Board</span>
+      <div class="topbar__sep"></div>
+      <div class="topbar__filters">
+        <button class="pill">All</button>
+        <button class="pill on">Website Redesign</button>
+        <button class="pill">Priority</button>
+      </div>
+    </div>
+    <div class="topbar__right">
+      <button class="ghost-btn">Crisis mode</button>
+      <button class="ghost-btn">Privacy</button>
+      <div class="profile-chip">
+        <div class="avatar" style="background:#2E86DE">WK</div>
+        <span class="profile-chip__name">Work</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="board">
+
+    <!-- ── TO DO ── -->
+    <div class="col">
+      <div class="col__head">
+        <span class="col__name">To Do</span>
+        <span class="col__count">4</span>
+      </div>
+      <div class="col__cards">
+
+        <div class="card" data-epic="blue">
+          <span class="card__star">★</span>
+          <div class="card__epic">Website Redesign</div>
+          <div class="card__title">Define new navigation structure and sidebar layout</div>
+          <div class="card__foot">
+            <span class="tag">Planning</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Review contract with new supplier before end of quarter</div>
+          <div class="card__foot">
+            <span class="tag">Generic Task</span>
+            <span class="chip urgent">Mar 5</span>
+          </div>
+        </div>
+
+        <div class="card" data-epic="purple">
+          <div class="card__epic">Mobile App</div>
+          <div class="card__title">Write API documentation for the authentication endpoints</div>
+          <div class="card__foot">
+            <span class="tag">Development</span>
+            <span class="chip warning">Mar 12</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Set up weekly sync with the design team</div>
+          <div class="card__foot">
+            <span class="tag">Communication</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="add-ghost">+ Add task</div>
+    </div>
+
+    <!-- ── IN PROGRESS ── -->
+    <div class="col">
+      <div class="col__head">
+        <span class="col__name">In Progress</span>
+        <span class="col__count">3</span>
+      </div>
+      <div class="col__cards">
+
+        <div class="card" data-epic="blue">
+          <span class="card__star">★</span>
+          <div class="card__epic">Website Redesign</div>
+          <div class="card__title">Redesign task card component with updated visual hierarchy</div>
+          <div class="card__foot">
+            <span class="tag">Development</span>
+          </div>
+        </div>
+
+        <div class="card" data-epic="green">
+          <div class="card__epic">Q1 Launch</div>
+          <div class="card__title">Prepare launch checklist and assign owners to each item</div>
+          <div class="card__foot">
+            <span class="tag">Planning</span>
+            <span class="chip urgent">Mar 8</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Migrate schema to support the new column data structure</div>
+          <div class="card__foot">
+            <span class="tag">Development</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── WAITING ── -->
+    <div class="col">
+      <div class="col__head">
+        <span class="col__name">Waiting</span>
+        <span class="col__count">2</span>
+      </div>
+      <div class="col__cards">
+
+        <div class="card" data-epic="green">
+          <div class="card__epic">Q1 Launch</div>
+          <div class="card__title">Legal review of the updated terms of service document</div>
+          <div class="card__foot">
+            <span class="tag">Communication</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Client feedback on homepage prototype — awaiting response</div>
+          <div class="card__foot">
+            <span class="tag">Communication</span>
+            <span class="chip warning">Mar 15</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── DONE ── -->
+    <div class="col done">
+      <div class="col__head">
+        <span class="col__name">Done</span>
+        <span class="col__count">3</span>
+      </div>
+      <div class="col__cards">
+
+        <div class="card" data-epic="purple">
+          <div class="card__epic">Mobile App</div>
+          <div class="card__title">Set up CI/CD pipeline for the staging environment</div>
+          <div class="card__foot">
+            <span class="tag">Development</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Update project specification with all new planned features</div>
+          <div class="card__foot">
+            <span class="tag">Planning</span>
+          </div>
+        </div>
+
+        <div class="card" data-epic="blue">
+          <div class="card__epic">Website Redesign</div>
+          <div class="card__title">Audit current design system and identify inconsistencies</div>
+          <div class="card__foot">
+            <span class="tag">Planning</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /board -->
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Demo</title>
+    <style>
+        :root {
+            --font-family-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            
+            --color-bg-deep: #101010;
+            --color-bg-surface: #181818;
+            --color-bg-muted: #222222;
+            --color-bg-hover: #2a2a2a;
+
+            --color-border: #333333;
+            --color-border-subtle: #282828;
+
+            --color-text-primary: #e0e0e0;
+            --color-text-secondary: #a0a0a0;
+            --color-text-tertiary: #707070;
+            --color-text-interactive: #4a90e2;
+
+            --color-accent-red: #E74C3C;
+            --color-accent-amber: #F5A623;
+            --color-accent-profile: #2E86DE;
+
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
+            --shadow-md: 0 3px 6px rgba(0,0,0,0.15);
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family-system);
+            background-color: var(--color-bg-deep);
+            color: var(--color-text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .app-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 240px;
+            background-color: var(--color-bg-surface);
+            border-right: 1px solid var(--color-border-subtle);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .sidebar-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 24px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--color-border-subtle);
+        }
+
+        .profile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent-profile);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .profile-info .name {
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .profile-info .status {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .sidebar-nav {
+            flex-grow: 1;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        
+        .sidebar-nav a .nav-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-primary);
+        }
+
+        .sidebar-nav a.active {
+            background-color: var(--color-bg-muted);
+            color: var(--color-text-primary);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 60px;
+            border-bottom: 1px solid var(--color-border);
+            flex-shrink: 0;
+        }
+
+        .top-bar h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .action-icon {
+            color: var(--color-text-secondary);
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .action-icon:hover {
+            color: var(--color-text-primary);
+        }
+
+        /* --- Board --- */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 24px;
+            overflow-x: auto;
+            height: 100%;
+        }
+
+        .kanban-column {
+            background-color: var(--color-bg-surface);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+        }
+
+        .column-header {
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .task-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-text-tertiary);
+            background-color: var(--color-bg-muted);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .column-content {
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        /* Custom scrollbar for column content */
+        .column-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .column-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .column-content::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 3px;
+        }
+        .column-content::-webkit-scrollbar-thumb:hover {
+            background: var(--color-text-tertiary);
+        }
+
+
+        /* --- Task Card --- */
+        .task-card {
+            background-color: var(--color-bg-muted);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            cursor: grab;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .task-card:hover {
+            background-color: var(--color-bg-hover);
+            border-color: #444;
+        }
+
+        .task-card-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--color-text-primary);
+        }
+
+        .task-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .task-card-category {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .task-card-epic {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .task-card-footer {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-card-priority, .task-card-deadline {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .task-card-priority {
+            color: var(--color-text-interactive);
+        }
+        .task-card-priority .icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .task-card-deadline {
+            color: var(--color-text-secondary);
+        }
+        .task-card-deadline .icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .task-card-deadline.is-warning {
+            color: var(--color-accent-amber);
+        }
+        .task-card-deadline.is-urgent {
+            color: var(--color-accent-red);
+        }
+        
+        .task-card.is-done {
+            opacity: 0.6;
+        }
+        .task-card.is-done .task-card-title {
+            text-decoration: line-through;
+            color: var(--color-text-secondary);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-profile">
+                <div class="profile-avatar">WK</div>
+                <div class="profile-info">
+                    <div class="name">Work</div>
+                    <div class="status">Online</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="active">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <span>Board</span>
+                    </a></li>
+                    <li><a href="#">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <span>Dashboard</span>
+                    </a></li>
+                    <li><a href="#">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                        <span>Backlog</span>
+                    </a></li>
+                    <li><a href="#">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                        <span>Archive</span>
+                    </a></li>
+                    <li><a href="#">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Reports</span>
+                    </a></li>
+                    <li><a href="#">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        <span>AI Assistant</span>
+                    </a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Board</h1>
+                <div class="top-bar-actions">
+                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1v-8zM14 10a1 1 0 011-1h6a1 1 0 011 1v3a1 1 0 01-1 1h-6a1 1 0 01-1-1v-3z"></path></svg>
+                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </header>
+
+            <div class="board">
+                <!-- To Do Column -->
+                <div class="kanban-column">
+                    <div class="column-header">To Do <span class="task-count">4</span></div>
+                    <div class="column-content">
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2E86DE;">Website Redesign</span>
+                            </div>
+                            <p class="task-card-title">Define new navigation structure and sidebar layout</p>
+                            <div class="task-card-footer">
+                                <div class="task-card-priority">
+                                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"></path></svg>
+                                    Priority
+                                </div>
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                        </div>
+                        <div class="task-card">
+                            <p class="task-card-title">Review contract with new supplier before end of quarter</p>
+                            <div class="task-card-footer">
+                                <div class="task-card-deadline is-urgent">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Mar 5
+                                </div>
+                                <span class="task-card-category">Generic Task</span>
+                            </div>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #8E44AD;">Mobile App</span>
+                            </div>
+                            <p class="task-card-title">Write API documentation for the authentication endpoints</p>
+                            <div class="task-card-footer">
+                                <div class="task-card-deadline is-warning">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Mar 12
+                                </div>
+                                <span class="task-card-category">Development</span>
+                            </div>
+                        </div>
+                        <div class="task-card">
+                            <p class="task-card-title">Set up weekly sync with the design team</p>
+                            <div class="task-card-footer">
+                                <span class="task-card-category">Communication</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- In Progress Column -->
+                <div class="kanban-column">
+                    <div class="column-header">In Progress <span class="task-count">3</span></div>
+                    <div class="column-content">
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2E86DE;">Website Redesign</span>
+                            </div>
+                            <p class="task-card-title">Redesign task card component with updated visual hierarchy</p>
+                            <div class="task-card-footer">
+                                <div class="task-card-priority">
+                                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"></path></svg>
+                                    Priority
+                                </div>
+                                <span class="task-card-category">Development</span>
+                            </div>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2ECC71;">Q1 Launch</span>
+                            </div>
+                            <p class="task-card-title">Prepare launch checklist and assign owners to each item</p>
+                            <div class="task-card-footer">
+                                <div class="task-card-deadline is-urgent">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Mar 8
+                                </div>
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                        </div>
+                        <div class="task-card">
+                            <p class="task-card-title">Migrate schema to support the new column data structure</p>
+                            <div class="task-card-footer">
+                                <span class="task-card-category">Development</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Waiting Column -->
+                <div class="kanban-column">
+                    <div class="column-header">Waiting <span class="task-count">2</span></div>
+                    <div class="column-content">
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2ECC71;">Q1 Launch</span>
+                            </div>
+                            <p class="task-card-title">Legal review of the updated terms of service document</p>
+                            <div class="task-card-footer">
+                                <span class="task-card-category">Communication</span>
+                            </div>
+                        </div>
+                        <div class="task-card">
+                            <p class="task-card-title">Client feedback on homepage prototype — awaiting response</p>
+                            <div class="task-card-footer">
+                                <div class="task-card-deadline is-warning">
+                                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Mar 15
+                                </div>
+                                <span class="task-card-category">Communication</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Done Column -->
+                <div class="kanban-column">
+                    <div class="column-header">Done <span class="task-count">3</span></div>
+                    <div class="column-content">
+                        <div class="task-card is-done">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #8E44AD;">Mobile App</span>
+                            </div>
+                            <p class="task-card-title">Set up CI/CD pipeline for the staging environment</p>
+                            <div class="task-card-footer">
+                                <span class="task-card-category">Development</span>
+                            </div>
+                        </div>
+                        <div class="task-card is-done">
+                            <p class="task-card-title">Update project specification with all new planned features</p>
+                            <div class="task-card-footer">
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                        </div>
+                        <div class="task-card is-done">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2E86DE;">Website Redesign</span>
+                            </div>
+                            <p class="task-card-title">Audit current design system and identify inconsistencies</p>
+                            <div class="task-card-footer">
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

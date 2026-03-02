@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local Kanban — Layout Demo</title>
+    <style>
+        :root {
+            /* Base */
+            --bg: #0b0f14;
+            --panel: #0f1620;
+            --panel-2: #101b28;
+            --card: #0e1622;
+            --card-2: #0c131d;
+            --border: rgba(255, 255, 255, .08);
+            --border-2: rgba(255, 255, 255, .12);
+            --text: rgba(255, 255, 255, .92);
+            --muted: rgba(255, 255, 255, .62);
+            --faint: rgba(255, 255, 255, .42);
+
+            /* Accents */
+            --accent: #5cc8ff;
+            --good: #2ECC71;
+            --warn: #f1c40f;
+            --danger: #ff5a5f;
+
+            /* Profile */
+            --profile: #ffb86b;
+            /* any fitting colour */
+
+            /* Layout */
+            --sidebar-w: 280px;
+            --topbar-h: 56px;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(1200px 700px at 15% 10%, rgba(92, 200, 255, .10), transparent 60%),
+                radial-gradient(900px 600px at 85% 15%, rgba(142, 68, 173, .12), transparent 55%),
+                radial-gradient(900px 700px at 60% 100%, rgba(46, 204, 113, .10), transparent 55%),
+                var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            line-height: 1.35;
+            overflow: hidden;
+        }
+
+        /* Subtle noise using pure CSS (no images) */
+        body:before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(0deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, .02) 1px, transparent 1px, transparent 3px);
+            mix-blend-mode: overlay;
+            opacity: .25;
+        }
+
+        .app {
+            height: 100%;
+            display: grid;
+            grid-template-columns: var(--sidebar-w) 1fr;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, 0)), var(--panel);
+            border-right: 1px solid var(--border);
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            background:
+                radial-gradient(12px 12px at 35% 35%, rgba(255, 255, 255, .35), transparent 70%),
+                linear-gradient(135deg, rgba(92, 200, 255, .55), rgba(46, 204, 113, .35));
+            border: 1px solid rgba(255, 255, 255, .12);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .35);
+        }
+
+        .brand-title {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        .brand-title strong {
+            font-size: 13px;
+            letter-spacing: .2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .brand-title span {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 6px 4px 0;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: transparent;
+        }
+
+        .nav a:hover {
+            background: rgba(255, 255, 255, .03);
+            border-color: rgba(255, 255, 255, .06);
+            color: rgba(255, 255, 255, .80);
+        }
+
+        .nav a.active {
+            color: var(--text);
+            background: linear-gradient(180deg, rgba(92, 200, 255, .12), rgba(255, 255, 255, .03));
+            border-color: rgba(92, 200, 255, .25);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .25);
+        }
+
+        .ico {
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .03);
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+        }
+
+        .ico:before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, .55);
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            letter-spacing: .5px;
+            color: rgba(0, 0, 0, .78);
+            background:
+                radial-gradient(14px 14px at 35% 35%, rgba(255, 255, 255, .55), transparent 70%),
+                linear-gradient(135deg, var(--profile), rgba(255, 255, 255, .18));
+            border: 1px solid rgba(255, 255, 255, .20);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .25);
+        }
+
+        .profile-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .profile-meta strong {
+            font-size: 12px;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-meta span {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .settings {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .02);
+            color: rgba(255, 255, 255, .80);
+        }
+
+        .settings small {
+            color: var(--muted);
+        }
+
+        .settings .gear {
+            width: 26px;
+            height: 26px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .03);
+        }
+
+        .settings .gear:before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 4px;
+            border: 2px solid rgba(255, 255, 255, .55);
+            box-sizing: border-box;
+        }
+
+        /* Main area */
+        .main {
+            height: 100%;
+            display: grid;
+            grid-template-rows: var(--topbar-h) 1fr;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: var(--topbar-h);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, 0)),
+                rgba(15, 22, 32, .72);
+            backdrop-filter: blur(6px);
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .page-title {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            font-size: 14px;
+            letter-spacing: .2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .page-title p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .02);
+            color: rgba(255, 255, 255, .84);
+            font-size: 12px;
+        }
+
+        .pill .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            background: rgba(92, 200, 255, .85);
+            box-shadow: 0 0 0 3px rgba(92, 200, 255, .15);
+        }
+
+        .pill.secondary .dot {
+            background: rgba(255, 255, 255, .45);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, .10);
+        }
+
+        .profile-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            background: rgba(255, 255, 255, .03);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .18);
+        }
+
+        .profile-chip .mini {
+            width: 24px;
+            height: 24px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 11px;
+            color: rgba(0, 0, 0, .80);
+            background:
+                radial-gradient(10px 10px at 35% 35%, rgba(255, 255, 255, .60), transparent 70%),
+                linear-gradient(135deg, var(--profile), rgba(255, 255, 255, .15));
+            border: 1px solid rgba(255, 255, 255, .18);
+        }
+
+        .profile-chip span {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .86);
+        }
+
+        /* Board */
+        .content {
+            overflow: auto;
+            padding: 18px 16px 18px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(240px, 1fr));
+            gap: 14px;
+            align-items: start;
+            min-height: calc(100vh - var(--topbar-h) - 40px);
+        }
+
+        .column {
+            background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, 0));
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+        }
+
+        .col-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 6px 10px;
+            position: sticky;
+            top: 0;
+            background: linear-gradient(180deg, rgba(11, 15, 20, .92), rgba(11, 15, 20, 0));
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+        }
+
+        .col-head h2 {
+            margin: 0;
+            font-size: 12px;
+            letter-spacing: .35px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .78);
+        }
+
+        .count {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 4px;
+        }
+
+        .card {
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .015));
+            border: 1px solid rgba(255, 255, 255, .10);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .25);
+            overflow: hidden;
+        }
+
+        .card-inner {
+            padding: 12px 12px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 13px;
+            letter-spacing: .15px;
+            color: rgba(255, 255, 255, .92);
+        }
+
+        .meta-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
+            padding-top: 1px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .80);
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .02);
+            white-space: nowrap;
+        }
+
+        .badge .b-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .45);
+        }
+
+        .badge.category {
+            color: rgba(255, 255, 255, .78);
+        }
+
+        .badge.category .b-dot {
+            background: rgba(255, 255, 255, .40);
+        }
+
+        .badge.deadline {
+            border-color: rgba(255, 255, 255, .14);
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .badge.deadline .b-dot {
+            background: rgba(255, 255, 255, .45);
+        }
+
+        .badge.deadline.urgent {
+            border-color: rgba(255, 90, 95, .35);
+            background: rgba(255, 90, 95, .08);
+            color: rgba(255, 255, 255, .88);
+        }
+
+        .badge.deadline.urgent .b-dot {
+            background: var(--danger);
+            box-shadow: 0 0 0 3px rgba(255, 90, 95, .14);
+        }
+
+        .badge.deadline.warning {
+            border-color: rgba(241, 196, 15, .32);
+            background: rgba(241, 196, 15, .08);
+            color: rgba(255, 255, 255, .88);
+        }
+
+        .badge.deadline.warning .b-dot {
+            background: var(--warn);
+            box-shadow: 0 0 0 3px rgba(241, 196, 15, .14);
+        }
+
+        .priority {
+            width: 26px;
+            height: 26px;
+            border-radius: 11px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, .14);
+            background: rgba(255, 255, 255, .03);
+            position: relative;
+        }
+
+        .priority:before {
+            content: "";
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 10px solid rgba(255, 255, 255, .78);
+            transform: translateY(-1px);
+            opacity: .95;
+        }
+
+        .priority:after {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 11px;
+            box-shadow: 0 0 0 3px rgba(92, 200, 255, .10);
+            pointer-events: none;
+        }
+
+        .epic-strip {
+            height: 4px;
+            background: rgba(255, 255, 255, .10);
+        }
+
+        .epic-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 12px 0;
+        }
+
+        .epic-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .88);
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .epic-pill .swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .45);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, .10);
+        }
+
+        .subtle {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .done {
+            opacity: .82;
+            border-color: rgba(255, 255, 255, .08);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .01));
+        }
+
+        .done .title {
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, .70);
+        }
+
+        .card-foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Epic colour helpers */
+        .epic-website {
+            --epic: #2E86DE;
+        }
+
+        .epic-mobile {
+            --epic: #8E44AD;
+        }
+
+        .epic-q1 {
+            --epic: #2ECC71;
+        }
+
+        .epic-website .epic-strip,
+        .epic-mobile .epic-strip,
+        .epic-q1 .epic-strip {
+            background: var(--epic);
+        }
+
+        .epic-website .epic-pill .swatch,
+        .epic-mobile .epic-pill .swatch,
+        .epic-q1 .epic-pill .swatch {
+            background: var(--epic);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--epic) 25%, transparent);
+        }
+
+        /* Small helpers */
+        .kbd {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .78);
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .02);
+            padding: 4px 7px;
+            border-radius: 9px;
+        }
+
+        /* Responsive tweak */
+        @media (max-width: 1100px) {
+            .app {
+                grid-template-columns: 260px 1fr;
+            }
+
+            .board {
+                grid-template-columns: repeat(2, minmax(240px, 1fr));
+            }
+
+            body {
+                overflow: auto;
+            }
+
+            .main {
+                overflow: visible;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .board {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- SIDEBAR (open state) -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true"></div>
+                <div class="brand-title">
+                    <strong>Local Kanban</strong>
+                    <span>Private, calm, self-hosted</span>
+                </div>
+            </div>
+
+            <nav class="nav" aria-label="Primary navigation">
+                <a class="active" href="#">
+                    <span class="ico" aria-hidden="true"></span>
+                    <span>Board</span>
+                </a>
+                <a href="#">
+                    <span class="ico" aria-hidden="true"></span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#">
+                    <span class="ico" aria-hidden="true"></span>
+                    <span>Backlog</span>
+                </a>
+                <a href="#">
+                    <span class="ico" aria-hidden="true"></span>
+                    <span>Archive</span>
+                </a>
+                <a href="#">
+                    <span class="ico" aria-hidden="true"></span>
+                    <span>Reports</span>
+                </a>
+                <a href="#">
+                    <span class="ico" aria-hidden="true"></span>
+                    <span>AI Assistant</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="profile">
+                    <div class="avatar" aria-hidden="true">WK</div>
+                    <div class="profile-meta">
+                        <strong>Work</strong>
+                        <span>Profile active</span>
+                    </div>
+                </div>
+
+                <div class="settings" role="button" aria-label="Settings">
+                    <div>
+                        <div style="font-weight:600; font-size:12px;">Settings</div>
+                        <small>Preferences & data</small>
+                    </div>
+                    <div class="gear" aria-hidden="true"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+            <!-- TOP BAR -->
+            <header class="topbar">
+                <div class="top-left">
+                    <div class="page-title">
+                        <h1>Board</h1>
+                        <p>AI Staging → Backlog → <strong>Board</strong> <span class="kbd"
+                                style="margin-left:8px;">Promote</span></p>
+                    </div>
+                </div>
+
+                <div class="top-actions">
+                    <div class="pill secondary" title="Privacy mode">
+                        <span class="dot" aria-hidden="true"></span>
+                        Privacy: Off
+                    </div>
+                    <div class="pill" title="Crisis mode">
+                        <span class="dot" aria-hidden="true"></span>
+                        Crisis: Off
+                    </div>
+                    <div class="profile-chip" title="Current profile">
+                        <div class="mini" aria-hidden="true">WK</div>
+                        <span>Work</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <section class="content">
+                <div class="board" aria-label="Kanban board">
+                    <!-- TO DO -->
+                    <section class="column" aria-label="To Do column">
+                        <div class="col-head">
+                            <h2>To Do</h2>
+                            <div class="count">4</div>
+                        </div>
+                        <div class="cards">
+                            <!-- 1 -->
+                            <article class="card epic-website">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Website
+                                        Redesign</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Define new navigation structure and sidebar layout</p>
+                                        <div class="meta-right">
+                                            <div class="priority" title="Priority" aria-label="Priority"></div>
+                                        </div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Planning</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 2 -->
+                            <article class="card">
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Review contract with new supplier before end of quarter</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Generic Task</span>
+                                        <span class="badge deadline urgent"><span class="b-dot"
+                                                aria-hidden="true"></span>Mar 5 · Urgent</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 3 -->
+                            <article class="card epic-mobile">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Mobile
+                                        App</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Write API documentation for the authentication endpoints</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Development</span>
+                                        <span class="badge deadline warning"><span class="b-dot"
+                                                aria-hidden="true"></span>Mar 12 · Warning</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 4 -->
+                            <article class="card">
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Set up weekly sync with the design team</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Communication</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- IN PROGRESS -->
+                    <section class="column" aria-label="In Progress column">
+                        <div class="col-head">
+                            <h2>In Progress</h2>
+                            <div class="count">3</div>
+                        </div>
+                        <div class="cards">
+                            <!-- 1 -->
+                            <article class="card epic-website">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Website
+                                        Redesign</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Redesign task card component with updated visual hierarchy</p>
+                                        <div class="meta-right">
+                                            <div class="priority" title="Priority" aria-label="Priority"></div>
+                                        </div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Development</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 2 -->
+                            <article class="card epic-q1">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Q1
+                                        Launch</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Prepare launch checklist and assign owners to each item</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Planning</span>
+                                        <span class="badge deadline urgent"><span class="b-dot"
+                                                aria-hidden="true"></span>Mar 8 · Urgent</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 3 -->
+                            <article class="card">
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Migrate schema to support the new column data structure</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Development</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- WAITING -->
+                    <section class="column" aria-label="Waiting column">
+                        <div class="col-head">
+                            <h2>Waiting</h2>
+                            <div class="count">2</div>
+                        </div>
+                        <div class="cards">
+                            <!-- 1 -->
+                            <article class="card epic-q1">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Q1
+                                        Launch</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Legal review of the updated terms of service document</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Communication</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 2 -->
+                            <article class="card">
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Client feedback on homepage prototype — awaiting response</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Communication</span>
+                                        <span class="badge deadline warning"><span class="b-dot"
+                                                aria-hidden="true"></span>Mar 15 · Warning</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- DONE -->
+                    <section class="column" aria-label="Done column">
+                        <div class="col-head">
+                            <h2>Done</h2>
+                            <div class="count">3</div>
+                        </div>
+                        <div class="cards">
+                            <!-- 1 -->
+                            <article class="card done epic-mobile">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Mobile
+                                        App</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Set up CI/CD pipeline for the staging environment</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Development</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 2 -->
+                            <article class="card done">
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Update project specification with all new planned features</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Planning</span>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <!-- 3 -->
+                            <article class="card done epic-website">
+                                <div class="epic-strip" aria-hidden="true"></div>
+                                <div class="epic-label">
+                                    <span class="epic-pill"><span class="swatch" aria-hidden="true"></span>Website
+                                        Redesign</span>
+                                    <span class="subtle">#Epic</span>
+                                </div>
+                                <div class="card-inner">
+                                    <div class="card-top">
+                                        <p class="title">Audit current design system and identify inconsistencies</p>
+                                        <div class="meta-right"></div>
+                                    </div>
+                                    <div class="card-foot">
+                                        <span class="badge category"><span class="b-dot"
+                                                aria-hidden="true"></span>Planning</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

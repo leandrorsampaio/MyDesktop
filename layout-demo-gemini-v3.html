@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Demo V3 (Focus Zone)</title>
+    <style>
+        :root {
+            --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-family-mono: "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", monospace;
+            
+            --color-bg: #FDFDFD;
+            --color-bg-muted: #F5F5F5;
+            --color-bg-inset: #EDEDED;
+
+            --color-border: #D1D1D1;
+            --color-border-strong: #000000;
+
+            --color-text-primary: #111111;
+            --color-text-secondary: #555555;
+            --color-text-placeholder: #888888;
+
+            --color-accent: #0057FF; /* Electric Blue */
+            --color-accent-red: #D92626;
+            --color-accent-amber: #E69900;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family-sans);
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- Main Header --- */
+        .main-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 0 24px;
+            height: 60px;
+            border-bottom: 2px solid var(--color-border-strong);
+            flex-shrink: 0;
+        }
+
+        .header-logo {
+            font-weight: 700;
+            font-size: 20px;
+        }
+        .header-logo span {
+            color: var(--color-accent);
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .header-nav a {
+            padding: 6px 12px;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .header-nav a:hover {
+            color: var(--color-text-primary);
+            background-color: var(--color-bg-muted);
+        }
+        .header-nav a.active {
+            color: var(--color-text-primary);
+            background-color: var(--color-bg-muted);
+        }
+
+        .header-search {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+        }
+        .search-bar {
+            width: 100%;
+            max-width: 400px;
+            background: var(--color-bg-muted);
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: var(--font-family-sans);
+            font-size: 15px;
+            font-weight: 500;
+            transition: border-color 0.2s;
+        }
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+        .search-bar::placeholder {
+            color: var(--color-text-placeholder);
+            font-weight: 500;
+        }
+
+        .header-profile {
+            margin-left: auto;
+        }
+        .profile-button {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: var(--color-text-primary);
+            color: var(--color-bg);
+            border: none;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        /* --- Board View --- */
+        .board-view {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            overflow: hidden;
+        }
+
+        .column-group {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: var(--color-bg-muted);
+            border-right: 2px solid var(--color-border-strong);
+        }
+        .column-group:last-child {
+            border-right: none;
+        }
+        
+        .column-group.is-focused {
+            background-color: var(--color-bg);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .kanban-column {
+            display: flex;
+            flex-direction: column;
+            padding: 0 12px;
+            border-right: 1px solid var(--color-border);
+        }
+        .column-group.is-focused .kanban-column:last-child {
+            border-right: none;
+        }
+        
+        .column-header {
+            padding: 16px 8px;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        .task-count {
+            font-family: var(--font-family-mono);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+        }
+
+        .column-content {
+            padding: 8px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: 100%;
+        }
+        .column-content::-webkit-scrollbar { display: none; }
+
+        /* --- Task Card --- */
+        .task-card {
+            background-color: var(--color-bg);
+            border: 2px solid var(--color-border-strong);
+            border-radius: 6px;
+            padding: 12px;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .task-card.is-priority {
+            border-left: 6px solid var(--color-accent);
+        }
+
+        .task-card-title {
+            font-weight: 600;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .task-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .task-card-category {
+            font-family: var(--font-family-mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+        }
+
+        .task-card-epic {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        .task-card-deadline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: var(--font-family-mono);
+        }
+        
+        .task-card-deadline.is-warning {
+            color: var(--color-accent-amber);
+        }
+        .task-card-deadline.is-urgent {
+            color: var(--color-accent-red);
+        }
+        
+        /* Done Column Specifics */
+        .column-group.future {
+            background-color: var(--color-bg-inset);
+        }
+        .column-group.future .task-card {
+            background-color: transparent;
+            border-color: var(--color-border);
+            opacity: 0.7;
+        }
+        .column-group.future .task-card-title {
+            text-decoration: line-through;
+        }
+        .column-group.future .task-card:hover {
+            opacity: 1;
+            background-color: var(--color-bg);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="main-header">
+            <div class="header-logo">Product<span>.</span></div>
+            <nav class="header-nav">
+                <a href="#" class="active">Board</a>
+                <a href="#">Dashboard</a>
+                <a href="#">Backlog</a>
+                <a href="#">Archive</a>
+                <a href="#">Reports</a>
+            </nav>
+            <div class="header-search">
+                <input type="search" class="search-bar" placeholder="Search or type a command (⌘K)">
+            </div>
+            <div class="header-profile">
+                <button class="profile-button">WK</button>
+            </div>
+        </header>
+
+        <main class="board-view">
+            <!-- PAST: To Do -->
+            <section class="column-group past">
+                <div class="kanban-column">
+                    <div class="column-header">To Do <span class="task-count">[4]</span></div>
+                    <div class="column-content">
+                        <div class="task-card is-priority">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2E86DE;">Website Redesign</span>
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                            <p class="task-card-title">Define new navigation structure and sidebar layout</p>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-category">Generic Task</span>
+                            </div>
+                            <p class="task-card-title">Review contract with new supplier before end of quarter</p>
+                            <div class="task-card-deadline is-urgent">DUE: MAR 5</div>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #8E44AD;">Mobile App</span>
+                                <span class="task-card-category">Development</span>
+                            </div>
+                            <p class="task-card-title">Write API documentation for the authentication endpoints</p>
+                            <div class="task-card-deadline is-warning">DUE: MAR 12</div>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-category">Communication</span>
+                            </div>
+                            <p class="task-card-title">Set up weekly sync with the design team</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRESENT: In Progress & Waiting -->
+            <section class="column-group is-focused">
+                <div class="kanban-column">
+                    <div class="column-header">In Progress <span class="task-count">[3]</span></div>
+                    <div class="column-content">
+                        <div class="task-card is-priority">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2E86DE;">Website Redesign</span>
+                                <span class="task-card-category">Development</span>
+                            </div>
+                            <p class="task-card-title">Redesign task card component with updated visual hierarchy</p>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2ECC71;">Q1 Launch</span>
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                            <p class="task-card-title">Prepare launch checklist and assign owners to each item</p>
+                            <div class="task-card-deadline is-urgent">DUE: MAR 8</div>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-category">Development</span>
+                            </div>
+                            <p class="task-card-title">Migrate schema to support the new column data structure</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="kanban-column">
+                    <div class="column-header">Waiting <span class="task-count">[2]</span></div>
+                    <div class="column-content">
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2ECC71;">Q1 Launch</span>
+                                <span class="task-card-category">Communication</span>
+                            </div>
+                            <p class="task-card-title">Legal review of the updated terms of service document</p>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-category">Communication</span>
+                            </div>
+                            <p class="task-card-title">Client feedback on homepage prototype — awaiting response</p>
+                            <div class="task-card-deadline is-warning">DUE: MAR 15</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FUTURE: Done -->
+            <section class="column-group future">
+                <div class="kanban-column">
+                    <div class="column-header">Done <span class="task-count">[3]</span></div>
+                    <div class="column-content">
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #8E44AD;">Mobile App</span>
+                                <span class="task-card-category">Development</span>
+                            </div>
+                            <p class="task-card-title">Set up CI/CD pipeline for the staging environment</p>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                            <p class="task-card-title">Update project specification with all new planned features</p>
+                        </div>
+                        <div class="task-card">
+                            <div class="task-card-meta">
+                                <span class="task-card-epic" style="background-color: #2E86DE;">Website Redesign</span>
+                                <span class="task-card-category">Planning</span>
+                            </div>
+                            <p class="task-card-title">Audit current design system and identify inconsistencies</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+</body>
+</html>
