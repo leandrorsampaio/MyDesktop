@@ -224,6 +224,56 @@
   </section>
 
 
+  <!-- ══ 4b. TYPOGRAPHY — SEMANTIC SCALE ═════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Typography — Semantic Scale (h1–h6, p)</h2>
+    <p class="ds-note">Proposed values — these tags have no explicit rules in styles.css yet. Defined here as a reference for the upcoming design system overhaul.</p>
+
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:32px;font-weight:300;letter-spacing:-0.5px;line-height:1.2;color:var(--text-primary)">Heading One</div>
+        <div class="ds-type-meta">h1 · 32px / weight 300 / tracking -0.5px · Page titles</div>
+      </div>
+    </div>
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:24px;font-weight:400;letter-spacing:-0.3px;line-height:1.3;color:var(--text-primary)">Heading Two</div>
+        <div class="ds-type-meta">h2 · 24px / weight 400 / tracking -0.3px · Section titles</div>
+      </div>
+    </div>
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:18px;font-weight:500;line-height:1.4;color:var(--text-primary)">Heading Three</div>
+        <div class="ds-type-meta">h3 · 18px / weight 500 · Sub-section titles, modal headers</div>
+      </div>
+    </div>
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:15px;font-weight:600;line-height:1.4;color:var(--text-primary)">Heading Four</div>
+        <div class="ds-type-meta">h4 · 15px / weight 600 · Card titles, form labels</div>
+      </div>
+    </div>
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:13px;font-weight:600;line-height:1.4;color:var(--text-secondary)">Heading Five</div>
+        <div class="ds-type-meta">h5 · 13px / weight 600 · Column headers, widget titles</div>
+      </div>
+    </div>
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;line-height:1.4;color:var(--text-muted)">Heading Six</div>
+        <div class="ds-type-meta">h6 · 11px / weight 700 / uppercase / tracking 2px · Labels, section tags, badges</div>
+      </div>
+    </div>
+    <div class="ds-type-row">
+      <div>
+        <div style="font-size:14px;font-weight:400;line-height:1.7;color:var(--text-primary);max-width:540px">Body paragraph. Regular text used across the application for descriptions, notes, and general content. Comfortable line-height for readability.</div>
+        <div class="ds-type-meta">p · 14px / weight 400 / line-height 1.7 · Body text</div>
+      </div>
+    </div>
+  </section>
+
+
   <!-- ══ 5. SHADOWS & ELEVATION ════════════════════════════════════ -->
   <section class="ds-section">
     <h2 class="ds-section__title">Shadows & Elevation</h2>
@@ -400,6 +450,21 @@
   </section>
 
 
+  <!-- ══ 7b. KANBAN COLUMN ═════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Kanban Column — &lt;kanban-column&gt;</h2>
+    <p class="ds-note">Columns are self-contained Web Components. Tasks are injected via renderTasks(tasks, renderer). Drag-and-drop is built in but inactive on this page.</p>
+    <div class="ds-row" style="align-items:flex-start">
+      <kanban-column id="ds-col-todo" data-status="todo" style="width:280px;display:block">
+        <span slot="title">To Do</span>
+      </kanban-column>
+      <kanban-column id="ds-col-done" data-status="done" style="width:280px;display:block">
+        <span slot="title">Done</span>
+      </kanban-column>
+    </div>
+  </section>
+
+
   <!-- ══ 8. TOAST NOTIFICATIONS ════════════════════════════════════ -->
   <section class="ds-section">
     <h2 class="ds-section__title">Toast Notifications — &lt;toast-notification&gt;</h2>
@@ -455,6 +520,46 @@
     </div>
   </section>
 
+
+  <!-- ══ 11. CUSTOM PICKER ════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Custom Picker — &lt;custom-picker&gt;</h2>
+    <p class="ds-note">Replaces native &lt;select&gt; elements. Items are injected via setItems([{value, label, color?}]). Fires a change event with {value, label}.</p>
+    <div class="ds-row" style="align-items:flex-start;flex-wrap:wrap;gap:32px">
+      <div class="ds-col">
+        <div class="ds-sub__label" style="margin-bottom:10px">type="color" — Epic color picker</div>
+        <custom-picker id="ds-picker-color" type="color" placeholder="Select epic color" columns="5"></custom-picker>
+        <div class="ds-label" style="margin-top:10px">columns="5" / setItems([&#123;value, label, color&#125;])</div>
+      </div>
+      <div class="ds-col">
+        <div class="ds-sub__label" style="margin-bottom:10px">type="icon" — Category icon picker</div>
+        <custom-picker id="ds-picker-icon" type="icon" placeholder="Select icon" columns="5"></custom-picker>
+        <div class="ds-label" style="margin-top:10px">columns="5" / setItems([&#123;value, label&#125;])</div>
+      </div>
+      <div class="ds-col">
+        <div class="ds-sub__label" style="margin-bottom:10px">type="list" size="compact" — Category list</div>
+        <custom-picker id="ds-picker-list" type="list" placeholder="Choose category" size="compact"></custom-picker>
+        <div class="ds-label" style="margin-top:10px">size="compact" / setItems([&#123;value, label&#125;])</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 12. DAILY CHECKLIST ═══════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Daily Checklist — &lt;daily-checklist&gt;</h2>
+    <p class="ds-note">Reads from and writes to localStorage. Resets daily at the configured reset hour. State on this page shares the "design-system" storage prefix — changes here do not affect your board.</p>
+    <daily-checklist style="max-width:360px;display:block"></daily-checklist>
+  </section>
+
+
+  <!-- ══ 13. NOTES WIDGET ══════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Notes Widget — &lt;notes-widget&gt;</h2>
+    <p class="ds-note">Persists to the server via /api/:profile/notes. On this page the API call returns 404 (no profile alias in the URL) — the widget renders normally but save operations will silently fail.</p>
+    <notes-widget style="max-width:420px;display:block"></notes-widget>
+  </section>
+
 </div>
 
 
@@ -502,6 +607,9 @@
 <script type="module" src="components/task-card/task-card.js"></script>
 <script type="module" src="components/modal-dialog/modal-dialog.js"></script>
 <script type="module" src="components/toast-notification/toast-notification.js"></script>
+<script type="module" src="components/kanban-column/kanban-column.js"></script>
+<script type="module" src="components/daily-checklist/daily-checklist.js"></script>
+<script type="module" src="components/notes-widget/notes-widget.js"></script>
 
 <script type="module">
   const toaster = document.getElementById('ds-toaster');
@@ -527,6 +635,74 @@
   document.querySelector('.js-close-default').addEventListener('click', () => modalDefault.close());
   document.querySelector('.js-close-large').addEventListener('click',   () => modalLarge.close());
   document.querySelector('.js-close-small').addEventListener('click',   () => modalSmall.close());
+
+  // Kanban columns — render mock tasks after both components are defined
+  Promise.all([
+    customElements.whenDefined('kanban-column'),
+    customElements.whenDefined('task-card')
+  ]).then(() => {
+    const todoTasks = [
+      { id: 'ds-k1', title: 'Define new navigation structure and sidebar layout', priority: true,  category: 'Planning',    categoryIcon: 'list-check', epicName: 'Website Redesign', epicColor: '#2E86DE', gradient: 5, light: true },
+      { id: 'ds-k2', title: 'Review contract with new supplier before end of quarter', priority: false, category: '',            categoryIcon: '',            deadlineText: '⏰ Mar 5 — 3 days', deadlineLevel: 'urgent', gradient: 3, light: true },
+    ];
+    const doneTasks = [
+      { id: 'ds-k3', title: 'Set up CI/CD pipeline for the staging environment', priority: false, category: 'Development', categoryIcon: 'code-slash', epicName: 'Mobile App', epicColor: '#8E44AD', gradient: 7, light: true },
+      { id: 'ds-k4', title: 'Update project specification with all new planned features', priority: false, category: 'Planning', categoryIcon: 'list-check', gradient: 15, light: false },
+    ];
+
+    function makeCard(task) {
+      const card = document.createElement('task-card');
+      card.className = task.light ? '--lightText' : '--darkText';
+      card.style.background = `var(--card-gradient-${task.gradient})`;
+      card.dataset.taskId = task.id;
+      card.dataset.title = task.title;
+      card.dataset.description = '';
+      card.dataset.priority = String(task.priority);
+      card.dataset.category = '1';
+      card.dataset.categoryName = task.category || '';
+      card.dataset.categoryIcon = task.categoryIcon || '';
+      if (task.epicName)     { card.dataset.epicName = task.epicName; card.dataset.epicColor = task.epicColor; }
+      if (task.deadlineText) { card.dataset.deadlineText = task.deadlineText; card.dataset.deadlineLevel = task.deadlineLevel; }
+      return card;
+    }
+
+    document.getElementById('ds-col-todo').renderTasks(todoTasks, makeCard);
+    document.getElementById('ds-col-done').renderTasks(doneTasks, makeCard);
+  });
+
+  // Custom pickers — call setItems after the element class is registered
+  customElements.whenDefined('custom-picker').then(() => {
+    const epicColors = [
+      { value: '#E74C3C', label: 'Ruby Red',  color: '#E74C3C' },
+      { value: '#FF6F61', label: 'Coral',      color: '#FF6F61' },
+      { value: '#E67E22', label: 'Tangerine',  color: '#E67E22' },
+      { value: '#F1C40F', label: 'Sunflower',  color: '#F1C40F' },
+      { value: '#2ECC71', label: 'Emerald',    color: '#2ECC71' },
+      { value: '#1ABC9C', label: 'Teal',       color: '#1ABC9C' },
+      { value: '#2E86DE', label: 'Ocean',      color: '#2E86DE' },
+      { value: '#8E44AD', label: 'Purple',     color: '#8E44AD' },
+      { value: '#E84393', label: 'Magenta',    color: '#E84393' },
+      { value: '#636E72', label: 'Slate',      color: '#636E72' },
+    ];
+    document.getElementById('ds-picker-color').setItems(epicColors);
+
+    const iconItems = [
+      'bookmark-star','box-seam','chat-text','check2-square','code-slash',
+      'envelope','flag','folder','gear','globe-americas',
+      'heart','house','inbox','layers','lightning',
+      'list-check','moon','person-circle','rocket-takeoff','star'
+    ].map(name => ({ value: name, label: name }));
+    document.getElementById('ds-picker-icon').setItems(iconItems);
+
+    const categories = [
+      { value: '1', label: 'Development' },
+      { value: '2', label: 'Planning' },
+      { value: '3', label: 'Communication' },
+      { value: '4', label: 'Design' },
+      { value: '5', label: 'Research' },
+    ];
+    document.getElementById('ds-picker-list').setItems(categories);
+  });
 
   // Icon grid — render after svg-icon is defined
   customElements.whenDefined('svg-icon').then(() => {
