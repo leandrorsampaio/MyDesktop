@@ -17,6 +17,58 @@ A clean, self-hosted, open-source personal task management tool. No account, no 
 
 ---
 
+## Target Audience
+
+**Who this is for:**
+- Developers, designers, video editors, freelancers, and indie makers
+- Professionals technically confident enough to run a terminal command — but who don't want their productivity tool to feel like a developer tool
+- Privacy-first people: self-hosters, GDPR-aware users, people who run their own Bitwarden, Nextcloud, or Plex and distrust big tech with their data
+- People frustrated by Jira's complexity and Trello's shallowness — they want something in between
+- People who use their browser new tab as a daily workspace (existing market — Momentum, Tabliss — but none with a proper kanban)
+- Solo workers, not teams — this is a personal tool, not a collaboration platform
+
+**What they have in common:**
+- They have taste. They use Linear, VS Code, Obsidian, Raycast, Things 3. They notice when a tool feels cheap or inconsistent.
+- They are busy. They want the common case to require zero clicks.
+- They want to own their data. "No account required" is a feature, not a limitation.
+
+**The browser homepage angle is the strongest differentiator.** This is a tool you look at 8 hours a day. It has to earn that screen time.
+
+---
+
+## Visual Design Philosophy
+
+**Style: Functional Calm**
+
+Restraint over decoration. Every visual element earns its place. The interface should feel like a clean physical workspace — not a packed dashboard, not a toy, not a corporate product.
+
+**Dark mode is primary.** Not optional, not an afterthought. The target audience defaults to dark. Light mode is a first-class alternative, not an afterthought.
+
+**Colour is semantic, not decorative.**
+- Colour = epic (the 20-colour palette already in the system)
+- A single marker (dot or star) = priority
+- Column position = status
+- Nothing else gets colour. No gradient backgrounds, no coloured section headers, no decorative splashes.
+
+**Typography:** One typeface, two weights. A humanist sans-serif (Inter, Geist, or similar). Legible at small sizes, personality-neutral. Not monospace — that signals code editor, not personal workspace.
+
+**Backgrounds:** Warm or cool dark neutrals, not pure black. `#111`–`#131318` range feels intentional and comfortable for long sessions. Pure `#000` is harsh. Pure `#fff` in light mode is equally harsh.
+
+**Cards:** Defined by a `1px` border on a slightly lighter surface — not heavy drop shadows. Subtle elevation, not visual noise.
+
+**Spacing:** Consistent 8px grid throughout. Generous whitespace. The board should breathe.
+
+**What to avoid:**
+- Glassmorphism — trendy, ages quickly, has performance cost
+- Neumorphism — accessibility problems, already dated
+- Heavy rounded corners everywhere — reads as consumer/playful, wrong audience
+- Coloured sidebars or section headers — reads as enterprise, wrong audience
+- Gradient backgrounds — decorative, not functional
+
+**Calibration reference:** Linear.app — not to copy it, but as a benchmark for the level of craft and restraint the target audience expects.
+
+---
+
 ## The Task Lifecycle
 
 Three tiers, one direction:
@@ -53,9 +105,9 @@ Six destinations:
 | 5 | Reports    | `/:alias/reports`    | Full reports view.                      |
 | 6 | AI         | `/:alias/ai`         | Meeting minutes → tasks. (last to build)|
 
-### Settings (gear icon, top bar)
+### Config button (bottom of sidebar)
 
-Replaces the current hamburger menu. Always visible in the top bar on every page. Opens existing modals — these are settings operations, not destinations. They stay as modals.
+Replaces the current hamburger menu. Pinned to the bottom of the sidebar on every page. Opens a settings panel or submenu — these are configuration operations, not destinations. They stay as modals.
 
 Contents:
 - Board Configuration (column CRUD + reorder)
@@ -65,6 +117,8 @@ Contents:
 - Edit Daily Checklist
 - General Configuration
 - Generate Report (action)
+
+The top bar is freed from navigation controls entirely. Existing board-level toggles (privacy, crisis mode, snooze) remain in the top bar as they are contextual to the board view, not global settings.
 
 ### Routing
 
