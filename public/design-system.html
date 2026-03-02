@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ─── Design system page shell only — zero component CSS here ─── */
+.ds { max-width: 1100px; margin: 0 auto; padding: 48px 40px 120px; }
+.ds-header { padding-bottom: 32px; margin-bottom: 56px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.ds-header__title { font-size: 30px; font-weight: 300; color: var(--text-primary); letter-spacing: -0.3px; }
+.ds-header__sub { color: var(--text-muted); margin-top: 6px; font-size: 13px; }
+.ds-section { margin-bottom: 72px; }
+.ds-section__title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 28px; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+.ds-sub { margin-bottom: 28px; }
+.ds-sub__label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+.ds-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.ds-col { display: flex; flex-direction: column; }
+.ds-label { font-size: 10px; color: var(--text-muted); margin-top: 7px; font-family: monospace; }
+/* Swatches */
+.ds-swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.ds-swatch { height: 52px; border-radius: 10px; margin-bottom: 6px; border: 1px solid rgba(0,0,0,0.06); }
+/* Gradients */
+.ds-grad-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+.ds-grad-swatch { height: 44px; border-radius: 7px; }
+/* Epic colors */
+.ds-epic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.ds-epic-swatch { height: 36px; border-radius: 8px; margin-bottom: 5px; }
+/* Typography */
+.ds-type-row { padding: 16px 20px; background: white; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: baseline; gap: 20px; }
+.ds-type-meta { font-size: 10px; color: var(--text-muted); font-family: monospace; white-space: nowrap; }
+/* Shadow demos */
+.ds-shadow-demo { height: 70px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); flex: 1; }
+/* Cards grid */
+.ds-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+/* Icons */
+.ds-icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 2px; }
+.ds-icon-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 8px; cursor: default; }
+.ds-icon-item:hover { background: rgba(0,0,0,0.04); }
+.ds-icon-name { font-size: 9px; color: var(--text-muted); text-align: center; word-break: break-all; line-height: 1.3; }
+/* Inline note */
+.ds-note { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="ds">
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════ -->
+  <div class="ds-header">
+    <div class="ds-header__title">Design System</div>
+    <div class="ds-header__sub">All visual tokens, components and variants in their current state.</div>
+  </div>
+
+
+  <!-- ══ 1. COLOR TOKENS ═════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Color Tokens</h2>
+
+    <div class="ds-sub">
+      <div class="ds-sub__label">Background & Surfaces</div>
+      <div class="ds-swatch-grid">
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#F5F1EB"></div>
+          <div class="ds-label">--bg-color<br>#F5F1EB</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#FFFFFF; box-shadow:var(--shadow-soft)"></div>
+          <div class="ds-label">Surface white<br>#FFFFFF</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:rgba(255,255,255,0.5)"></div>
+          <div class="ds-label">--column-bg<br>rgba(255,255,255,0.5)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-sub">
+      <div class="ds-sub__label">Text</div>
+      <div class="ds-swatch-grid">
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#2D2D2D"></div>
+          <div class="ds-label">--text-primary<br>#2D2D2D</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#5A5A5A"></div>
+          <div class="ds-label">--text-secondary<br>#5A5A5A</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#8A8A8A"></div>
+          <div class="ds-label">--text-muted<br>#8A8A8A</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#FFFFFF; border:1px solid #ddd"></div>
+          <div class="ds-label">--text-light<br>#FFFFFF</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-sub">
+      <div class="ds-sub__label">Semantic</div>
+      <div class="ds-swatch-grid">
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#C4A484"></div>
+          <div class="ds-label">--accent-color<br>#C4A484</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#B8956F"></div>
+          <div class="ds-label">--accent-hover<br>#B8956F</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#C97065"></div>
+          <div class="ds-label">--danger-color<br>#C97065</div>
+        </div>
+        <div class="ds-col">
+          <div class="ds-swatch" style="background:#7BA37B"></div>
+          <div class="ds-label">--success-color<br>#7BA37B</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 2. CARD GRADIENTS ════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Card Gradient System</h2>
+    <p class="ds-note">Position-based: index 0 (darkest, use --lightText) → 19 (lightest, use --darkText). Gradients 0–11 use white text; 12–19 use dark text.</p>
+    <div class="ds-grad-grid">
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-0)"></div><div class="ds-label">0</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-1)"></div><div class="ds-label">1</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-2)"></div><div class="ds-label">2</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-3)"></div><div class="ds-label">3</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-4)"></div><div class="ds-label">4</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-5)"></div><div class="ds-label">5</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-6)"></div><div class="ds-label">6</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-7)"></div><div class="ds-label">7</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-8)"></div><div class="ds-label">8</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-9)"></div><div class="ds-label">9</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-10)"></div><div class="ds-label">10</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-11)"></div><div class="ds-label">11</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-12)"></div><div class="ds-label">12</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-13)"></div><div class="ds-label">13</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-14)"></div><div class="ds-label">14</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-15)"></div><div class="ds-label">15</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-16)"></div><div class="ds-label">16</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-17)"></div><div class="ds-label">17</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-18)"></div><div class="ds-label">18</div></div>
+      <div class="ds-col"><div class="ds-grad-swatch" style="background:var(--card-gradient-19)"></div><div class="ds-label">19</div></div>
+    </div>
+  </section>
+
+
+  <!-- ══ 3. EPIC COLOR PALETTE ════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Epic Color Palette — 20 Colors</h2>
+    <p class="ds-note">Each epic must use a unique color from this palette. Colors are also used as the epic bar background on task cards.</p>
+    <div class="ds-epic-grid">
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#E74C3C"></div><div class="ds-label">Ruby Red<br>#E74C3C</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#FF6F61"></div><div class="ds-label">Coral<br>#FF6F61</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#E67E22"></div><div class="ds-label">Tangerine<br>#E67E22</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#F5A623"></div><div class="ds-label">Amber<br>#F5A623</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#F1C40F"></div><div class="ds-label">Sunflower<br>#F1C40F</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#A8D84E"></div><div class="ds-label">Lime<br>#A8D84E</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#2ECC71"></div><div class="ds-label">Emerald<br>#2ECC71</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#00B894"></div><div class="ds-label">Jade<br>#00B894</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#1ABC9C"></div><div class="ds-label">Teal<br>#1ABC9C</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#00CEC9"></div><div class="ds-label">Cyan<br>#00CEC9</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#54A0FF"></div><div class="ds-label">Sky Blue<br>#54A0FF</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#2E86DE"></div><div class="ds-label">Ocean<br>#2E86DE</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#3742FA"></div><div class="ds-label">Royal Blue<br>#3742FA</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#5758BB"></div><div class="ds-label">Indigo<br>#5758BB</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#8E44AD"></div><div class="ds-label">Purple<br>#8E44AD</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#B24BDB"></div><div class="ds-label">Orchid<br>#B24BDB</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#E84393"></div><div class="ds-label">Magenta<br>#E84393</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#FD79A8"></div><div class="ds-label">Rose<br>#FD79A8</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#636E72"></div><div class="ds-label">Slate<br>#636E72</div></div>
+      <div class="ds-col"><div class="ds-epic-swatch" style="background:#2D3436"></div><div class="ds-label">Charcoal<br>#2D3436</div></div>
+    </div>
+  </section>
+
+
+  <!-- ══ 4. TYPOGRAPHY ════════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Typography — Montserrat</h2>
+
+    <div class="ds-type-row">
+      <span class="appHeader__title">Welcome, Leandro</span>
+      <span class="ds-type-meta">28px / weight 300 — .appHeader__title</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:20px;font-weight:600;color:var(--text-primary);letter-spacing:-0.3px">Modal Title</span>
+      <span class="ds-type-meta">20px / weight 600 — .modal__header h2</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:15px;font-weight:600;color:var(--text-primary)">Task title — body text</span>
+      <span class="ds-type-meta">15px / weight 600 — .taskCard__title (compact: 13px)</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:14px;font-weight:400;color:var(--text-primary)">Regular body text — description and content</span>
+      <span class="ds-type-meta">14px / weight 400</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:12px;font-weight:400;color:var(--text-secondary)">Secondary body — task description, metadata</span>
+      <span class="ds-type-meta">12px / weight 400 — .taskCard__desc</span>
+    </div>
+    <div class="ds-type-row">
+      <span class="appHeader__dateInfo" style="font-size:13px;color:var(--text-muted)">Mon 3 Mar · Week 10</span>
+      <span class="ds-type-meta">13px / weight 400 — .appHeader__dateInfo</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted)">Column Header</span>
+      <span class="ds-type-meta">12px / weight 600 / uppercase / letter-spacing 2px — .column__title</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);background:var(--card-gradient-3);padding:3px 10px;border-radius:4px">Epic Name</span>
+      <span class="ds-type-meta">10px / weight 600 / uppercase — .taskCard__epicBar</span>
+    </div>
+    <div class="ds-type-row">
+      <span style="font-size:10px;font-weight:600;color:var(--text-muted)">badge label</span>
+      <span class="ds-type-meta">10px / weight 600 — .taskCard__badge</span>
+    </div>
+  </section>
+
+
+  <!-- ══ 5. SHADOWS & ELEVATION ════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Shadows & Elevation</h2>
+    <div class="ds-row">
+      <div class="ds-col" style="flex:1">
+        <div class="ds-shadow-demo" style="box-shadow:var(--shadow-card)">shadow-card</div>
+        <div class="ds-label">--shadow-card · 0 2px 8px rgba(0,0,0,0.04)</div>
+      </div>
+      <div class="ds-col" style="flex:1">
+        <div class="ds-shadow-demo" style="box-shadow:var(--shadow-soft)">shadow-soft</div>
+        <div class="ds-label">--shadow-soft · 0 2px 12px rgba(0,0,0,0.06)</div>
+      </div>
+      <div class="ds-col" style="flex:1">
+        <div class="ds-shadow-demo" style="box-shadow:var(--shadow-medium)">shadow-medium</div>
+        <div class="ds-label">--shadow-medium · 0 4px 20px rgba(0,0,0,0.08)</div>
+      </div>
+      <div class="ds-col" style="flex:1">
+        <div class="ds-shadow-demo" style="box-shadow:0 20px 60px rgba(0,0,0,0.15)">Modal shadow</div>
+        <div class="ds-label">Modal · 0 20px 60px rgba(0,0,0,0.15)</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 6. BUTTONS ════════════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Buttons — &lt;custom-button&gt;</h2>
+    <div class="ds-row">
+      <div class="ds-col">
+        <custom-button>Cancel</custom-button>
+        <div class="ds-label">&lt;custom-button&gt;<br>Default / Cancel</div>
+      </div>
+      <div class="ds-col">
+        <custom-button modifier="save">Save</custom-button>
+        <div class="ds-label">modifier="save"</div>
+      </div>
+      <div class="ds-col">
+        <custom-button modifier="clone">Clone</custom-button>
+        <div class="ds-label">modifier="clone"</div>
+      </div>
+      <div class="ds-col">
+        <custom-button modifier="delete">Delete</custom-button>
+        <div class="ds-label">modifier="delete"</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 7. TASK CARDS ══════════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Task Cards — &lt;task-card&gt;</h2>
+    <p class="ds-note">Background is set on the host element via style="background: var(--card-gradient-N)". Class --lightText or --darkText controls text color.</p>
+    <div class="ds-cards-grid">
+
+      <!-- 1. Title only, dark gradient -->
+      <task-card
+        class="--lightText"
+        style="background:var(--card-gradient-2)"
+        data-task-id="ds-1"
+        data-title="Simple task — title only, no epic, no category badge"
+        data-description=""
+        data-priority="false"
+        data-category="1"
+        data-category-name=""
+        data-category-icon="">
+      </task-card>
+
+      <!-- 2. Epic bar + priority star -->
+      <task-card
+        class="--lightText"
+        style="background:var(--card-gradient-5)"
+        data-task-id="ds-2"
+        data-title="Define new navigation structure and sidebar layout"
+        data-description="Includes sidebar, routing and settings architecture."
+        data-priority="true"
+        data-category="1"
+        data-category-name=""
+        data-category-icon=""
+        data-epic-name="Website Redesign"
+        data-epic-color="#2E86DE">
+      </task-card>
+
+      <!-- 3. Category badge + warning deadline -->
+      <task-card
+        class="--lightText"
+        style="background:var(--card-gradient-8)"
+        data-task-id="ds-3"
+        data-title="Write API documentation for the authentication endpoints"
+        data-description=""
+        data-priority="false"
+        data-category="2"
+        data-category-name="Development"
+        data-category-icon="code-slash"
+        data-deadline-text="⏰ Mar 12 — 10 days"
+        data-deadline-level="warning">
+      </task-card>
+
+      <!-- 4. Epic + priority + category + urgent deadline -->
+      <task-card
+        class="--lightText"
+        style="background:var(--card-gradient-4)"
+        data-task-id="ds-4"
+        data-title="Prepare launch checklist and assign owners to each item"
+        data-description=""
+        data-priority="true"
+        data-category="2"
+        data-category-name="Planning"
+        data-category-icon="list-check"
+        data-epic-name="Q1 Launch"
+        data-epic-color="#2ECC71"
+        data-deadline-text="⏰ Mar 5 — 3 days"
+        data-deadline-level="urgent">
+      </task-card>
+
+      <!-- 5. Purple epic, communication category -->
+      <task-card
+        class="--lightText"
+        style="background:var(--card-gradient-7)"
+        data-task-id="ds-5"
+        data-title="Legal review of the updated terms of service"
+        data-description=""
+        data-priority="false"
+        data-category="3"
+        data-category-name="Communication"
+        data-category-icon="chat-text"
+        data-epic-name="Mobile App"
+        data-epic-color="#8E44AD">
+      </task-card>
+
+      <!-- 6. Light gradient, dark text -->
+      <task-card
+        class="--darkText"
+        style="background:var(--card-gradient-15)"
+        data-task-id="ds-6"
+        data-title="Light gradient card — uses --darkText class"
+        data-description="Gradients 12–19 are light enough to require dark text."
+        data-priority="false"
+        data-category="1"
+        data-category-name=""
+        data-category-icon="">
+      </task-card>
+
+      <!-- 7. Lightest gradient, dark text, upcoming deadline -->
+      <task-card
+        class="--darkText"
+        style="background:var(--card-gradient-19)"
+        data-task-id="ds-7"
+        data-title="Client feedback on homepage prototype"
+        data-description=""
+        data-priority="false"
+        data-category="3"
+        data-category-name="Communication"
+        data-category-icon="envelope"
+        data-deadline-text="📅 Mar 20 — 18 days"
+        data-deadline-level="upcoming">
+      </task-card>
+
+      <!-- 8. Overdue -->
+      <task-card
+        class="--lightText"
+        style="background:var(--card-gradient-1)"
+        data-task-id="ds-8"
+        data-title="Review contract with supplier — overdue"
+        data-description=""
+        data-priority="true"
+        data-category="1"
+        data-category-name=""
+        data-category-icon=""
+        data-deadline-text="⚠️ Feb 28 — 2 days overdue"
+        data-deadline-level="overdue">
+      </task-card>
+
+    </div>
+  </section>
+
+
+  <!-- ══ 8. TOAST NOTIFICATIONS ════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Toast Notifications — &lt;toast-notification&gt;</h2>
+    <p class="ds-note">Auto-dismiss after 4s. Multiple toasts stack. Trigger via elements.toaster.success/error/warning/info(msg)</p>
+    <div class="ds-row">
+      <div class="ds-col">
+        <custom-button modifier="save" class="js-toast-success">Success toast</custom-button>
+        <div class="ds-label">.success(msg)</div>
+      </div>
+      <div class="ds-col">
+        <custom-button modifier="delete" class="js-toast-error">Error toast</custom-button>
+        <div class="ds-label">.error(msg)</div>
+      </div>
+      <div class="ds-col">
+        <custom-button class="js-toast-warning">Warning toast</custom-button>
+        <div class="ds-label">.warning(msg)</div>
+      </div>
+      <div class="ds-col">
+        <custom-button class="js-toast-info">Info toast</custom-button>
+        <div class="ds-label">.info(msg)</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 9. MODAL DIALOG ═══════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">Modal Dialog — &lt;modal-dialog&gt;</h2>
+    <p class="ds-note">Three sizes. Close via backdrop click, ESC, or .close(). Never toggle classes directly — always use .open() / .close().</p>
+    <div class="ds-row">
+      <div class="ds-col">
+        <custom-button class="js-open-default">Open default modal</custom-button>
+        <div class="ds-label">Default size</div>
+      </div>
+      <div class="ds-col">
+        <custom-button class="js-open-large">Open large modal</custom-button>
+        <div class="ds-label">size="large"</div>
+      </div>
+      <div class="ds-col">
+        <custom-button class="js-open-small">Open small modal</custom-button>
+        <div class="ds-label">size="small"</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══ 10. SVG ICONS ════════════════════════════════════════════ -->
+  <section class="ds-section">
+    <h2 class="ds-section__title">SVG Icons — &lt;svg-icon&gt;</h2>
+    <p class="ds-note">Uses currentColor — inherits parent text color. Set size in px via the size attribute (default 24).</p>
+    <div class="ds-icon-grid" id="iconGrid">
+      <!-- Populated by script below -->
+    </div>
+  </section>
+
+</div>
+
+
+<!-- ══ MODAL INSTANCES ══════════════════════════════════════════════ -->
+<modal-dialog class="js-modal-default">
+  <span slot="title">Default Modal</span>
+  <div style="padding: 0 32px 32px">
+    <p style="color:var(--text-secondary);margin-bottom:24px">This is the default modal size. Used for task creation, editing, and general configuration forms.</p>
+    <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06)">
+      <custom-button class="js-close-default">Cancel</custom-button>
+      <custom-button modifier="save">Confirm</custom-button>
+    </div>
+  </div>
+</modal-dialog>
+
+<modal-dialog class="js-modal-large" size="large">
+  <span slot="title">Large Modal</span>
+  <div style="padding: 0 32px 32px">
+    <p style="color:var(--text-secondary);margin-bottom:24px">This is the large modal. Used for reports, archived tasks, categories, epics, profiles and board configuration — anything that needs more horizontal space.</p>
+    <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06)">
+      <custom-button class="js-close-large">Close</custom-button>
+    </div>
+  </div>
+</modal-dialog>
+
+<modal-dialog class="js-modal-small" size="small">
+  <span slot="title">Confirm Delete?</span>
+  <div style="padding: 0 32px 32px">
+    <p style="color:var(--text-secondary);margin-bottom:24px">Small modals are used exclusively for destructive confirmations. Keep the message short and the actions obvious.</p>
+    <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06)">
+      <custom-button class="js-close-small">Cancel</custom-button>
+      <custom-button modifier="delete">Delete</custom-button>
+    </div>
+  </div>
+</modal-dialog>
+
+<!-- ══ TOAST INSTANCE ═════════════════════════════════════════════ -->
+<toast-notification id="ds-toaster"></toast-notification>
+
+
+<!-- ══ COMPONENT SCRIPTS ══════════════════════════════════════════ -->
+<script type="module" src="components/svg-icon/svg-icon.js"></script>
+<script type="module" src="components/custom-picker/custom-picker.js"></script>
+<script type="module" src="components/button/button.js"></script>
+<script type="module" src="components/task-card/task-card.js"></script>
+<script type="module" src="components/modal-dialog/modal-dialog.js"></script>
+<script type="module" src="components/toast-notification/toast-notification.js"></script>
+
+<script type="module">
+  const toaster = document.getElementById('ds-toaster');
+
+  // Toast triggers
+  document.querySelector('.js-toast-success').addEventListener('click', () =>
+    toaster.success('Task saved successfully.'));
+  document.querySelector('.js-toast-error').addEventListener('click', () =>
+    toaster.error('Something went wrong. Changes reverted.'));
+  document.querySelector('.js-toast-warning').addEventListener('click', () =>
+    toaster.warning('Deadline is approaching — 2 days left.'));
+  document.querySelector('.js-toast-info').addEventListener('click', () =>
+    toaster.info('Report generated for Week 10.'));
+
+  // Modal triggers
+  const modalDefault = document.querySelector('.js-modal-default');
+  const modalLarge   = document.querySelector('.js-modal-large');
+  const modalSmall   = document.querySelector('.js-modal-small');
+
+  document.querySelector('.js-open-default').addEventListener('click', () => modalDefault.open());
+  document.querySelector('.js-open-large').addEventListener('click',   () => modalLarge.open());
+  document.querySelector('.js-open-small').addEventListener('click',   () => modalSmall.open());
+  document.querySelector('.js-close-default').addEventListener('click', () => modalDefault.close());
+  document.querySelector('.js-close-large').addEventListener('click',   () => modalLarge.close());
+  document.querySelector('.js-close-small').addEventListener('click',   () => modalSmall.close());
+
+  // Icon grid — render after svg-icon is defined
+  customElements.whenDefined('svg-icon').then(() => {
+    const icons = [
+      'bookmark-star','box-arrow-in-up-right','box-seam','chat-text',
+      'check2-square','code-slash','cup-hot','dice-6','door-open',
+      'droplet','envelope','exclamation-triangle','feather','flag',
+      'folder','gear','globe-americas','grip-vertical','heart','house',
+      'inbox','journal-arrow-down','key','lamp','layers','lightning',
+      'link-45deg','list-check','moon','music-note-beamed','person-circle',
+      'pin-angle','rocket-takeoff','save','sliders','star','star-fill',
+      'trash','umbrella'
+    ];
+    const grid = document.getElementById('iconGrid');
+    icons.forEach(name => {
+      const item = document.createElement('div');
+      item.className = 'ds-icon-item';
+      item.innerHTML = `
+        <svg-icon icon="${name}" size="20"></svg-icon>
+        <span class="ds-icon-name">${name}</span>
+      `;
+      grid.appendChild(item);
+    });
+  });
+</script>
+
+</body>
+</html>
