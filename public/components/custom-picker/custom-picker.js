@@ -100,14 +100,14 @@ class CustomPicker extends HTMLElement {
                     align-items: center;
                     gap: 8px;
                     padding: 10px 14px;
-                    border: none;
-                    border-radius: 10px;
-                    background-color: rgba(255, 255, 255, 0.7);
-                    color: var(--text-primary, #2D2D2D);
+                    border: 1px solid var(--color-border, #e5e7eb);
+                    border-radius: var(--radius-md, 6px);
+                    background-color: var(--color-bg-primary, #ffffff);
+                    color: var(--color-text-primary, #111827);
                     font-size: 14px;
                     font-family: inherit;
                     cursor: pointer;
-                    transition: background-color 0.3s, box-shadow 0.3s;
+                    transition: border-color 0.15s, box-shadow 0.15s;
                     min-width: 140px;
                     text-align: left;
                     width: 100%;
@@ -117,25 +117,26 @@ class CustomPicker extends HTMLElement {
                     font-size: 11px;
                     font-weight: 600;
                     min-width: auto;
-                    border-radius: 8px;
+                    border-radius: var(--radius-sm, 4px);
+                    border: none;
                     background-color: transparent;
-                    color: var(--text-muted, #8A8A8A);
+                    color: var(--color-text-tertiary, #9ca3af);
                 }
                 .customPicker__trigger:hover {
-                    background-color: rgba(255, 255, 255, 0.9);
+                    border-color: var(--color-text-tertiary, #9ca3af);
                 }
                 :host([size="compact"]) .customPicker__trigger:hover {
-                    background: rgba(0, 0, 0, 0.05);
-                    color: var(--text-secondary, #5A5A5A);
+                    background: var(--color-bg-tertiary, #f3f4f6);
+                    color: var(--color-text-secondary, #4b5563);
                 }
                 .customPicker__trigger:focus {
                     outline: none;
-                    background-color: rgba(255, 255, 255, 0.9);
-                    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+                    border-color: var(--color-accent-primary, #1a73e8);
+                    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
                 }
                 :host([size="compact"]) .customPicker__trigger:focus {
                     box-shadow: none;
-                    background: rgba(0, 0, 0, 0.05);
+                    background: var(--color-bg-tertiary, #f3f4f6);
                 }
                 .customPicker__triggerSwatch {
                     width: 16px;
@@ -164,13 +165,13 @@ class CustomPicker extends HTMLElement {
                     white-space: nowrap;
                 }
                 .customPicker__triggerLabel.--placeholder {
-                    color: var(--text-muted, #8A8A8A);
+                    color: var(--color-text-tertiary, #9ca3af);
                 }
                 .customPicker__chevron {
                     font-size: 10px;
-                    color: var(--text-muted, #8A8A8A);
+                    color: var(--color-text-tertiary, #9ca3af);
                     flex-shrink: 0;
-                    transition: transform 0.2s;
+                    transition: transform 0.15s;
                 }
                 :host(.--active) .customPicker__chevron {
                     transform: rotate(180deg);
@@ -180,14 +181,15 @@ class CustomPicker extends HTMLElement {
                     top: calc(100% + 6px);
                     left: 0;
                     z-index: 200;
-                    background: #FFFFFF;
-                    border-radius: 14px;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+                    background: var(--color-bg-primary, #ffffff);
+                    border: 1px solid var(--color-border, #e5e7eb);
+                    border-radius: var(--radius-lg, 8px);
+                    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
                     padding: 12px;
                     opacity: 0;
                     visibility: hidden;
                     transform: translateY(-8px);
-                    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+                    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
                     min-width: 100%;
                 }
                 :host(.--active) .customPicker__panel {
@@ -218,7 +220,7 @@ class CustomPicker extends HTMLElement {
                     background-color: rgba(0, 0, 0, 0.04);
                 }
                 .customPicker__cell.--selected {
-                    background-color: rgba(196, 164, 132, 0.15);
+                    background-color: rgba(26, 115, 232, 0.08);
                 }
                 .customPicker__cell.--disabled {
                     opacity: 0.4;
@@ -232,7 +234,7 @@ class CustomPicker extends HTMLElement {
                     transition: box-shadow 0.15s;
                 }
                 .customPicker__cell.--selected .customPicker__swatch {
-                    box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--accent-color, #C4A484);
+                    box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--color-accent-primary, #1a73e8);
                 }
                 /* Icon mode cells */
                 .customPicker__cell.--icon {
@@ -241,7 +243,7 @@ class CustomPicker extends HTMLElement {
                     border-radius: 8px;
                 }
                 .customPicker__cell.--icon.--selected {
-                    background-color: rgba(196, 164, 132, 0.2);
+                    background-color: rgba(26, 115, 232, 0.1);
                 }
                 .customPicker__cell.--icon:hover:not(.--disabled) {
                     background-color: rgba(0, 0, 0, 0.06);
@@ -282,20 +284,20 @@ class CustomPicker extends HTMLElement {
                     padding: 8px 12px;
                     border: none;
                     background: none;
-                    border-radius: 8px;
+                    border-radius: var(--radius-sm, 4px);
                     cursor: pointer;
                     font-family: inherit;
                     font-size: 13px;
-                    color: var(--text-primary, #2D2D2D);
+                    color: var(--color-text-primary, #111827);
                     transition: background-color 0.15s;
                     text-align: left;
                     width: 100%;
                 }
                 .customPicker__listItem:hover:not(.--disabled) {
-                    background-color: rgba(196, 164, 132, 0.1);
+                    background-color: rgba(26, 115, 232, 0.06);
                 }
                 .customPicker__listItem.--selected {
-                    background-color: rgba(196, 164, 132, 0.15);
+                    background-color: rgba(26, 115, 232, 0.08);
                     font-weight: 600;
                 }
                 .customPicker__listItem.--disabled {

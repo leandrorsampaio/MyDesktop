@@ -3,45 +3,43 @@
 }
 
 .btn {
-    padding: 14px 24px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-md, 6px);
     font-size: 14px;
     font-weight: 600;
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: inherit;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.15s;
 }
 
 /* Default/Cancel Style */
 .btn {
-    background: #F5F1EB; /* --bg-color */
-    color: #5A5A5A; /* --text-secondary */
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-secondary, #4b5563);
 }
 
 .btn:hover {
-    background-color: #EDE9E3;
+    background-color: var(--color-border, #e5e7eb);
 }
 
 /* Save/Update Style */
 .btn[modifier="save"] {
-    background-color: #C4A484; /* --accent-color */
-    color: #FFFFFF; /* --text-light */
-    box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
-    padding: 14px 28px;
+    background-color: var(--color-accent-primary, #1a73e8);
+    color: #ffffff;
+    padding: 10px 24px;
 }
 
 .btn[modifier="save"]:hover {
-    background-color: #B8956F; /* --accent-hover */
+    background-color: var(--color-accent-primary-hover, #1557b0);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(196, 164, 132, 0.4);
 }
 
 /* Clone Style */
 .btn[modifier="clone"] {
     background-color: #5758BB;
-    color: #FFFFFF;
-    padding: 14px 20px;
+    color: #ffffff;
+    padding: 10px 18px;
 }
 
 .btn[modifier="clone"]:hover {
@@ -51,12 +49,12 @@
 
 /* Delete Style */
 .btn[modifier="delete"] {
-    background-color: #C97065; /* --danger-color */
-    color: #FFFFFF; /* --text-light */
-    padding: 14px 20px;
+    background-color: var(--color-accent-error, #ef4444);
+    color: #ffffff;
+    padding: 10px 18px;
 }
 
 .btn[modifier="delete"]:hover {
-    background-color: #B85A50;
+    background-color: #dc2626;
     transform: translateY(-1px);
 }

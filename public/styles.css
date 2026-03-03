@@ -1,43 +1,48 @@
-/* CSS Custom Properties - Color Gradients */
+/* CSS Custom Properties - Design System */
 :root {
-    /* Task card gradient — dark teal (position 0) to near-white (position 19) */
-    --card-gradient-0: linear-gradient(135deg, #0D4D4D 0%, #106060 100%);
-    --card-gradient-1: linear-gradient(135deg, #106060 0%, #137373 100%);
-    --card-gradient-2: linear-gradient(135deg, #137373 0%, #168686 100%);
-    --card-gradient-3: linear-gradient(135deg, #168686 0%, #199999 100%);
-    --card-gradient-4: linear-gradient(135deg, #199999 0%, #1CACAC 100%);
-    --card-gradient-5: linear-gradient(135deg, #1CACAC 0%, #1FBFBF 100%);
-    --card-gradient-6: linear-gradient(135deg, #1FBFBF 0%, #22D2D2 100%);
-    --card-gradient-7: linear-gradient(135deg, #22D2D2 0%, #2FDBDB 100%);
-    --card-gradient-8: linear-gradient(135deg, #2FDBDB 0%, #3CE4E4 100%);
-    --card-gradient-9: linear-gradient(135deg, #3CE4E4 0%, #49EDED 100%);
-    --card-gradient-10: linear-gradient(135deg, #49EDED 0%, #56F0F0 100%);
-    --card-gradient-11: linear-gradient(135deg, #56F0F0 0%, #66F2F2 100%);
-    --card-gradient-12: linear-gradient(135deg, #66F2F2 0%, #76F4F4 100%);
-    --card-gradient-13: linear-gradient(135deg, #76F4F4 0%, #86F6F6 100%);
-    --card-gradient-14: linear-gradient(135deg, #86F6F6 0%, #96F8F8 100%);
-    --card-gradient-15: linear-gradient(135deg, #96F8F8 0%, #A6FAFA 100%);
-    --card-gradient-16: linear-gradient(135deg, #A6FAFA 0%, #B6FBFB 100%);
-    --card-gradient-17: linear-gradient(135deg, #B6FBFB 0%, #C6FCFC 100%);
-    --card-gradient-18: linear-gradient(135deg, #C6FCFC 0%, #D6FDFD 100%);
-    --card-gradient-19: linear-gradient(135deg, #D6FDFD 0%, #E6FEFE 100%);
+    /* === Color System === */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f8f9fa;
+    --color-bg-tertiary: #f3f4f6;
+    --color-border: #e5e7eb;
+    --color-text-primary: #111827;
+    --color-text-secondary: #4b5563;
+    --color-text-tertiary: #9ca3af;
+    --color-accent-primary: #1a73e8;
+    --color-accent-primary-hover: #1557b0;
+    --color-accent-success: #10b981;
+    --color-accent-error: #ef4444;
+    --color-accent-warning: #f59e0b;
 
-    /* Zen Theme - Light beige/sand palette */
-    --bg-color: #F5F1EB;
-    --sidebar-bg: #F5F1EB;
-    --column-bg: rgba(255, 255, 255, 0.5);
-    --text-primary: #2D2D2D;
-    --text-secondary: #5A5A5A;
-    --text-muted: #8A8A8A;
-    --text-light: #FFFFFF;
-    --text-dark: #2D2D2D;
-    --accent-color: #C4A484;
-    --accent-hover: #B8956F;
-    --danger-color: #C97065;
-    --success-color: #7BA37B;
-    --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.06);
-    --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.08);
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+    /* === Radius System === */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+
+    /* === Shadow System === */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    /* === Typography === */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+    /* === Legacy Aliases (keep existing var() references working) === */
+    --bg-color: var(--color-bg-secondary);
+    --sidebar-bg: var(--color-bg-secondary);
+    --column-bg: var(--color-bg-primary);
+    --card-bg: var(--color-bg-primary);
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-tertiary);
+    --text-light: #ffffff;
+    --text-dark: var(--color-text-primary);
+    --accent-color: var(--color-accent-primary);
+    --accent-hover: var(--color-accent-primary-hover);
+    --danger-color: var(--color-accent-error);
+    --success-color: var(--color-accent-success);
+    --shadow-soft: var(--shadow-sm);
+    --shadow-medium: var(--shadow-md);
+    --shadow-card: var(--shadow-sm);
 }
 
 /* Reset and Base */
@@ -48,9 +53,9 @@
 }
 
 body {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
+    font-family: var(--font-family);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
     min-height: 100vh;
     overflow-x: hidden;
     line-height: 1.6;
@@ -64,8 +69,9 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 32px 40px;
-    background-color: transparent;
+    padding: 16px 40px;
+    background-color: var(--color-bg-primary);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .appHeader__welcome {
@@ -75,10 +81,10 @@ body {
 }
 
 .appHeader__title {
-    font-size: 28px;
-    font-weight: 300;
-    color: var(--text-primary);
-    letter-spacing: -0.5px;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.3px;
 }
 
 .appHeader__dateInfo {
@@ -109,9 +115,9 @@ body {
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 14px;
-    box-shadow: var(--shadow-soft);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
 }
 
 .toolbar__filters {
@@ -126,57 +132,57 @@ body {
     gap: 4px;
     padding: 6px 12px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 11px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     white-space: nowrap;
 }
 
 .toolbar__categoryBtn:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
 }
 
 .toolbar__categoryBtn.--active {
-    background: var(--accent-color);
-    color: var(--text-light);
+    background: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 .toolbar__categoryBtn.--active:hover {
-    background: var(--accent-hover);
+    background: var(--color-accent-primary-hover);
 }
 
 .toolbar__priorityBtn {
     padding: 6px 12px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 11px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     white-space: nowrap;
 }
 
 .toolbar__priorityBtn:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
 }
 
 .toolbar__priorityBtn.--active {
-    background: var(--accent-color);
-    color: var(--text-light);
+    background: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 .toolbar__priorityBtn.--active:hover {
-    background: var(--accent-hover);
+    background: var(--color-accent-primary-hover);
 }
 
 .toolbar__divider {
@@ -187,16 +193,16 @@ body {
 }
 
 .toolbar__privacyBtn {
-    padding: 8px 18px;
+    padding: 6px 12px;
     border: none;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--text-muted);
-    font-size: 12px;
+    color: var(--color-text-tertiary);
+    font-size: 11px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.15s ease;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     white-space: nowrap;
@@ -204,16 +210,16 @@ body {
 
 .toolbar__privacyBtn:hover {
     background: rgba(0, 0, 0, 0.05);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
 }
 
 .toolbar__privacyBtn.--active {
-    background: var(--accent-color);
-    color: var(--text-light);
+    background: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 .toolbar__privacyBtn.--active:hover {
-    background: var(--accent-hover);
+    background: var(--color-accent-primary-hover);
 }
 
 .toolbar__snoozeBtn {
@@ -283,9 +289,10 @@ body {
     top: calc(100% + 8px);
     right: 0;
     min-width: 200px;
-    background: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
     padding: 8px;
     z-index: 100;
     animation: slideDown 0.2s ease;
@@ -312,11 +319,11 @@ body {
 }
 
 .profileSelector__dropdownItem:hover {
-    background: rgba(196, 164, 132, 0.1);
+    background: rgba(26, 115, 232, 0.06);
 }
 
 .profileSelector__dropdownItem.--active {
-    background: rgba(196, 164, 132, 0.15);
+    background: rgba(26, 115, 232, 0.08);
     font-weight: 600;
 }
 
@@ -352,8 +359,8 @@ body {
 }
 
 .profileSelector__dropdownNewTab:hover {
-    color: var(--accent-color);
-    background: rgba(196, 164, 132, 0.15);
+    color: var(--color-accent-primary);
+    background: rgba(26, 115, 232, 0.08);
 }
 
 /* ==========================================
@@ -365,19 +372,18 @@ body {
     justify-content: center;
     align-items: center;
     gap: 5px;
-    width: 44px;
-    height: 44px;
-    background: rgba(255, 255, 255, 0.6);
-    border: none;
-    border-radius: 12px;
+    width: 36px;
+    height: 36px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-soft);
+    transition: all 0.15s ease;
 }
 
 .navMenu__trigger:hover {
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: var(--shadow-medium);
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-text-tertiary);
 }
 
 .navMenu__trigger span {
@@ -403,19 +409,19 @@ body {
 
 .navMenu__dropdown {
     position: absolute;
-    top: calc(100% + 12px);
+    top: calc(100% + 8px);
     right: 0;
-    background-color: #FFFFFF;
-    border: none;
-    border-radius: 16px;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     min-width: 220px;
-    padding: 12px;
+    padding: 8px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+    transform: translateY(-8px);
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
     z-index: 100;
-    box-shadow: var(--shadow-medium);
+    box-shadow: var(--shadow-md);
 }
 
 .navMenu__dropdown.--active {
@@ -443,7 +449,7 @@ body {
 }
 
 .navMenu__item:hover {
-    background-color: rgba(196, 164, 132, 0.1);
+    background-color: rgba(26, 115, 232, 0.06);
 }
 
 .navMenu__icon {
@@ -482,10 +488,10 @@ body {
 }
 
 .sidebar__section {
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 20px;
-    padding: 28px;
-    box-shadow: var(--shadow-soft);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
 }
 
 .sidebar__section.--hidden {
@@ -565,7 +571,7 @@ body {
 
 .dailyChecklist__link:hover {
     opacity: 1;
-    background: rgba(196, 164, 132, 0.1);
+    background: rgba(26, 115, 232, 0.08);
 }
 
 /* ==========================================
@@ -614,23 +620,22 @@ body {
     min-height: 150px;
     min-width: 500px;
     width: 100%;
-    padding: 18px;
-    border: none;
-    border-radius: 14px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
     line-height: 1.7;
     resize: vertical;
-    transition: box-shadow 0.3s, background-color 0.3s;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .notes__textarea:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .notes__textarea::placeholder {
@@ -754,14 +759,14 @@ body {
 }
 
 .btn {
-    padding: 12px 24px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     font-size: 14px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    transition: background-color 0.15s, transform 0.15s;
 }
 
 .btn:hover {
@@ -769,30 +774,30 @@ body {
 }
 
 .btn.--cancel {
-    background-color: var(--bg-color);
-    color: var(--text-secondary);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
 }
 
 .btn.--cancel:hover {
-    background-color: #E8E4DE;
+    background-color: var(--color-border);
 }
 
 .btn.--save {
-    background-color: var(--accent-color);
-    color: white;
+    background-color: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 .btn.--save:hover {
-    background-color: var(--accent-hover);
+    background-color: var(--color-accent-primary-hover);
 }
 
 .btn.--delete {
-    background-color: var(--danger-color);
-    color: white;
+    background-color: var(--color-accent-error);
+    color: #ffffff;
 }
 
 .btn.--delete:hover {
-    background-color: #B85A50;
+    background-color: #dc2626;
 }
 
 .taskForm {
@@ -816,21 +821,21 @@ body {
 .taskForm__group input[type="text"],
 .taskForm__group textarea {
     width: 100%;
-    padding: 14px 18px;
-    border: none;
-    border-radius: 12px;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
     font-size: 15px;
     font-family: inherit;
-    transition: box-shadow 0.3s, background-color 0.3s;
+    transition: box-shadow 0.15s, border-color 0.15s;
 }
 
 .taskForm__group input[type="text"]:focus,
 .taskForm__group textarea:focus {
     outline: none;
-    background-color: #EDE9E3;
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.2);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .taskForm__group input::placeholder,
@@ -848,7 +853,7 @@ body {
 .taskForm__checkboxGroup input[type="checkbox"] {
     width: 20px;
     height: 20px;
-    accent-color: var(--accent-color);
+    accent-color: var(--color-accent-primary);
     cursor: pointer;
 }
 
@@ -878,31 +883,30 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 8px 14px;
+    padding: 6px 12px;
     font-size: 13px;
     font-weight: 500;
     font-family: inherit;
-    color: var(--text-secondary);
-    background: var(--bg-color);
-    border-radius: 10px;
-    transition: all 0.25s ease;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
     text-transform: none;
     letter-spacing: 0;
     cursor: pointer;
 }
 
 .taskForm__categoryPill input[type="radio"]:checked+span {
-    background: var(--accent-color);
-    color: var(--text-light);
-    box-shadow: 0 2px 8px rgba(196, 164, 132, 0.3);
+    background: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 .taskForm__categoryPill span:hover {
-    background: #EDE9E3;
+    background: var(--color-border);
 }
 
 .taskForm__categoryPill input[type="radio"]:checked+span:hover {
-    background: var(--accent-hover);
+    background: var(--color-accent-primary-hover);
 }
 
 .taskForm__log {
@@ -1051,13 +1055,13 @@ body {
 }
 
 .reportDetail__section h4 {
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--accent-color);
+    letter-spacing: 1.5px;
+    color: var(--color-accent-primary);
     margin-bottom: 16px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid var(--color-border);
     font-weight: 600;
 }
 
@@ -1261,20 +1265,20 @@ body {
 
 .checklistEditor__row input[type="text"] {
     flex: 1;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .checklistEditor__row input[type="text"]:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .checklistEditor__row input[type="text"]::placeholder {
@@ -1308,24 +1312,24 @@ body {
 }
 
 .checklistEditor__addBtn {
-    padding: 14px 18px;
-    border: 2px dashed rgba(0, 0, 0, 0.1);
-    border-radius: 12px;
+    padding: 12px 18px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
     background: transparent;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 14px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.15s;
     width: 100%;
     margin-bottom: 24px;
 }
 
 .checklistEditor__addBtn:hover {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-    background: rgba(196, 164, 132, 0.05);
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+    background: rgba(26, 115, 232, 0.04);
 }
 
 .checklistEditor .modal__actions {
@@ -1370,33 +1374,33 @@ body {
 
 .taskForm__datetimeInput {
     flex: 1;
-    padding: 10px 14px;
-    border: none;
-    border-radius: 12px;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
-    transition: box-shadow 0.3s, background-color 0.3s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .taskForm__datetimeInput:focus {
     outline: none;
-    background-color: #EDE9E3;
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.2);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .taskForm__clearBtn {
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     border: none;
-    background: var(--bg-color);
-    color: var(--text-muted);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
     font-size: 12px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.15s, color 0.15s;
     white-space: nowrap;
 }
 
@@ -1413,21 +1417,21 @@ body {
 }
 
 .taskForm__quickBtn {
-    padding: 5px 10px;
-    border-radius: 8px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
     border: none;
-    background: var(--bg-color);
-    color: var(--text-secondary);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
     font-size: 12px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.15s, color 0.15s;
 }
 
 .taskForm__quickBtn:hover {
-    background: var(--accent-color);
-    color: var(--text-light);
+    background: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 .taskForm__timeHint {
@@ -1467,20 +1471,20 @@ body {
 
 .epicsEditor__nameInput {
     flex: 1;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .epicsEditor__nameInput:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .epicsEditor__nameInput::placeholder {
@@ -1535,10 +1539,10 @@ body {
 
 .epicsEditor__itemName {
     padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
     font-weight: 500;
@@ -1546,8 +1550,8 @@ body {
 
 .epicsEditor__itemName:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .epicsEditor__itemAlias {
@@ -1607,20 +1611,20 @@ body {
 
 .categoriesEditor__nameInput {
     flex: 1;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .categoriesEditor__nameInput:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .categoriesEditor__nameInput::placeholder {
@@ -1661,10 +1665,10 @@ body {
 
 .categoriesEditor__itemName {
     padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
     font-weight: 500;
@@ -1672,8 +1676,8 @@ body {
 
 .categoriesEditor__itemName:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .categoriesEditor__deleteBtn {
@@ -1733,20 +1737,20 @@ body {
 
 .profilesEditor__nameInput {
     flex: 1;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .profilesEditor__nameInput:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .profilesEditor__nameInput::placeholder {
@@ -1755,11 +1759,11 @@ body {
 
 .profilesEditor__lettersInput {
     width: 60px;
-    padding: 12px 8px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 10px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
     text-align: center;
@@ -1770,8 +1774,8 @@ body {
 
 .profilesEditor__lettersInput:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .profilesEditor__lettersInput::placeholder {
@@ -1833,10 +1837,10 @@ body {
 
 .profilesEditor__itemName {
     padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
     font-weight: 500;
@@ -1844,8 +1848,8 @@ body {
 
 .profilesEditor__itemName:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .profilesEditor__itemAlias {
@@ -1858,10 +1862,10 @@ body {
 .profilesEditor__itemLetters {
     width: 50px;
     padding: 8px 6px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 12px;
     font-family: inherit;
     text-align: center;
@@ -1872,8 +1876,8 @@ body {
 
 .profilesEditor__itemLetters:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .profilesEditor__defaultBtn {
@@ -1950,20 +1954,20 @@ body {
 
 .boardConfigEditor__nameInput {
     flex: 1;
-    padding: 12px 14px;
-    border: none;
-    border-radius: 10px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .boardConfigEditor__nameInput:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .boardConfigEditor__nameInput::placeholder {
@@ -2001,8 +2005,8 @@ body {
 }
 
 .boardConfigEditor__item.--dragOver {
-    background-color: rgba(196, 164, 132, 0.15);
-    outline: 2px dashed var(--accent-color);
+    background-color: rgba(26, 115, 232, 0.06);
+    outline: 2px dashed var(--color-accent-primary);
     outline-offset: -2px;
 }
 
@@ -2036,10 +2040,10 @@ body {
 .boardConfigEditor__itemName {
     flex: 1;
     padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     font-family: inherit;
     font-weight: 500;
@@ -2048,8 +2052,8 @@ body {
 
 .boardConfigEditor__itemName:focus {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.15);
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
 }
 
 .boardConfigEditor__archiveToggle {
@@ -2137,7 +2141,7 @@ body {
 .generalConfig__section {
     margin-bottom: 24px;
     padding-bottom: 24px;
-    border-bottom: 1px solid var(--bg-color);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .generalConfig__section:last-of-type {
@@ -2179,10 +2183,10 @@ body {
 .generalConfig__thresholds input[type="number"] {
     width: 70px;
     padding: 8px 10px;
-    border-radius: 8px;
-    border: none;
-    background: var(--bg-color);
-    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
     font-size: 14px;
     text-align: center;
     font-family: inherit;
@@ -2192,7 +2196,7 @@ body {
    Crisis Mode
    ========================================== */
 body.--crisisMode {
-    border: 5px solid #C0392B;
+    border: 5px solid var(--color-accent-error);
 }
 
 body.--crisisMode .toolbar {

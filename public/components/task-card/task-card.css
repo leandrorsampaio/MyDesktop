@@ -1,19 +1,20 @@
 :host {
-    border-radius: 14px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
     cursor: grab;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
     position: relative;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.4s ease-out;
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
+    animation: fadeIn 0.3s ease-out;
+    box-shadow: var(--shadow-sm);
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(-8px);
+        transform: translateY(-6px);
     }
     to {
         opacity: 1;
@@ -22,8 +23,8 @@
 }
 
 :host(:hover) {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 :host([hidden]) {
@@ -40,22 +41,14 @@
     cursor: grabbing;
 }
 
-:host(.--lightText) {
-    color: var(--text-light);
-}
-
-:host(.--darkText) {
-    color: var(--text-dark);
-}
-
 .taskCard__epicBar {
-    padding: 3px 16px;
-    font-size: 10px;
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: #FFFFFF;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
+    margin: 10px 14px 0 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -63,8 +56,8 @@
 
 .taskCard__body {
     display: flex;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px 14px 14px 14px;
 }
 
 .taskCard__handle {
@@ -73,13 +66,14 @@
     justify-content: center;
     gap: 2px;
     cursor: grab;
-    opacity: 0.4;
-    transition: opacity 0.3s;
+    opacity: 0.3;
+    transition: opacity 0.15s;
     flex-shrink: 0;
+    color: var(--color-text-tertiary);
 }
 
 :host(:hover) .taskCard__handle {
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .taskCard__handleDots {
@@ -104,33 +98,34 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .taskCard__star {
-    color: #E8B923;
-    font-size: 14px;
+    color: #f59e0b;
+    font-size: 13px;
     flex-shrink: 0;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .taskCard__title {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.4;
     word-wrap: break-word;
-    letter-spacing: -0.2px;
+    letter-spacing: -0.1px;
+    color: var(--color-text-primary);
 }
 
 .taskCard__desc {
     font-size: 12px;
-    opacity: 0.75;
+    color: var(--color-text-secondary);
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-weight: 400;
+    margin-top: 4px;
 }
 
 .taskCard__badge {
@@ -142,26 +137,26 @@
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.3px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.22);
-    opacity: 0.85;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
 }
 
 .taskCard__editBtn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(255, 255, 255, 0.25);
-    border: none;
-    border-radius: 6px;
-    color: inherit;
-    padding: 5px 10px;
+    top: 10px;
+    right: 10px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    padding: 4px 10px;
     font-size: 11px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.3s, background-color 0.3s;
+    transition: opacity 0.15s;
 }
 
 :host(:hover) .taskCard__editBtn {
@@ -169,7 +164,8 @@
 }
 
 .taskCard__editBtn:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-text-tertiary);
 }
 
 /* Deadline urgency chip */
@@ -178,24 +174,24 @@
     align-items: center;
     font-size: 11px;
     font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 6px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
     margin-top: 6px;
     line-height: 1.4;
 }
 
 .taskCard__deadline.--overdue,
 .taskCard__deadline.--urgent {
-    background: rgba(231, 76, 60, 0.15);
-    color: #C0392B;
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
 }
 
 .taskCard__deadline.--warning {
-    background: rgba(241, 196, 15, 0.2);
-    color: #9A7100;
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
 }
 
 .taskCard__deadline.--upcoming {
-    background: rgba(100, 100, 100, 0.12);
-    color: var(--text-muted, #8A8A8A);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
 }
