@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.29.0
-**Last Updated:** 2026-03-01
+**Version:** 2.30.0
+**Last Updated:** 2026-03-04
 
 ---
 
@@ -57,7 +57,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── epics.json
 │       └── categories.json
 ├── tests/
-│   ├── unit/                      # utils.test.js, validation.test.js
+│   ├── unit/                      # utils.test.js, validation.test.js, router.test.js
 │   └── api/                       # tasks, notes, reports, rate-limit
 └── public/
     ├── index.html
@@ -69,6 +69,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── state.js               # Centralized state + optimistic UI helpers
     │   ├── api.js                 # Pure HTTP functions, no side effects
     │   ├── filters.js             # Category, priority, epic filter logic
+    │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
     │   ├── crisis-mode.js
     │   ├── modals.js              # All modal logic
     │   └── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
@@ -79,6 +80,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         ├── daily-checklist/
         ├── notes-widget/
         ├── kanban-column/
+        ├── nav-sidebar/           # Navigation sidebar (slide-over overlay)
         ├── custom-picker/         # Inline component (no .html/.css)
         ├── svg-icon/              # Inline component (no .html/.css)
         └── toast-notification/
@@ -145,8 +147,9 @@ DELETE /api/:profile/columns/:id         - Delete column; tasks moved to first c
 
 ### SPA Routing
 ```
-GET    /           - Redirect to default profile alias
-GET    /:alias     - Serve index.html if profile exists, else redirect
+GET    /              - Redirect to default profile alias
+GET    /:alias        - Serve index.html if profile exists, else redirect
+GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, archive, reports, ai)
 ```
 
 ---
@@ -322,6 +325,13 @@ These are behaviors not evident from reading the code. Know these before making 
 
 **Snoze visibility is CSS-driven (not JS):** snoozed `task-card` elements receive the class `--snoozed` from `createTaskCard()`. The `task-card.css` `:host(.--snoozed)` rule reads CSS custom properties `--snoozed-card-display` and `--snoozed-card-opacity` that are defined on `:root` and overridden by `.kanban.--showSnoozed` (toggle active) and `body.--snoozeTransparent` (transparent mode). These custom properties inherit through Shadow DOM boundaries, so no JS traversal is needed. `task-card.css` also has `:host([hidden]) { display: none !important }` to keep filter-hidden cards hidden regardless of snooze state.
 
+### Navigation & Routing
+- **`<nav-sidebar>`** is a slide-over overlay (left side). Trigger button is in the top-left of the header. Closes on backdrop click, ESC, or when a config action is selected.
+- **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`. Anything else defaults to `board`.
+- **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
+- **Non-board pages** show a placeholder "coming soon" view and skip kanban initialization. The `appContainer` is hidden; the `pageView` div is shown.
+- **Hamburger menu removed** — all config actions moved to the sidebar's Config submenu. Crisis mode moved from the menu to the toolbar. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
+
 ### Crisis Mode & Privacy Toggle
 - Both are purely client-side CSS toggles — no server calls, no persistence.
 - Crisis Mode reuses `applyAllFilters()` to activate the priority filter; it does not duplicate filter logic.
@@ -339,6 +349,16 @@ These are behaviors not evident from reading the code. Know these before making 
 ---
 
 ## Component APIs
+
+### `<nav-sidebar>`
+```html
+<nav-sidebar class="js-navSidebar"></nav-sidebar>
+```
+- **Attributes:** `alias` (profile alias, sets href on nav links), `page` (active page name, sets `--active` class)
+- **Boolean attribute:** `open` — managed by `open()` / `close()`. Do not toggle manually.
+- **JS API:** `open()`, `close()`, `toggle()`
+- **Dispatches:** `config-action` (CustomEvent, bubbles+composed) with `detail.action` — one of: `board-config`, `manage-epics`, `manage-categories`, `manage-profiles`, `edit-checklist`, `general-config`, `generate-report`. The component calls `close()` before dispatching.
+- **Behavior:** backdrop click and ESC close the sidebar; the component manages its own ESC listener (attached on `open()`, removed on `close()`). Config submenu opens above the Config button and closes on any action or sidebar close.
 
 ### `<svg-icon>`
 ```html
@@ -390,20 +410,20 @@ elements.toaster.info('msg')     // beige
 | JS hook                          | Purpose                          | Size    | Trigger                                    |
 |----------------------------------|----------------------------------|---------|--------------------------------------------|
 | `.js-taskModal`                  | Add / Edit / Clone task          | default | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add |
-| `.js-reportsModal`               | View reports                     | large   | Hamburger → View Reports                   |
-| `.js-archivedModal`              | View archived tasks              | large   | Hamburger → All Completed Tasks            |
-| `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                |
-| `.js-categoriesModal`            | Manage categories CRUD           | large   | Hamburger → Manage Categories              |
-| `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in categories modal                 |
-| `.js-epicsModal`                 | Manage epics CRUD                | large   | Hamburger → Manage Epics                   |
-| `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in epics modal                      |
-| `.js-profilesModal`              | Manage profiles CRUD             | large   | Hamburger → Manage Profiles                |
-| `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in profiles modal                   |
-| `.js-checklistModal`             | Edit daily checklist             | large   | Hamburger → Edit Daily Checklist           |
-| `.js-generateReportConfirmModal` | Generate report confirmation     | small   | Hamburger → Generate Report                |
-| `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Hamburger → Board Configuration            |
-| `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal               |
-| `.js-generalConfigModal`         | Sidebar visibility, snooze mode, deadline thresholds | default | Hamburger → General Configuration         |
+| `.js-reportsModal`               | View reports                     | large   | Reports page (modal; will be replaced by full page)    |
+| `.js-archivedModal`              | View archived tasks              | large   | Archive page (modal; will be replaced by full page)    |
+| `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                            |
+| `.js-categoriesModal`            | Manage categories CRUD           | large   | Sidebar Config → Manage Categories                     |
+| `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in categories modal                             |
+| `.js-epicsModal`                 | Manage epics CRUD                | large   | Sidebar Config → Manage Epics                          |
+| `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in epics modal                                  |
+| `.js-profilesModal`              | Manage profiles CRUD             | large   | Sidebar Config → Manage Profiles                       |
+| `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in profiles modal                               |
+| `.js-checklistModal`             | Edit daily checklist             | large   | Sidebar Config → Edit Daily Checklist                  |
+| `.js-generateReportConfirmModal` | Generate report confirmation     | small   | Sidebar Config → Generate Report                       |
+| `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Sidebar Config → Board Configuration                   |
+| `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal                           |
+| `.js-generalConfigModal`         | Sidebar visibility, snooze mode, deadline thresholds | default | Sidebar Config → General Configuration    |
 
 ---
 
@@ -617,6 +637,7 @@ New code must go into the correct existing module. Only create a new module if a
 | `state.js`       | Centralized state + optimistic UI helpers              |
 | `api.js`         | Pure HTTP functions — return data, no side effects     |
 | `utils.js`       | Shared pure utilities                                  |
+| `router.js`      | Client-side path parser: `parsePath()`, `buildPath()`  |
 | `filters.js`     | Category, priority, epic filter logic                  |
 | `modals.js`      | All modal dialog logic                                 |
 | `crisis-mode.js` | Crisis mode (favicon, CSS class, filter activation)    |

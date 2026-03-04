@@ -1683,6 +1683,31 @@ app.get('/', async (req, res) => {
     }
 });
 
+// Sub-page URLs: /:alias/dashboard, /:alias/backlog, /:alias/archive, /:alias/reports, /:alias/ai
+// Serves the same app shell as /:alias — client-side JS reads pathname to render the correct view.
+app.get('/:alias/:page', async (req, res) => {
+    const { alias } = req.params;
+
+    if (alias.includes('.')) {
+        return res.status(404).send('Not found');
+    }
+
+    try {
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const profile = profiles.find(p => p.alias === alias);
+
+        if (profile) {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        } else if (profiles.length > 0) {
+            res.redirect('/' + profiles[0].alias);
+        } else {
+            res.redirect('/');
+        }
+    } catch (error) {
+        res.status(500).send('Server error');
+    }
+});
+
 // Profile URL: serve index.html if profile exists, else redirect to first profile
 app.get('/:alias', async (req, res) => {
     const alias = req.params.alias;

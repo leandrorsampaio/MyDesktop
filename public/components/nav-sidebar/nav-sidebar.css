@@ -1,0 +1,148 @@
+/* nav-sidebar component styles — Functional Calm design */
+
+:host {
+    display: contents;
+}
+
+/* Backdrop — full-screen overlay behind the panel */
+.navSidebar__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.18);
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+:host([open]) .navSidebar__backdrop {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Sliding panel */
+.navSidebar__panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 220px;
+    background: var(--color-bg-primary, #ffffff);
+    border-right: 1px solid var(--color-border, #e5e7eb);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.22s ease, visibility 0.22s ease;
+}
+
+:host([open]) .navSidebar__panel {
+    transform: translateX(0);
+    visibility: visible;
+}
+
+/* Navigation links */
+.navSidebar__nav {
+    flex: 1;
+    padding: 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+}
+
+.navSidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 6px);
+    color: var(--color-text-secondary, #4b5563);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+}
+
+.navSidebar__item:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+.navSidebar__item.--active {
+    background: rgba(26, 115, 232, 0.08);
+    color: var(--color-accent-primary, #1a73e8);
+    font-weight: 600;
+}
+
+/* Footer — config button + submenu */
+.navSidebar__footer {
+    padding: 8px;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+    position: relative;
+}
+
+.navSidebar__configBtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: var(--radius-md, 6px);
+    background: transparent;
+    color: var(--color-text-secondary, #4b5563);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    text-align: left;
+}
+
+.navSidebar__configBtn:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+/* Config submenu — pops up above the config button */
+.navSidebar__configMenu {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 8px;
+    right: 8px;
+    background: var(--color-bg-primary, #ffffff);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);
+    padding: 6px;
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    z-index: 202;
+}
+
+.navSidebar__configMenu.--open {
+    display: block;
+}
+
+.navSidebar__configItem {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-primary, #111827);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+}
+
+.navSidebar__configItem:hover {
+    background: rgba(26, 115, 232, 0.06);
+}

@@ -10,6 +10,7 @@
  */
 
 import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, SNOOZE_CHECK_INTERVAL_MS } from './js/constants.js';
+import { parsePath } from './js/router.js';
 import { getWeekNumber, escapeHtml, formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue } from './js/utils.js';
 import {
     tasks,
@@ -76,8 +77,13 @@ import {
         currentDate: document.querySelector('.js-currentDate'),
         currentWeekday: document.querySelector('.js-currentWeekday'),
         currentWeek: document.querySelector('.js-currentWeek'),
-        menuBtn: document.querySelector('.js-menuBtn'),
-        dropdownMenu: document.querySelector('.js-dropdownMenu'),
+
+        // Navigation Sidebar
+        sidebarBtn: document.querySelector('.js-sidebarBtn'),
+        navSidebar: document.querySelector('.js-navSidebar'),
+
+        // Page view (placeholder for non-board pages)
+        pageView: document.querySelector('.js-pageView'),
 
         // Task Modal
         taskModal: document.querySelector('.js-taskModal'),
@@ -90,15 +96,13 @@ import {
         taskLogList: document.querySelector('.js-taskLogList'),
         taskModalActions: document.querySelector('.js-taskModalActions'),
 
-        // Reports Modal
+        // Reports Modal (opened via sidebar config-action in future pages)
         reportsModal: document.querySelector('.js-reportsModal'),
         reportsContainer: document.querySelector('.js-reportsContainer'),
-        viewReportsBtn: document.querySelector('.js-viewReportsBtn'),
 
-        // Archived Tasks Modal
+        // Archived Tasks Modal (opened via sidebar config-action in future pages)
         archivedModal: document.querySelector('.js-archivedModal'),
         archivedContainer: document.querySelector('.js-archivedContainer'),
-        viewArchivedBtn: document.querySelector('.js-viewArchivedBtn'),
 
         // Confirm Modal
         confirmModal: document.querySelector('.js-confirmModal'),
@@ -126,8 +130,7 @@ import {
         epicConfirmCancel: document.querySelector('.js-epicConfirmCancel'),
         epicConfirmDelete: document.querySelector('.js-epicConfirmDelete'),
 
-        // Category Management
-        manageCategoriesBtn: document.querySelector('.js-manageCategoriesBtn'),
+        // Category Management (triggered via sidebar config menu)
         categoriesModal: document.querySelector('.js-categoriesModal'),
         categoryNameInput: document.querySelector('.js-categoryNameInput'),
         categoryIconSelect: document.querySelector('.js-categoryIconSelect'),
@@ -141,8 +144,7 @@ import {
         categoryConfirmCancel: document.querySelector('.js-categoryConfirmCancel'),
         categoryConfirmDelete: document.querySelector('.js-categoryConfirmDelete'),
 
-        // Epic Management
-        manageEpicsBtn: document.querySelector('.js-manageEpicsBtn'),
+        // Epic Management (triggered via sidebar config menu)
         epicsModal: document.querySelector('.js-epicsModal'),
         epicNameInput: document.querySelector('.js-epicNameInput'),
         epicColorSelect: document.querySelector('.js-epicColorSelect'),
@@ -157,8 +159,7 @@ import {
         profileName: document.querySelector('.js-profileName'),
         profileDropdown: document.querySelector('.js-profileDropdown'),
 
-        // Profile Management
-        manageProfilesBtn: document.querySelector('.js-manageProfilesBtn'),
+        // Profile Management (triggered via sidebar config menu)
         profilesModal: document.querySelector('.js-profilesModal'),
         profileNameInput: document.querySelector('.js-profileNameInput'),
         profileLettersInput: document.querySelector('.js-profileLettersInput'),
@@ -174,18 +175,15 @@ import {
         profileConfirmCancel: document.querySelector('.js-profileConfirmCancel'),
         profileConfirmDelete: document.querySelector('.js-profileConfirmDelete'),
 
-        // Crisis Mode
+        // Crisis Mode (now in toolbar)
         crisisModeBtn: document.querySelector('.js-crisisModeBtn'),
-        headerToolbar: document.querySelector('.toolbar'),
 
-        // Generate Report (modal-based, in hamburger menu)
-        generateReportBtn: document.querySelector('.js-generateReportBtn'),
+        // Generate Report (triggered via sidebar config menu)
         generateReportConfirmModal: document.querySelector('.js-generateReportConfirmModal'),
         generateReportCancel: document.querySelector('.js-generateReportCancel'),
         generateReportConfirm: document.querySelector('.js-generateReportConfirm'),
 
-        // General Configuration
-        generalConfigBtn: document.querySelector('.js-generalConfigBtn'),
+        // General Configuration (triggered via sidebar config menu)
         generalConfigModal: document.querySelector('.js-generalConfigModal'),
         showDailyChecklistToggle: document.querySelector('.js-showDailyChecklist'),
         showNotesToggle: document.querySelector('.js-showNotes'),
@@ -194,8 +192,7 @@ import {
         dailyChecklist: document.querySelector('daily-checklist'),
         notesWidget: document.querySelector('notes-widget'),
 
-        // Board Configuration
-        boardConfigBtn: document.querySelector('.js-boardConfigBtn'),
+        // Board Configuration (triggered via sidebar config menu)
         boardConfigModal: document.querySelector('.js-boardConfigModal'),
         columnsList: document.querySelector('.js-columnsList'),
         columnNameInput: document.querySelector('.js-columnNameInput'),
@@ -211,8 +208,7 @@ import {
         // Kanban container
         kanban: document.querySelector('.kanban'),
 
-        // Checklist Modal
-        editChecklistBtn: document.querySelector('.js-editChecklistBtn'),
+        // Checklist Modal (triggered via sidebar config menu)
         checklistModal: document.querySelector('.js-checklistModal'),
         checklistItemsContainer: document.querySelector('.js-checklistItemsContainer'),
         addChecklistItemBtn: document.querySelector('.js-addChecklistItemBtn'),
@@ -260,23 +256,95 @@ import {
     }
 
     // ==========================================
-    // Hamburger Menu
+    // Menu / Sidebar Utilities
     // ==========================================
 
     /**
-     * Toggles the hamburger menu open/closed.
+     * No-op kept so all existing callers (modals, crisis-mode) require no changes.
+     * The sidebar closes itself before dispatching config-action events.
      */
-    function toggleMenu() {
-        elements.menuBtn.classList.toggle('--active');
-        elements.dropdownMenu.classList.toggle('--active');
+    const closeMenu = () => {};
+
+    /**
+     * Renders a "coming soon" placeholder into the pageView container.
+     * @param {string} page - One of the SUB_PAGES values
+     */
+    function renderPlaceholderPage(page) {
+        const titles = {
+            dashboard: 'Dashboard',
+            backlog: 'Backlog',
+            archive: 'Archive',
+            reports: 'Reports',
+            ai: 'AI Assistant',
+        };
+        const descriptions = {
+            dashboard: 'Epic progress overview and overall task health.',
+            backlog: 'Future tasks not yet active on the board.',
+            archive: 'All completed and archived tasks.',
+            reports: 'Weekly snapshots and full work history.',
+            ai: 'Convert meeting notes and raw text into structured tasks.',
+        };
+        elements.pageView.innerHTML = `
+            <div class="placeholderPage">
+                <p class="placeholderPage__badge">Coming soon</p>
+                <h2 class="placeholderPage__title">${titles[page] || page}</h2>
+                <p class="placeholderPage__description">${descriptions[page] || ''}</p>
+            </div>
+        `;
     }
 
     /**
-     * Closes the hamburger menu.
+     * Handles a config-action event dispatched by the nav sidebar.
+     * Each action maps to an existing modal or operation.
+     * @param {string} action
      */
-    function closeMenu() {
-        elements.menuBtn.classList.remove('--active');
-        elements.dropdownMenu.classList.remove('--active');
+    function handleConfigAction(action) {
+        switch (action) {
+            case 'board-config':
+                openBoardConfigModal(elements, closeMenu, async () => {
+                    initKanban(columns);
+                    await fetchTasks();
+                });
+                break;
+            case 'manage-epics':
+                openEpicsModal(elements, closeMenu, () => {
+                    renderAllColumns();
+                });
+                break;
+            case 'manage-categories':
+                openCategoriesModal(elements, closeMenu, () => {
+                    renderCategoryFilters(elements.categoryFilters, (categoryId) => {
+                        toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
+                    });
+                    renderAllColumns();
+                });
+                break;
+            case 'manage-profiles':
+                openProfilesModal(elements, closeMenu, async () => {
+                    const fetchedProfiles = await fetchProfilesApi();
+                    setProfiles(fetchedProfiles);
+                    const current = fetchedProfiles.find(p => p.id === activeProfile?.id);
+                    if (current) {
+                        setActiveProfile(current);
+                        setApiBase(current.alias);
+                        renderProfileSelector();
+                        if (current.alias !== getProfileAliasFromUrl()) {
+                            window.location.href = '/' + current.alias;
+                            return;
+                        }
+                    }
+                });
+                break;
+            case 'edit-checklist':
+                openChecklistModal(elements, closeMenu);
+                break;
+            case 'general-config':
+                openGeneralConfigModal();
+                break;
+            case 'generate-report':
+                handleGenerateReport();
+                break;
+        }
     }
 
     // ==========================================
@@ -789,27 +857,6 @@ import {
             toggleProfileDropdown();
         });
 
-        // Manage Profiles
-        elements.manageProfilesBtn.addEventListener('click', () => {
-            openProfilesModal(elements, closeMenu, async () => {
-                // Re-fetch profiles after changes
-                const fetchedProfiles = await fetchProfilesApi();
-                setProfiles(fetchedProfiles);
-                // Update active profile in case it was renamed
-                const current = fetchedProfiles.find(p => p.id === activeProfile?.id);
-                if (current) {
-                    setActiveProfile(current);
-                    setApiBase(current.alias);
-                    renderProfileSelector();
-                    // If alias changed, navigate to new URL
-                    if (current.alias !== getProfileAliasFromUrl()) {
-                        window.location.href = '/' + current.alias;
-                        return;
-                    }
-                }
-            });
-        });
-
         // Profile Confirm Delete Modal
         elements.profileConfirmCancel.addEventListener('click', () => {
             elements.profileConfirmModal.close();
@@ -818,14 +865,17 @@ import {
             confirmDeleteProfile(elements);
         });
 
-        // Hamburger Menu
-        elements.menuBtn.addEventListener('click', toggleMenu);
+        // Navigation Sidebar
+        elements.sidebarBtn.addEventListener('click', () => {
+            elements.navSidebar.toggle();
+        });
 
-        // Close menu and profile dropdown when clicking outside
+        elements.navSidebar.addEventListener('config-action', (e) => {
+            handleConfigAction(e.detail.action);
+        });
+
+        // Close profile dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!elements.menuBtn.contains(e.target) && !elements.dropdownMenu.contains(e.target)) {
-                closeMenu();
-            }
             if (!elements.profileSelector.contains(e.target)) {
                 closeProfileDropdown();
             }
@@ -841,29 +891,12 @@ import {
             handleEpicFilterChange(elements.epicFilter, applyAllFilters);
         });
 
-        // Manage Categories
-        elements.manageCategoriesBtn.addEventListener('click', () => {
-            openCategoriesModal(elements, closeMenu, () => {
-                renderCategoryFilters(elements.categoryFilters, (categoryId) => {
-                    toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
-                });
-                renderAllColumns();
-            });
-        });
-
         // Category Confirm Delete Modal
         elements.categoryConfirmCancel.addEventListener('click', () => {
             elements.categoryConfirmModal.close();
         });
         elements.categoryConfirmDelete.addEventListener('click', () => {
             confirmDeleteCategory(elements);
-        });
-
-        // Manage Epics
-        elements.manageEpicsBtn.addEventListener('click', () => {
-            openEpicsModal(elements, closeMenu, () => {
-                renderAllColumns();
-            });
         });
 
         // Crisis Mode
@@ -894,15 +927,13 @@ import {
             }
         });
 
-        // Generate Report (hamburger menu item + confirm modal)
-        elements.generateReportBtn.addEventListener('click', handleGenerateReport);
+        // Generate Report (triggered via sidebar config menu; confirm modal wired here)
         elements.generateReportCancel.addEventListener('click', () => {
             elements.generateReportConfirmModal.close();
         });
         elements.generateReportConfirm.addEventListener('click', executeGenerateReport);
 
-        // General Configuration
-        elements.generalConfigBtn.addEventListener('click', openGeneralConfigModal);
+        // General Configuration (triggered via sidebar config menu)
         elements.generalConfigCancel.addEventListener('click', () => {
             elements.generalConfigModal.close();
         });
@@ -936,14 +967,6 @@ import {
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
 
-        // Board Configuration
-        elements.boardConfigBtn.addEventListener('click', () => {
-            openBoardConfigModal(elements, closeMenu, async () => {
-                initKanban(columns);
-                await fetchTasks();
-            });
-        });
-
         // Column Delete Confirmation
         elements.columnConfirmCancel.addEventListener('click', () => {
             elements.columnConfirmModal.close();
@@ -952,20 +975,7 @@ import {
             confirmDeleteColumn(elements);
         });
 
-        // Reports
-        elements.viewReportsBtn.addEventListener('click', () => {
-            openReportsModal(elements, closeMenu);
-        });
-
-        // Archived Tasks
-        elements.viewArchivedBtn.addEventListener('click', () => {
-            openArchivedModal(elements, closeMenu);
-        });
-
-        // Checklist Modal
-        elements.editChecklistBtn.addEventListener('click', () => {
-            openChecklistModal(elements, closeMenu);
-        });
+        // Checklist Modal (triggered via sidebar config menu)
         elements.addChecklistItemBtn.addEventListener('click', () => {
             addChecklistItem(elements);
         });
@@ -1009,10 +1019,9 @@ import {
             moveTask(taskId, newStatus, newPosition);
         });
 
-        // Close menu and profile dropdown on ESC key
+        // Close profile dropdown on ESC key (sidebar handles its own ESC)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                closeMenu();
                 closeProfileDropdown();
             }
         });
@@ -1056,6 +1065,19 @@ import {
             document.body.classList.add('profile-' + matchedProfile.alias);
             renderProfileSelector();
             loadGeneralConfig();
+
+            // Sidebar: set alias + active page for link hrefs and active state
+            const { page } = parsePath();
+            elements.navSidebar.setAttribute('alias', matchedProfile.alias);
+            elements.navSidebar.setAttribute('page', page);
+
+            // Routing: show board or placeholder page
+            if (page !== 'board') {
+                elements.appContainer.style.display = 'none';
+                elements.pageView.style.display = '';
+                renderPlaceholderPage(page);
+                return; // Skip board-only initialization
+            }
         } catch (error) {
             console.error('Error fetching profiles:', error);
         }

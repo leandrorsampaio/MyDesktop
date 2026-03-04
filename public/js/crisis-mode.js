@@ -76,8 +76,8 @@ export function toggleCrisisMode(elements, closeMenu) {
         document.title = '!!!';
         setFavicon(generateRedStarFavicon());
 
-        // Update menu button text
-        elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Exit Crisis Mode';
+        // Update toolbar button text
+        elements.crisisModeBtn.textContent = '🚨 Exit Crisis';
     } else {
         // Deactivate priority filter
         setPriorityFilter(false, elements.priorityFilterBtn);
@@ -88,7 +88,7 @@ export function toggleCrisisMode(elements, closeMenu) {
         document.title = originalTitle;
         setFavicon('favicon.png');
 
-        // Restore menu button text
-        elements.crisisModeBtn.innerHTML = '<span class="navMenu__icon">🚨</span> Crisis Mode';
+        // Restore toolbar button text
+        elements.crisisModeBtn.textContent = '🚨 Crisis';
     }
 }
