@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.30.0
+**Version:** 2.32.0
 **Last Updated:** 2026-03-04
 
 ---
@@ -57,7 +57,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── epics.json
 │       └── categories.json
 ├── tests/
-│   ├── unit/                      # utils.test.js, validation.test.js, router.test.js
+│   ├── unit/                      # utils.test.js, validation.test.js, router.test.js, archive-page.test.js
 │   └── api/                       # tasks, notes, reports, rate-limit
 └── public/
     ├── index.html
@@ -72,7 +72,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
     │   ├── crisis-mode.js
     │   ├── modals.js              # All modal logic
-    │   └── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
+    │   ├── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
+    │   └── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     └── components/
         ├── button/
         ├── task-card/
@@ -83,6 +84,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         ├── nav-sidebar/           # Navigation sidebar (slide-over overlay)
         ├── custom-picker/         # Inline component (no .html/.css)
         ├── svg-icon/              # Inline component (no .html/.css)
+        ├── list-header/           # Inline component — sortable column header for list pages
+        ├── archive-row/           # Expandable archived-task row (.html + .css)
         └── toast-notification/
 ```
 
@@ -124,6 +127,7 @@ POST   /api/:profile/tasks/:id/move      - Move/reorder (body: { newStatus, newP
 POST   /api/:profile/tasks/archive       - Archive all done tasks
 POST   /api/:profile/reports/generate    - Generate report snapshot
 GET    /api/:profile/archived            - Get archived tasks
+POST   /api/:profile/archived/:id/restore - Restore task to first column (adds log entry)
 GET    /api/:profile/reports             - Get all reports
 GET    /api/:profile/reports/:id         - Get report by ID
 PUT    /api/:profile/reports/:id         - Update report title (body: { title })
@@ -329,7 +333,8 @@ These are behaviors not evident from reading the code. Know these before making 
 - **`<nav-sidebar>`** is a slide-over overlay (left side). Trigger button is in the top-left of the header. Closes on backdrop click, ESC, or when a config action is selected.
 - **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`. Anything else defaults to `board`.
 - **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
-- **Non-board pages** show a placeholder "coming soon" view and skip kanban initialization. The `appContainer` is hidden; the `pageView` div is shown.
+- **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive page calls `initArchivePage(elements.pageView)` via dynamic import; all other unbuilt pages still use `renderPlaceholderPage()`.
+- **`pageView.--fullPage`** class modifier removes centering and padding from `.pageView` — applied by page modules that render a full-width layout (archive page sets this on init).
 - **Hamburger menu removed** — all config actions moved to the sidebar's Config submenu. Crisis mode moved from the menu to the toolbar. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
 
 ### Crisis Mode & Privacy Toggle
@@ -393,6 +398,27 @@ These are behaviors not evident from reading the code. Know these before making 
 - Handles close button, backdrop click, and ESC key internally
 - **Never** open/close by toggling classes directly
 
+### `<list-header>`
+```html
+<list-header class="js-listHeader"></list-header>
+```
+- Inline Web Component (no external .html/.css)
+- **JS API:** `setColumns([{ id, label, sortable? }])` — defines columns and renders; `setSort(field, direction)` — sets initial active sort without dispatching an event
+- **Dispatches:** `sort-change` (bubbles+composed) → `{ detail: { field, direction: 'asc'|'desc' } }`
+- Clicking a sortable column cycles `asc → desc → asc`. First click on a new column defaults to `asc`.
+- Column widths controlled via CSS custom properties: `--archive-col-title`, `--archive-col-epic`, `--archive-col-category`, `--archive-col-date`, `--archive-col-actions`
+
+### `<archive-row>`
+```html
+<archive-row></archive-row>
+```
+- Shadow DOM, loads `archive-row.html` + `archive-row.css` via fetch (cached in `static templateCache`)
+- **JS API:** `setTask(task, { epicName, epicColor, categoryName, categoryIcon })` — sets data and renders
+- Expand/collapse: clicking anywhere on the row header toggles the detail panel (description, meta, reversed activity log). Restore button click does NOT toggle expand.
+- **Dispatches:** `restore-task` (bubbles+composed) → `{ detail: { taskId } }`
+- Column widths match `<list-header>` via the same `--archive-col-*` CSS custom properties (inherit through Shadow DOM)
+- Epic pill uses `_hexToRgba(epicColor, 0.12)` background + solid `epicColor` text (same as task-card)
+
 ### `<toast-notification>`
 ```javascript
 elements.toaster.success('msg')  // green
@@ -411,7 +437,7 @@ elements.toaster.info('msg')     // beige
 |----------------------------------|----------------------------------|---------|--------------------------------------------|
 | `.js-taskModal`                  | Add / Edit / Clone task          | default | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add |
 | `.js-reportsModal`               | View reports                     | large   | Reports page (modal; will be replaced by full page)    |
-| `.js-archivedModal`              | View archived tasks              | large   | Archive page (modal; will be replaced by full page)    |
+| `.js-archivedModal`              | View archived tasks (legacy modal) | large | Still in DOM for backward compat; the real Archive page is `/:alias/archive` |
 | `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                            |
 | `.js-categoriesModal`            | Manage categories CRUD           | large   | Sidebar Config → Manage Categories                     |
 | `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in categories modal                             |
