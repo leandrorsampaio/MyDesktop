@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.32.0
+**Version:** 2.32.1
 **Last Updated:** 2026-03-04
 
 ---
@@ -60,7 +60,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │   ├── unit/                      # utils.test.js, validation.test.js, router.test.js, archive-page.test.js
 │   └── api/                       # tasks, notes, reports, rate-limit
 └── public/
-    ├── index.html
+    ├── index.html                 # `<base href="/">` ensures relative assets resolve correctly on sub-pages (/:alias/:page)
     ├── app.js                     # Main entry — wires everything
     ├── styles.css
     ├── js/
