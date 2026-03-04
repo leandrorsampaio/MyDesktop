@@ -979,7 +979,10 @@ import {
                 elements.pageView.style.display = '';
                 if (page === 'archive') {
                     const { initArchivePage } = await import('./js/archive-page.js');
-                    initArchivePage(elements.pageView);
+                    initArchivePage(elements.pageView).catch(err => {
+                        console.error('Archive page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load archive page');
+                    });
                 } else {
                     renderPlaceholderPage(page);
                 }

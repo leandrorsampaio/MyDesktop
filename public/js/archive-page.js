@@ -175,7 +175,13 @@ export async function initArchivePage(pageViewEl) {
     // Restore-task from archive rows (event delegation on container)
     pageViewEl.addEventListener('restore-task', async (e) => {
         const { taskId } = e.detail;
-        const result = await restoreArchivedTaskApi(taskId);
+        let result;
+        try {
+            result = await restoreArchivedTaskApi(taskId);
+        } catch (err) {
+            if (toaster) toaster.error('Failed to restore task');
+            return;
+        }
         if (result.ok) {
             // Remove from local array
             sortedTasks = sortedTasks.filter(t => t.id !== taskId);

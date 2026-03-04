@@ -21,12 +21,12 @@ class ArchiveRow extends HTMLElement {
 
     async connectedCallback() {
         if (!ArchiveRow.templateCache) {
-            ArchiveRow.templateCache = await Promise.all([
+            ArchiveRow.templateCache = Promise.all([
                 fetch('/components/archive-row/archive-row.html').then(r => r.text()),
                 fetch('/components/archive-row/archive-row.css').then(r => r.text())
             ]);
         }
-        const [html, css] = ArchiveRow.templateCache;
+        const [html, css] = await ArchiveRow.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;
@@ -203,8 +203,16 @@ class ArchiveRow extends HTMLElement {
     }
 
     _getIconChar(iconName) {
-        // Map icon names to simple unicode chars for the category icon display
+        // Map icon names (Bootstrap icons used in categories) to unicode chars
         const map = {
+            // Bootstrap icon names used in categories
+            'inbox': '📥',
+            'code-slash': '⌨',
+            'chat-text': '💬',
+            'pin-angle': '📌',
+            'lightning': '⚡',
+            'box-seam': '📦',
+            // Legacy svg-icon names
             'close': '×',
             'edit': '✏',
             'newTab': '↗',

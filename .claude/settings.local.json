@@ -11,7 +11,10 @@
       "Bash(ls:*)",
       "Bash(npm run test:unit:*)",
       "Bash(node:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(lsof:*)",
+      "Bash(git:*)",
+      "Bash(npm:*)"
     ]
   }
 }
