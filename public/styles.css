@@ -26,6 +26,13 @@
     /* === Typography === */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
+    /* === Archive / List Page Column Widths === */
+    --archive-col-title: 4;
+    --archive-col-epic: 1.5;
+    --archive-col-category: 1.5;
+    --archive-col-date: 1;
+    --archive-col-actions: 104px;
+
     /* === Legacy Aliases (keep existing var() references working) === */
     --bg-color: var(--color-bg-secondary);
     --sidebar-bg: var(--color-bg-secondary);
@@ -2175,6 +2182,57 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
      * styled from global CSS. Add responsive styles to each component's
      * CSS file if needed, or use CSS custom properties.
      */
+}
+
+/* ==========================================
+   Block: pageView modifier — full-page layout
+   ========================================== */
+.pageView.--fullPage {
+    align-items: flex-start;
+    padding: 0;
+}
+
+/* ==========================================
+   Block: archivePage
+   ========================================== */
+.archivePage {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+}
+
+.archivePage__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.archivePage__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.archivePage__count {
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+}
+
+.archivePage__tableWrap {
+    border-radius: var(--radius-md);
+}
+
+.archivePage__empty {
+    padding: 32px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-tertiary);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 /* Fallback for smaller screens */

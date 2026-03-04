@@ -1,0 +1,30 @@
+<!-- Row header: always visible -->
+<div class="archiveRow__header js-header">
+    <div class="archiveRow__col archiveRow__col--title">
+        <span class="archiveRow__star js-star" aria-hidden="true">★</span>
+        <span class="archiveRow__title js-title"></span>
+    </div>
+    <div class="archiveRow__col archiveRow__col--epic">
+        <span class="archiveRow__epicPill js-epicPill"></span>
+    </div>
+    <div class="archiveRow__col archiveRow__col--category">
+        <span class="archiveRow__categoryIcon js-categoryIcon"></span>
+        <span class="archiveRow__categoryName js-categoryName"></span>
+    </div>
+    <div class="archiveRow__col archiveRow__col--date js-date"></div>
+    <div class="archiveRow__col archiveRow__col--actions">
+        <button type="button" class="archiveRow__restoreBtn js-restoreBtn">Restore</button>
+        <button type="button" class="archiveRow__expandBtn js-expandBtn" aria-label="Expand row">
+            <span class="archiveRow__chevron js-chevron">▼</span>
+        </button>
+    </div>
+</div>
+
+<!-- Expanded panel: shown when row is open -->
+<div class="archiveRow__panel js-panel" hidden>
+    <div class="archiveRow__panelInner">
+        <div class="archiveRow__desc js-desc"></div>
+        <div class="archiveRow__meta js-meta"></div>
+        <div class="archiveRow__logSection js-logSection"></div>
+    </div>
+</div>

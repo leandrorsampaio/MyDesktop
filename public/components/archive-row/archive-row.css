@@ -1,0 +1,217 @@
+:host {
+    display: block;
+    background: var(--color-bg-primary);
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+:host(:last-of-type) {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* ---- Row Header ---- */
+.archiveRow__header {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.archiveRow__header:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* ---- Columns (same flex weights as list-header) ---- */
+.archiveRow__col {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.archiveRow__col--title {
+    flex: var(--archive-col-title, 4);
+}
+
+.archiveRow__col--epic {
+    flex: var(--archive-col-epic, 1.5);
+}
+
+.archiveRow__col--category {
+    flex: var(--archive-col-category, 1.5);
+}
+
+.archiveRow__col--date {
+    flex: var(--archive-col-date, 1);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.archiveRow__col--actions {
+    flex: 0 0 var(--archive-col-actions, 104px);
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ---- Title ---- */
+.archiveRow__star {
+    color: var(--color-accent-warning);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.archiveRow__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Epic pill ---- */
+.archiveRow__epicPill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ---- Category ---- */
+.archiveRow__categoryIcon {
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.archiveRow__categoryName {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Buttons ---- */
+.archiveRow__restoreBtn {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.archiveRow__restoreBtn:hover {
+    background: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
+    color: #fff;
+}
+
+.archiveRow__expandBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+    transition: background-color 0.1s, color 0.1s;
+}
+
+.archiveRow__expandBtn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+}
+
+.archiveRow__chevron {
+    font-size: 10px;
+    transition: transform 0.15s;
+    display: inline-block;
+}
+
+.archiveRow__chevron.--open {
+    transform: rotate(180deg);
+}
+
+/* ---- Expanded Panel ---- */
+.archiveRow__panel[hidden] {
+    display: none;
+}
+
+.archiveRow__panel {
+    display: block;
+}
+
+.archiveRow__panelInner {
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.archiveRow__desc {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.archiveRow__meta {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    display: flex;
+    gap: 16px;
+}
+
+.archiveRow__logSection {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.archiveRow__logTitle {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--color-text-tertiary);
+    margin-bottom: 4px;
+}
+
+.archiveRow__logEntry {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    padding: 3px 0;
+    border-bottom: 1px solid var(--color-bg-tertiary);
+}
+
+.archiveRow__logEntry:last-child {
+    border-bottom: none;
+}
+
+.archiveRow__logDate {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    margin-right: 6px;
+}

@@ -977,7 +977,12 @@ import {
             if (page !== 'board') {
                 elements.appContainer.style.display = 'none';
                 elements.pageView.style.display = '';
-                renderPlaceholderPage(page);
+                if (page === 'archive') {
+                    const { initArchivePage } = await import('./js/archive-page.js');
+                    initArchivePage(elements.pageView);
+                } else {
+                    renderPlaceholderPage(page);
+                }
                 return; // Skip board-only initialization
             }
         } catch (error) {

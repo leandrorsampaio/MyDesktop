@@ -133,6 +133,26 @@ export async function fetchArchivedTasksApi() {
 }
 
 /**
+ * Restores an archived task back to the first board column.
+ * @param {string} id - The archived task ID to restore
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>} Result object
+ */
+export async function restoreArchivedTaskApi(id) {
+    const response = await fetch(`${apiBase}/archived/${id}/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to restore task' };
+    }
+
+    const data = await response.json();
+    return { ok: true, data };
+}
+
+/**
  * Fetches all reports from the server.
  * @returns {Promise<Array<Object>>} Array of report objects
  */

@@ -1080,6 +1080,59 @@ app.get('/api/:profile/archived', resolveProfile, async (req, res) => {
     }
 });
 
+// POST restore archived task to the first column
+app.post('/api/:profile/archived/:id/restore', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const taskId = req.params.id;
+
+        const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
+        const taskIndex = archivedTasks.findIndex(t => t.id === taskId);
+
+        if (taskIndex === -1) {
+            return res.status(404).json({ error: 'Archived task not found' });
+        }
+
+        const task = archivedTasks[taskIndex];
+
+        // First column (columns are already sorted by order via resolveProfile)
+        const firstColumn = req.columns[0];
+        if (!firstColumn) {
+            return res.status(500).json({ error: 'No columns found for this profile' });
+        }
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+
+        // Re-index existing tasks in the first column to make room at position 0
+        tasks.forEach(t => {
+            if (t.status === firstColumn.id) {
+                t.position = (t.position || 0) + 1;
+            }
+        });
+
+        // Restore task: set status to first column, position 0
+        task.status = firstColumn.id;
+        task.position = 0;
+
+        // Add restore log entry
+        const today = new Date().toISOString().split('T')[0];
+        if (!task.log) task.log = [];
+        task.log.push({ date: today, action: 'Restored to board' });
+
+        tasks.unshift(task);
+
+        // Remove from archived
+        archivedTasks.splice(taskIndex, 1);
+
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        await writeJsonFile(req.profileFiles.archived, archivedTasks);
+
+        res.json({ task });
+    } catch (error) {
+        console.error('Restore error:', error);
+        res.status(500).json({ error: 'Failed to restore task' });
+    }
+});
+
 // GET all reports
 app.get('/api/:profile/reports', resolveProfile, async (req, res) => {
     try {
