@@ -16,34 +16,12 @@
                 <span></span>
                 <span></span>
             </button>
-            <div class="appHeader__welcome">
-                <h1 class="appHeader__title">Welcome, Leandro</h1>
-                <div class="appHeader__dateInfo">
-                    <span class="js-currentDate"></span>
-                    <span class="appHeader__separator">•</span>
-                    <span class="js-currentWeekday"></span>
-                    <span class="appHeader__separator">•</span>
-                    <span class="js-currentWeek"></span>
-                </div>
-            </div>
+            <app-welcome class="js-appWelcome"></app-welcome>
         </div>
         <div class="appHeader__actions">
-            <div class="toolbar js-toolbar">
-                <div class="toolbar__filters js-categoryFilters">
-                    <!-- Filter buttons rendered dynamically from categories state -->
-                </div>
-                <custom-picker type="list" placeholder="Epics" size="compact" class="toolbar__epicFilter js-epicFilter"></custom-picker>
-                <button class="toolbar__priorityBtn js-priorityFilterBtn">★ Priority</button>
-                <button class="toolbar__snoozeBtn js-snoozeToggleBtn" style="display:none;"></button>
-                <div class="toolbar__divider"></div>
-                <button class="toolbar__crisisBtn js-crisisModeBtn">🚨 Crisis</button>
-                <button class="toolbar__privacyBtn js-privacyToggleBtn">Hide</button>
-            </div>
-            <div class="profileSelector js-profileSelector">
-                <button class="profileSelector__btn js-profileBtn" aria-label="Switch profile"></button>
-                <span class="profileSelector__name js-profileName"></span>
-                <div class="profileSelector__dropdown js-profileDropdown"></div>
-            </div>
+            <!-- Board toolbar injected here by initBoardToolbar() on board page only -->
+            <div class="js-toolbarMount"></div>
+            <profile-selector class="js-profileSelector"></profile-selector>
         </div>
     </header>
 
@@ -401,6 +379,8 @@
     <!-- Toast Notifications -->
     <toast-notification class="js-toaster"></toast-notification>
 
+    <script type="module" src="components/app-welcome/app-welcome.js"></script>
+    <script type="module" src="components/profile-selector/profile-selector.js"></script>
     <script type="module" src="components/nav-sidebar/nav-sidebar.js"></script>
     <script type="module" src="components/svg-icon/svg-icon.js"></script>
     <script type="module" src="components/custom-picker/custom-picker.js"></script>

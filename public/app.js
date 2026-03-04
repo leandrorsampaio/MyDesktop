@@ -11,7 +11,7 @@
 
 import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, SNOOZE_CHECK_INTERVAL_MS } from './js/constants.js';
 import { parsePath } from './js/router.js';
-import { getWeekNumber, escapeHtml, formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue } from './js/utils.js';
+import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue } from './js/utils.js';
 import {
     tasks,
     setTasks,
@@ -73,17 +73,23 @@ import {
     // DOM Elements
     // ==========================================
     const elements = {
-        // Header
-        currentDate: document.querySelector('.js-currentDate'),
-        currentWeekday: document.querySelector('.js-currentWeekday'),
-        currentWeek: document.querySelector('.js-currentWeek'),
-
         // Navigation Sidebar
         sidebarBtn: document.querySelector('.js-sidebarBtn'),
         navSidebar: document.querySelector('.js-navSidebar'),
 
         // Page view (placeholder for non-board pages)
         pageView: document.querySelector('.js-pageView'),
+
+        // Profile Selector component
+        profileSelector: document.querySelector('.js-profileSelector'),
+
+        // Board-only elements — null until initBoardToolbar() populates them
+        categoryFilters:   null,
+        priorityFilterBtn: null,
+        epicFilter:        null,
+        snoozeToggleBtn:   null,
+        crisisModeBtn:     null,
+        privacyToggleBtn:  null,
 
         // Task Modal
         taskModal: document.querySelector('.js-taskModal'),
@@ -109,20 +115,14 @@ import {
         confirmCancel: document.querySelector('.js-confirmCancel'),
         confirmDelete: document.querySelector('.js-confirmDelete'),
 
-        // Privacy
+        // Privacy (appContainer always in DOM)
         appContainer: document.querySelector('.js-appContainer'),
-        privacyToggleBtn: document.querySelector('.js-privacyToggleBtn'),
 
         // Task Epic dropdown
         taskEpic: document.querySelector('.js-taskEpic'),
 
         // Category pills in task modal
         categoryPills: document.querySelector('.js-categoryPills'),
-
-        // Category Filters
-        categoryFilters: document.querySelector('.js-categoryFilters'),
-        priorityFilterBtn: document.querySelector('.js-priorityFilterBtn'),
-        epicFilter: document.querySelector('.js-epicFilter'),
 
         // Epic Delete Confirmation
         epicConfirmModal: document.querySelector('.js-epicConfirmModal'),
@@ -153,12 +153,6 @@ import {
         epicColorError: document.querySelector('.js-epicColorError'),
         epicsList: document.querySelector('.js-epicsList'),
 
-        // Profile Selector
-        profileSelector: document.querySelector('.js-profileSelector'),
-        profileBtn: document.querySelector('.js-profileBtn'),
-        profileName: document.querySelector('.js-profileName'),
-        profileDropdown: document.querySelector('.js-profileDropdown'),
-
         // Profile Management (triggered via sidebar config menu)
         profilesModal: document.querySelector('.js-profilesModal'),
         profileNameInput: document.querySelector('.js-profileNameInput'),
@@ -174,9 +168,6 @@ import {
         profileConfirmMessage: document.querySelector('.js-profileConfirmMessage'),
         profileConfirmCancel: document.querySelector('.js-profileConfirmCancel'),
         profileConfirmDelete: document.querySelector('.js-profileConfirmDelete'),
-
-        // Crisis Mode (now in toolbar)
-        crisisModeBtn: document.querySelector('.js-crisisModeBtn'),
 
         // Generate Report (triggered via sidebar config menu)
         generateReportConfirmModal: document.querySelector('.js-generateReportConfirmModal'),
@@ -224,36 +215,10 @@ import {
         deadlineHint:         document.querySelector('.js-deadlineHint'),
         snoozeHint:           document.querySelector('.js-snoozeHint'),
 
-        // Toolbar - snooze toggle
-        snoozeToggleBtn:      document.querySelector('.js-snoozeToggleBtn'),
-
         // General config - deadline thresholds
         deadlineUrgentHours:  document.querySelector('.js-deadlineUrgentHours'),
         deadlineWarningHours: document.querySelector('.js-deadlineWarningHours')
     };
-
-    // ==========================================
-    // Header Date Functions
-    // ==========================================
-
-    /**
-     * Initializes the header date display with current date info.
-     */
-    function initHeaderDate() {
-        const now = new Date();
-
-        // Format date: "January 25, 2026"
-        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-        elements.currentDate.textContent = now.toLocaleDateString('en-US', dateOptions);
-
-        // Weekday: "Saturday"
-        const weekdayOptions = { weekday: 'long' };
-        elements.currentWeekday.textContent = now.toLocaleDateString('en-US', weekdayOptions);
-
-        // Week number
-        const weekNumber = getWeekNumber(now);
-        elements.currentWeek.textContent = `Week ${weekNumber}`;
-    }
 
     // ==========================================
     // Menu / Sidebar Utilities
@@ -313,9 +278,11 @@ import {
                 break;
             case 'manage-categories':
                 openCategoriesModal(elements, closeMenu, () => {
-                    renderCategoryFilters(elements.categoryFilters, (categoryId) => {
-                        toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
-                    });
+                    if (elements.categoryFilters) {
+                        renderCategoryFilters(elements.categoryFilters, (categoryId) => {
+                            toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
+                        });
+                    }
                     renderAllColumns();
                 });
                 break;
@@ -327,8 +294,9 @@ import {
                     if (current) {
                         setActiveProfile(current);
                         setApiBase(current.alias);
-                        renderProfileSelector();
-                        if (current.alias !== getProfileAliasFromUrl()) {
+                        elements.profileSelector.setProfiles(fetchedProfiles);
+                        elements.profileSelector.setActiveProfile(current);
+                        if (current.alias !== parsePath().alias) {
                             window.location.href = '/' + current.alias;
                             return;
                         }
@@ -345,86 +313,6 @@ import {
                 handleGenerateReport();
                 break;
         }
-    }
-
-    // ==========================================
-    // Profile Selector
-    // ==========================================
-
-    /**
-     * Gets the profile alias from the current URL pathname.
-     * @returns {string} The alias portion of the path (e.g., 'work' from '/work')
-     */
-    function getProfileAliasFromUrl() {
-        const path = window.location.pathname;
-        // Remove leading slash and get first segment
-        const segments = path.split('/').filter(Boolean);
-        return segments[0] || '';
-    }
-
-    /**
-     * Renders the profile selector button and name.
-     */
-    function renderProfileSelector() {
-        if (!activeProfile) return;
-        elements.profileBtn.textContent = activeProfile.letters;
-        elements.profileBtn.style.backgroundColor = activeProfile.color;
-        elements.profileName.textContent = activeProfile.name;
-    }
-
-    /**
-     * Renders the profile dropdown with all available profiles.
-     */
-    function renderProfileDropdown() {
-        elements.profileDropdown.innerHTML = profiles.map(p => {
-            const isActive = p.id === activeProfile?.id;
-            const newTabBtn = !isActive
-                ? `<button class="profileSelector__dropdownNewTab" data-alias="${escapeHtml(p.alias)}" title="Open in new tab">&#8599;</button>`
-                : '';
-            return `
-                <button class="profileSelector__dropdownItem ${isActive ? '--active' : ''}"
-                        data-alias="${escapeHtml(p.alias)}">
-                    <span class="profileSelector__dropdownIcon" style="background-color: ${p.color};">${escapeHtml(p.letters)}</span>
-                    <span class="profileSelector__dropdownName">${escapeHtml(p.name)}</span>
-                    ${newTabBtn}
-                </button>
-            `;
-        }).join('');
-
-        // New tab buttons — open profile in new tab
-        elements.profileDropdown.querySelectorAll('.profileSelector__dropdownNewTab').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.open('/' + btn.dataset.alias, '_blank');
-                closeProfileDropdown();
-            });
-        });
-
-        // Add click handlers via event delegation
-        elements.profileDropdown.querySelectorAll('.profileSelector__dropdownItem').forEach(item => {
-            item.addEventListener('click', () => {
-                const alias = item.dataset.alias;
-                if (alias !== activeProfile?.alias) {
-                    window.location.href = '/' + alias;
-                } else {
-                    closeProfileDropdown();
-                }
-            });
-        });
-    }
-
-    /**
-     * Toggles the profile dropdown open/closed.
-     */
-    function toggleProfileDropdown() {
-        elements.profileDropdown.classList.toggle('--active');
-    }
-
-    /**
-     * Closes the profile dropdown.
-     */
-    function closeProfileDropdown() {
-        elements.profileDropdown.classList.remove('--active');
     }
 
     // ==========================================
@@ -558,6 +446,7 @@ import {
 
     /**
      * Re-renders all kanban columns and applies active filters.
+     * Guards epic filter and snooze button — null when called from a non-board page.
      */
     function renderAllColumns() {
         // Build epic lookup once per render cycle for O(1) access in createTaskCard
@@ -565,7 +454,7 @@ import {
         // Build category lookup once per render cycle
         categoryLookup = new Map(categories.map(c => [c.id, c]));
         columns.forEach(col => renderColumn(col.id));
-        renderEpicFilter(elements.epicFilter);
+        if (elements.epicFilter) renderEpicFilter(elements.epicFilter);
         applyAllFilters();
         updateSnoozeButton();
     }
@@ -695,8 +584,10 @@ import {
     /**
      * Shows/hides the snooze toggle button based on whether any tasks are currently snoozed.
      * Also resets the toggle state if no snoozed tasks remain.
+     * No-op on non-board pages where the toolbar is not rendered.
      */
     function updateSnoozeButton() {
+        if (!elements.snoozeToggleBtn) return;
         const now = new Date();
         const snoozedTasks = tasks.filter(t => t.snoozeUntil && new Date(t.snoozeUntil) > now);
         if (snoozedTasks.length > 0) {
@@ -824,37 +715,56 @@ import {
     }
 
     // ==========================================
+    // Board Toolbar
+    // ==========================================
+
+    /**
+     * Injects the board toolbar HTML into the mount point and re-queries
+     * board-only elements. Called only when page === 'board'.
+     */
+    function initBoardToolbar() {
+        const mount = document.querySelector('.js-toolbarMount');
+        mount.innerHTML = `
+            <div class="toolbar js-toolbar">
+                <div class="toolbar__filters js-categoryFilters"></div>
+                <custom-picker type="list" placeholder="Epics" size="compact" class="toolbar__epicFilter js-epicFilter"></custom-picker>
+                <button class="toolbar__priorityBtn js-priorityFilterBtn" type="button">★ Priority</button>
+                <button class="toolbar__snoozeBtn js-snoozeToggleBtn" style="display:none;" type="button"></button>
+                <div class="toolbar__divider"></div>
+                <button class="toolbar__crisisBtn js-crisisModeBtn" type="button">🚨 Crisis</button>
+                <button class="toolbar__privacyBtn js-privacyToggleBtn" type="button">Hide</button>
+            </div>
+        `;
+        elements.categoryFilters   = mount.querySelector('.js-categoryFilters');
+        elements.priorityFilterBtn = mount.querySelector('.js-priorityFilterBtn');
+        elements.epicFilter        = mount.querySelector('.js-epicFilter');
+        elements.snoozeToggleBtn   = mount.querySelector('.js-snoozeToggleBtn');
+        elements.crisisModeBtn     = mount.querySelector('.js-crisisModeBtn');
+        elements.privacyToggleBtn  = mount.querySelector('.js-privacyToggleBtn');
+    }
+
+    // ==========================================
     // Event Listeners
     // ==========================================
 
     /**
-     * Initializes all event listeners.
+     * Initializes event listeners that are active on all pages (modals, sidebar, profile, etc.).
      */
     function initEventListeners() {
-        // Wrapper that renders a column and applies filters
-        const renderColumnWithFilters = (status) => {
-            renderColumn(status);
-            applyAllFilters();
-            updateSnoozeButton();
-        };
-
-        // Create the task form submit handler
-        const handleTaskFormSubmit = createTaskFormSubmitHandler(
-            elements,
-            renderColumnWithFilters,
-            renderAllColumns,
-            addTask,
-            updateTaskInState
-        );
-
-        // Profile Selector
-        elements.profileBtn.addEventListener('click', () => {
-            renderProfileDropdown();
-            toggleProfileDropdown();
+        // Navigation Sidebar
+        elements.sidebarBtn.addEventListener('click', () => {
+            elements.navSidebar.toggle();
         });
-        elements.profileName.addEventListener('click', () => {
-            renderProfileDropdown();
-            toggleProfileDropdown();
+        elements.navSidebar.addEventListener('config-action', (e) => {
+            handleConfigAction(e.detail.action);
+        });
+
+        // Profile Selector component events
+        elements.profileSelector.addEventListener('profile-select', (e) => {
+            window.location.href = '/' + e.detail.alias;
+        });
+        elements.profileSelector.addEventListener('profile-open-new-tab', (e) => {
+            window.open('/' + e.detail.alias, '_blank');
         });
 
         // Profile Confirm Delete Modal
@@ -865,32 +775,6 @@ import {
             confirmDeleteProfile(elements);
         });
 
-        // Navigation Sidebar
-        elements.sidebarBtn.addEventListener('click', () => {
-            elements.navSidebar.toggle();
-        });
-
-        elements.navSidebar.addEventListener('config-action', (e) => {
-            handleConfigAction(e.detail.action);
-        });
-
-        // Close profile dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!elements.profileSelector.contains(e.target)) {
-                closeProfileDropdown();
-            }
-        });
-
-        // Priority Filter
-        elements.priorityFilterBtn.addEventListener('click', () => {
-            togglePriorityFilter(elements.priorityFilterBtn, applyAllFilters);
-        });
-
-        // Epic Filter
-        elements.epicFilter.addEventListener('change', () => {
-            handleEpicFilterChange(elements.epicFilter, applyAllFilters);
-        });
-
         // Category Confirm Delete Modal
         elements.categoryConfirmCancel.addEventListener('click', () => {
             elements.categoryConfirmModal.close();
@@ -899,35 +783,7 @@ import {
             confirmDeleteCategory(elements);
         });
 
-        // Crisis Mode
-        elements.crisisModeBtn.addEventListener('click', () => {
-            toggleCrisisMode(elements, closeMenu);
-        });
-
-        // Privacy Toggle
-        elements.privacyToggleBtn.addEventListener('click', () => {
-            elements.appContainer.classList.toggle('--privacyMode');
-            const isHidden = elements.appContainer.classList.contains('--privacyMode');
-            elements.privacyToggleBtn.textContent = isHidden ? 'Show' : 'Hide';
-            elements.privacyToggleBtn.classList.toggle('--active', isHidden);
-        });
-
-        // Add Task & Archive — event delegation on kanban container
-        // Buttons are dynamically created inside <kanban-column> by initKanban()
-        elements.kanban.addEventListener('click', (e) => {
-            if (e.target.classList.contains('js-addTaskBtn')) {
-                openAddTaskModal(
-                    elements,
-                    () => openDeleteConfirmation(elements),
-                    handleTaskFormSubmit
-                );
-            }
-            if (e.target.classList.contains('js-archiveBtn')) {
-                handleArchive(e.target.dataset.columnId);
-            }
-        });
-
-        // Generate Report (triggered via sidebar config menu; confirm modal wired here)
+        // Generate Report (triggered via sidebar config menu)
         elements.generateReportCancel.addEventListener('click', () => {
             elements.generateReportConfirmModal.close();
         });
@@ -938,13 +794,6 @@ import {
             elements.generalConfigModal.close();
         });
         elements.generalConfigSave.addEventListener('click', saveGeneralConfig);
-
-        // Snooze toggle button
-        elements.snoozeToggleBtn.addEventListener('click', () => {
-            const isActive = elements.kanban.classList.toggle('--showSnoozed');
-            elements.snoozeToggleBtn.classList.toggle('--active', isActive);
-            applyAllFilters();
-        });
 
         // Task form: quick datetime buttons + clear buttons (event delegation)
         elements.taskForm.addEventListener('click', (e) => {
@@ -1001,6 +850,73 @@ import {
         elements.epicConfirmDelete.addEventListener('click', () => {
             confirmDeleteEpic(elements);
         });
+    }
+
+    /**
+     * Initializes board-specific event listeners.
+     * Called only on the board page, after initBoardToolbar() has injected the toolbar.
+     */
+    function initBoardEventListeners() {
+        // Wrapper that renders a column and applies filters
+        const renderColumnWithFilters = (status) => {
+            renderColumn(status);
+            applyAllFilters();
+            updateSnoozeButton();
+        };
+
+        // Create the task form submit handler
+        const handleTaskFormSubmit = createTaskFormSubmitHandler(
+            elements,
+            renderColumnWithFilters,
+            renderAllColumns,
+            addTask,
+            updateTaskInState
+        );
+
+        // Priority Filter
+        elements.priorityFilterBtn.addEventListener('click', () => {
+            togglePriorityFilter(elements.priorityFilterBtn, applyAllFilters);
+        });
+
+        // Epic Filter
+        elements.epicFilter.addEventListener('change', () => {
+            handleEpicFilterChange(elements.epicFilter, applyAllFilters);
+        });
+
+        // Crisis Mode
+        elements.crisisModeBtn.addEventListener('click', () => {
+            toggleCrisisMode(elements, closeMenu);
+        });
+
+        // Privacy Toggle
+        elements.privacyToggleBtn.addEventListener('click', () => {
+            elements.appContainer.classList.toggle('--privacyMode');
+            const isHidden = elements.appContainer.classList.contains('--privacyMode');
+            elements.privacyToggleBtn.textContent = isHidden ? 'Show' : 'Hide';
+            elements.privacyToggleBtn.classList.toggle('--active', isHidden);
+        });
+
+        // Snooze toggle button
+        elements.snoozeToggleBtn.addEventListener('click', () => {
+            const isActive = elements.kanban.classList.toggle('--showSnoozed');
+            elements.snoozeToggleBtn.classList.toggle('--active', isActive);
+            applyAllFilters();
+        });
+
+        // Add Task & Archive — event delegation on kanban container
+        // Buttons are dynamically created inside <kanban-column> by initKanban()
+        elements.kanban.addEventListener('click', (e) => {
+            if (e.target.classList.contains('js-addTaskBtn')) {
+                openAddTaskModal(
+                    elements,
+                    () => openDeleteConfirmation(elements),
+                    handleTaskFormSubmit
+                );
+            }
+            if (e.target.classList.contains('js-archiveBtn')) {
+                handleArchive(e.target.dataset.columnId);
+            }
+        });
 
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
@@ -1018,13 +934,6 @@ import {
             const { taskId, newStatus, newPosition } = e.detail;
             moveTask(taskId, newStatus, newPosition);
         });
-
-        // Close profile dropdown on ESC key (sidebar handles its own ESC)
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeProfileDropdown();
-            }
-        });
     }
 
     // ==========================================
@@ -1035,13 +944,6 @@ import {
      * Initializes the application.
      */
     async function init() {
-        // Initialize header date
-        initHeaderDate();
-
-        // Initialize UI
-        renderCategoryFilters(elements.categoryFilters, (categoryId) => {
-            toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
-        });
         initEventListeners();
 
         // Fetch profiles and determine active profile from URL
@@ -1049,7 +951,7 @@ import {
             const fetchedProfiles = await fetchProfilesApi();
             setProfiles(fetchedProfiles);
 
-            const alias = getProfileAliasFromUrl();
+            const { alias, page } = parsePath();
             const matchedProfile = fetchedProfiles.find(p => p.alias === alias);
 
             if (!matchedProfile) {
@@ -1063,11 +965,11 @@ import {
             setActiveProfile(matchedProfile);
             setApiBase(matchedProfile.alias);
             document.body.classList.add('profile-' + matchedProfile.alias);
-            renderProfileSelector();
+            elements.profileSelector.setProfiles(fetchedProfiles);
+            elements.profileSelector.setActiveProfile(matchedProfile);
             loadGeneralConfig();
 
             // Sidebar: set alias + active page for link hrefs and active state
-            const { page } = parsePath();
             elements.navSidebar.setAttribute('alias', matchedProfile.alias);
             elements.navSidebar.setAttribute('page', page);
 
@@ -1081,6 +983,10 @@ import {
         } catch (error) {
             console.error('Error fetching profiles:', error);
         }
+
+        // Board-only: inject toolbar and wire board event listeners
+        initBoardToolbar();
+        initBoardEventListeners();
 
         // Fetch data (categories and epics first so cards can reference them)
         try {
@@ -1096,7 +1002,7 @@ import {
             console.error('Error fetching epics:', error);
         }
 
-        // Re-render category filters now that dynamic categories are loaded
+        // Render category filters now that dynamic categories are loaded
         renderCategoryFilters(elements.categoryFilters, (categoryId) => {
             toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
         });
