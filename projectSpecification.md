@@ -73,7 +73,9 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── crisis-mode.js
     │   ├── modals.js              # All modal logic
     │   ├── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
-    │   └── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
+    │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
+    │   ├── backlog-page.js        # Backlog page — initBacklogPage()
+    │   └── dashboard-page.js      # Dashboard page — initDashboardPage()
     └── components/
         ├── button/
         ├── task-card/
@@ -333,7 +335,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **`<nav-sidebar>`** is a slide-over overlay (left side). Trigger button is in the top-left of the header. Closes on backdrop click, ESC, or when a config action is selected.
 - **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`. Anything else defaults to `board`.
 - **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
-- **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive page calls `initArchivePage(elements.pageView)` via dynamic import; all other unbuilt pages still use `renderPlaceholderPage()`.
+- **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive calls `initArchivePage`; Backlog calls `initBacklogPage`; Dashboard calls `initDashboardPage` — all via dynamic import. Unbuilt pages use `renderPlaceholderPage()`.
 - **`pageView.--fullPage`** class modifier removes centering and padding from `.pageView` — applied by page modules that render a full-width layout (archive page sets this on init).
 - **Hamburger menu removed** — all config actions moved to the sidebar's Config submenu. Crisis mode moved from the menu to the toolbar. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
 

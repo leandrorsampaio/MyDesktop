@@ -989,6 +989,12 @@ import {
                         console.error('Backlog page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load backlog page');
                     });
+                } else if (page === 'dashboard') {
+                    const { initDashboardPage } = await import('./js/dashboard-page.js');
+                    initDashboardPage(elements.pageView).catch(err => {
+                        console.error('Dashboard page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load dashboard page');
+                    });
                 } else {
                     renderPlaceholderPage(page);
                 }
