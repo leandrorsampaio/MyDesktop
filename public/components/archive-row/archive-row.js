@@ -139,7 +139,13 @@ class ArchiveRow extends HTMLElement {
             categoryNameEl.textContent = meta.categoryName || '';
         }
         if (categoryIconEl) {
-            categoryIconEl.textContent = meta.categoryIcon ? this._getIconChar(meta.categoryIcon) : '';
+            categoryIconEl.innerHTML = '';
+            if (meta.categoryIcon) {
+                const icon = document.createElement('svg-icon');
+                icon.setAttribute('icon', meta.categoryIcon);
+                icon.setAttribute('size', '12');
+                categoryIconEl.appendChild(icon);
+            }
         }
 
         // Completed date
@@ -200,26 +206,6 @@ class ArchiveRow extends HTMLElement {
         if (panel) panel.hidden = !this._expanded;
         const chevron = this.shadowRoot.querySelector('.js-chevron');
         if (chevron) chevron.classList.toggle('--open', this._expanded);
-    }
-
-    _getIconChar(iconName) {
-        // Map icon names (Bootstrap icons used in categories) to unicode chars
-        const map = {
-            // Bootstrap icon names used in categories
-            'inbox': '📥',
-            'code-slash': '⌨',
-            'chat-text': '💬',
-            'pin-angle': '📌',
-            'lightning': '⚡',
-            'box-seam': '📦',
-            // Legacy svg-icon names
-            'close': '×',
-            'edit': '✏',
-            'newTab': '↗',
-            'star': '★',
-            'plus': '+',
-        };
-        return map[iconName] || '•';
     }
 
     _escapeHtml(str) {

@@ -1612,7 +1612,7 @@
     "priority": false,
     "category": 2,
     "epicId": null,
-    "status": "done",
+    "status": "wait",
     "position": 0,
     "log": [
       {
@@ -1626,6 +1626,10 @@
       {
         "date": "2026-02-23",
         "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from Done to Wait"
       }
     ],
     "createdDate": "2026-02-17T13:06:06.044Z"
@@ -1703,7 +1707,7 @@
     "priority": false,
     "category": 2,
     "epicId": null,
-    "status": "done",
+    "status": "wait",
     "position": 1,
     "log": [
       {
@@ -1717,6 +1721,10 @@
       {
         "date": "2026-02-23",
         "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from Done to Wait"
       }
     ],
     "createdDate": "2026-02-23T15:53:52.547Z"
@@ -1768,5 +1776,29 @@
     "createdDate": "2026-02-28T00:26:27.033Z",
     "deadline": null,
     "snoozeUntil": null
+  },
+  {
+    "id": "mmf6wpa2dio0der0d",
+    "title": "TEST",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-06",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-06T17:50:17.594Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   }
 ]
