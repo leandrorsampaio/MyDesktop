@@ -2235,6 +2235,77 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
+/* ==========================================
+   Block: backlogPage
+   ========================================== */
+.backlogPage {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    /* Override actions column width to fit 2 buttons */
+    --archive-col-actions: 140px;
+}
+
+.backlogPage__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.backlogPage__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.backlogPage__count {
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+}
+
+.backlogPage__tableWrap {
+    border-radius: var(--radius-md);
+}
+
+.backlogPage__empty {
+    padding: 32px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-tertiary);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.backlogPage__fab {
+    position: fixed;
+    bottom: 32px;
+    left: 32px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-accent-primary);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.15s, transform 0.1s;
+    z-index: 100;
+}
+
+.backlogPage__fab:hover {
+    background: var(--color-accent-primary-hover);
+    transform: scale(1.08);
+}
+
 /* Fallback for smaller screens */
 @media (max-width: 1399px) {
     .appContainer {

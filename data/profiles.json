@@ -11,25 +11,36 @@
         "id": "todo",
         "name": "To Do",
         "order": 0,
-        "hasArchive": false
+        "hasArchive": false,
+        "isBacklog": false
       },
       {
         "id": "wait",
         "name": "Wait",
         "order": 1,
-        "hasArchive": false
+        "hasArchive": false,
+        "isBacklog": false
       },
       {
         "id": "inprogress",
         "name": "In Progress",
         "order": 2,
-        "hasArchive": false
+        "hasArchive": false,
+        "isBacklog": false
       },
       {
         "id": "done",
         "name": "Done",
         "order": 3,
-        "hasArchive": true
+        "hasArchive": true,
+        "isBacklog": false
+      },
+      {
+        "id": "mmf9c0aaza1snpz8c",
+        "name": "Backlog",
+        "order": 4,
+        "hasArchive": false,
+        "isBacklog": true
       }
     ]
   },
@@ -45,13 +56,15 @@
         "id": "todo",
         "name": "To Do",
         "order": 0,
-        "hasArchive": false
+        "hasArchive": false,
+        "isBacklog": false
       },
       {
         "id": "mlzpmyfqurwo2x06y",
         "name": "TEst",
         "order": 1,
-        "hasArchive": true
+        "hasArchive": true,
+        "isBacklog": false
       }
     ]
   }

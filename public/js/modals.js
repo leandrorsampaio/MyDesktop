@@ -304,7 +304,7 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
  * @param {Function} updateTaskInState - Function to update task in state
  * @returns {Function} The submit handler
  */
-export function createTaskFormSubmitHandler(elements, renderColumn, renderAllColumns, addTaskToState, updateTaskInState) {
+export function createTaskFormSubmitHandler(elements, renderColumn, renderAllColumns, addTaskToState, updateTaskInState, overrideColumnId = null) {
     return async function handleTaskFormSubmit(e) {
         e.preventDefault();
 
@@ -345,7 +345,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             }
         } else {
             // CREATE: Optimistic UI with rollback
-            const defaultColumnId = columns[0]?.id || 'todo';
+            const defaultColumnId = overrideColumnId || columns[0]?.id || 'todo';
             const tempId = generateTempId();
             const tempTask = {
                 id: tempId,
@@ -368,7 +368,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             elements.taskModal.close();
 
             try {
-                const newTask = await createTaskApi({ title, description, priority, category, epicId, deadline, snoozeUntil });
+                const newTask = await createTaskApi({ title, description, priority, category, epicId, deadline, snoozeUntil, status: defaultColumnId });
                 // Replace temp task with real one from server
                 replaceTask(tempId, newTask);
                 renderColumn(defaultColumnId);

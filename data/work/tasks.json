@@ -1,5 +1,41 @@
 [
   {
+    "id": "mmf6wpa2dio0der0d",
+    "title": "TEST",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-06",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Restored to board"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-06T17:50:17.594Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
+  },
+  {
     "id": "mkt4h64fx9wd08bq9",
     "title": "Test Task",
     "description": "This is a test",
@@ -600,7 +636,7 @@
     "description": "Static resource on production.\nAdd to <head>",
     "priority": true,
     "status": "todo",
-    "position": 1,
+    "position": 3,
     "log": [
       {
         "date": "2026-01-26",
@@ -1028,7 +1064,7 @@
     "priority": false,
     "category": 2,
     "status": "todo",
-    "position": 0,
+    "position": 2,
     "log": [
       {
         "date": "2026-02-02",
@@ -1433,7 +1469,7 @@
     "priority": false,
     "category": 2,
     "status": "inprogress",
-    "position": 3,
+    "position": 4,
     "log": [
       {
         "date": "2026-02-11",
@@ -1737,7 +1773,7 @@
     "category": 2,
     "epicId": null,
     "status": "inprogress",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-02-23",
@@ -1754,7 +1790,7 @@
     "category": 1,
     "epicId": null,
     "status": "inprogress",
-    "position": 4,
+    "position": 5,
     "log": [
       {
         "date": "2026-02-24",
@@ -1771,7 +1807,7 @@
     "category": 1,
     "epicId": null,
     "status": "todo",
-    "position": 2,
+    "position": 4,
     "log": [],
     "createdDate": "2026-02-28T00:26:27.033Z",
     "deadline": null,
@@ -1800,5 +1836,24 @@
     "deadline": null,
     "snoozeUntil": null,
     "categoryName": "Non categorized"
+  },
+  {
+    "id": "mmfait37j96r8mb2g",
+    "title": "ewfefewfewfewf",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "todo",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-03-06",
+        "action": "Moved from Backlog to To Do"
+      }
+    ],
+    "createdDate": "2026-03-06T19:31:27.811Z",
+    "deadline": null,
+    "snoozeUntil": null
   }
 ]

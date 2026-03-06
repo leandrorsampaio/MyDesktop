@@ -1526,8 +1526,20 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "archived",
-    "position": 2,
+    "position": 0,
     "log": [
+      {
+        "date": "2026-03-06",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Restored to board"
+      },
       {
         "date": "2026-03-06",
         "action": "Moved from To Do to In Progress"

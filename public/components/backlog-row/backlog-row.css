@@ -1,0 +1,128 @@
+:host {
+    display: block;
+    background: var(--color-bg-primary);
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+:host(:last-of-type) {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* ---- Row Header ---- */
+.backlogRow__header {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    min-height: 44px;
+}
+
+.backlogRow__header:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* ---- Columns (same flex weights as list-header) ---- */
+.backlogRow__col {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.backlogRow__col--title {
+    flex: var(--archive-col-title, 4);
+}
+
+.backlogRow__col--epic {
+    flex: var(--archive-col-epic, 1.5);
+}
+
+.backlogRow__col--category {
+    flex: var(--archive-col-category, 1.5);
+}
+
+.backlogRow__col--date {
+    flex: var(--archive-col-date, 1);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.backlogRow__col--actions {
+    flex: 0 0 var(--archive-col-actions, 140px);
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ---- Title ---- */
+.backlogRow__star {
+    color: var(--color-accent-warning);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.backlogRow__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Epic pill ---- */
+.backlogRow__epicPill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ---- Category ---- */
+.backlogRow__categoryIcon {
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.backlogRow__categoryName {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Buttons ---- */
+.backlogRow__btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.backlogRow__btn--edit:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-primary);
+}
+
+.backlogRow__btn--promote:hover {
+    background: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
+    color: #fff;
+}

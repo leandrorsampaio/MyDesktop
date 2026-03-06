@@ -414,7 +414,7 @@ import {
      */
     function initKanban(cols) {
         elements.kanban.innerHTML = '';
-        cols.forEach((col, idx) => {
+        cols.filter(col => !col.isBacklog).forEach((col, idx) => {
             const columnEl = document.createElement('kanban-column');
             columnEl.dataset.status = col.id;
 
@@ -453,7 +453,7 @@ import {
         epicLookup = new Map(epics.map(e => [e.id, e]));
         // Build category lookup once per render cycle
         categoryLookup = new Map(categories.map(c => [c.id, c]));
-        columns.forEach(col => renderColumn(col.id));
+        columns.filter(col => !col.isBacklog).forEach(col => renderColumn(col.id));
         if (elements.epicFilter) renderEpicFilter(elements.epicFilter);
         applyAllFilters();
         updateSnoozeButton();
@@ -982,6 +982,12 @@ import {
                     initArchivePage(elements.pageView).catch(err => {
                         console.error('Archive page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load archive page');
+                    });
+                } else if (page === 'backlog') {
+                    const { initBacklogPage } = await import('./js/backlog-page.js');
+                    initBacklogPage(elements.pageView, { elements }).catch(err => {
+                        console.error('Backlog page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load backlog page');
                     });
                 } else {
                     renderPlaceholderPage(page);

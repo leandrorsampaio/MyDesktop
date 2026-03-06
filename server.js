@@ -299,10 +299,10 @@ const MAX_COLUMNS = 15;
  * Source of truth: /public/js/constants.js
  */
 const DEFAULT_COLUMNS = [
-    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false },
-    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false },
-    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false },
-    { id: 'done',       name: 'Done',        order: 3, hasArchive: true  }
+    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false, isBacklog: false },
+    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false, isBacklog: false },
+    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false, isBacklog: false },
+    { id: 'done',       name: 'Done',        order: 3, hasArchive: true,  isBacklog: false }
 ];
 
 /**
@@ -531,9 +531,21 @@ async function resolveProfile(req, res, next) {
 
         const profile = profiles[profileIndex];
 
-        // Auto-migrate: add default columns if the profile has none
+        // Auto-migrate: add default columns if the profile has none;
+        // also backfill isBacklog field on existing columns
+        let profileModified = false;
         if (!profile.columns || profile.columns.length === 0) {
             profile.columns = DEFAULT_COLUMNS;
+            profileModified = true;
+        } else {
+            for (const col of profile.columns) {
+                if (col.isBacklog === undefined) {
+                    col.isBacklog = false;
+                    profileModified = true;
+                }
+            }
+        }
+        if (profileModified) {
             await writeJsonFile(PROFILES_FILE, profiles);
         }
 
@@ -799,11 +811,15 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const { title, description = '', priority = false } = req.body;
 
-        // Default status is the first column (order 0)
-        const defaultColumnId = req.columns[0].id;
+        // Use status from body if it's a valid column ID, otherwise default to first column
+        const validColumnIds = new Set(req.columns.map(c => c.id));
+        const requestedStatus = req.body.status;
+        const columnId = (requestedStatus && validColumnIds.has(requestedStatus))
+            ? requestedStatus
+            : req.columns[0].id;
 
-        // Get max position in default column
-        const defaultColTasks = tasks.filter(t => t.status === defaultColumnId);
+        // Get max position in target column
+        const defaultColTasks = tasks.filter(t => t.status === columnId);
         const maxPosition = defaultColTasks.length > 0
             ? Math.max(...defaultColTasks.map(t => t.position)) + 1
             : 0;
@@ -818,7 +834,7 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
             priority: Boolean(priority),
             category,
             epicId,
-            status: defaultColumnId,
+            status: columnId,
             position: maxPosition,
             log: [],
             createdDate: new Date().toISOString(),
@@ -1414,7 +1430,7 @@ app.post('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res)
             return res.status(400).json({ error: `Maximum of ${MAX_COLUMNS} columns allowed` });
         }
 
-        const { name } = req.body;
+        const { name, isBacklog } = req.body;
         if (!name || typeof name !== 'string' || name.trim() === '') {
             return res.status(400).json({ error: 'Column name is required' });
         }
@@ -1426,7 +1442,8 @@ app.post('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res)
             id: generateId(),
             name: name.trim(),
             order: columns.length,
-            hasArchive: false
+            hasArchive: false,
+            isBacklog: isBacklog ? true : false
         };
 
         columns.push(newColumn);
@@ -1453,7 +1470,7 @@ app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, r
             return res.status(404).json({ error: 'Column not found' });
         }
 
-        const { name, hasArchive } = req.body;
+        const { name, hasArchive, isBacklog } = req.body;
 
         if (name !== undefined) {
             if (typeof name !== 'string' || name.trim() === '') {
@@ -1467,6 +1484,10 @@ app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, r
 
         if (hasArchive !== undefined) {
             columns[colIndex].hasArchive = Boolean(hasArchive);
+        }
+
+        if (isBacklog !== undefined) {
+            columns[colIndex].isBacklog = Boolean(isBacklog);
         }
 
         const profiles = await readJsonFile(PROFILES_FILE, []);
