@@ -25,7 +25,9 @@ import {
     fetchProfilesApi,
     createProfileApi,
     updateProfileApi,
-    deleteProfileApi
+    deleteProfileApi,
+    fetchAiConfigApi,
+    saveAiConfigApi
 } from './api.js';
 
 // ==========================================
@@ -1593,4 +1595,228 @@ export async function confirmDeleteProfile(elements) {
     } else {
         elements.toaster.error(result.error);
     }
+}
+
+// ==========================================
+// AI Configuration Modal
+// ==========================================
+
+const AI_PROVIDER_DEFAULTS = {
+    anthropic: { label: 'Anthropic (Claude)',                  defaultModel: 'claude-haiku-4-5-20251001', requiresKey: true  },
+    openai:    { label: 'OpenAI',                              defaultModel: 'gpt-4o-mini',              requiresKey: true  },
+    groq:      { label: 'Groq (free tier available)',          defaultModel: 'llama-3.3-70b-versatile',  requiresKey: true  },
+    custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false }
+};
+
+/**
+ * Opens the AI Configuration modal.
+ * Loads current config, lets user change provider/model/key, saves via API.
+ * @param {Object} elements - DOM element references
+ */
+export async function openAiConfigModal(elements) {
+    const modal         = elements.aiConfigModal;
+    const providerSel   = elements.aiProviderSelect;
+    const modelInput    = elements.aiModelInput;
+    const customUrlGrp  = elements.aiCustomUrlGroup;
+    const customUrlInput = elements.aiCustomUrl;
+    const keyInput      = elements.aiKeyInput;
+    const keyHint       = elements.aiKeyHint;
+    const errorEl       = elements.aiConfigError;
+    const cancelBtn     = elements.aiConfigCancel;
+    const saveBtn       = elements.aiConfigSave;
+
+    errorEl.style.display = 'none';
+    errorEl.textContent   = '';
+
+    // Load current config
+    let currentConfig = {};
+    try {
+        currentConfig = await fetchAiConfigApi();
+    } catch {
+        elements.toaster.error('Failed to load AI config');
+        return;
+    }
+
+    // Populate fields
+    providerSel.value   = currentConfig.activeProvider || 'anthropic';
+    modelInput.value    = currentConfig.activeModel    || AI_PROVIDER_DEFAULTS[providerSel.value]?.defaultModel || '';
+    customUrlInput.value = currentConfig.customBaseUrl || '';
+    keyInput.value      = '';
+    keyHint.textContent = currentConfig.hasKey ? 'Key saved — leave blank to keep current' : '';
+
+    function updateProviderVisibility() {
+        const isCustom = providerSel.value === 'custom';
+        customUrlGrp.style.display = isCustom ? '' : 'none';
+    }
+    updateProviderVisibility();
+
+    // When provider changes, update default model and visibility
+    function onProviderChange() {
+        const def = AI_PROVIDER_DEFAULTS[providerSel.value];
+        if (def && !modelInput.value.trim()) {
+            modelInput.value = def.defaultModel;
+        } else if (def && modelInput.value === (AI_PROVIDER_DEFAULTS[Object.keys(AI_PROVIDER_DEFAULTS).find(k => k !== providerSel.value)]?.defaultModel || '')) {
+            // switching away from a previous provider's default — replace with new default
+        }
+        // If model was set to a previous provider's default, replace it
+        const prevDefault = Object.values(AI_PROVIDER_DEFAULTS).find(d => d.defaultModel === modelInput.value && d !== def);
+        if (prevDefault || !modelInput.value) modelInput.value = def?.defaultModel || '';
+        updateProviderVisibility();
+    }
+
+    // Remove any old listener before adding a fresh one
+    const newProviderSel = providerSel.cloneNode(true);
+    providerSel.parentNode.replaceChild(newProviderSel, providerSel);
+    elements.aiProviderSelect = newProviderSel;
+    newProviderSel.value = currentConfig.activeProvider || 'anthropic';
+    newProviderSel.addEventListener('change', onProviderChange);
+
+    function onSave() {
+        errorEl.style.display = 'none';
+        const provider = elements.aiProviderSelect.value;
+        const model    = modelInput.value.trim();
+        const key      = keyInput.value.trim();
+        const baseUrl  = customUrlInput.value.trim();
+
+        if (!model) {
+            errorEl.textContent   = 'Model name is required';
+            errorEl.style.display = '';
+            return;
+        }
+        if (provider === 'custom' && !baseUrl) {
+            errorEl.textContent   = 'Base URL is required for Custom provider';
+            errorEl.style.display = '';
+            return;
+        }
+
+        saveAiConfigApi({ activeProvider: provider, activeModel: model, apiKey: key, customBaseUrl: baseUrl })
+            .then(result => {
+                if (!result.ok) {
+                    errorEl.textContent   = result.error;
+                    errorEl.style.display = '';
+                    return;
+                }
+                elements.toaster.success('AI configuration saved');
+                modal.close();
+            })
+            .catch(() => {
+                errorEl.textContent   = 'Failed to save configuration';
+                errorEl.style.display = '';
+            });
+    }
+
+    cancelBtn.onclick = () => modal.close();
+    saveBtn.onclick   = onSave;
+
+    modal.open();
+    modelInput.focus();
+}
+
+// ==========================================
+// AI Staged Task Modals
+// ==========================================
+
+/**
+ * Internal helper: populates the task modal form with staged task data and opens it.
+ * @param {Object} stagedTask
+ * @param {Object} elements
+ * @param {string} title - Modal title text
+ * @param {string} titlePrefix - Prefix to prepend to task title (e.g. "(Clone) ")
+ * @param {Function} onSave - Called with { title, description, priority, epicId, category, deadline }
+ */
+function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
+    setEditingTaskId(null);
+    elements.modalTitle.textContent = title;
+    elements.taskForm.reset();
+
+    elements.taskTitle.value       = titlePrefix + (stagedTask.title || '');
+    elements.taskDescription.value = stagedTask.description || '';
+    elements.taskPriority.checked  = stagedTask.priority || false;
+
+    renderCategoryPills(elements.categoryPills);
+    setCategorySelection(stagedTask.category || DEFAULT_CATEGORY_ID);
+    populateTaskEpicSelect(elements.taskEpic, stagedTask.epicId || '');
+
+    elements.taskLogSection.style.display = 'none';
+
+    if (stagedTask.deadline && !titlePrefix) {
+        elements.taskDeadline.value       = toDatetimeLocalValue(new Date(stagedTask.deadline));
+        elements.deadlineHint.textContent = formatRelativeTime(stagedTask.deadline);
+    } else {
+        elements.taskDeadline.value       = '';
+        elements.deadlineHint.textContent = '';
+    }
+    elements.taskSnooze.value       = '';
+    elements.snoozeHint.textContent = '';
+
+    // Render Cancel + Save only (no Delete, no Clone)
+    elements.taskModalActions.innerHTML = '';
+    const rightActions = document.createElement('div');
+    rightActions.className = 'modal__actionsRight';
+
+    const cancelBtn = document.createElement('custom-button');
+    cancelBtn.setAttribute('label', 'Cancel');
+
+    const saveBtn = document.createElement('custom-button');
+    saveBtn.setAttribute('label', 'Save');
+    saveBtn.setAttribute('modifier', 'save');
+    saveBtn.setAttribute('type', 'submit');
+
+    rightActions.appendChild(cancelBtn);
+    rightActions.appendChild(saveBtn);
+    elements.taskModalActions.appendChild(rightActions);
+
+    function cleanup() {
+        elements.taskForm.onsubmit = null;
+        cancelBtn.removeEventListener('click', onCancel);
+    }
+
+    function onCancel() {
+        cleanup();
+        elements.taskModal.close();
+    }
+
+    elements.taskForm.onsubmit = (e) => {
+        e.preventDefault();
+        cleanup();
+        onSave({
+            title:       elements.taskTitle.value.trim(),
+            description: elements.taskDescription.value,
+            priority:    elements.taskPriority.checked,
+            epicId:      elements.taskEpic.value || null,
+            category:    getSelectedCategory(),
+            deadline:    elements.taskDeadline.value
+                ? new Date(elements.taskDeadline.value).toISOString()
+                : null
+        });
+        elements.taskModal.close();
+    };
+
+    cancelBtn.addEventListener('click', onCancel);
+
+    elements.taskModal.open();
+    elements.taskTitle.focus();
+}
+
+/**
+ * Opens the task modal pre-filled with a staged task for editing.
+ * On save, calls onSave(updatedFields) — the caller persists the change.
+ * @param {Object} stagedTask
+ * @param {Object} elements
+ * @param {{ onSave: Function }} opts
+ */
+export function openEditStagedTaskModal(stagedTask, elements, { onSave }) {
+    _openStagedTaskForm(stagedTask, elements, 'Edit Staged Task', '', onSave);
+}
+
+/**
+ * Opens the task modal pre-filled as a clone of a staged task.
+ * Title is prefixed with "(Clone) ". Deadline is cleared.
+ * On save, calls onSave(taskData) — the caller decides the destination.
+ * @param {Object} stagedTask
+ * @param {Object} elements
+ * @param {{ onSave: Function }} opts
+ */
+export function openCloneStagedTaskModal(stagedTask, elements, { onSave }) {
+    _openStagedTaskForm(stagedTask, elements, 'Clone Staged Task', '(Clone) ', onSave);
 }

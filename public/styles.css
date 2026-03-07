@@ -2683,3 +2683,290 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 
 }
+
+/* ==========================================
+   Block: aiPage
+   ========================================== */
+
+/* Override list-header/ai-staged-row column widths for the AI page context */
+.aiPage {
+    --archive-col-actions: 300px;
+}
+
+.aiPage {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 65px);
+    overflow: hidden;
+    width: 100%;
+}
+
+/* ---- Chat section (top 55%) ---- */
+.aiPage__chat {
+    flex: 0 0 55%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+}
+
+.aiPage__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ---- Message bubbles ---- */
+.aiPage__message {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    line-height: 1.55;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.aiPage__message--user {
+    align-self: flex-end;
+    background: var(--color-accent-primary);
+    color: #fff;
+    border-bottom-right-radius: var(--radius-sm);
+}
+
+.aiPage__message--ai {
+    align-self: flex-start;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border-bottom-left-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ---- Thinking indicator (animated dots) ---- */
+.aiPage__message--thinking {
+    align-self: flex-start;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    border-bottom-left-radius: var(--radius-sm);
+    padding: 12px 18px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.aiPage__message--thinking span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-tertiary);
+    animation: aiThinkingDot 1.2s ease-in-out infinite;
+}
+
+.aiPage__message--thinking span:nth-child(2) { animation-delay: 0.2s; }
+.aiPage__message--thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes aiThinkingDot {
+    0%, 60%, 100% { opacity: 0.3; transform: scale(1); }
+    30%            { opacity: 1;   transform: scale(1.3); }
+}
+
+/* ---- Task chip inline in AI message ---- */
+.aiPage__taskChip {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-accent-primary);
+    background: rgba(26, 115, 232, 0.1);
+    border: 1px solid rgba(26, 115, 232, 0.25);
+    border-radius: 10px;
+    padding: 2px 8px;
+    align-self: flex-start;
+}
+
+/* ---- Input area ---- */
+.aiPage__inputArea {
+    flex-shrink: 0;
+    padding: 12px 24px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+}
+
+.aiPage__input {
+    width: 100%;
+    resize: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    font-family: var(--font-family);
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
+    max-height: 120px;
+    overflow-y: auto;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+}
+
+.aiPage__input:focus {
+    border-color: var(--color-accent-primary);
+}
+
+.aiPage__inputActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.aiPage__clearBtn {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-family);
+    padding: 4px 0;
+    transition: color 0.1s;
+}
+
+.aiPage__clearBtn:hover {
+    color: var(--color-text-secondary);
+}
+
+.aiPage__sendBtn {
+    padding: 7px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-family);
+    background: var(--color-accent-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.aiPage__sendBtn:hover:not(:disabled) {
+    background: var(--color-accent-primary-hover);
+}
+
+.aiPage__sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---- Tasks section (bottom 45%) ---- */
+.aiPage__tasks {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--color-bg-secondary);
+}
+
+.aiPage__tasksHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-primary);
+    flex-shrink: 0;
+}
+
+.aiPage__tasksTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.aiPage__count {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+}
+
+.aiPage__tableWrap {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.aiPage__emptyState {
+    padding: 32px 24px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-tertiary);
+}
+
+.aiPage__rows {
+    /* rows container — no additional styling needed */
+}
+
+/* ==========================================
+   Block: aiConfig (AI Configuration modal)
+   ========================================== */
+
+.aiConfig {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.aiConfig__hint {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.aiConfig__group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.aiConfig__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.aiConfig__select,
+.aiConfig__input {
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: var(--font-family);
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+}
+
+.aiConfig__select:focus,
+.aiConfig__input:focus {
+    border-color: var(--color-accent-primary);
+}
+
+.aiConfig__fieldHint {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin: 0;
+}
+
+.aiConfig__error {
+    font-size: 13px;
+    color: var(--color-accent-error);
+    padding: 8px 10px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-md);
+}

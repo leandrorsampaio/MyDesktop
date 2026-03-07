@@ -63,7 +63,8 @@ import {
     confirmDeleteCategory,
     openProfilesModal,
     confirmDeleteProfile,
-    setQuickDateTime
+    setQuickDateTime,
+    openAiConfigModal
 } from './js/modals.js';
 
 (function() {
@@ -173,6 +174,18 @@ import {
         generateReportConfirmModal: document.querySelector('.js-generateReportConfirmModal'),
         generateReportCancel: document.querySelector('.js-generateReportCancel'),
         generateReportConfirm: document.querySelector('.js-generateReportConfirm'),
+
+        // AI Configuration (triggered via sidebar config menu)
+        aiConfigModal:      document.querySelector('.js-aiConfigModal'),
+        aiConfigCancel:     document.querySelector('.js-aiConfigCancel'),
+        aiConfigSave:       document.querySelector('.js-aiConfigSave'),
+        aiProviderSelect:   document.querySelector('.js-aiProviderSelect'),
+        aiModelInput:       document.querySelector('.js-aiModelInput'),
+        aiCustomUrl:        document.querySelector('.js-aiCustomUrl'),
+        aiCustomUrlGroup:   document.querySelector('.js-aiCustomUrlGroup'),
+        aiKeyInput:         document.querySelector('.js-aiKeyInput'),
+        aiKeyHint:          document.querySelector('.js-aiKeyHint'),
+        aiConfigError:      document.querySelector('.js-aiConfigError'),
 
         // General Configuration (triggered via sidebar config menu)
         generalConfigModal: document.querySelector('.js-generalConfigModal'),
@@ -311,6 +324,9 @@ import {
                 break;
             case 'generate-report':
                 handleGenerateReport();
+                break;
+            case 'ai-config':
+                openAiConfigModal(elements);
                 break;
         }
     }
@@ -994,6 +1010,12 @@ import {
                     initDashboardPage(elements.pageView).catch(err => {
                         console.error('Dashboard page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load dashboard page');
+                    });
+                } else if (page === 'ai') {
+                    const { initAiPage } = await import('./js/ai-page.js');
+                    initAiPage(elements.pageView, { elements }).catch(err => {
+                        console.error('AI page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load AI page');
                     });
                 } else {
                     renderPlaceholderPage(page);

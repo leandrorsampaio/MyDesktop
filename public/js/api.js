@@ -491,3 +491,169 @@ export async function deleteColumnApi(id) {
 
     return { ok: true, data: await response.json() };
 }
+
+// ===========================================
+// AI Configuration API Functions (global — not profile-scoped)
+// ===========================================
+
+/**
+ * Fetches AI configuration metadata (never returns the API key).
+ * @returns {Promise<{ activeProvider: string|null, activeModel: string|null, hasKey: boolean, customBaseUrl: string|null }>}
+ */
+export async function fetchAiConfigApi() {
+    const response = await fetch('/api/ai/config');
+    return await response.json();
+}
+
+/**
+ * Saves AI configuration. Pass apiKey only when changing it; omit or pass '' to keep existing.
+ * @param {{ activeProvider: string, activeModel: string, apiKey?: string, customBaseUrl?: string }} data
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function saveAiConfigApi(data) {
+    const response = await fetch('/api/ai/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to save AI config' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+// ===========================================
+// AI Chat API Function (profile-scoped)
+// ===========================================
+
+/**
+ * Sends a chat message to the AI and returns narrative + newly staged tasks.
+ * @param {Array<{ role: string, content: string }>} messages - Full conversation history
+ * @returns {Promise<{ok: boolean, data?: { narrative: string, tasks: Array<Object> }, error?: string}>}
+ */
+export async function sendAiChatApi(messages) {
+    const response = await fetch(`${apiBase}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'AI request failed' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+// ===========================================
+// AI Staged Tasks API Functions (profile-scoped)
+// ===========================================
+
+/**
+ * Fetches all staged tasks for the active profile.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchStagedTasksApi() {
+    const response = await fetch(`${apiBase}/ai/staged`);
+    return await response.json();
+}
+
+/**
+ * Creates a staged task manually.
+ * @param {Object} data
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function createStagedTaskApi(data) {
+    const response = await fetch(`${apiBase}/ai/staged`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to create staged task' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Updates a staged task.
+ * @param {string} id
+ * @param {Object} data
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function updateStagedTaskApi(id, data) {
+    const response = await fetch(`${apiBase}/ai/staged/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to update staged task' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Deletes a staged task permanently.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function deleteStagedTaskApi(id) {
+    const response = await fetch(`${apiBase}/ai/staged/${id}`, { method: 'DELETE' });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to delete staged task' };
+    }
+
+    return { ok: true };
+}
+
+/**
+ * Promotes a staged task to the backlog column.
+ * Auto-creates the backlog column if none exists.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function promoteToBacklogApi(id) {
+    const response = await fetch(`${apiBase}/ai/staged/${id}/promote/backlog`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to promote to backlog' };
+    }
+
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Promotes a staged task to the board's first column.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function promoteToBoardApi(id) {
+    const response = await fetch(`${apiBase}/ai/staged/${id}/promote/board`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        return { ok: false, error: error.error || 'Failed to promote to board' };
+    }
+
+    return { ok: true, data: await response.json() };
+}

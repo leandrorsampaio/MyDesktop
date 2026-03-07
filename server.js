@@ -14,6 +14,39 @@ const PORT = process.env.PORT || 3001;
 // Data file paths
 const DATA_DIR = path.join(__dirname, 'data');
 const PROFILES_FILE = path.join(DATA_DIR, 'profiles.json');
+const AI_CONFIG_FILE = path.join(DATA_DIR, 'ai-config.json');
+
+/**
+ * AI provider registry.
+ * format: 'anthropic' | 'openai-compatible'
+ * Built-in providers have fixed baseUrl. Custom provider is user-defined.
+ */
+const AI_PROVIDERS = {
+    anthropic: {
+        format: 'anthropic',
+        baseUrl: 'https://api.anthropic.com',
+        defaultModel: 'claude-haiku-4-5-20251001',
+        requiresKey: true
+    },
+    openai: {
+        format: 'openai-compatible',
+        baseUrl: 'https://api.openai.com/v1',
+        defaultModel: 'gpt-4o-mini',
+        requiresKey: true
+    },
+    groq: {
+        format: 'openai-compatible',
+        baseUrl: 'https://api.groq.com/openai/v1',
+        defaultModel: 'llama-3.3-70b-versatile',
+        requiresKey: true
+    },
+    custom: {
+        format: 'openai-compatible',
+        baseUrl: null,
+        defaultModel: '',
+        requiresKey: false
+    }
+};
 
 /**
  * Maximum number of profiles allowed.
@@ -108,6 +141,8 @@ function createRateLimiter({ maxRequests, isWriteOperation = false }) {
 // Create rate limiters for different operation types
 const readLimiter = createRateLimiter({ maxRequests: RATE_LIMIT.MAX_REQUESTS });
 const writeLimiter = createRateLimiter({ maxRequests: RATE_LIMIT.MAX_WRITES, isWriteOperation: true });
+// Stricter rate limiter for AI chat calls (external API, expensive)
+const aiLimiter = createRateLimiter({ maxRequests: 10, isWriteOperation: true });
 
 // Apply rate limiting to all API routes
 app.use('/api/', readLimiter);
@@ -400,6 +435,7 @@ async function createEmptyProfileData(profileDir) {
     await writeJsonFile(path.join(profileDir, 'notes.json'), { content: '' });
     await writeJsonFile(path.join(profileDir, 'epics.json'), []);
     await writeJsonFile(path.join(profileDir, 'categories.json'), DEFAULT_CATEGORIES);
+    await writeJsonFile(path.join(profileDir, 'ai-staged-tasks.json'), []);
 }
 
 /**
@@ -556,7 +592,8 @@ async function resolveProfile(req, res, next) {
             reports: path.join(profileDir, 'reports.json'),
             notes: path.join(profileDir, 'notes.json'),
             epics: path.join(profileDir, 'epics.json'),
-            categories: path.join(profileDir, 'categories.json')
+            categories: path.join(profileDir, 'categories.json'),
+            aiStaged: path.join(profileDir, 'ai-staged-tasks.json')
         };
         req.profile = profile;
         // Columns sorted by order for consistent use across handlers
@@ -1734,6 +1771,577 @@ app.delete('/api/:profile/categories/:id', resolveProfile, writeLimiter, async (
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete category' });
+    }
+});
+
+// ===========================================
+// AI Helper Functions
+// ===========================================
+
+/**
+ * Tool definition for structured task extraction.
+ * Anthropic format — transformed for OpenAI-compatible providers in callOpenAiCompatibleAi().
+ */
+const PROPOSE_TASKS_TOOL = {
+    name: 'propose_tasks',
+    description: 'Propose structured task objects extracted from the conversation. Call this in every response, even with an empty tasks array when no tasks are being created.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            tasks: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        title:       { type: 'string',  description: 'Task title, concise and actionable, max 200 chars' },
+                        description: { type: 'string',  description: 'Optional details that do not fit in the title' },
+                        priority:    { type: 'boolean', description: 'true only for explicitly urgent or blocking tasks' },
+                        epicId:      { type: 'string',  description: 'Epic ID from the provided list if the task clearly belongs to it, otherwise omit' },
+                        category:    { type: 'integer', description: 'Category ID from the provided list, default 1 (Non categorized)' },
+                        deadline:    { type: 'string',  description: 'ISO 8601 datetime only if a specific date or time is explicitly mentioned, otherwise omit' }
+                    },
+                    required: ['title']
+                }
+            }
+        },
+        required: ['tasks']
+    }
+};
+
+/**
+ * Builds the AI system prompt, injecting current profile epics and categories.
+ * @param {Array<Object>} epics
+ * @param {Array<Object>} categories
+ * @returns {string}
+ */
+function buildAiSystemPrompt(epics, categories) {
+    const epicsStr = epics.length
+        ? epics.map(e => `  - "${e.name}" (id: "${e.id}")`).join('\n')
+        : '  (none defined yet)';
+
+    const catsStr = categories
+        .map(c => `  - "${c.name}" (id: ${c.id})`)
+        .join('\n');
+
+    return `You are a task management assistant for a personal kanban tool.
+Your job is to help the user extract actionable tasks from unstructured text (meeting notes, emails, brain dumps) and have natural conversations about their work.
+
+Always call propose_tasks() in your response — even when no tasks are being created (pass an empty array in that case).
+
+Available epics for this profile:
+${epicsStr}
+
+Available categories:
+${catsStr}
+
+Task creation rules:
+- Set priority: true only for explicitly urgent or blocking tasks
+- Set epicId to the matching epic's id only if the content clearly relates to it
+- Set deadline only if a specific date or time is explicitly stated in the text (ISO 8601)
+- Keep titles concise and actionable (verb + object, e.g. "Update API documentation")
+- Use description for details that do not fit in the title
+- Default category is 1 (Non categorized) when nothing matches`;
+}
+
+/**
+ * Attempts to extract tasks JSON from a plain-text response (fallback when tool use fails).
+ * Looks for a JSON block containing a "tasks" array.
+ * @param {string} text
+ * @returns {Array<Object>} extracted tasks or []
+ */
+function extractTasksFromText(text) {
+    try {
+        // Try ```json ... ``` block first
+        const fenced = text.match(/```json\s*([\s\S]*?)\s*```/);
+        if (fenced) {
+            const parsed = JSON.parse(fenced[1]);
+            if (Array.isArray(parsed.tasks)) return parsed.tasks;
+            if (Array.isArray(parsed)) return parsed;
+        }
+        // Try bare { "tasks": [...] } anywhere in the text
+        const bare = text.match(/\{[\s\S]*"tasks"\s*:\s*\[[\s\S]*?\]\s*\}/);
+        if (bare) {
+            const parsed = JSON.parse(bare[0]);
+            if (Array.isArray(parsed.tasks)) return parsed.tasks;
+        }
+    } catch {
+        // Parsing failed — return empty
+    }
+    return [];
+}
+
+/**
+ * Calls the Anthropic Messages API.
+ * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
+ */
+async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            model,
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages,
+            tools: [PROPOSE_TASKS_TOOL]
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Anthropic API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    let narrative = '';
+    let rawTasks = [];
+
+    for (const block of (data.content || [])) {
+        if (block.type === 'text') {
+            narrative += (narrative ? '\n' : '') + block.text;
+        } else if (block.type === 'tool_use' && block.name === 'propose_tasks') {
+            rawTasks = block.input?.tasks || [];
+        }
+    }
+
+    if (!rawTasks.length && narrative) {
+        rawTasks = extractTasksFromText(narrative);
+    }
+
+    return { narrative: narrative.trim(), rawTasks };
+}
+
+/**
+ * Calls any OpenAI-compatible API (OpenAI, Groq, LM Studio, Ollama /v1, etc.).
+ * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
+ */
+async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages) {
+    // Transform tool to OpenAI function-calling format
+    const tool = {
+        type: 'function',
+        function: {
+            name: PROPOSE_TASKS_TOOL.name,
+            description: PROPOSE_TASKS_TOOL.description,
+            parameters: PROPOSE_TASKS_TOOL.input_schema
+        }
+    };
+
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'authorization': `Bearer ${apiKey || 'none'}`,
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            tools: [tool],
+            tool_choice: 'auto'
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `AI provider error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const message = data.choices?.[0]?.message;
+    let narrative = (message?.content || '').trim();
+    let rawTasks = [];
+
+    if (message?.tool_calls?.length) {
+        try {
+            const args = JSON.parse(message.tool_calls[0].function.arguments);
+            rawTasks = args.tasks || [];
+        } catch {
+            rawTasks = [];
+        }
+    }
+
+    if (!rawTasks.length && narrative) {
+        rawTasks = extractTasksFromText(narrative);
+    }
+
+    return { narrative, rawTasks };
+}
+
+/**
+ * Normalises a raw task from the AI into a valid StagedTask object.
+ * Validates fields against loaded epics and categories; applies safe defaults.
+ * @param {Object} raw
+ * @param {string} id
+ * @param {Set<string>} validEpicIds
+ * @param {Set<number>} validCategoryIds
+ * @returns {Object} StagedTask
+ */
+function normaliseStagedTask(raw, id, validEpicIds, validCategoryIds) {
+    const title = typeof raw.title === 'string' ? raw.title.trim().substring(0, 200) : '';
+    if (!title) return null;
+
+    const description = typeof raw.description === 'string' ? raw.description.substring(0, 2000) : '';
+    const priority    = raw.priority === true;
+    const epicId      = (typeof raw.epicId === 'string' && validEpicIds.has(raw.epicId)) ? raw.epicId : null;
+    const catNum      = Number(raw.category);
+    const category    = (!isNaN(catNum) && validCategoryIds.has(catNum)) ? catNum : 1;
+    const deadline    = (raw.deadline && typeof raw.deadline === 'string' && !isNaN(Date.parse(raw.deadline)))
+        ? raw.deadline
+        : null;
+
+    return {
+        id,
+        title,
+        description,
+        priority,
+        epicId,
+        category,
+        deadline,
+        createdDate: new Date().toISOString()
+    };
+}
+
+// ===========================================
+// AI Configuration Routes (global, not profile-scoped)
+// ===========================================
+
+// GET AI config — never returns the API key, only metadata
+app.get('/api/ai/config', async (req, res) => {
+    try {
+        const config = await readJsonFile(AI_CONFIG_FILE, {});
+        const activeProvider = config.activeProvider || null;
+        const providerData   = activeProvider ? (config.providers?.[activeProvider] || {}) : {};
+        res.json({
+            activeProvider,
+            activeModel:   config.activeModel || null,
+            hasKey:        !!(providerData.apiKey),
+            customBaseUrl: providerData.baseUrl || null
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read AI config' });
+    }
+});
+
+// POST AI config — saves provider, model, and optionally API key
+app.post('/api/ai/config', writeLimiter, async (req, res) => {
+    try {
+        const { activeProvider, activeModel, apiKey, customBaseUrl } = req.body;
+
+        if (!activeProvider || !AI_PROVIDERS[activeProvider]) {
+            return res.status(400).json({ error: 'Invalid provider. Must be one of: ' + Object.keys(AI_PROVIDERS).join(', ') });
+        }
+        if (!activeModel || typeof activeModel !== 'string' || !activeModel.trim()) {
+            return res.status(400).json({ error: 'Model name is required' });
+        }
+        if (activeProvider === 'custom' && (!customBaseUrl || typeof customBaseUrl !== 'string' || !customBaseUrl.trim())) {
+            return res.status(400).json({ error: 'Base URL is required for custom provider' });
+        }
+
+        const existing = await readJsonFile(AI_CONFIG_FILE, {});
+        if (!existing.providers) existing.providers = {};
+        if (!existing.providers[activeProvider]) existing.providers[activeProvider] = {};
+
+        existing.activeProvider = activeProvider;
+        existing.activeModel    = activeModel.trim();
+
+        // Only update the key if a non-empty value was provided
+        if (typeof apiKey === 'string' && apiKey.trim()) {
+            existing.providers[activeProvider].apiKey = apiKey.trim();
+        }
+        if (activeProvider === 'custom') {
+            existing.providers[activeProvider].baseUrl = customBaseUrl.trim();
+        }
+
+        await writeJsonFile(AI_CONFIG_FILE, existing);
+
+        const providerData = existing.providers[activeProvider];
+        res.json({
+            activeProvider,
+            activeModel: existing.activeModel,
+            hasKey: !!(providerData.apiKey),
+            customBaseUrl: providerData.baseUrl || null
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save AI config' });
+    }
+});
+
+// ===========================================
+// AI Staged Tasks Routes (profile-scoped)
+// ===========================================
+
+// GET all staged tasks
+app.get('/api/:profile/ai/staged', resolveProfile, async (req, res) => {
+    try {
+        const staged = await readJsonFile(req.profileFiles.aiStaged, []);
+        res.json(staged);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read staged tasks' });
+    }
+});
+
+// POST create a staged task manually
+app.post('/api/:profile/ai/staged', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const validCategoryIds = new Set(categories.map(c => c.id));
+
+        const validation = validateTaskInput(req.body, { requireTitle: true, validCategoryIds });
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
+        const staged = await readJsonFile(req.profileFiles.aiStaged, []);
+        const newTask = {
+            id:          generateId(),
+            title:       req.body.title.trim(),
+            description: req.body.description || '',
+            priority:    req.body.priority === true,
+            epicId:      req.body.epicId || null,
+            category:    req.body.category ? Number(req.body.category) : 1,
+            deadline:    req.body.deadline || null,
+            createdDate: new Date().toISOString()
+        };
+
+        staged.push(newTask);
+        await writeJsonFile(req.profileFiles.aiStaged, staged);
+        res.status(201).json(newTask);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create staged task' });
+    }
+});
+
+// PUT update a staged task
+app.put('/api/:profile/ai/staged/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const validCategoryIds = new Set(categories.map(c => c.id));
+
+        const validation = validateTaskInput(req.body, { requireTitle: false, validCategoryIds });
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.errors.join('; ') });
+        }
+
+        const staged = await readJsonFile(req.profileFiles.aiStaged, []);
+        const idx = staged.findIndex(t => t.id === req.params.id);
+        if (idx === -1) return res.status(404).json({ error: 'Staged task not found' });
+
+        const task = staged[idx];
+        if (req.body.title       !== undefined) task.title       = req.body.title.trim();
+        if (req.body.description !== undefined) task.description = req.body.description;
+        if (req.body.priority    !== undefined) task.priority    = req.body.priority === true;
+        if (req.body.epicId      !== undefined) task.epicId      = req.body.epicId || null;
+        if (req.body.category    !== undefined) task.category    = Number(req.body.category);
+        if (req.body.deadline    !== undefined) task.deadline    = req.body.deadline || null;
+
+        await writeJsonFile(req.profileFiles.aiStaged, staged);
+        res.json(task);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update staged task' });
+    }
+});
+
+// DELETE a staged task
+app.delete('/api/:profile/ai/staged/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const staged = await readJsonFile(req.profileFiles.aiStaged, []);
+        const idx = staged.findIndex(t => t.id === req.params.id);
+        if (idx === -1) return res.status(404).json({ error: 'Staged task not found' });
+
+        staged.splice(idx, 1);
+        await writeJsonFile(req.profileFiles.aiStaged, staged);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete staged task' });
+    }
+});
+
+// POST promote staged task to backlog
+app.post('/api/:profile/ai/staged/:id/promote/backlog', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const staged = await readJsonFile(req.profileFiles.aiStaged, []);
+        const stagedTask = staged.find(t => t.id === req.params.id);
+        if (!stagedTask) return res.status(404).json({ error: 'Staged task not found' });
+
+        // Find or create backlog column
+        const profiles = await readJsonFile(PROFILES_FILE, []);
+        const profileIndex = profiles.findIndex(p => p.alias === req.params.profile);
+        const profile = profiles[profileIndex];
+        let backlogCol = profile.columns.find(c => c.isBacklog === true);
+
+        if (!backlogCol) {
+            backlogCol = {
+                id: generateId(),
+                name: 'Backlog',
+                order: profile.columns.length,
+                hasArchive: false,
+                isBacklog: true
+            };
+            profile.columns.push(backlogCol);
+            await writeJsonFile(PROFILES_FILE, profiles);
+        }
+
+        // Shift existing tasks in backlog column down
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        for (const t of tasks) {
+            if (t.status === backlogCol.id) t.position += 1;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const newTask = {
+            id:          generateId(),
+            title:       stagedTask.title,
+            description: stagedTask.description || '',
+            priority:    stagedTask.priority || false,
+            epicId:      stagedTask.epicId || null,
+            category:    stagedTask.category || 1,
+            deadline:    stagedTask.deadline || null,
+            snoozeUntil: null,
+            status:      backlogCol.id,
+            position:    0,
+            log:         [{ date: today, action: 'Added from AI Staging' }],
+            createdDate: new Date().toISOString()
+        };
+        tasks.push(newTask);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+
+        // Remove from staged
+        const updatedStaged = staged.filter(t => t.id !== req.params.id);
+        await writeJsonFile(req.profileFiles.aiStaged, updatedStaged);
+
+        res.json({ ok: true, task: newTask });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to promote to backlog' });
+    }
+});
+
+// POST promote staged task to board (first non-backlog column)
+app.post('/api/:profile/ai/staged/:id/promote/board', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const staged = await readJsonFile(req.profileFiles.aiStaged, []);
+        const stagedTask = staged.find(t => t.id === req.params.id);
+        if (!stagedTask) return res.status(404).json({ error: 'Staged task not found' });
+
+        const firstCol = req.columns.find(c => !c.isBacklog);
+        if (!firstCol) return res.status(400).json({ error: 'No board column found' });
+
+        // Shift existing tasks in first column down
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        for (const t of tasks) {
+            if (t.status === firstCol.id) t.position += 1;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const newTask = {
+            id:          generateId(),
+            title:       stagedTask.title,
+            description: stagedTask.description || '',
+            priority:    stagedTask.priority || false,
+            epicId:      stagedTask.epicId || null,
+            category:    stagedTask.category || 1,
+            deadline:    stagedTask.deadline || null,
+            snoozeUntil: null,
+            status:      firstCol.id,
+            position:    0,
+            log:         [{ date: today, action: 'Added from AI Staging' }],
+            createdDate: new Date().toISOString()
+        };
+        tasks.push(newTask);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+
+        // Remove from staged
+        const updatedStaged = staged.filter(t => t.id !== req.params.id);
+        await writeJsonFile(req.profileFiles.aiStaged, updatedStaged);
+
+        res.json({ ok: true, task: newTask });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to promote to board' });
+    }
+});
+
+// ===========================================
+// AI Chat Route (profile-scoped)
+// ===========================================
+
+// POST send a message to the AI; returns { narrative, tasks }
+app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) => {
+    try {
+        const { messages } = req.body;
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return res.status(400).json({ error: 'messages must be a non-empty array' });
+        }
+        for (const m of messages) {
+            if (!m || typeof m.role !== 'string' || typeof m.content !== 'string') {
+                return res.status(400).json({ error: 'Each message must have role and content strings' });
+            }
+            if (m.role !== 'user' && m.role !== 'assistant') {
+                return res.status(400).json({ error: 'Message role must be "user" or "assistant"' });
+            }
+        }
+
+        // Load AI config
+        const aiConfig = await readJsonFile(AI_CONFIG_FILE, {});
+        if (!aiConfig.activeProvider) {
+            return res.status(400).json({ error: 'AI not configured. Add your provider via Config → AI Configuration.' });
+        }
+
+        const providerKey  = aiConfig.activeProvider;
+        const providerMeta = AI_PROVIDERS[providerKey];
+        if (!providerMeta) {
+            return res.status(400).json({ error: 'Unknown AI provider in config.' });
+        }
+
+        const providerData = aiConfig.providers?.[providerKey] || {};
+        if (providerMeta.requiresKey && !providerData.apiKey) {
+            return res.status(400).json({ error: 'API key not set for this provider. Configure it via Config → AI Configuration.' });
+        }
+
+        const model   = aiConfig.activeModel;
+        const apiKey  = providerData.apiKey || '';
+        const baseUrl = providerKey === 'custom'
+            ? providerData.baseUrl
+            : providerMeta.baseUrl;
+
+        // Build system prompt with current profile epics + categories
+        const epics      = await readJsonFile(req.profileFiles.epics, []);
+        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+        const systemPrompt = buildAiSystemPrompt(epics, categories);
+
+        // Call the AI
+        let narrative, rawTasks;
+        try {
+            if (providerMeta.format === 'anthropic') {
+                ({ narrative, rawTasks } = await callAnthropicAi(apiKey, model, systemPrompt, messages));
+            } else {
+                ({ narrative, rawTasks } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages));
+            }
+        } catch (aiErr) {
+            return res.status(502).json({ error: 'AI provider error: ' + aiErr.message });
+        }
+
+        // Validate and normalise raw tasks
+        const validEpicIds     = new Set(epics.map(e => e.id));
+        const validCategoryIds = new Set(categories.map(c => c.id));
+        const newStagedTasks   = [];
+
+        for (const raw of rawTasks) {
+            const task = normaliseStagedTask(raw, generateId(), validEpicIds, validCategoryIds);
+            if (task) newStagedTasks.push(task);
+        }
+
+        // Persist new staged tasks
+        if (newStagedTasks.length > 0) {
+            const existing = await readJsonFile(req.profileFiles.aiStaged, []);
+            await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
+        }
+
+        res.json({ narrative, tasks: newStagedTasks });
+    } catch (error) {
+        res.status(500).json({ error: 'AI chat failed' });
     }
 });
 

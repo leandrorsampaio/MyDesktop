@@ -1,0 +1,133 @@
+:host {
+    display: block;
+    background: var(--color-bg-primary);
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+:host(:last-of-type) {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* ---- Row Header ---- */
+.aiStagedRow__header {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    min-height: 44px;
+}
+
+.aiStagedRow__header:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* ---- Columns (same flex weights as list-header) ---- */
+.aiStagedRow__col {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.aiStagedRow__col--title {
+    flex: var(--archive-col-title, 4);
+}
+
+.aiStagedRow__col--epic {
+    flex: var(--archive-col-epic, 1.5);
+}
+
+.aiStagedRow__col--category {
+    flex: var(--archive-col-category, 1.5);
+}
+
+.aiStagedRow__col--actions {
+    flex: 0 0 var(--archive-col-actions, 300px);
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ---- Title ---- */
+.aiStagedRow__star {
+    color: var(--color-accent-warning);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.aiStagedRow__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Epic pill ---- */
+.aiStagedRow__epicPill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ---- Category ---- */
+.aiStagedRow__categoryIcon {
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.aiStagedRow__categoryName {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Buttons ---- */
+.aiStagedRow__btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.aiStagedRow__btn:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-primary);
+}
+
+.aiStagedRow__btn--backlog:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-accent-primary);
+    color: var(--color-accent-primary);
+}
+
+.aiStagedRow__btn--board:hover {
+    background: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
+    color: #fff;
+}
+
+.aiStagedRow__btn--delete:hover {
+    background: var(--color-accent-error);
+    border-color: var(--color-accent-error);
+    color: #fff;
+}
