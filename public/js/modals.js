@@ -1645,14 +1645,14 @@ export async function openAiConfigModal(elements) {
     keyHint.textContent = currentConfig.hasKey ? 'Key saved — leave blank to keep current' : '';
 
     function updateProviderVisibility() {
-        const isCustom = providerSel.value === 'custom';
+        const isCustom = elements.aiProviderSelect.value === 'custom';
         customUrlGrp.style.display = isCustom ? '' : 'none';
     }
     updateProviderVisibility();
 
     // When provider changes, update default model and visibility
     function onProviderChange() {
-        const def = AI_PROVIDER_DEFAULTS[providerSel.value];
+        const def = AI_PROVIDER_DEFAULTS[elements.aiProviderSelect.value];
         if (def && !modelInput.value.trim()) {
             modelInput.value = def.defaultModel;
         } else if (def && modelInput.value === (AI_PROVIDER_DEFAULTS[Object.keys(AI_PROVIDER_DEFAULTS).find(k => k !== providerSel.value)]?.defaultModel || '')) {

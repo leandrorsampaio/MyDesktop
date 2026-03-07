@@ -1930,7 +1930,8 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         }
     };
 
-    const response = await fetch(`${baseUrl}/chat/completions`, {
+    const finalUrl = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
+    const response = await fetch(finalUrl, {
         method: 'POST',
         headers: {
             'authorization': `Bearer ${apiKey || 'none'}`,
@@ -2052,7 +2053,7 @@ app.post('/api/ai/config', writeLimiter, async (req, res) => {
             existing.providers[activeProvider].apiKey = apiKey.trim();
         }
         if (activeProvider === 'custom') {
-            existing.providers[activeProvider].baseUrl = customBaseUrl.trim();
+            existing.providers[activeProvider].baseUrl = customBaseUrl.trim().replace(/\/+$/, '');
         }
 
         await writeJsonFile(AI_CONFIG_FILE, existing);

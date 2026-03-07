@@ -1864,10 +1864,29 @@
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mmf9c0aaza1snpz8c",
-    "position": 0,
+    "position": 1,
     "log": [],
     "createdDate": "2026-03-07T10:09:58.095Z",
     "deadline": "2026-03-08T07:00:00.000Z",
     "snoozeUntil": null
+  },
+  {
+    "id": "mmgvdk4b3invtcz8x",
+    "title": "Plan the menu",
+    "description": "Decide on dishes to prepare for dinner, considering dietary preferences of friends.",
+    "priority": false,
+    "epicId": null,
+    "category": 5,
+    "deadline": null,
+    "snoozeUntil": null,
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-07",
+        "action": "Added from AI Staging"
+      }
+    ],
+    "createdDate": "2026-03-07T22:03:01.019Z"
   }
 ]
