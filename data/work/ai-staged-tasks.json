@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "id": "mmgzfwpf607rz9nzk",
+    "title": "Buy groceries",
+    "description": "Purchase ingredients, drinks, and snacks for the barbecue.",
+    "priority": false,
+    "epicId": null,
+    "category": 1,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  },
+  {
+    "id": "mmgzfwpfe82dqcx6r",
+    "title": "Prepare the grill",
+    "description": "Clean and set up the barbecue area.",
+    "priority": false,
+    "epicId": null,
+    "category": 1,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  },
+  {
+    "id": "mmgzfwpfrzn27bu9s",
+    "title": "Plan the menu",
+    "description": "Decide on dishes and sides to serve.",
+    "priority": false,
+    "epicId": null,
+    "category": 5,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  },
+  {
+    "id": "mmgzfwpfxpnnhwsgn",
+    "title": "Set up seating and decorations",
+    "description": "Arrange outdoor furniture and ambiance.",
+    "priority": false,
+    "epicId": null,
+    "category": 1,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  },
+  {
+    "id": "mmgzfwpfht9sms8u3",
+    "title": "Invite friends",
+    "description": "Confirm attendees and share details.",
+    "priority": false,
+    "epicId": null,
+    "category": 3,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  },
+  {
+    "id": "mmgzfwpfyu5txa08p",
+    "title": "Prepare side dishes",
+    "description": "Cook or assemble accompaniments.",
+    "priority": false,
+    "epicId": null,
+    "category": 1,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  },
+  {
+    "id": "mmgzfwpfyuhzmxic0",
+    "title": "Chill drinks",
+    "description": "Stock and refrigerate beverages.",
+    "priority": false,
+    "epicId": null,
+    "category": 1,
+    "deadline": null,
+    "createdDate": "2026-03-07T23:56:49.107Z"
+  }
+]

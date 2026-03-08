@@ -23,24 +23,28 @@ const AI_CONFIG_FILE = path.join(DATA_DIR, 'ai-config.json');
  */
 const AI_PROVIDERS = {
     anthropic: {
+        label: 'Anthropic (Claude)',
         format: 'anthropic',
         baseUrl: 'https://api.anthropic.com',
         defaultModel: 'claude-haiku-4-5-20251001',
         requiresKey: true
     },
     openai: {
+        label: 'OpenAI',
         format: 'openai-compatible',
         baseUrl: 'https://api.openai.com/v1',
         defaultModel: 'gpt-4o-mini',
         requiresKey: true
     },
     groq: {
+        label: 'Groq',
         format: 'openai-compatible',
         baseUrl: 'https://api.groq.com/openai/v1',
         defaultModel: 'llama-3.3-70b-versatile',
         requiresKey: true
     },
     custom: {
+        label: 'Custom / Local',
         format: 'openai-compatible',
         baseUrl: null,
         defaultModel: '',
@@ -2009,64 +2013,176 @@ function normaliseStagedTask(raw, id, validEpicIds, validCategoryIds) {
 // AI Configuration Routes (global, not profile-scoped)
 // ===========================================
 
-// GET AI config — never returns the API key, only metadata
+/**
+ * Migrates old ai-config.json format (activeProvider + providers map) to new multi-config format.
+ * Returns the new format object (does NOT write to disk — caller writes if needed).
+ */
+function migrateAiConfig(config) {
+    if (config.configs) return config; // already new format
+    const provider = config.activeProvider;
+    if (!provider) return { configs: [], activeConfigId: null };
+    const providerData = config.providers?.[provider] || {};
+    const id = Date.now().toString(36);
+    return {
+        activeConfigId: id,
+        configs: [{
+            id,
+            name: AI_PROVIDERS[provider]?.label || provider,
+            provider,
+            model: config.activeModel || '',
+            apiKey: providerData.apiKey || '',
+            baseUrl: providerData.baseUrl || ''
+        }]
+    };
+}
+
+/** Strips apiKey from a config entry and adds hasKey boolean for safe client response. */
+function safeConfigEntry(entry) {
+    const { apiKey, ...rest } = entry;
+    return { ...rest, hasKey: !!(apiKey) };
+}
+
+// GET AI config — never returns API keys
 app.get('/api/ai/config', async (req, res) => {
     try {
-        const config = await readJsonFile(AI_CONFIG_FILE, {});
-        const activeProvider = config.activeProvider || null;
-        const providerData   = activeProvider ? (config.providers?.[activeProvider] || {}) : {};
+        const raw = await readJsonFile(AI_CONFIG_FILE, {});
+        const config = migrateAiConfig(raw);
         res.json({
-            activeProvider,
-            activeModel:   config.activeModel || null,
-            hasKey:        !!(providerData.apiKey),
-            customBaseUrl: providerData.baseUrl || null
+            activeConfigId: config.activeConfigId || null,
+            configs: (config.configs || []).map(safeConfigEntry)
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to read AI config' });
     }
 });
 
-// POST AI config — saves provider, model, and optionally API key
-app.post('/api/ai/config', writeLimiter, async (req, res) => {
+// POST /api/ai/config/entries — create a new config entry
+app.post('/api/ai/config/entries', writeLimiter, async (req, res) => {
     try {
-        const { activeProvider, activeModel, apiKey, customBaseUrl } = req.body;
+        const { name, provider, model, apiKey, baseUrl } = req.body;
 
-        if (!activeProvider || !AI_PROVIDERS[activeProvider]) {
+        if (!name || typeof name !== 'string' || !name.trim() || name.trim().length > 100) {
+            return res.status(400).json({ error: 'Name is required (max 100 chars)' });
+        }
+        if (!provider || !AI_PROVIDERS[provider]) {
             return res.status(400).json({ error: 'Invalid provider. Must be one of: ' + Object.keys(AI_PROVIDERS).join(', ') });
         }
-        if (!activeModel || typeof activeModel !== 'string' || !activeModel.trim()) {
+        if (!model || typeof model !== 'string' || !model.trim()) {
             return res.status(400).json({ error: 'Model name is required' });
         }
-        if (activeProvider === 'custom' && (!customBaseUrl || typeof customBaseUrl !== 'string' || !customBaseUrl.trim())) {
+        if (provider === 'custom' && (!baseUrl || typeof baseUrl !== 'string' || !baseUrl.trim())) {
             return res.status(400).json({ error: 'Base URL is required for custom provider' });
         }
 
-        const existing = await readJsonFile(AI_CONFIG_FILE, {});
-        if (!existing.providers) existing.providers = {};
-        if (!existing.providers[activeProvider]) existing.providers[activeProvider] = {};
+        const raw = await readJsonFile(AI_CONFIG_FILE, {});
+        const config = migrateAiConfig(raw);
+        if (!config.configs) config.configs = [];
 
-        existing.activeProvider = activeProvider;
-        existing.activeModel    = activeModel.trim();
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        const entry = {
+            id,
+            name: name.trim(),
+            provider,
+            model: model.trim(),
+            apiKey: (typeof apiKey === 'string' && apiKey.trim()) ? apiKey.trim() : '',
+            baseUrl: provider === 'custom' ? baseUrl.trim().replace(/\/+$/, '') : ''
+        };
+        config.configs.push(entry);
+        if (!config.activeConfigId) config.activeConfigId = id;
 
-        // Only update the key if a non-empty value was provided
-        if (typeof apiKey === 'string' && apiKey.trim()) {
-            existing.providers[activeProvider].apiKey = apiKey.trim();
-        }
-        if (activeProvider === 'custom') {
-            existing.providers[activeProvider].baseUrl = customBaseUrl.trim().replace(/\/+$/, '');
-        }
-
-        await writeJsonFile(AI_CONFIG_FILE, existing);
-
-        const providerData = existing.providers[activeProvider];
-        res.json({
-            activeProvider,
-            activeModel: existing.activeModel,
-            hasKey: !!(providerData.apiKey),
-            customBaseUrl: providerData.baseUrl || null
-        });
+        await writeJsonFile(AI_CONFIG_FILE, config);
+        res.json({ activeConfigId: config.activeConfigId, entry: safeConfigEntry(entry) });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to save AI config' });
+        res.status(500).json({ error: 'Failed to create AI config entry' });
+    }
+});
+
+// PUT /api/ai/config/entries/:id — update an existing config entry
+app.put('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, provider, model, apiKey, baseUrl } = req.body;
+
+        if (!name || typeof name !== 'string' || !name.trim() || name.trim().length > 100) {
+            return res.status(400).json({ error: 'Name is required (max 100 chars)' });
+        }
+        if (!provider || !AI_PROVIDERS[provider]) {
+            return res.status(400).json({ error: 'Invalid provider. Must be one of: ' + Object.keys(AI_PROVIDERS).join(', ') });
+        }
+        if (!model || typeof model !== 'string' || !model.trim()) {
+            return res.status(400).json({ error: 'Model name is required' });
+        }
+        if (provider === 'custom' && (!baseUrl || typeof baseUrl !== 'string' || !baseUrl.trim())) {
+            return res.status(400).json({ error: 'Base URL is required for custom provider' });
+        }
+
+        const raw = await readJsonFile(AI_CONFIG_FILE, {});
+        const config = migrateAiConfig(raw);
+        const idx = (config.configs || []).findIndex(c => c.id === id);
+        if (idx === -1) return res.status(404).json({ error: 'Config entry not found' });
+
+        const existing = config.configs[idx];
+        config.configs[idx] = {
+            id,
+            name: name.trim(),
+            provider,
+            model: model.trim(),
+            // Keep existing key if empty string passed (means "don't change")
+            apiKey: (typeof apiKey === 'string' && apiKey.trim()) ? apiKey.trim() : (existing.apiKey || ''),
+            baseUrl: provider === 'custom' ? baseUrl.trim().replace(/\/+$/, '') : ''
+        };
+
+        await writeJsonFile(AI_CONFIG_FILE, config);
+        res.json({ entry: safeConfigEntry(config.configs[idx]) });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update AI config entry' });
+    }
+});
+
+// DELETE /api/ai/config/entries/:id — delete a config entry
+app.delete('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const raw = await readJsonFile(AI_CONFIG_FILE, {});
+        const config = migrateAiConfig(raw);
+
+        if ((config.configs || []).length <= 1) {
+            return res.status(400).json({ error: 'Cannot delete the last configuration' });
+        }
+
+        const idx = (config.configs || []).findIndex(c => c.id === id);
+        if (idx === -1) return res.status(404).json({ error: 'Config entry not found' });
+
+        config.configs.splice(idx, 1);
+        if (config.activeConfigId === id) {
+            config.activeConfigId = config.configs[0]?.id || null;
+        }
+
+        await writeJsonFile(AI_CONFIG_FILE, config);
+        res.json({ activeConfigId: config.activeConfigId });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete AI config entry' });
+    }
+});
+
+// PUT /api/ai/config/active — set the active config entry
+app.put('/api/ai/config/active', writeLimiter, async (req, res) => {
+    try {
+        const { configId } = req.body;
+        if (!configId || typeof configId !== 'string') {
+            return res.status(400).json({ error: 'configId is required' });
+        }
+
+        const raw = await readJsonFile(AI_CONFIG_FILE, {});
+        const config = migrateAiConfig(raw);
+        const found = (config.configs || []).find(c => c.id === configId);
+        if (!found) return res.status(404).json({ error: 'Config entry not found' });
+
+        config.activeConfigId = configId;
+        await writeJsonFile(AI_CONFIG_FILE, config);
+        res.json({ activeConfigId: configId });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to set active AI config' });
     }
 });
 
@@ -2285,27 +2401,25 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
         }
 
         // Load AI config
-        const aiConfig = await readJsonFile(AI_CONFIG_FILE, {});
-        if (!aiConfig.activeProvider) {
-            return res.status(400).json({ error: 'AI not configured. Add your provider via Config → AI Configuration.' });
+        const rawConfig = await readJsonFile(AI_CONFIG_FILE, {});
+        const aiConfig  = migrateAiConfig(rawConfig);
+        const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
+        if (!cfg) {
+            return res.status(400).json({ error: 'No active AI configuration. Add one via Config → AI Configuration.' });
         }
 
-        const providerKey  = aiConfig.activeProvider;
-        const providerMeta = AI_PROVIDERS[providerKey];
+        const providerMeta = AI_PROVIDERS[cfg.provider];
         if (!providerMeta) {
             return res.status(400).json({ error: 'Unknown AI provider in config.' });
         }
 
-        const providerData = aiConfig.providers?.[providerKey] || {};
-        if (providerMeta.requiresKey && !providerData.apiKey) {
+        if (providerMeta.requiresKey && !cfg.apiKey) {
             return res.status(400).json({ error: 'API key not set for this provider. Configure it via Config → AI Configuration.' });
         }
 
-        const model   = aiConfig.activeModel;
-        const apiKey  = providerData.apiKey || '';
-        const baseUrl = providerKey === 'custom'
-            ? providerData.baseUrl
-            : providerMeta.baseUrl;
+        const model   = cfg.model;
+        const apiKey  = cfg.apiKey || '';
+        const baseUrl = cfg.provider === 'custom' ? cfg.baseUrl : providerMeta.baseUrl;
 
         // Build system prompt with current profile epics + categories
         const epics      = await readJsonFile(req.profileFiles.epics, []);

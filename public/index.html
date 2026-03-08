@@ -381,35 +381,48 @@
     <modal-dialog class="js-aiConfigModal">
         <span slot="title">AI Configuration</span>
         <div class="aiConfig">
-            <p class="aiConfig__hint">API keys are stored locally on your machine and never shared.</p>
-            <div class="aiConfig__group">
-                <label class="aiConfig__label">Provider</label>
-                <select class="aiConfig__select js-aiProviderSelect">
-                    <option value="anthropic">Anthropic (Claude)</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="groq">Groq (free tier available)</option>
-                    <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
-                </select>
+            <!-- Panel 1: List view -->
+            <div class="aiConfig__listPanel js-aiConfigListPanel">
+                <p class="aiConfig__hint">API keys are stored locally on your machine and never shared.</p>
+                <div class="aiConfig__entries js-aiConfigEntries"></div>
+                <button type="button" class="aiConfig__addBtn js-aiConfigAddBtn">+ Add configuration</button>
             </div>
-            <div class="aiConfig__group js-aiCustomUrlGroup" style="display:none;">
-                <label class="aiConfig__label">Base URL</label>
-                <input type="text" class="aiConfig__input js-aiCustomUrl" placeholder="http://localhost:1234/v1" />
-                <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
-            </div>
-            <div class="aiConfig__group">
-                <label class="aiConfig__label">Model</label>
-                <input type="text" class="aiConfig__input js-aiModelInput" placeholder="Enter model name" />
-            </div>
-            <div class="aiConfig__group">
-                <label class="aiConfig__label">API Key</label>
-                <input type="password" class="aiConfig__input js-aiKeyInput" placeholder="Enter API key" autocomplete="off" />
-                <p class="aiConfig__fieldHint js-aiKeyHint"></p>
-            </div>
-            <div class="aiConfig__error js-aiConfigError" style="display:none;"></div>
-            <div class="modal__actions">
-                <div class="modal__actionsRight">
-                    <button type="button" class="btn --cancel js-aiConfigCancel">Cancel</button>
-                    <button type="button" class="btn --save js-aiConfigSave">Save</button>
+            <!-- Panel 2: Form view (add / edit) -->
+            <div class="aiConfig__formPanel js-aiConfigFormPanel" style="display:none;">
+                <button type="button" class="aiConfig__backBtn js-aiConfigBackBtn">← Back</button>
+                <div class="aiConfig__group">
+                    <label class="aiConfig__label">Name</label>
+                    <input type="text" class="aiConfig__input js-aiConfigNameInput" placeholder="e.g. LM Studio - Devstral" maxlength="100" />
+                </div>
+                <div class="aiConfig__group">
+                    <label class="aiConfig__label">Provider</label>
+                    <select class="aiConfig__select js-aiConfigProviderSel">
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="groq">Groq</option>
+                        <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
+                    </select>
+                </div>
+                <div class="aiConfig__group js-aiConfigCustomUrlGroup" style="display:none;">
+                    <label class="aiConfig__label">Base URL</label>
+                    <input type="text" class="aiConfig__input js-aiConfigCustomUrl" placeholder="http://localhost:1234/v1" />
+                    <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
+                </div>
+                <div class="aiConfig__group">
+                    <label class="aiConfig__label">Model</label>
+                    <input type="text" class="aiConfig__input js-aiConfigModelInput" placeholder="Enter model name" />
+                </div>
+                <div class="aiConfig__group">
+                    <label class="aiConfig__label">API Key</label>
+                    <input type="password" class="aiConfig__input js-aiConfigKeyInput" placeholder="Enter API key" autocomplete="off" />
+                    <p class="aiConfig__fieldHint js-aiConfigKeyHint"></p>
+                </div>
+                <div class="aiConfig__error js-aiConfigError" style="display:none;"></div>
+                <div class="modal__actions">
+                    <div class="modal__actionsRight">
+                        <button type="button" class="btn --cancel js-aiConfigCancel">Cancel</button>
+                        <button type="button" class="btn --save js-aiConfigSave">Save</button>
+                    </div>
                 </div>
             </div>
         </div>

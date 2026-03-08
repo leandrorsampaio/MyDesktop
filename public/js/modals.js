@@ -27,7 +27,9 @@ import {
     updateProfileApi,
     deleteProfileApi,
     fetchAiConfigApi,
-    saveAiConfigApi
+    createAiConfigEntryApi,
+    updateAiConfigEntryApi,
+    deleteAiConfigEntryApi
 } from './api.js';
 
 // ==========================================
@@ -1604,112 +1606,210 @@ export async function confirmDeleteProfile(elements) {
 const AI_PROVIDER_DEFAULTS = {
     anthropic: { label: 'Anthropic (Claude)',                  defaultModel: 'claude-haiku-4-5-20251001', requiresKey: true  },
     openai:    { label: 'OpenAI',                              defaultModel: 'gpt-4o-mini',              requiresKey: true  },
-    groq:      { label: 'Groq (free tier available)',          defaultModel: 'llama-3.3-70b-versatile',  requiresKey: true  },
+    groq:      { label: 'Groq',                               defaultModel: 'llama-3.3-70b-versatile',  requiresKey: true  },
     custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false }
 };
 
 /**
- * Opens the AI Configuration modal.
- * Loads current config, lets user change provider/model/key, saves via API.
+ * Opens the AI Configuration modal with a two-panel list/form view.
  * @param {Object} elements - DOM element references
  */
 export async function openAiConfigModal(elements) {
-    const modal         = elements.aiConfigModal;
-    const providerSel   = elements.aiProviderSelect;
-    const modelInput    = elements.aiModelInput;
-    const customUrlGrp  = elements.aiCustomUrlGroup;
-    const customUrlInput = elements.aiCustomUrl;
-    const keyInput      = elements.aiKeyInput;
-    const keyHint       = elements.aiKeyHint;
-    const errorEl       = elements.aiConfigError;
-    const cancelBtn     = elements.aiConfigCancel;
-    const saveBtn       = elements.aiConfigSave;
+    const modal        = elements.aiConfigModal;
+    const listPanel    = elements.aiConfigListPanel;
+    const formPanel    = elements.aiConfigFormPanel;
+    const entriesEl    = elements.aiConfigEntries;
+    const addBtn       = elements.aiConfigAddBtn;
+    const backBtn      = elements.aiConfigBackBtn;
+    const nameInput    = elements.aiConfigNameInput;
+    const providerSel  = elements.aiConfigProviderSel;
+    const customUrlGrp = elements.aiConfigCustomUrlGroup;
+    const customUrl    = elements.aiConfigCustomUrl;
+    const modelInput   = elements.aiConfigModelInput;
+    const keyInput     = elements.aiConfigKeyInput;
+    const keyHint      = elements.aiConfigKeyHint;
+    const errorEl      = elements.aiConfigError;
+    const cancelBtn    = elements.aiConfigCancel;
+    const saveBtn      = elements.aiConfigSave;
 
-    errorEl.style.display = 'none';
-    errorEl.textContent   = '';
+    // In-memory cache updated as user makes changes
+    let configState = { activeConfigId: null, configs: [] };
 
-    // Load current config
-    let currentConfig = {};
+    // ---- Load config ----
     try {
-        currentConfig = await fetchAiConfigApi();
+        configState = await fetchAiConfigApi();
     } catch {
         elements.toaster.error('Failed to load AI config');
         return;
     }
 
-    // Populate fields
-    providerSel.value   = currentConfig.activeProvider || 'anthropic';
-    modelInput.value    = currentConfig.activeModel    || AI_PROVIDER_DEFAULTS[providerSel.value]?.defaultModel || '';
-    customUrlInput.value = currentConfig.customBaseUrl || '';
-    keyInput.value      = '';
-    keyHint.textContent = currentConfig.hasKey ? 'Key saved — leave blank to keep current' : '';
+    // ---- Show list panel ----
+    function _showList() {
+        formPanel.style.display = 'none';
+        listPanel.style.display = '';
+        _renderList();
+    }
 
-    function updateProviderVisibility() {
-        const isCustom = elements.aiProviderSelect.value === 'custom';
+    function _renderList() {
+        entriesEl.innerHTML = '';
+        if (!configState.configs.length) {
+            entriesEl.innerHTML = '<p class="aiConfig__emptyHint">No configurations yet. Add one below.</p>';
+            return;
+        }
+        for (const cfg of configState.configs) {
+            const isActive = cfg.id === configState.activeConfigId;
+            const row = document.createElement('div');
+            row.className = 'aiConfig__entry' + (isActive ? ' --active' : '');
+
+            const dot = document.createElement('span');
+            dot.className = 'aiConfig__entryDot' + (isActive ? ' --active' : '');
+
+            const name = document.createElement('span');
+            name.className = 'aiConfig__entryName';
+            name.textContent = cfg.name;
+
+            const sub = document.createElement('span');
+            sub.className = 'aiConfig__entrySub';
+            sub.textContent = cfg.model ? `${AI_PROVIDER_DEFAULTS[cfg.provider]?.label || cfg.provider} · ${cfg.model}` : (AI_PROVIDER_DEFAULTS[cfg.provider]?.label || cfg.provider);
+
+            const info = document.createElement('div');
+            info.className = 'aiConfig__entryInfo';
+            info.appendChild(name);
+            info.appendChild(sub);
+
+            const actions = document.createElement('div');
+            actions.className = 'aiConfig__entryActions';
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'aiConfig__entryBtn';
+            editBtn.textContent = 'Edit';
+            editBtn.addEventListener('click', () => _showForm(cfg));
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'aiConfig__entryBtn aiConfig__entryBtn--delete';
+            delBtn.textContent = '✕';
+            delBtn.title = 'Delete';
+            delBtn.addEventListener('click', () => _deleteEntry(cfg.id));
+
+            actions.appendChild(editBtn);
+            actions.appendChild(delBtn);
+
+            row.appendChild(dot);
+            row.appendChild(info);
+            row.appendChild(actions);
+            entriesEl.appendChild(row);
+        }
+    }
+
+    async function _deleteEntry(id) {
+        if (configState.configs.length <= 1) {
+            elements.toaster.error('Cannot delete the last configuration');
+            return;
+        }
+        const result = await deleteAiConfigEntryApi(id);
+        if (!result.ok) {
+            elements.toaster.error(result.error || 'Failed to delete configuration');
+            return;
+        }
+        configState.configs = configState.configs.filter(c => c.id !== id);
+        configState.activeConfigId = result.data.activeConfigId;
+        elements.toaster.success('Configuration deleted');
+        _renderList();
+    }
+
+    // ---- Show form panel (null = add mode, entry object = edit mode) ----
+    function _showForm(entry) {
+        const isEdit = !!entry;
+        listPanel.style.display = 'none';
+        formPanel.style.display = '';
+
+        nameInput.value    = isEdit ? entry.name  : '';
+        providerSel.value  = isEdit ? entry.provider : 'anthropic';
+        customUrl.value    = isEdit ? (entry.baseUrl || '') : '';
+        modelInput.value   = isEdit ? entry.model : (AI_PROVIDER_DEFAULTS['anthropic'].defaultModel);
+        keyInput.value     = '';
+        keyHint.textContent = isEdit && entry.hasKey ? 'Key saved — leave blank to keep current' : '';
+        errorEl.style.display = 'none';
+        errorEl.textContent   = '';
+
+        _updateProviderVisibility();
+        nameInput.focus();
+
+        // Store editing id on save button
+        saveBtn.dataset.editId = isEdit ? entry.id : '';
+    }
+
+    function _updateProviderVisibility() {
+        const isCustom = providerSel.value === 'custom';
         customUrlGrp.style.display = isCustom ? '' : 'none';
     }
-    updateProviderVisibility();
 
-    // When provider changes, update default model and visibility
-    function onProviderChange() {
-        const def = AI_PROVIDER_DEFAULTS[elements.aiProviderSelect.value];
-        if (def && !modelInput.value.trim()) {
-            modelInput.value = def.defaultModel;
-        } else if (def && modelInput.value === (AI_PROVIDER_DEFAULTS[Object.keys(AI_PROVIDER_DEFAULTS).find(k => k !== providerSel.value)]?.defaultModel || '')) {
-            // switching away from a previous provider's default — replace with new default
+    providerSel.onchange = () => {
+        const def = AI_PROVIDER_DEFAULTS[providerSel.value];
+        // Replace model only if it was a known default from another provider
+        const isDefaultOfOther = Object.values(AI_PROVIDER_DEFAULTS).some(
+            d => d !== def && d.defaultModel && d.defaultModel === modelInput.value
+        );
+        if (isDefaultOfOther || !modelInput.value.trim()) {
+            modelInput.value = def?.defaultModel || '';
         }
-        // If model was set to a previous provider's default, replace it
-        const prevDefault = Object.values(AI_PROVIDER_DEFAULTS).find(d => d.defaultModel === modelInput.value && d !== def);
-        if (prevDefault || !modelInput.value) modelInput.value = def?.defaultModel || '';
-        updateProviderVisibility();
-    }
+        _updateProviderVisibility();
+    };
 
-    // Remove any old listener before adding a fresh one
-    const newProviderSel = providerSel.cloneNode(true);
-    providerSel.parentNode.replaceChild(newProviderSel, providerSel);
-    elements.aiProviderSelect = newProviderSel;
-    newProviderSel.value = currentConfig.activeProvider || 'anthropic';
-    newProviderSel.addEventListener('change', onProviderChange);
-
-    function onSave() {
+    async function _onSave() {
         errorEl.style.display = 'none';
-        const provider = elements.aiProviderSelect.value;
-        const model    = modelInput.value.trim();
-        const key      = keyInput.value.trim();
-        const baseUrl  = customUrlInput.value.trim();
+        const name    = nameInput.value.trim();
+        const provider = providerSel.value;
+        const model   = modelInput.value.trim();
+        const key     = keyInput.value.trim();
+        const baseUrl = customUrl.value.trim();
+        const editId  = saveBtn.dataset.editId;
 
+        if (!name) {
+            errorEl.textContent = 'Name is required'; errorEl.style.display = ''; return;
+        }
         if (!model) {
-            errorEl.textContent   = 'Model name is required';
-            errorEl.style.display = '';
-            return;
+            errorEl.textContent = 'Model name is required'; errorEl.style.display = ''; return;
         }
         if (provider === 'custom' && !baseUrl) {
-            errorEl.textContent   = 'Base URL is required for Custom provider';
+            errorEl.textContent = 'Base URL is required for Custom provider'; errorEl.style.display = ''; return;
+        }
+
+        const payload = { name, provider, model, apiKey: key, baseUrl };
+        let result;
+        if (editId) {
+            result = await updateAiConfigEntryApi(editId, payload);
+        } else {
+            result = await createAiConfigEntryApi(payload);
+        }
+
+        if (!result.ok) {
+            errorEl.textContent = result.error || 'Failed to save configuration';
             errorEl.style.display = '';
             return;
         }
 
-        saveAiConfigApi({ activeProvider: provider, activeModel: model, apiKey: key, customBaseUrl: baseUrl })
-            .then(result => {
-                if (!result.ok) {
-                    errorEl.textContent   = result.error;
-                    errorEl.style.display = '';
-                    return;
-                }
-                elements.toaster.success('AI configuration saved');
-                modal.close();
-            })
-            .catch(() => {
-                errorEl.textContent   = 'Failed to save configuration';
-                errorEl.style.display = '';
-            });
+        if (editId) {
+            const idx = configState.configs.findIndex(c => c.id === editId);
+            if (idx !== -1) configState.configs[idx] = result.data.entry;
+        } else {
+            configState.configs.push(result.data.entry);
+            if (!configState.activeConfigId) configState.activeConfigId = result.data.activeConfigId;
+        }
+
+        elements.toaster.success(editId ? 'Configuration updated' : 'Configuration added');
+        _showList();
     }
 
+    addBtn.onclick  = () => _showForm(null);
+    backBtn.onclick = () => _showList();
     cancelBtn.onclick = () => modal.close();
-    saveBtn.onclick   = onSave;
+    saveBtn.onclick = _onSave;
 
+    _showList();
     modal.open();
-    modelInput.focus();
 }
 
 // ==========================================

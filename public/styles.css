@@ -2970,3 +2970,177 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: var(--radius-md);
 }
+
+/* Multi-config list panel */
+.aiConfig__listPanel,
+.aiConfig__formPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.aiConfig__entries {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.aiConfig__emptyHint {
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+    margin: 0;
+    padding: 8px 0;
+}
+
+.aiConfig__entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+}
+
+.aiConfig__entry.--active {
+    border-color: var(--color-accent-primary);
+    background: rgba(26, 115, 232, 0.04);
+}
+
+.aiConfig__entryDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--color-border);
+    border: 2px solid var(--color-border);
+}
+
+.aiConfig__entryDot.--active {
+    background: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
+}
+
+.aiConfig__entryInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.aiConfig__entryName {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.aiConfig__entrySub {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.aiConfig__entryActions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.aiConfig__entryBtn {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: var(--font-family);
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.aiConfig__entryBtn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+.aiConfig__entryBtn--delete:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--color-accent-error);
+}
+
+.aiConfig__addBtn {
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
+    font-family: var(--font-family);
+    background: none;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    text-align: center;
+}
+
+.aiConfig__addBtn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-accent-primary);
+    border-color: var(--color-accent-primary);
+}
+
+.aiConfig__backBtn {
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-family: var(--font-family);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    align-self: flex-start;
+}
+
+.aiConfig__backBtn:hover {
+    color: var(--color-text-primary);
+}
+
+/* AI page model selector bar */
+.aiPage__modelBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+}
+
+.aiPage__modelLabel {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.aiPage__modelSelect {
+    font-size: 13px;
+    font-family: var(--font-family);
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 3px 6px;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+}
+
+.aiPage__modelSelect:focus {
+    border-color: var(--color-accent-primary);
+}

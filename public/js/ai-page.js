@@ -22,6 +22,7 @@ import {
     promoteToBacklogApi,
     promoteToBoardApi,
     fetchAiConfigApi,
+    setActiveAiConfigApi,
     sendAiChatApi
 } from './api.js';
 import { openEditStagedTaskModal, openCloneStagedTaskModal } from './modals.js';
@@ -55,6 +56,10 @@ export async function initAiPage(pageViewEl, { elements }) {
         <div class="aiPage">
             <div class="aiPage__chat">
                 <div class="aiPage__messages js-aiMessages"></div>
+                <div class="aiPage__modelBar js-aiModelBar">
+                    <label class="aiPage__modelLabel">Model</label>
+                    <select class="aiPage__modelSelect js-aiModelSelect"></select>
+                </div>
                 <div class="aiPage__inputArea">
                     <textarea
                         class="aiPage__input js-aiInput"
@@ -85,24 +90,26 @@ export async function initAiPage(pageViewEl, { elements }) {
     `;
 
     // Local DOM refs
-    const inputEl    = pageViewEl.querySelector('.js-aiInput');
-    const sendBtn    = pageViewEl.querySelector('.js-aiSendBtn');
-    const clearBtn   = pageViewEl.querySelector('.js-aiClearBtn');
-    const messagesEl = pageViewEl.querySelector('.js-aiMessages');
-    const rowsEl     = pageViewEl.querySelector('.js-stagedRows');
-    const emptyEl    = pageViewEl.querySelector('.js-emptyState');
-    const countEl    = pageViewEl.querySelector('.js-stagedCount');
-    const headerEl   = pageViewEl.querySelector('.js-listHeader');
+    const inputEl      = pageViewEl.querySelector('.js-aiInput');
+    const sendBtn      = pageViewEl.querySelector('.js-aiSendBtn');
+    const clearBtn     = pageViewEl.querySelector('.js-aiClearBtn');
+    const messagesEl   = pageViewEl.querySelector('.js-aiMessages');
+    const rowsEl       = pageViewEl.querySelector('.js-stagedRows');
+    const emptyEl      = pageViewEl.querySelector('.js-emptyState');
+    const countEl      = pageViewEl.querySelector('.js-stagedCount');
+    const headerEl     = pageViewEl.querySelector('.js-listHeader');
+    const modelSelectEl = pageViewEl.querySelector('.js-aiModelSelect');
 
     // ---- Fetch initial data ----
-    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged;
+    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig;
     try {
-        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged] = await Promise.all([
+        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig] = await Promise.all([
             fetchTasksApi(),
             fetchColumnsApi(),
             fetchEpicsApi(),
             fetchCategoriesApi(),
-            fetchStagedTasksApi()
+            fetchStagedTasksApi(),
+            fetchAiConfigApi()
         ]);
     } catch (err) {
         if (toaster) toaster.error('Failed to load AI page data');
@@ -125,6 +132,31 @@ export async function initAiPage(pageViewEl, { elements }) {
         { id: 'category', label: 'Category', sortable: false },
         { id: 'actions',  label: '',         sortable: false }
     ]);
+
+    // ---- Populate model selector ----
+    function _populateModelSelect(config) {
+        modelSelectEl.innerHTML = '';
+        if (!config.configs || !config.configs.length) {
+            const opt = document.createElement('option');
+            opt.textContent = 'No configuration — set one in Config → AI Configuration';
+            opt.disabled = true;
+            modelSelectEl.appendChild(opt);
+            return;
+        }
+        for (const cfg of config.configs) {
+            const opt = document.createElement('option');
+            opt.value = cfg.id;
+            opt.textContent = cfg.name;
+            modelSelectEl.appendChild(opt);
+        }
+        if (config.activeConfigId) modelSelectEl.value = config.activeConfigId;
+    }
+    _populateModelSelect(fetchedAiConfig);
+
+    modelSelectEl.addEventListener('change', async () => {
+        const result = await setActiveAiConfigApi(modelSelectEl.value);
+        if (!result.ok && toaster) toaster.error('Failed to switch model');
+    });
 
     // ---- Initial renders ----
     _renderMessages(messagesEl);
@@ -253,7 +285,7 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
         return;
     }
 
-    if (!aiConfig.activeProvider) {
+    if (!aiConfig.activeConfigId || !aiConfig.configs?.length) {
         if (toaster) toaster.warning('Configure your AI provider first via Config → AI Configuration');
         return;
     }

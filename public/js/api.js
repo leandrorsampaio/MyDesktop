@@ -497,8 +497,8 @@ export async function deleteColumnApi(id) {
 // ===========================================
 
 /**
- * Fetches AI configuration metadata (never returns the API key).
- * @returns {Promise<{ activeProvider: string|null, activeModel: string|null, hasKey: boolean, customBaseUrl: string|null }>}
+ * Fetches AI configuration metadata (never returns API keys).
+ * @returns {Promise<{ activeConfigId: string|null, configs: Array<Object> }>}
  */
 export async function fetchAiConfigApi() {
     const response = await fetch('/api/ai/config');
@@ -506,22 +506,73 @@ export async function fetchAiConfigApi() {
 }
 
 /**
- * Saves AI configuration. Pass apiKey only when changing it; omit or pass '' to keep existing.
- * @param {{ activeProvider: string, activeModel: string, apiKey?: string, customBaseUrl?: string }} data
+ * Creates a new AI config entry.
+ * @param {{ name: string, provider: string, model: string, apiKey?: string, baseUrl?: string }} data
  * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
  */
-export async function saveAiConfigApi(data) {
-    const response = await fetch('/api/ai/config', {
+export async function createAiConfigEntryApi(data) {
+    const response = await fetch('/api/ai/config/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-
     if (!response.ok) {
-        const error = await response.json();
-        return { ok: false, error: error.error || 'Failed to save AI config' };
+        const err = await response.json();
+        return { ok: false, error: err.error || 'Failed to create AI config' };
     }
+    return { ok: true, data: await response.json() };
+}
 
+/**
+ * Updates an existing AI config entry.
+ * @param {string} id
+ * @param {{ name: string, provider: string, model: string, apiKey?: string, baseUrl?: string }} data
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function updateAiConfigEntryApi(id, data) {
+    const response = await fetch(`/api/ai/config/entries/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        return { ok: false, error: err.error || 'Failed to update AI config' };
+    }
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Deletes an AI config entry.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function deleteAiConfigEntryApi(id) {
+    const response = await fetch(`/api/ai/config/entries/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        return { ok: false, error: err.error || 'Failed to delete AI config' };
+    }
+    return { ok: true, data: await response.json() };
+}
+
+/**
+ * Sets the active AI config entry.
+ * @param {string} configId
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function setActiveAiConfigApi(configId) {
+    const response = await fetch('/api/ai/config/active', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ configId })
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        return { ok: false, error: err.error || 'Failed to set active AI config' };
+    }
     return { ok: true, data: await response.json() };
 }
 
