@@ -1607,6 +1607,7 @@ const AI_PROVIDER_DEFAULTS = {
     anthropic: { label: 'Anthropic (Claude)',                  defaultModel: 'claude-haiku-4-5-20251001', requiresKey: true  },
     openai:    { label: 'OpenAI',                              defaultModel: 'gpt-4o-mini',              requiresKey: true  },
     groq:      { label: 'Groq',                               defaultModel: 'llama-3.3-70b-versatile',  requiresKey: true  },
+    google:    { label: 'Google AI Studio (Gemini)',           defaultModel: 'gemini-2.0-flash',         requiresKey: true  },
     custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false }
 };
 

@@ -43,6 +43,13 @@ const AI_PROVIDERS = {
         defaultModel: 'llama-3.3-70b-versatile',
         requiresKey: true
     },
+    google: {
+        label: 'Google AI Studio (Gemini)',
+        format: 'openai-compatible',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        defaultModel: 'gemini-2.0-flash',
+        requiresKey: true
+    },
     custom: {
         label: 'Custom / Local',
         format: 'openai-compatible',
