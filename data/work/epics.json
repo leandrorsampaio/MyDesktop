@@ -10,5 +10,23 @@
     "name": "ECOM",
     "color": "#F5A623",
     "alias": "ecom"
+  },
+  {
+    "id": "mmji2xjk6s7spj1wu",
+    "name": "Export Products",
+    "color": "#2ECC71",
+    "alias": "exportProducts"
+  },
+  {
+    "id": "mmji7ki7lo4hksbjk",
+    "name": "Repo Clean Up",
+    "color": "#E84393",
+    "alias": "repoCleanUp"
+  },
+  {
+    "id": "mmkdwjunpjcvd0pz6",
+    "name": "Marketing Cloud",
+    "color": "#2E86DE",
+    "alias": "marketingCloud"
   }
 ]

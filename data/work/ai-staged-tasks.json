@@ -1,72 +1,42 @@
 [
   {
-    "id": "mmgzfwpf607rz9nzk",
+    "id": "mmj01h6zckyi5xgj2",
     "title": "Buy groceries",
-    "description": "Purchase ingredients, drinks, and snacks for the barbecue.",
-    "priority": false,
-    "epicId": null,
-    "category": 1,
-    "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
-  },
-  {
-    "id": "mmgzfwpfe82dqcx6r",
-    "title": "Prepare the grill",
-    "description": "Clean and set up the barbecue area.",
-    "priority": false,
-    "epicId": null,
-    "category": 1,
-    "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
-  },
-  {
-    "id": "mmgzfwpfrzn27bu9s",
-    "title": "Plan the menu",
-    "description": "Decide on dishes and sides to serve.",
+    "description": "Purchase ingredients for the meal (chicken, vegetables, etc.).",
     "priority": false,
     "epicId": null,
     "category": 5,
     "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
+    "createdDate": "2026-03-09T09:49:07.787Z"
   },
   {
-    "id": "mmgzfwpfxpnnhwsgn",
-    "title": "Set up seating and decorations",
-    "description": "Arrange outdoor furniture and ambiance.",
+    "id": "mmj01h6zz3c7ukdha",
+    "title": "Prepare the chicken dish",
+    "description": "Cook or marinate the chicken as planned.",
     "priority": false,
     "epicId": null,
-    "category": 1,
+    "category": 2,
     "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
+    "createdDate": "2026-03-09T09:49:07.787Z"
   },
   {
-    "id": "mmgzfwpfht9sms8u3",
-    "title": "Invite friends",
-    "description": "Confirm attendees and share details.",
+    "id": "mmj01h6zt87dbocvb",
+    "title": "Set up the dining area",
+    "description": "Arrange the table or space for a cozy meal.",
     "priority": false,
     "epicId": null,
-    "category": 3,
+    "category": 5,
     "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
+    "createdDate": "2026-03-09T09:49:07.787Z"
   },
   {
-    "id": "mmgzfwpfyu5txa08p",
-    "title": "Prepare side dishes",
-    "description": "Cook or assemble accompaniments.",
+    "id": "mmj01h6z9xn5v63dn",
+    "title": "Prepare dessert",
+    "description": "Choose or make something sweet to finish the dinner.",
     "priority": false,
     "epicId": null,
-    "category": 1,
+    "category": 2,
     "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
-  },
-  {
-    "id": "mmgzfwpfyuhzmxic0",
-    "title": "Chill drinks",
-    "description": "Stock and refrigerate beverages.",
-    "priority": false,
-    "epicId": null,
-    "category": 1,
-    "deadline": null,
-    "createdDate": "2026-03-07T23:56:49.107Z"
+    "createdDate": "2026-03-09T09:49:07.787Z"
   }
 ]

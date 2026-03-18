@@ -1553,5 +1553,227 @@
     "deadline": null,
     "snoozeUntil": null,
     "categoryName": "Non categorized"
+  },
+  {
+    "id": "mlicltt1teb19t9be",
+    "title": "ESB-574 New Banners UI component",
+    "description": "https://solenis.atlassian.net/browse/ESB-574\n---\nCR Created\n\n--- NEED NEW CR",
+    "priority": false,
+    "category": 2,
+    "status": "archived",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-02-11",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-17",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-09",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-11T18:13:24.133Z",
+    "epicId": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mlqm9qvwlas5glc3t",
+    "title": "New ticket: CMS news (check feseability)",
+    "description": "not done",
+    "priority": false,
+    "category": 2,
+    "epicId": null,
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-02-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from Done to Wait"
+      },
+      {
+        "date": "2026-03-09",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-02-17T13:06:06.044Z",
+    "categoryName": "Development"
+  },
+  {
+    "id": "mlzcyynpdrmgf4k62",
+    "title": "Solve Header Issue (Export Errro)",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": null,
+    "status": "archived",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-02-23",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-09",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-02-23T15:55:41.941Z",
+    "categoryName": "Development"
+  },
+  {
+    "id": "ml5hd7sxvn4aplch7",
+    "title": "ESB-544: Image not available link wrong in advic component",
+    "description": "Deployed to Prod",
+    "priority": false,
+    "category": 2,
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-02-02",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-02-03",
+        "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-16",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-09",
+        "action": "Moved from To Do to Done"
+      }
+    ],
+    "createdDate": "2026-02-02T18:05:40.161Z",
+    "epicId": null,
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mmjgsz6bza3wbi9m1",
+    "title": "ESB-558 - Fix Download Items (Ravi bug)",
+    "description": "https://solenis.atlassian.net/browse/ESB-558\nno bug after test on UAT",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-03-09",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-13",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-09T17:38:24.659Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mmji1esj06gevkb8q",
+    "title": "Loading Time (Mikael Email's) - Discuss with Alex",
+    "description": "Invoices and deiveries new tables take considerable more time than the old ones. The All order seems fine. \n\nI have to do 2 things:\n\n1 Ask ADVIC to fix this, should not take so much time. (this was added to the component regarding OMS components)\n\n2 Finish the OMS component tickte to make the components show less data",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-03-09",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-10",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-09T18:12:57.763Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mmkdxzq3phf8sqvjg",
+    "title": "Check the Marketing Cloud integration with DAM",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mmkdwjunpjcvd0pz6",
+    "status": "archived",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-10",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-13",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-10T09:06:05.979Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mmp7846dkd2sfl9ca",
+    "title": "Check access to Shari",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mmkdwjunpjcvd0pz6",
+    "status": "archived",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-03-13",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-16",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-13T17:56:51.877Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   }
 ]
