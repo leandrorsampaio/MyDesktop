@@ -47,6 +47,18 @@
     transform: translateY(-1px);
 }
 
+/* Backlog Style */
+.btn[modifier="backlog"] {
+    background-color: #636E72;
+    color: #ffffff;
+    padding: 10px 18px;
+}
+
+.btn[modifier="backlog"]:hover {
+    background-color: #535c60;
+    transform: translateY(-1px);
+}
+
 /* Delete Style */
 .btn[modifier="delete"] {
     background-color: var(--color-accent-error, #ef4444);

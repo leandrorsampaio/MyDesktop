@@ -418,6 +418,16 @@ import {
         }
     }
 
+    /**
+     * Sends a board task to the backlog column.
+     * Closes the edit modal, moves the task via the existing moveTask flow.
+     */
+    async function sendTaskToBacklog(taskId, backlogColumnId) {
+        elements.taskModal.close();
+        await moveTask(taskId, backlogColumnId, 0);
+        elements.toaster.success('Task sent to backlog');
+    }
+
     // ==========================================
     // Render Functions
     // ==========================================
@@ -943,12 +953,19 @@ import {
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
             const taskId = e.detail.taskId;
+            const backlogCol = columns.find(c => c.isBacklog);
+            const task = findTask(taskId);
+            // Show "Backlog" button only for board tasks (not already in backlog)
+            const onSendToBacklog = (backlogCol && task && task.status !== backlogCol.id)
+                ? () => sendTaskToBacklog(taskId, backlogCol.id)
+                : null;
             openEditModal(
                 taskId,
                 elements,
                 () => openDeleteConfirmation(elements),
                 handleTaskFormSubmit,
-                () => openCloneTaskModal(taskId, elements, () => openDeleteConfirmation(elements), handleTaskFormSubmit)
+                () => openCloneTaskModal(taskId, elements, () => openDeleteConfirmation(elements), handleTaskFormSubmit),
+                onSendToBacklog
             );
         });
 

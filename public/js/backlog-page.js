@@ -11,7 +11,7 @@ import {
 } from './state.js';
 import {
     fetchTasksApi, fetchColumnsApi, fetchEpicsApi, fetchCategoriesApi,
-    moveTaskApi, createColumnApi, updateColumnApi
+    moveTaskApi
 } from './api.js';
 
 /**
@@ -58,41 +58,13 @@ export async function initBacklogPage(pageViewEl, { elements }) {
     setEpics(fetchedEpics);
     setCategories(fetchedCategories);
 
-    // Find or auto-create the backlog column.
-    // Check isBacklog flag first; fall back to name match in case flag wasn't persisted.
-    let backlogCol = fetchedColumns.find(c => c.isBacklog) ||
-                     fetchedColumns.find(c => c.name === 'Backlog');
+    // Backlog column is always present (created by resolveProfile middleware)
+    setColumns(fetchedColumns);
+    const backlogCol = fetchedColumns.find(c => c.isBacklog);
 
-    if (backlogCol && !backlogCol.isBacklog) {
-        // Flag missing — patch it on the server so future loads find it correctly
-        try {
-            await updateColumnApi(backlogCol.id, { isBacklog: true });
-            backlogCol = { ...backlogCol, isBacklog: true };
-            const updatedColumns = fetchedColumns.map(c => c.id === backlogCol.id ? backlogCol : c);
-            setColumns(updatedColumns);
-        } catch (err) {
-            // Non-fatal — column still usable without the flag
-            console.warn('Backlog page: could not patch isBacklog flag', err);
-            setColumns(fetchedColumns);
-        }
-    } else if (!backlogCol) {
-        try {
-            const result = await createColumnApi({ name: 'Backlog', isBacklog: true });
-            if (result.ok) {
-                backlogCol = result.data;
-                setColumns([...fetchedColumns, backlogCol]);
-            } else {
-                if (toaster) toaster.error('Failed to create backlog column');
-                pageViewEl.querySelector('.js-backlogCount').textContent = 'Error';
-                return;
-            }
-        } catch (err) {
-            console.error('Backlog page: failed to create backlog column', err);
-            if (toaster) toaster.error('Failed to create backlog column');
-            return;
-        }
-    } else {
-        setColumns(fetchedColumns);
+    if (!backlogCol) {
+        if (toaster) toaster.error('Backlog column not found');
+        return;
     }
 
     const backlogColumnId = backlogCol.id;

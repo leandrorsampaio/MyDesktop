@@ -86,12 +86,15 @@ function renderBoardConfigEditor(elements, onColumnsChanged) {
 function renderColumnsList(elements, onColumnsChanged) {
     const list = elements.columnsList;
 
-    if (columns.length === 0) {
+    // Filter out the backlog column — it is permanent and not configurable here
+    const boardColumns = columns.filter(c => !c.isBacklog);
+
+    if (boardColumns.length === 0) {
         list.innerHTML = '<div class="emptyState">No columns configured</div>';
         return;
     }
 
-    list.innerHTML = columns.map((col, idx) => `
+    list.innerHTML = boardColumns.map((col, idx) => `
         <div class="boardConfigEditor__item" data-col-id="${col.id}" draggable="true">
             <span class="boardConfigEditor__dragHandle" title="Drag to reorder">⠿</span>
             <span class="boardConfigEditor__badge ${idx === 0 ? '--default' : ''}" title="${idx === 0 ? 'Default column' : ''}">

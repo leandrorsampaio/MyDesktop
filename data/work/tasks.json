@@ -636,7 +636,7 @@
     "description": "Static resource on production.\nAdd to <head>",
     "priority": true,
     "status": "todo",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-01-26",
@@ -1840,7 +1840,7 @@
     "category": 1,
     "epicId": null,
     "status": "todo",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-02-24",
@@ -1849,6 +1849,14 @@
       {
         "date": "2026-03-09",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-18",
+        "action": "Moved from To Do to Backlog"
+      },
+      {
+        "date": "2026-03-18",
+        "action": "Moved from Backlog to To Do"
       }
     ],
     "createdDate": "2026-02-24T22:25:43.581Z"
@@ -1861,7 +1869,7 @@
     "category": 1,
     "epicId": null,
     "status": "todo",
-    "position": 1,
+    "position": 2,
     "log": [],
     "createdDate": "2026-02-28T00:26:27.033Z",
     "deadline": null,
@@ -1899,7 +1907,7 @@
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mmf9c0aaza1snpz8c",
-    "position": 2,
+    "position": 3,
     "log": [],
     "createdDate": "2026-03-07T10:09:58.095Z",
     "deadline": "2026-03-08T07:00:00.000Z",
@@ -1915,7 +1923,7 @@
     "deadline": null,
     "snoozeUntil": null,
     "status": "mmf9c0aaza1snpz8c",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-03-07",
@@ -1948,7 +1956,7 @@
     "deadline": null,
     "snoozeUntil": null,
     "status": "mmf9c0aaza1snpz8c",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-09",

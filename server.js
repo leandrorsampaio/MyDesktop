@@ -348,7 +348,8 @@ const DEFAULT_COLUMNS = [
     { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false, isBacklog: false },
     { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false, isBacklog: false },
     { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false, isBacklog: false },
-    { id: 'done',       name: 'Done',        order: 3, hasArchive: true,  isBacklog: false }
+    { id: 'done',       name: 'Done',        order: 3, hasArchive: true,  isBacklog: false },
+    { id: 'backlog',    name: 'Backlog',     order: 4, hasArchive: false, isBacklog: true  }
 ];
 
 /**
@@ -579,7 +580,7 @@ async function resolveProfile(req, res, next) {
         const profile = profiles[profileIndex];
 
         // Auto-migrate: add default columns if the profile has none;
-        // also backfill isBacklog field on existing columns
+        // also backfill isBacklog field on existing columns and ensure a backlog column exists
         let profileModified = false;
         if (!profile.columns || profile.columns.length === 0) {
             profile.columns = DEFAULT_COLUMNS;
@@ -590,6 +591,17 @@ async function resolveProfile(req, res, next) {
                     col.isBacklog = false;
                     profileModified = true;
                 }
+            }
+            // Ensure a backlog column exists for existing profiles
+            if (!profile.columns.some(c => c.isBacklog)) {
+                profile.columns.push({
+                    id: 'backlog',
+                    name: 'Backlog',
+                    order: profile.columns.length,
+                    hasArchive: false,
+                    isBacklog: true
+                });
+                profileModified = true;
             }
         }
         if (profileModified) {
@@ -1597,6 +1609,9 @@ app.delete('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req
         }
 
         const colIndex = columns.findIndex(c => c.id === req.params.id);
+        if (colIndex !== -1 && columns[colIndex].isBacklog) {
+            return res.status(400).json({ error: 'Cannot delete the backlog column' });
+        }
         if (colIndex === -1) {
             return res.status(404).json({ error: 'Column not found' });
         }
@@ -2290,22 +2305,10 @@ app.post('/api/:profile/ai/staged/:id/promote/backlog', resolveProfile, writeLim
         const stagedTask = staged.find(t => t.id === req.params.id);
         if (!stagedTask) return res.status(404).json({ error: 'Staged task not found' });
 
-        // Find or create backlog column
-        const profiles = await readJsonFile(PROFILES_FILE, []);
-        const profileIndex = profiles.findIndex(p => p.alias === req.params.profile);
-        const profile = profiles[profileIndex];
-        let backlogCol = profile.columns.find(c => c.isBacklog === true);
-
+        // Backlog column is always present (ensured by resolveProfile middleware)
+        const backlogCol = req.profile.columns.find(c => c.isBacklog === true);
         if (!backlogCol) {
-            backlogCol = {
-                id: generateId(),
-                name: 'Backlog',
-                order: profile.columns.length,
-                hasArchive: false,
-                isBacklog: true
-            };
-            profile.columns.push(backlogCol);
-            await writeJsonFile(PROFILES_FILE, profiles);
+            return res.status(500).json({ error: 'Backlog column not found' });
         }
 
         // Shift existing tasks in backlog column down

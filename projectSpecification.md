@@ -164,7 +164,7 @@ GET    /api/:profile/ai/staged                     - Get all staged tasks
 POST   /api/:profile/ai/staged                     - Create staged task manually (body: StagedTask fields)
 PUT    /api/:profile/ai/staged/:id                 - Update staged task
 DELETE /api/:profile/ai/staged/:id                 - Delete staged task
-POST   /api/:profile/ai/staged/:id/promote/backlog - Promote to backlog (auto-creates backlog column if needed; adds log "Added from AI Staging")
+POST   /api/:profile/ai/staged/:id/promote/backlog - Promote to backlog (adds log "Added from AI Staging")
 POST   /api/:profile/ai/staged/:id/promote/board   - Promote to first non-backlog board column (adds log "Added from AI Staging")
 ```
 
@@ -254,14 +254,15 @@ Existing tasks without `deadline` or `snoozeUntil` behave as `null` (no chip, no
 ### Column Object
 ```javascript
 {
-  id: string,         // auto-generated (default IDs: "todo", "wait", "inprogress", "done")
+  id: string,         // auto-generated (default IDs: "todo", "wait", "inprogress", "done", "backlog")
   name: string,       // required, max 200 chars
   order: number,      // 0-based sort index
-  hasArchive: boolean // if true, column gets an Archive button
+  hasArchive: boolean, // if true, column gets an Archive button
+  isBacklog: boolean   // if true, this is the backlog column (exactly one per profile)
 }
 ```
 
-**Constraints:** max 15 columns per profile; min 1 (cannot delete last). First column (order 0) is the default — new tasks are created there; deleted-column tasks move there. Column IDs for the 4 default columns match legacy `task.status` values for zero-migration compatibility. Stored inside `profiles.json` (not a separate file).
+**Constraints:** max 15 columns per profile; min 1 (cannot delete last). First column (order 0) is the default — new tasks are created there; deleted-column tasks move there. Column IDs for the 4 default board columns match legacy `task.status` values for zero-migration compatibility. Stored inside `profiles.json` (not a separate file). The **backlog column** (`isBacklog: true`) is permanent — it is included in `DEFAULT_COLUMNS`, auto-added to existing profiles by `resolveProfile` middleware, and cannot be deleted. It is hidden from the Board Configuration modal.
 
 ### StagedTask Object
 ```javascript
@@ -320,6 +321,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **`applyAllFilters()`** uses AND logic across active filters: cards must match ANY active category AND the priority filter AND the selected epic. Queries through `kanban-column` shadow roots to reach `task-card` elements. All filter state is in-memory — resets on page reload.
 - **Epic filter picker** always includes "All epics" as its first item (value `''`). Selecting it clears the active epic filter. `renderEpicFilter()` sets `pickerEl.value = activeEpicFilter || ''` so the picker always reflects current state.
 - **Clone Task:** the edit modal has a "Clone" button (indigo, `modifier="clone"`) between Cancel and Save. Clicking it calls `openCloneTaskModal()` which closes the edit modal and reopens in Add mode with all task fields copied except `log`; title is prefixed with `"(Clone) "`; snooze is copied only if still in the future. The resulting form submits as a new task creation.
+- **Send to Backlog:** the edit modal has a "Backlog" button (slate grey, `modifier="backlog"`) between Clone and Update. Only shown for board tasks (not tasks already in the backlog column). Clicking it closes the modal, moves the task to the backlog column at position 0 via `moveTask()`, and shows a success toast. The server generates a log entry: `"Moved from 'X' to 'Backlog'"`.
 
 ### Categories
 - **Category 1 cannot be deleted.** Deleting any other category reassigns its active tasks to category 1. Archived tasks are untouched.
@@ -343,10 +345,11 @@ These are behaviors not evident from reading the code. Know these before making 
 - The **first column** (order 0) is the default: new tasks are created there; tasks are moved there when a column is deleted.
 - Column deletion appends a log entry to each moved task: `"Column 'Wait' deleted – moved to 'To Do'"`.
 - Renaming a column does **not** change `task.status` (the column ID is immutable after creation). Existing task logs remain accurate.
-- The default four column IDs (`todo`, `wait`, `inprogress`, `done`) intentionally match legacy `task.status` values — no data migration needed for existing tasks.
+- The default four board column IDs (`todo`, `wait`, `inprogress`, `done`) intentionally match legacy `task.status` values — no data migration needed for existing tasks. The fifth default column (`backlog`, `isBacklog: true`) is the permanent backlog.
 - `task.status` now equals a **column ID** (any string), not one of four hardcoded values.
-- Profiles without a `columns` field are auto-migrated to `DEFAULT_COLUMNS` by `resolveProfile` middleware on first request.
-- `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`).
+- Profiles without a `columns` field are auto-migrated to `DEFAULT_COLUMNS` by `resolveProfile` middleware on first request. Profiles that have columns but lack a backlog column get one auto-added.
+- The **backlog column** is permanent: it cannot be deleted (server returns 400), and it is hidden from the Board Configuration modal. It is always created as part of `DEFAULT_COLUMNS`.
+- `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`). Columns with `isBacklog: true` are filtered out of the board view.
 
 ### Reports & Archive (independent operations)
 - **Report generation** (`Hamburger → Generate Report`) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.

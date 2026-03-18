@@ -78,8 +78,10 @@ export function setQuickDateTime(inputEl, offsetType) {
  * @param {Object} elements - DOM element references
  * @param {Function} onDelete - Callback for delete button click
  * @param {Function} onSubmit - Form submit handler
+ * @param {Function} [onClone] - Callback for clone button click
+ * @param {Function} [onSendToBacklog] - Callback for send-to-backlog button click
  */
-export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, onClone) {
+export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, onClone, onSendToBacklog) {
     elements.taskModalActions.innerHTML = '';
 
     const rightActions = document.createElement('div');
@@ -104,6 +106,14 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, 
         cloneBtn.setAttribute('modifier', 'clone');
         cloneBtn.addEventListener('click', onClone);
         rightActions.appendChild(cloneBtn);
+    }
+
+    if (isEditing && onSendToBacklog) {
+        const backlogBtn = document.createElement('custom-button');
+        backlogBtn.setAttribute('label', 'Backlog');
+        backlogBtn.setAttribute('modifier', 'backlog');
+        backlogBtn.addEventListener('click', onSendToBacklog);
+        rightActions.appendChild(backlogBtn);
     }
 
     rightActions.appendChild(saveBtn);
@@ -197,8 +207,10 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
  * @param {Object} elements - DOM element references
  * @param {Function} onDelete - Callback for delete button
  * @param {Function} onSubmit - Form submit handler
+ * @param {Function} [onClone] - Callback for clone button click
+ * @param {Function} [onSendToBacklog] - Callback for send-to-backlog button click
  */
-export function openEditModal(taskId, elements, onDelete, onSubmit, onClone) {
+export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onSendToBacklog) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -240,7 +252,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone) {
         elements.snoozeHint.textContent = '';
     }
 
-    renderTaskModalActions(true, elements, onDelete, onSubmit, onClone);
+    renderTaskModalActions(true, elements, onDelete, onSubmit, onClone, onSendToBacklog);
 
     elements.taskModal.open();
     elements.taskTitle.focus();
