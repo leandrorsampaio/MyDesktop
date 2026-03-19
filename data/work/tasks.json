@@ -1505,7 +1505,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 3,
+    "position": 4,
     "log": [
       {
         "date": "2026-02-16",
@@ -1644,7 +1644,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 6,
+    "position": 5,
     "log": [
       {
         "date": "2026-02-17",
@@ -1778,8 +1778,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 7,
+    "status": "inprogress",
+    "position": 2,
     "log": [
       {
         "date": "2026-02-23",
@@ -1804,6 +1804,10 @@
       {
         "date": "2026-03-10",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
       }
     ],
     "createdDate": "2026-02-23T15:53:52.547Z",
@@ -2054,7 +2058,7 @@
     "category": 5,
     "epicId": "mmji2xjk6s7spj1wu",
     "status": "done",
-    "position": 5,
+    "position": 6,
     "log": [
       {
         "date": "2026-03-09",
@@ -2080,8 +2084,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "todo",
-    "position": 5,
+    "status": "done",
+    "position": 9,
     "log": [
       {
         "date": "2026-03-09",
@@ -2090,6 +2094,14 @@
       {
         "date": "2026-03-09",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-09T18:18:17.597Z",
@@ -2104,7 +2116,7 @@
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
     "status": "done",
-    "position": 4,
+    "position": 5,
     "log": [
       {
         "date": "2026-03-09",
@@ -2151,7 +2163,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-13",
@@ -2174,7 +2186,7 @@
     "category": 1,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-13",
@@ -2197,7 +2209,7 @@
     "category": 1,
     "epicId": "mmkdwjunpjcvd0pz6",
     "status": "done",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-03-13",
@@ -2244,7 +2256,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 0,
+    "position": 4,
     "log": [
       {
         "date": "2026-03-13",
@@ -2260,11 +2272,20 @@
     "title": "Make recommendation to Bart on Linekin",
     "description": "Could I ask you to write a LI recommendation? Of coursse, only if you feel I deserve one https://www.linkedin.com/in/bartosz-suchocki/",
     "priority": false,
-    "category": 1,
+    "category": 6,
     "epicId": null,
-    "status": "todo",
-    "position": 8,
-    "log": [],
+    "status": "inprogress",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Generic Task"
+      }
+    ],
     "createdDate": "2026-03-16T14:51:31.078Z",
     "deadline": null,
     "snoozeUntil": null
@@ -2276,9 +2297,14 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 9,
-    "log": [],
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to Backlog"
+      }
+    ],
     "createdDate": "2026-03-17T01:44:53.032Z",
     "deadline": null,
     "snoozeUntil": null
@@ -2290,9 +2316,14 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "todo",
-    "position": 10,
-    "log": [],
+    "status": "inprogress",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
     "createdDate": "2026-03-17T03:44:50.136Z",
     "deadline": null,
     "snoozeUntil": null
@@ -2300,16 +2331,20 @@
   {
     "id": "mmudeakem9pwa43ey",
     "title": "remove unecessary UI compomenents",
-    "description": "",
+    "description": "Dummy components",
     "priority": false,
-    "category": 1,
-    "epicId": null,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 1,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-17",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Development"
       }
     ],
     "createdDate": "2026-03-17T08:48:28.670Z",
@@ -2319,16 +2354,24 @@
   {
     "id": "mmudghcfl5zvr2r1k",
     "title": "Fonts DS issue",
-    "description": "",
+    "description": "Done on version 3.2 DS",
     "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "inprogress",
-    "position": 2,
+    "category": 2,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "done",
+    "position": 7,
     "log": [
       {
         "date": "2026-03-17",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-17T08:50:10.767Z",
@@ -2338,19 +2381,149 @@
   {
     "id": "mmudm7xvk370majt1",
     "title": "double burger menu",
-    "description": "",
+    "description": "removed from UAT and PROD. \nAsking Deelip to make some changes here (improogments)",
     "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "inprogress",
-    "position": 3,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 1,
     "log": [
       {
         "date": "2026-03-17",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from In Progress to Wait"
       }
     ],
     "createdDate": "2026-03-17T08:54:38.515Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mmx6d2aa8zppeva7p",
+    "title": "Check Code overwirtten by Advic",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "inprogress",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from Wait to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-19T07:54:52.498Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mmx6durn8rvc1167o",
+    "title": "ORG Emails and Desktop",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": null,
+    "status": "done",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-19T07:55:29.411Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mmx6egjgh97i4txf1",
+    "title": "ticket to EUVIC - List of components LWC available",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "inprogress",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-19T07:55:57.629Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mmx6fxces06r76p0g",
+    "title": "ESB-558 - Download documents bug",
+    "description": "check why is not working. Update ticket to Ravi with what needs to be done\nhttps://solenis.atlassian.net/browse/ESB-558",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 10,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to Done"
+      }
+    ],
+    "createdDate": "2026-03-19T07:57:06.062Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mmx8lpfm6tdf6gcrw",
+    "title": "Check PR realease from Euvic",
+    "description": "https://github.com/Solenis-LLC/design-system-lit/pull/539#pullrequestreview-3973662090",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "done",
+    "position": 8,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to Done"
+      }
+    ],
+    "createdDate": "2026-03-19T08:57:34.978Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mmxfibe0mc25ll20m",
+    "title": "Requeste contacts to Sebastian (onboarding)",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": null,
+    "status": "inprogress",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-19T12:10:54.120Z",
     "deadline": null,
     "snoozeUntil": null
   }
