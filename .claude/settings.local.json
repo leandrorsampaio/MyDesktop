@@ -17,7 +17,8 @@
       "Bash(npm:*)",
       "Bash(ps:*)",
       "Bash(xargs kill)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }
