@@ -62,7 +62,7 @@ A vanilla JavaScript kanban task tracker — no frameworks, no build tools, ES m
 - **Style:** Solo host, informal, like chatting with a knowledgeable friend
 - **Content:** Concepts explained with analogies and mental models, NO code shown
 - **Framework comparisons:** Always compare vanilla approach with React, Svelte, Angular, and especially LWC
-- **Files:** `episode-01-*` through `episode-12-*`
+- **Files:** `episode-s1e01-*` through `episode-s1e12-*`
 
 ### Season 2: Code Walkthrough (12 episodes — COMPLETE)
 - **Audience context:** Listener is AT THE COMPUTER with files open
@@ -124,7 +124,8 @@ A vanilla JavaScript kanban task tracker — no frameworks, no build tools, ES m
 
 ### Naming Convention
 
-- Season 1: `episode-01-short-title.md` through `episode-12-short-title.md`
+- Pattern: `episode-s{season}e{episode}-short-title.md`
+- Season 1: `episode-s1e01-short-title.md` through `episode-s1e12-short-title.md`
 - Season 2: `episode-s2e01-short-title.md` through `episode-s2e12-short-title.md`
 - Season 3: `episode-s3e01-short-title.md` etc.
 - Keep filenames lowercase, hyphenated, descriptive
