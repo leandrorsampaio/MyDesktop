@@ -709,5 +709,295 @@
       ]
     },
     "notes": "CRs: 574\n "
+  },
+  {
+    "id": "mn2b2aa61x0ienytf",
+    "title": "Week 12 (Mar 16-22)",
+    "generatedDate": "2026-03-22T22:05:18.600Z",
+    "weekNumber": 12,
+    "dateRange": "Mar 16-22",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": null
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mm16ce59p0zkv1tng",
+              "title": "create list of LWC ready for DS",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            },
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            },
+            {
+              "id": "mmizdeoc9qv4hpepp",
+              "title": "Rob/Balzac: Logo's to interactive movies",
+              "description": "What to do here? ticket?",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "New Components SDS (SOL-XX)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmudm7xvk370majt1",
+              "title": "double burger menu",
+              "description": "removed from UAT and PROD. \nAsking Deelip to make some changes here (improogments)",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": [
+            {
+              "id": "mlzcwm8z3a3c7z1l9",
+              "title": "Check Image problem",
+              "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmp78qeryf39ufy0b",
+              "title": "EIPP Beautification",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmtaxbbagd27gkp26",
+              "title": "Make recommendation to Bart on Linekin",
+              "description": "Could I ask you to write a LI recommendation? Of coursse, only if you feel I deserve one https://www.linkedin.com/in/bartosz-suchocki/",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": null
+            },
+            {
+              "id": "mmu2jt20khe9h7urb",
+              "title": "Repo Clean up (final check)",
+              "description": "Make sure that no alert is our responsibility",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji7ki7lo4hksbjk"
+            },
+            {
+              "id": "mmudeakem9pwa43ey",
+              "title": "remove unecessary UI compomenents",
+              "description": "Dummy components",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmx6d2aa8zppeva7p",
+              "title": "Check Code overwirtten by Advic",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmx6egjgh97i4txf1",
+              "title": "ticket to EUVIC - List of components LWC available",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmxfibe0mc25ll20m",
+              "title": "Requeste contacts to Sebastian (onboarding)",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": null
+            }
+          ]
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "mlof933ntaf4bu3j3",
+              "title": "Tickets to Quinton (OMS)",
+              "description": "Invoices and deliveries new tables take considerable more time than the old ones. The All order seems fine. \n\nI have to do 3 things:\n\n1 TICKET: Ask ADVIC to fix this, should not take so much time. \n\n\n2 TICKET. Finish the OMS component tickte to make the components show less data\n\n3 Update the email where mikael complains about it.\n\n\n---------\n\n\nhttps://solenis.atlassian.net/browse/ESB-595\nhttps://solenis.atlassian.net/browse/ESB-600",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmji2jx4l3lgzy2ho",
+              "title": "Export: Prepare email with al Changes and Bugs",
+              "description": "ticket created with what needs to be done https://solenis.atlassian.net/browse/ESB-594",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mmji89ktwlvmyarze",
+              "title": "Solve some items from the repo issues",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji7ki7lo4hksbjk"
+            },
+            {
+              "id": "mmji8ywbvhb5483g8",
+              "title": "Message to Advic: what they should solve?",
+              "description": "email and ticket \nhttps://solenis.atlassian.net/browse/ESB-601",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji7ki7lo4hksbjk"
+            },
+            {
+              "id": "mmkl8gurpdexi759q",
+              "title": "New PDP",
+              "description": "Rob complains about PDP\n\n- Actions buttons before scroll\n- everthing too big for his screen (diversay laptos are really small)\n- Heiader to high\n- short links also after scroll\n\n\nRe thing how can we do the PDP and comes with a plan to implement it.\n--- \n\nemail to Balzac sent.\n\n---- \n\nnew ticket with quick wins for the header: https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmp77bktk18b5eqsy",
+              "title": "PR Table Bart",
+              "description": "200 files",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmp77ue39jy9rb8g5",
+              "title": "Check Info request by Mikael",
+              "description": "Presentation made. Align with Shari",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mmkdwjunpjcvd0pz6"
+            },
+            {
+              "id": "mmudghcfl5zvr2r1k",
+              "title": "Fonts DS issue",
+              "description": "Done on version 3.2 DS",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmx6durn8rvc1167o",
+              "title": "ORG Emails and Desktop",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": null
+            },
+            {
+              "id": "mmx6fxces06r76p0g",
+              "title": "ESB-558 - Download documents bug",
+              "description": "check why is not working. Update ticket to Ravi with what needs to be done\nhttps://solenis.atlassian.net/browse/ESB-558",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmx8lpfm6tdf6gcrw",
+              "title": "Check PR realease from Euvic",
+              "description": "https://github.com/Solenis-LLC/design-system-lit/pull/539#pullrequestreview-3973662090",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinl22lxnkra6pjt"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mmg5wklrdg4rgkc5r",
+              "title": "wqdqwqwwqd",
+              "description": "dwqdqwdqwdqwd",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmgvdk4b3invtcz8x",
+              "title": "Plan the menu",
+              "description": "Decide on dishes to prepare for dinner, considering dietary preferences of friends.",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": null
+            },
+            {
+              "id": "mmj03djot9zc3rg7p",
+              "title": "Plan the menu",
+              "description": "Decide on dishes to serve alongside chicken (e.g., sides, dessert).",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": null
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "\n\n\n\nTo study\nLWC lifecycle hooks"
   }
 ]

@@ -635,8 +635,8 @@
     "title": "<head> clean up",
     "description": "Static resource on production.\nAdd to <head>",
     "priority": true,
-    "status": "todo",
-    "position": 1,
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 4,
     "log": [
       {
         "date": "2026-01-26",
@@ -665,11 +665,15 @@
       {
         "date": "2026-02-16",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Backlog"
       }
     ],
     "createdDate": "2026-01-26T18:42:36.610Z",
     "category": 2,
-    "epicId": null,
+    "epicId": "mlinlecx6b1djaonv",
     "deadline": null,
     "snoozeUntil": null
   },
@@ -1504,7 +1508,7 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 4,
     "log": [
       {
@@ -1530,7 +1534,8 @@
     ],
     "createdDate": "2026-02-16T00:14:05.555Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Planning"
   },
   {
     "id": "mlpdja5gg25jozz9g",
@@ -1643,8 +1648,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 5,
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 3,
     "log": [
       {
         "date": "2026-02-17",
@@ -1665,6 +1670,10 @@
       {
         "date": "2026-03-09",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Backlog"
       }
     ],
     "createdDate": "2026-02-17T13:05:41.854Z",
@@ -1773,7 +1782,7 @@
   },
   {
     "id": "mlzcwm8z3a3c7z1l9",
-    "title": "Check Image problem",
+    "title": "Check Image problem - Create ticket",
     "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)",
     "priority": false,
     "category": 2,
@@ -1837,44 +1846,20 @@
     "categoryName": "Development"
   },
   {
-    "id": "mm16ce59p0zkv1tng",
-    "title": "create list of LWC ready for DS",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 0,
-    "log": [
-      {
-        "date": "2026-02-24",
-        "action": "Moved from To Do to In Progress"
-      },
-      {
-        "date": "2026-03-09",
-        "action": "Moved from In Progress to To Do"
-      },
-      {
-        "date": "2026-03-18",
-        "action": "Moved from To Do to Backlog"
-      },
-      {
-        "date": "2026-03-18",
-        "action": "Moved from Backlog to To Do"
-      }
-    ],
-    "createdDate": "2026-02-24T22:25:43.581Z"
-  },
-  {
     "id": "mm5kz7899tywcxdmt",
     "title": "Check with Deelip: global classes for text complience",
     "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
     "priority": false,
     "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 2,
-    "log": [],
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Backlog"
+      }
+    ],
     "createdDate": "2026-02-28T00:26:27.033Z",
     "deadline": null,
     "snoozeUntil": null
@@ -1904,70 +1889,23 @@
     "categoryName": "Non categorized"
   },
   {
-    "id": "mmg5wklrdg4rgkc5r",
-    "title": "wqdqwqwwqd",
-    "description": "dwqdqwdqwdqwd",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinl22lxnkra6pjt",
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 3,
-    "log": [],
-    "createdDate": "2026-03-07T10:09:58.095Z",
-    "deadline": "2026-03-08T07:00:00.000Z",
-    "snoozeUntil": null
-  },
-  {
-    "id": "mmgvdk4b3invtcz8x",
-    "title": "Plan the menu",
-    "description": "Decide on dishes to prepare for dinner, considering dietary preferences of friends.",
-    "priority": false,
-    "epicId": null,
-    "category": 5,
-    "deadline": null,
-    "snoozeUntil": null,
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 2,
-    "log": [
-      {
-        "date": "2026-03-07",
-        "action": "Added from AI Staging"
-      }
-    ],
-    "createdDate": "2026-03-07T22:03:01.019Z"
-  },
-  {
     "id": "mmizdeoc9qv4hpepp",
     "title": "Rob/Balzac: Logo's to interactive movies",
     "description": "What to do here? ticket?",
     "priority": false,
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 4,
-    "log": [],
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Backlog"
+      }
+    ],
     "createdDate": "2026-03-09T09:30:24.780Z",
     "deadline": null,
     "snoozeUntil": null
-  },
-  {
-    "id": "mmj03djot9zc3rg7p",
-    "title": "Plan the menu",
-    "description": "Decide on dishes to serve alongside chicken (e.g., sides, dessert).",
-    "priority": false,
-    "epicId": null,
-    "category": 5,
-    "deadline": null,
-    "snoozeUntil": null,
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 1,
-    "log": [
-      {
-        "date": "2026-03-09",
-        "action": "Added from AI Staging"
-      }
-    ],
-    "createdDate": "2026-03-09T09:50:36.372Z"
   },
   {
     "id": "mmj15hwrzqybghg12",
@@ -1975,10 +1913,15 @@
     "description": "",
     "priority": false,
     "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 3,
-    "log": [],
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Backlog"
+      }
+    ],
     "createdDate": "2026-03-09T10:20:14.955Z",
     "deadline": null,
     "snoozeUntil": null
@@ -2014,12 +1957,16 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "wait",
+    "status": "todo",
     "position": 0,
     "log": [
       {
         "date": "2026-03-09",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to To Do"
       }
     ],
     "createdDate": "2026-03-09T17:55:02.449Z",
@@ -2057,7 +2004,7 @@
     "priority": false,
     "category": 5,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "done",
+    "status": "archived",
     "position": 6,
     "log": [
       {
@@ -2075,7 +2022,8 @@
     ],
     "createdDate": "2026-03-09T18:13:51.064Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Planning"
   },
   {
     "id": "mmji89ktwlvmyarze",
@@ -2084,7 +2032,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "done",
+    "status": "archived",
     "position": 9,
     "log": [
       {
@@ -2106,7 +2054,8 @@
     ],
     "createdDate": "2026-03-09T18:18:17.597Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mmji8ywbvhb5483g8",
@@ -2115,7 +2064,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "done",
+    "status": "archived",
     "position": 5,
     "log": [
       {
@@ -2129,7 +2078,8 @@
     ],
     "createdDate": "2026-03-09T18:18:50.411Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mmkdxzq3phf8sqvjg",
@@ -2162,7 +2112,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 3,
     "log": [
       {
@@ -2176,7 +2126,8 @@
     ],
     "createdDate": "2026-03-10T12:30:12.051Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mmp77bktk18b5eqsy",
@@ -2185,7 +2136,7 @@
     "priority": false,
     "category": 1,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "done",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -2199,7 +2150,8 @@
     ],
     "createdDate": "2026-03-13T17:56:14.813Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   },
   {
     "id": "mmp77ue39jy9rb8g5",
@@ -2208,7 +2160,7 @@
     "priority": false,
     "category": 1,
     "epicId": "mmkdwjunpjcvd0pz6",
-    "status": "done",
+    "status": "archived",
     "position": 2,
     "log": [
       {
@@ -2222,7 +2174,8 @@
     ],
     "createdDate": "2026-03-13T17:56:39.195Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   },
   {
     "id": "mmp7846dkd2sfl9ca",
@@ -2255,12 +2208,20 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 4,
+    "status": "todo",
+    "position": 3,
     "log": [
       {
         "date": "2026-03-13",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to To Do"
       }
     ],
     "createdDate": "2026-03-13T17:57:20.691Z",
@@ -2274,8 +2235,8 @@
     "priority": false,
     "category": 6,
     "epicId": null,
-    "status": "inprogress",
-    "position": 7,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-03-19",
@@ -2284,6 +2245,10 @@
       {
         "date": "2026-03-19",
         "action": "Category changed from Non categorized to Generic Task"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-16T14:51:31.078Z",
@@ -2298,7 +2263,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mmf9c0aaza1snpz8c",
-    "position": 0,
+    "position": 6,
     "log": [
       {
         "date": "2026-03-19",
@@ -2316,12 +2281,16 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "inprogress",
-    "position": 6,
+    "status": "todo",
+    "position": 1,
     "log": [
       {
         "date": "2026-03-19",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to To Do"
       }
     ],
     "createdDate": "2026-03-17T03:44:50.136Z",
@@ -2336,7 +2305,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 3,
+    "position": 4,
     "log": [
       {
         "date": "2026-03-17",
@@ -2358,7 +2327,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "done",
+    "status": "archived",
     "position": 7,
     "log": [
       {
@@ -2376,7 +2345,8 @@
     ],
     "createdDate": "2026-03-17T08:50:10.767Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mmudm7xvk370majt1",
@@ -2385,7 +2355,7 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
+    "status": "done",
     "position": 1,
     "log": [
       {
@@ -2399,6 +2369,10 @@
       {
         "date": "2026-03-19",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-03-17T08:54:38.515Z",
@@ -2413,7 +2387,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 1,
+    "position": 5,
     "log": [
       {
         "date": "2026-03-19",
@@ -2435,7 +2409,7 @@
     "priority": false,
     "category": 6,
     "epicId": null,
-    "status": "done",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -2449,7 +2423,8 @@
     ],
     "createdDate": "2026-03-19T07:55:29.411Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
   },
   {
     "id": "mmx6egjgh97i4txf1",
@@ -2458,12 +2433,16 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "inprogress",
-    "position": 5,
+    "status": "done",
+    "position": 2,
     "log": [
       {
         "date": "2026-03-19",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-19T07:55:57.629Z",
@@ -2477,7 +2456,7 @@
     "priority": false,
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 10,
     "log": [
       {
@@ -2487,7 +2466,8 @@
     ],
     "createdDate": "2026-03-19T07:57:06.062Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   },
   {
     "id": "mmx8lpfm6tdf6gcrw",
@@ -2496,7 +2476,7 @@
     "priority": false,
     "category": 1,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "done",
+    "status": "archived",
     "position": 8,
     "log": [
       {
@@ -2506,24 +2486,197 @@
     ],
     "createdDate": "2026-03-19T08:57:34.978Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   },
   {
     "id": "mmxfibe0mc25ll20m",
     "title": "Requeste contacts to Sebastian (onboarding)",
-    "description": "",
+    "description": "Tell him to Ariel request IT",
     "priority": false,
-    "category": 6,
-    "epicId": null,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-19",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Category changed from Generic Task to Communication"
       }
     ],
     "createdDate": "2026-03-19T12:10:54.120Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2b9u36c8x423qi4",
+    "title": "SDS 1.3 Deployment Procedure",
+    "description": "Todos:\n- Install: QA, DevBox, DataCloud\n- Adjust Release notes on GitHub\n- Send email to Stakeholders\n- Send list (JSON) to euvic",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "inprogress",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-22T22:11:10.866Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2bbaxdgllccpzaw",
+    "title": "Email to Devs about new components usage",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Backlog"
+      }
+    ],
+    "createdDate": "2026-03-22T22:12:19.345Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2berxeantcbejps",
+    "title": "(Follow UP) ESB-601 Security Warnings in Salesforce Repo (AdVic Code)",
+    "description": "https://solenis.atlassian.net/browse/ESB-601",
+    "priority": false,
+    "category": 4,
+    "epicId": "mmji7ki7lo4hksbjk",
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 7,
+    "log": [],
+    "createdDate": "2026-03-22T22:15:01.346Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2bfhjmu7czequ2f",
+    "title": "ESB-594 Product List Export Feature: Bugs list",
+    "description": "https://solenis.atlassian.net/browse/ESB-594",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 8,
+    "log": [],
+    "createdDate": "2026-03-22T22:15:34.546Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2bhjfcp25vydl8h",
+    "title": "ESB-600 - uiTable Optimization",
+    "description": "https://solenis.atlassian.net/browse/ESB-600\n\nTo be done by Leandro: \n- Add pagination flag to hide the pagination entirely\n- Add ordering flag to hide the pagination entirely",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "todo",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to To Do"
+      }
+    ],
+    "createdDate": "2026-03-22T22:17:10.296Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2bjlxbmnv44k110",
+    "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+    "description": "https://solenis.atlassian.net/browse/ESB-595",
+    "priority": false,
+    "category": 4,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mmf9c0aaza1snpz8c",
+    "position": 9,
+    "log": [],
+    "createdDate": "2026-03-22T22:18:46.847Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2bl6078z3z4ulca",
+    "title": "(Follow Up) ESB-588 New videos for SDS Category",
+    "description": "https://solenis.atlassian.net/browse/ESB-588\n\n(follow up with Balzac)",
+    "priority": false,
+    "category": 4,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-03-22T22:19:59.527Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2bn3vyp4vkpw04f",
+    "title": "(Follow Up Deelip) ESB-604 Header Improvements",
+    "description": "https://solenis.atlassian.net/browse/ESB-604",
+    "priority": false,
+    "category": 4,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "inprogress",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-22T22:21:30.094Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn2cwmrv7eai6waxd",
+    "title": "(Follow Up) Message to Anna New Developer",
+    "description": "- We want 2 developers (not sebastian)\n- Please give access to Jira Board to him and to me",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "inprogress",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Category changed from Non categorized to Communication"
+      }
+    ],
+    "createdDate": "2026-03-22T22:56:54.091Z",
     "deadline": null,
     "snoozeUntil": null
   }
