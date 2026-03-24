@@ -1783,12 +1783,12 @@
   {
     "id": "mlzcwm8z3a3c7z1l9",
     "title": "Check Image problem - Create ticket",
-    "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)",
+    "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)\n\n\nCase Created:\nhttps://help.salesforce.com/s/case-view?caseId=500Hx000017ulHRIAY",
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-02-23",
@@ -1817,6 +1817,14 @@
       {
         "date": "2026-03-19",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from Wait to In Progress"
       }
     ],
     "createdDate": "2026-02-23T15:53:52.547Z",
@@ -2236,7 +2244,7 @@
     "category": 6,
     "epicId": null,
     "status": "done",
-    "position": 0,
+    "position": 2,
     "log": [
       {
         "date": "2026-03-19",
@@ -2300,12 +2308,12 @@
   {
     "id": "mmudeakem9pwa43ey",
     "title": "remove unecessary UI compomenents",
-    "description": "Dummy components",
+    "description": "Dummy components\n\nuiComSliderHeroDummy not possible to be deleted in the moment",
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 4,
+    "status": "done",
+    "position": 6,
     "log": [
       {
         "date": "2026-03-17",
@@ -2314,6 +2322,10 @@
       {
         "date": "2026-03-19",
         "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-17T08:48:28.670Z",
@@ -2356,7 +2368,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 1,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-17",
@@ -2387,7 +2399,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 5,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-19",
@@ -2434,7 +2446,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 2,
+    "position": 4,
     "log": [
       {
         "date": "2026-03-19",
@@ -2492,12 +2504,12 @@
   {
     "id": "mmxfibe0mc25ll20m",
     "title": "Requeste contacts to Sebastian (onboarding)",
-    "description": "Tell him to Ariel request IT",
+    "description": "Tell him to Ariel request IT\n---\ndone. He will take care in case he needs some follow with IT",
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 1,
+    "status": "done",
+    "position": 5,
     "log": [
       {
         "date": "2026-03-19",
@@ -2506,6 +2518,10 @@
       {
         "date": "2026-03-22",
         "action": "Category changed from Generic Task to Communication"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-19T12:10:54.120Z",
@@ -2520,7 +2536,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "inprogress",
-    "position": 6,
+    "position": 4,
     "log": [
       {
         "date": "2026-03-22",
@@ -2585,7 +2601,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
+    "status": "inprogress",
     "position": 2,
     "log": [
       {
@@ -2595,6 +2611,10 @@
       {
         "date": "2026-03-22",
         "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from To Do to In Progress"
       }
     ],
     "createdDate": "2026-03-22T22:17:10.296Z",
@@ -2623,7 +2643,7 @@
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "wait",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-03-22",
@@ -2637,12 +2657,12 @@
   {
     "id": "mn2bn3vyp4vkpw04f",
     "title": "(Follow Up Deelip) ESB-604 Header Improvements",
-    "description": "https://solenis.atlassian.net/browse/ESB-604",
+    "description": "https://solenis.atlassian.net/browse/ESB-604\n\nOne item missing. I ask deelip to fix (no sds link on mobile)",
     "priority": false,
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 3,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-03-22",
@@ -2651,6 +2671,14 @@
       {
         "date": "2026-03-22",
         "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-03-22T22:21:30.094Z",
@@ -2660,12 +2688,12 @@
   {
     "id": "mn2cwmrv7eai6waxd",
     "title": "(Follow Up) Message to Anna New Developer",
-    "description": "- We want 2 developers (not sebastian)\n- Please give access to Jira Board to him and to me",
+    "description": "- We want 2 developers (not sebastian)\n- Please give access to Jira Board to him and to me\n\n- all done",
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 0,
+    "status": "done",
+    "position": 1,
     "log": [
       {
         "date": "2026-03-22",
@@ -2674,9 +2702,40 @@
       {
         "date": "2026-03-22",
         "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-22T22:56:54.091Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn3u7s4ojcb20va5z",
+    "title": "Update tasks",
+    "description": "Update all tasks from my notebook from yesterday",
+    "priority": false,
+    "category": 4,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "inprogress",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-23",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-23T23:49:13.896Z",
     "deadline": null,
     "snoozeUntil": null
   }
