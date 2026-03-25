@@ -1788,7 +1788,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 3,
+    "position": 2,
     "log": [
       {
         "date": "2026-02-23",
@@ -2244,7 +2244,7 @@
     "category": 6,
     "epicId": null,
     "status": "done",
-    "position": 2,
+    "position": 4,
     "log": [
       {
         "date": "2026-03-19",
@@ -2313,7 +2313,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 6,
+    "position": 8,
     "log": [
       {
         "date": "2026-03-17",
@@ -2368,7 +2368,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 3,
+    "position": 5,
     "log": [
       {
         "date": "2026-03-17",
@@ -2394,12 +2394,12 @@
   {
     "id": "mmx6d2aa8zppeva7p",
     "title": "Check Code overwirtten by Advic",
-    "description": "",
+    "description": "Nothing found",
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 1,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-03-19",
@@ -2408,6 +2408,10 @@
       {
         "date": "2026-03-19",
         "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-19T07:54:52.498Z",
@@ -2446,7 +2450,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 4,
+    "position": 6,
     "log": [
       {
         "date": "2026-03-19",
@@ -2509,7 +2513,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 5,
+    "position": 7,
     "log": [
       {
         "date": "2026-03-19",
@@ -2536,7 +2540,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "inprogress",
-    "position": 4,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-22",
@@ -2601,8 +2605,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 2,
+    "status": "done",
+    "position": 1,
     "log": [
       {
         "date": "2026-03-22",
@@ -2615,6 +2619,10 @@
       {
         "date": "2026-03-23",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-22T22:17:10.296Z",
@@ -2662,7 +2670,7 @@
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 0,
+    "position": 2,
     "log": [
       {
         "date": "2026-03-22",
@@ -2693,7 +2701,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 1,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-22",
@@ -2728,11 +2736,19 @@
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-23",
         "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from Done to In Progress"
       }
     ],
     "createdDate": "2026-03-23T23:49:13.896Z",
