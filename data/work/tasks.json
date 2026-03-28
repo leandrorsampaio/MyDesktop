@@ -1788,7 +1788,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "inprogress",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-02-23",
@@ -2217,7 +2217,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 3,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-13",
@@ -2244,7 +2244,7 @@
     "category": 6,
     "epicId": null,
     "status": "done",
-    "position": 4,
+    "position": 6,
     "log": [
       {
         "date": "2026-03-19",
@@ -2285,12 +2285,12 @@
   {
     "id": "mmu2jt20khe9h7urb",
     "title": "Repo Clean up (final check)",
-    "description": "Make sure that no alert is our responsibility",
+    "description": "Make sure that no alert is our responsibility\n--\nAll fixes done",
     "priority": false,
     "category": 2,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "todo",
-    "position": 1,
+    "status": "done",
+    "position": 12,
     "log": [
       {
         "date": "2026-03-19",
@@ -2299,6 +2299,14 @@
       {
         "date": "2026-03-22",
         "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-17T03:44:50.136Z",
@@ -2313,7 +2321,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 8,
+    "position": 10,
     "log": [
       {
         "date": "2026-03-17",
@@ -2368,7 +2376,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 5,
+    "position": 7,
     "log": [
       {
         "date": "2026-03-17",
@@ -2399,7 +2407,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-19",
@@ -2450,7 +2458,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 6,
+    "position": 8,
     "log": [
       {
         "date": "2026-03-19",
@@ -2513,7 +2521,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 7,
+    "position": 9,
     "log": [
       {
         "date": "2026-03-19",
@@ -2540,7 +2548,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "inprogress",
-    "position": 3,
+    "position": 5,
     "log": [
       {
         "date": "2026-03-22",
@@ -2573,13 +2581,30 @@
   {
     "id": "mn2berxeantcbejps",
     "title": "(Follow UP) ESB-601 Security Warnings in Salesforce Repo (AdVic Code)",
-    "description": "https://solenis.atlassian.net/browse/ESB-601",
+    "description": "https://solenis.atlassian.net/browse/ESB-601\n----\nSeems still one item missing...",
     "priority": false,
     "category": 4,
     "epicId": "mmji7ki7lo4hksbjk",
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 7,
-    "log": [],
+    "status": "done",
+    "position": 11,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from Backlog to To Do"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to Done"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from Done to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
     "createdDate": "2026-03-22T22:15:01.346Z",
     "deadline": null,
     "snoozeUntil": null
@@ -2590,7 +2615,7 @@
     "description": "https://solenis.atlassian.net/browse/ESB-594",
     "priority": false,
     "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
+    "epicId": "mmji2xjk6s7spj1wu",
     "status": "mmf9c0aaza1snpz8c",
     "position": 8,
     "log": [],
@@ -2606,7 +2631,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-03-22",
@@ -2645,17 +2670,25 @@
   },
   {
     "id": "mn2bl6078z3z4ulca",
-    "title": "(Follow Up) ESB-588 New videos for SDS Category",
-    "description": "https://solenis.atlassian.net/browse/ESB-588\n\n(follow up with Balzac)",
+    "title": "ESB-588 New videos for SDS Category",
+    "description": "https://solenis.atlassian.net/browse/ESB-588\n\nfinal videos in the email",
     "priority": false,
-    "category": 4,
+    "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 0,
+    "status": "inprogress",
+    "position": 2,
     "log": [
       {
         "date": "2026-03-22",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Category changed from To Remember to Communication"
       }
     ],
     "createdDate": "2026-03-22T22:19:59.527Z",
@@ -2670,7 +2703,7 @@
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-22",
@@ -2701,7 +2734,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 3,
+    "position": 5,
     "log": [
       {
         "date": "2026-03-22",
@@ -2730,7 +2763,7 @@
   },
   {
     "id": "mn3u7s4ojcb20va5z",
-    "title": "Update tasks",
+    "title": "Update tasks from notebook",
     "description": "Update all tasks from my notebook from yesterday",
     "priority": false,
     "category": 4,
@@ -2752,6 +2785,100 @@
       }
     ],
     "createdDate": "2026-03-23T23:49:13.896Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn6qxljexs331p8d1",
+    "title": "Workshop: Sending to Mautusz my findings about the Header",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-26T00:40:38.474Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn6r1z9dha9o6uqnk",
+    "title": "Google Fonts as static resource",
+    "description": "Following security email",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "todo",
+    "position": 2,
+    "log": [],
+    "createdDate": "2026-03-26T00:44:02.881Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn6riwxflkgqpt1mg",
+    "title": "Image error on Export Function",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mmji2xjk6s7spj1wu",
+    "status": "inprogress",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to In Progress"
+      }
+    ],
+    "createdDate": "2026-03-26T00:57:13.011Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn7k1ykioo8i95fe9",
+    "title": "new buttons for uiTable for Quinton",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-03-26T14:15:50.850Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mn82rexx9b2youcgm",
+    "title": "Create CR",
+    "description": "- Securities Fixes\n- uiTable (https://solenis.atlassian.net/browse/ESB-600)",
+    "priority": false,
+    "category": 6,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-03-26T22:59:31.557Z",
     "deadline": null,
     "snoozeUntil": null
   }
