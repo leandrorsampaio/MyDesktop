@@ -286,15 +286,43 @@ body {
     color: var(--text-light);
 }
 
+.toolbar__panelBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.toolbar__panelBtn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+.toolbar__panelBtn.--active {
+    background: var(--color-accent-primary);
+    color: #fff;
+}
+
+.toolbar__panelBtn.--active:hover {
+    background: var(--color-accent-hover, #1567d3);
+}
+
 /* ==========================================
    Block: appContainer
    ========================================== */
 .appContainer {
-    display: grid;
-    grid-template-columns: 560px 1fr;
     min-height: calc(100vh - 120px);
     padding: 0 40px 40px 40px;
-    gap: 32px;
     transition: filter 0.4s ease;
 }
 
@@ -352,13 +380,40 @@ body {
    Block: sidebar
    ========================================== */
 .sidebar {
-    background-color: transparent;
-    padding: 0;
+    position: fixed;
+    top: 65px;
+    left: 0;
+    bottom: 0;
+    width: 420px;
+    background: var(--color-bg-secondary);
+    border-right: 1px solid var(--color-border);
+    padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 28px;
     overflow-y: auto;
-    max-height: calc(100vh - 160px);
+    z-index: 90;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+}
+
+.sidebar.--open {
+    transform: translateX(0);
+}
+
+.sidebarBackdrop {
+    display: none;
+    position: fixed;
+    top: 65px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 89;
+}
+
+.sidebarBackdrop.--visible {
+    display: block;
 }
 
 .sidebar__section {
@@ -521,7 +576,7 @@ body {
    ========================================== */
 .kanban {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--column-count, 4), minmax(0, 1fr));
     gap: 24px;
     padding: 0;
     overflow-x: auto;
@@ -2144,13 +2199,8 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 
 /* External monitor (2304px and above) */
 @media (min-width: 2000px) {
-    .appContainer {
-        grid-template-columns: 560px 1fr;
-        gap: 40px;
-    }
-
     .kanban {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(var(--column-count, 4), minmax(0, 1fr));
         gap: 28px;
     }
 
@@ -2162,13 +2212,11 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 /* MacBook Pro 14" (1512px) and similar screens */
 @media (min-width: 1400px) and (max-width: 1999px) {
     .appContainer {
-        grid-template-columns: 560px 1fr;
         padding: 0 32px 32px 32px;
-        gap: 24px;
     }
 
     .kanban {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(var(--column-count, 4), 1fr);
         gap: 16px;
     }
 
@@ -2652,7 +2700,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 /* Fallback for smaller screens */
 @media (max-width: 1399px) {
     .appContainer {
-        grid-template-columns: 1fr;
         padding: 0 24px 24px 24px;
     }
 
@@ -2661,7 +2708,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 
     .sidebar {
-        max-height: none;
+        width: 340px;
     }
 
     .kanban {

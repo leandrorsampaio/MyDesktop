@@ -999,5 +999,542 @@
       ]
     },
     "notes": "\n\n\n\nTo study\nLWC lifecycle hooks"
+  },
+  {
+    "id": "mnccgqieud9d2zbci",
+    "title": "Week 14 (Mar 30 - Apr 5)",
+    "generatedDate": "2026-03-29T22:42:14.197Z",
+    "weekNumber": 14,
+    "dateRange": "Mar 30 - Apr 5",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "New Components SDS (SOL-XX)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmp78qeryf39ufy0b",
+              "title": "EIPP Beautification",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": [
+            {
+              "id": "mn7k1ykioo8i95fe9",
+              "title": "new buttons for uiTable for Quinton",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn82rexx9b2youcgm",
+              "title": "Create CR",
+              "description": "- Securities Fixes\n- uiTable (https://solenis.atlassian.net/browse/ESB-600)",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": [
+            {
+              "id": "mlzcwm8z3a3c7z1l9",
+              "title": "Check Image problem - Create ticket",
+              "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)\n\n\nCase Created:\nhttps://help.salesforce.com/s/case-view?caseId=500Hx000017ulHRIAY",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2b9u36c8x423qi4",
+              "title": "SDS 1.3 Deployment Procedure",
+              "description": "Todos:\n- Install: QA, DevBox, DataCloud\n- Adjust Release notes on GitHub\n- Send email to Stakeholders\n- Send list (JSON) to euvic",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bl6078z3z4ulca",
+              "title": "ESB-588 New videos for SDS Category",
+              "description": "https://solenis.atlassian.net/browse/ESB-588\n\nfinal videos in the email",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn3u7s4ojcb20va5z",
+              "title": "Update tasks from notebook",
+              "description": "Update all tasks from my notebook from yesterday",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6riwxflkgqpt1mg",
+              "title": "Image error on Export Function",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            }
+          ]
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "mmtaxbbagd27gkp26",
+              "title": "Make recommendation to Bart on Linekin",
+              "description": "Could I ask you to write a LI recommendation? Of coursse, only if you feel I deserve one https://www.linkedin.com/in/bartosz-suchocki/",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": null
+            },
+            {
+              "id": "mmu2jt20khe9h7urb",
+              "title": "Repo Clean up (final check)",
+              "description": "Make sure that no alert is our responsibility\n--\nAll fixes done",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji7ki7lo4hksbjk"
+            },
+            {
+              "id": "mmudeakem9pwa43ey",
+              "title": "remove unecessary UI compomenents",
+              "description": "Dummy components\n\nuiComSliderHeroDummy not possible to be deleted in the moment",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmudm7xvk370majt1",
+              "title": "double burger menu",
+              "description": "removed from UAT and PROD. \nAsking Deelip to make some changes here (improogments)",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmx6d2aa8zppeva7p",
+              "title": "Check Code overwirtten by Advic",
+              "description": "Nothing found",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmx6egjgh97i4txf1",
+              "title": "ticket to EUVIC - List of components LWC available",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmxfibe0mc25ll20m",
+              "title": "Requeste contacts to Sebastian (onboarding)",
+              "description": "Tell him to Ariel request IT\n---\ndone. He will take care in case he needs some follow with IT",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2berxeantcbejps",
+              "title": "(Follow UP) ESB-601 Security Warnings in Salesforce Repo (AdVic Code)",
+              "description": "https://solenis.atlassian.net/browse/ESB-601\n----\nSeems still one item missing...",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mmji7ki7lo4hksbjk"
+            },
+            {
+              "id": "mn2bhjfcp25vydl8h",
+              "title": "ESB-600 - uiTable Optimization",
+              "description": "https://solenis.atlassian.net/browse/ESB-600\n\nTo be done by Leandro: \n- Add pagination flag to hide the pagination entirely\n- Add ordering flag to hide the pagination entirely",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bn3vyp4vkpw04f",
+              "title": "(Follow Up Deelip) ESB-604 Header Improvements",
+              "description": "https://solenis.atlassian.net/browse/ESB-604\n\nOne item missing. I ask deelip to fix (no sds link on mobile)",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2cwmrv7eai6waxd",
+              "title": "(Follow Up) Message to Anna New Developer",
+              "description": "- We want 2 developers (not sebastian)\n- Please give access to Jira Board to him and to me\n\n- all done",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6qxljexs331p8d1",
+              "title": "Workshop: Sending to Mautusz my findings about the Header",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmizdeoc9qv4hpepp",
+              "title": "Rob/Balzac: Logo's to interactive movies",
+              "description": "What to do here? ticket?",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bfhjmu7czequ2f",
+              "title": "ESB-594 Product List Export Feature: Bugs list",
+              "description": "https://solenis.atlassian.net/browse/ESB-594",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "ToS: LWC lifecycle hooks"
+  },
+  {
+    "id": "mnjk74c2yv4cs80qu",
+    "title": "Week 14 (Mar 30 - Apr 5)",
+    "generatedDate": "2026-04-03T23:53:05.713Z",
+    "weekNumber": 14,
+    "dateRange": "Mar 30 - Apr 5",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "New Components SDS (SOL-XX)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mmp78qeryf39ufy0b",
+              "title": "EIPP Beautification",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bl6078z3z4ulca",
+              "title": "ESB-588 New videos for SDS Category",
+              "description": "https://solenis.atlassian.net/browse/ESB-588\n\nfinal videos in the email",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mncz3i18yhd8e5ne9",
+              "title": "Deelip: Images on Feature innovation (imgs beign replaced)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": []
+        },
+        {
+          "columnId": "mncchgncxlcix2v96",
+          "columnName": "Today",
+          "tasks": [
+            {
+              "id": "mn6riwxflkgqpt1mg",
+              "title": "Image error on Export Function",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mnetcss0ara8i0ote",
+              "title": "Flosum access Sebastian and Tanu",
+              "description": "",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": [
+            {
+              "id": "mn3u7s4ojcb20va5z",
+              "title": "Update tasks from notebook",
+              "description": "Update all tasks from my notebook from yesterday",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "mlzcwm8z3a3c7z1l9",
+              "title": "Check Image problem - Create ticket",
+              "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)\n\n\nCase Created:\nhttps://help.salesforce.com/s/case-view?caseId=500Hx000017ulHRIAY",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2b9u36c8x423qi4",
+              "title": "SDS 1.3 Deployment Procedure",
+              "description": "Todos:\n- Install: QA, DevBox, DataCloud\n- Adjust Release notes on GitHub\n- Send email to Stakeholders\n- Send list (JSON) to euvic",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn7k1ykioo8i95fe9",
+              "title": "new buttons for uiTable for Quinton",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn82rexx9b2youcgm",
+              "title": "Create CR",
+              "description": "- Securities Fixes\n- uiTable (https://solenis.atlassian.net/browse/ESB-600)",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mncclt1wqkjxxcz2g",
+              "title": "Image Problem: check if JS is removing the src from the images",
+              "description": "Is not the case",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnccmwpdyr3cabvwk",
+              "title": "Talk to Gagan to approve the tickets",
+              "description": "",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnccnchr9gtr7af0z",
+              "title": "Talk to Mikael EUVIC new dev",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnh9fs0v1nsoy2ljh",
+              "title": "Add info to the ticket regarding the image problem",
+              "description": "Done",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmizdeoc9qv4hpepp",
+              "title": "Rob/Balzac: Logo's to interactive movies",
+              "description": "What to do here? ticket?",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bfhjmu7czequ2f",
+              "title": "ESB-594 Product List Export Feature: Bugs list",
+              "description": "https://solenis.atlassian.net/browse/ESB-594",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "ToS: LWC lifecycle hooks"
   }
 ]

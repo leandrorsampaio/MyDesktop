@@ -78,6 +78,10 @@ import {
         sidebarBtn: document.querySelector('.js-sidebarBtn'),
         navSidebar: document.querySelector('.js-navSidebar'),
 
+        // Board sidebar (checklist + notes overlay)
+        boardSidebar: document.querySelector('.js-sidebar'),
+        sidebarBackdrop: document.querySelector('.js-sidebarBackdrop'),
+
         // Page view (placeholder for non-board pages)
         pageView: document.querySelector('.js-pageView'),
 
@@ -446,7 +450,9 @@ import {
      */
     function initKanban(cols) {
         elements.kanban.innerHTML = '';
-        cols.filter(col => !col.isBacklog).forEach((col, idx) => {
+        const boardCols = cols.filter(col => !col.isBacklog);
+        elements.kanban.style.setProperty('--column-count', boardCols.length);
+        boardCols.forEach((col, idx) => {
             const columnEl = document.createElement('kanban-column');
             columnEl.dataset.status = col.id;
 
@@ -758,6 +764,11 @@ import {
         const mount = document.querySelector('.js-toolbarMount');
         mount.innerHTML = `
             <div class="toolbar js-toolbar">
+                <button class="toolbar__panelBtn js-panelToggleBtn" type="button" aria-label="Toggle notes panel">
+                    <svg-icon icon="edit" size="14"></svg-icon>
+                    <span>Panel</span>
+                </button>
+                <div class="toolbar__divider"></div>
                 <div class="toolbar__filters js-categoryFilters"></div>
                 <custom-picker type="list" placeholder="Epics" size="compact" class="toolbar__epicFilter js-epicFilter"></custom-picker>
                 <button class="toolbar__priorityBtn js-priorityFilterBtn" type="button">★ Priority</button>
@@ -767,12 +778,30 @@ import {
                 <button class="toolbar__privacyBtn js-privacyToggleBtn" type="button">Hide</button>
             </div>
         `;
+        elements.panelToggleBtn    = mount.querySelector('.js-panelToggleBtn');
         elements.categoryFilters   = mount.querySelector('.js-categoryFilters');
         elements.priorityFilterBtn = mount.querySelector('.js-priorityFilterBtn');
         elements.epicFilter        = mount.querySelector('.js-epicFilter');
         elements.snoozeToggleBtn   = mount.querySelector('.js-snoozeToggleBtn');
         elements.crisisModeBtn     = mount.querySelector('.js-crisisModeBtn');
         elements.privacyToggleBtn  = mount.querySelector('.js-privacyToggleBtn');
+    }
+
+    /** Opens or closes the board sidebar (checklist + notes panel). */
+    function toggleBoardSidebar() {
+        const isOpen = elements.boardSidebar.classList.toggle('--open');
+        elements.sidebarBackdrop.classList.toggle('--visible', isOpen);
+        if (elements.panelToggleBtn) {
+            elements.panelToggleBtn.classList.toggle('--active', isOpen);
+        }
+    }
+
+    function closeBoardSidebar() {
+        elements.boardSidebar.classList.remove('--open');
+        elements.sidebarBackdrop.classList.remove('--visible');
+        if (elements.panelToggleBtn) {
+            elements.panelToggleBtn.classList.remove('--active');
+        }
     }
 
     // ==========================================
@@ -904,6 +933,10 @@ import {
             addTask,
             updateTaskInState
         );
+
+        // Board sidebar panel toggle
+        elements.panelToggleBtn.addEventListener('click', toggleBoardSidebar);
+        elements.sidebarBackdrop.addEventListener('click', closeBoardSidebar);
 
         // Priority Filter
         elements.priorityFilterBtn.addEventListener('click', () => {

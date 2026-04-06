@@ -29,16 +29,17 @@
     <!-- Navigation Sidebar (slide-over overlay) -->
     <nav-sidebar class="js-navSidebar"></nav-sidebar>
 
+    <!-- Left Sidebar Overlay (checklist + notes) -->
+    <div class="sidebarBackdrop js-sidebarBackdrop"></div>
+    <aside class="sidebar js-sidebar">
+        <!-- Recurrent Tasks Section -->
+        <daily-checklist class="sidebar__section"></daily-checklist>
+
+        <!-- Notes Section -->
+        <notes-widget class="sidebar__section"></notes-widget>
+    </aside>
+
     <div class="appContainer js-appContainer">
-        <!-- Left Sidebar -->
-        <aside class="sidebar">
-            <!-- Recurrent Tasks Section -->
-            <daily-checklist class="sidebar__section"></daily-checklist>
-
-            <!-- Notes Section -->
-            <notes-widget class="sidebar__section"></notes-widget>
-        </aside>
-
         <!-- Main Kanban Board — columns are created dynamically by app.js -->
         <main class="kanban js-kanban"></main>
     </div>

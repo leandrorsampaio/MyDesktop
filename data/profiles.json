@@ -22,23 +22,30 @@
         "isBacklog": false
       },
       {
+        "id": "mncchgncxlcix2v96",
+        "name": "Today",
+        "order": 2,
+        "hasArchive": false,
+        "isBacklog": false
+      },
+      {
         "id": "inprogress",
         "name": "In Progress",
-        "order": 2,
+        "order": 3,
         "hasArchive": false,
         "isBacklog": false
       },
       {
         "id": "done",
         "name": "Done",
-        "order": 3,
+        "order": 4,
         "hasArchive": true,
         "isBacklog": false
       },
       {
         "id": "mmf9c0aaza1snpz8c",
         "name": "Backlog",
-        "order": 4,
+        "order": 5,
         "hasArchive": false,
         "isBacklog": true
       }

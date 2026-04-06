@@ -2059,5 +2059,649 @@
     "deadline": null,
     "snoozeUntil": null,
     "categoryName": "Non categorized"
+  },
+  {
+    "id": "mmtaxbbagd27gkp26",
+    "title": "Make recommendation to Bart on Linekin",
+    "description": "Could I ask you to write a LI recommendation? Of coursse, only if you feel I deserve one https://www.linkedin.com/in/bartosz-suchocki/",
+    "priority": false,
+    "category": 6,
+    "epicId": null,
+    "status": "archived",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Generic Task"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-16T14:51:31.078Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "mmu2jt20khe9h7urb",
+    "title": "Repo Clean up (final check)",
+    "description": "Make sure that no alert is our responsibility\n--\nAll fixes done",
+    "priority": false,
+    "category": 2,
+    "epicId": "mmji7ki7lo4hksbjk",
+    "status": "archived",
+    "position": 12,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-17T03:44:50.136Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mmudeakem9pwa43ey",
+    "title": "remove unecessary UI compomenents",
+    "description": "Dummy components\n\nuiComSliderHeroDummy not possible to be deleted in the moment",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 10,
+    "log": [
+      {
+        "date": "2026-03-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-17T08:48:28.670Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mmudm7xvk370majt1",
+    "title": "double burger menu",
+    "description": "removed from UAT and PROD. \nAsking Deelip to make some changes here (improogments)",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-03-17",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-17T08:54:38.515Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mmx6d2aa8zppeva7p",
+    "title": "Check Code overwirtten by Advic",
+    "description": "Nothing found",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-19T07:54:52.498Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mmx6egjgh97i4txf1",
+    "title": "ticket to EUVIC - List of components LWC available",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "archived",
+    "position": 8,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-19T07:55:57.629Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mmxfibe0mc25ll20m",
+    "title": "Requeste contacts to Sebastian (onboarding)",
+    "description": "Tell him to Ariel request IT\n---\ndone. He will take care in case he needs some follow with IT",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 9,
+    "log": [
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Category changed from Generic Task to Communication"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-19T12:10:54.120Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mn2berxeantcbejps",
+    "title": "(Follow UP) ESB-601 Security Warnings in Salesforce Repo (AdVic Code)",
+    "description": "https://solenis.atlassian.net/browse/ESB-601\n----\nSeems still one item missing...",
+    "priority": false,
+    "category": 4,
+    "epicId": "mmji7ki7lo4hksbjk",
+    "status": "archived",
+    "position": 11,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from Backlog to To Do"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to Done"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from Done to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-22T22:15:01.346Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "To Remember"
+  },
+  {
+    "id": "mn2bhjfcp25vydl8h",
+    "title": "ESB-600 - uiTable Optimization",
+    "description": "https://solenis.atlassian.net/browse/ESB-600\n\nTo be done by Leandro: \n- Add pagination flag to hide the pagination entirely\n- Add ordering flag to hide the pagination entirely",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-22T22:17:10.296Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mn2bn3vyp4vkpw04f",
+    "title": "(Follow Up Deelip) ESB-604 Header Improvements",
+    "description": "https://solenis.atlassian.net/browse/ESB-604\n\nOne item missing. I ask deelip to fix (no sds link on mobile)",
+    "priority": false,
+    "category": 4,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-24",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-22T22:21:30.094Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "To Remember"
+  },
+  {
+    "id": "mn2cwmrv7eai6waxd",
+    "title": "(Follow Up) Message to Anna New Developer",
+    "description": "- We want 2 developers (not sebastian)\n- Please give access to Jira Board to him and to me\n\n- all done",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-22",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-22T22:56:54.091Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mn6qxljexs331p8d1",
+    "title": "Workshop: Sending to Mautusz my findings about the Header",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-26",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-03-26T00:40:38.474Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mlzcwm8z3a3c7z1l9",
+    "title": "Check Image problem - Create ticket",
+    "description": "https://products.solenis.com/fi/product/taski-jonmaster-ultra-damp-mop-eco-10kpl-40-cm-9292077. I checked but I could not find the problem-. \n\n-------- \nHenk-Jan Van Pesch, \n \nthe link for this product you sent seems not available anymore.\nstatics.teams.cdn.office.net/evergreen-assets/safelinks/2/atp-safelinks.html\n \nI investigate similar products and I could not find any that have similar issue.\nHowever, Alex saw similar issue last week. I made an investigation in the time and was a super strange bug. \nSomehow there SF was replacing the inner content of the image, for no apparent reason, there was nothing in the code in our side that could explain that. But then the problem stop happening. \n \nSeems for me a problem in the SF side. I want to write a ticket about it but I need to see the problem happening again so I can take the code print screens to better describe the issue. \n \nPlease inform me as soon you see this issue happening again.\n\n------\n\nhappening again\nhttps://products.solenis.com/product/divo-ps-vb7-vb7-208l-scale-control-additive-ref-pet-compatible-57489010\n(USA)\n\n\nCase Created:\nhttps://help.salesforce.com/s/case-view?caseId=500Hx000017ulHRIAY",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-02-23",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-02-23",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-06",
+        "action": "Moved from Done to Wait"
+      },
+      {
+        "date": "2026-03-09",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-10",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-19",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-23",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from Today to Wait"
+      },
+      {
+        "date": "2026-03-30",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-04-03",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-02-23T15:53:52.547Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mn2b9u36c8x423qi4",
+    "title": "SDS 1.3 Deployment Procedure",
+    "description": "Todos:\n- Install: QA, DevBox, DataCloud\n- Adjust Release notes on GitHub\n- Send email to Stakeholders\n- Send list (JSON) to euvic",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "archived",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-03-22",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-03-22T22:11:10.866Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mn7k1ykioo8i95fe9",
+    "title": "new buttons for uiTable for Quinton",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-26T14:15:50.850Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mn82rexx9b2youcgm",
+    "title": "Create CR",
+    "description": "- Securities Fixes\n- uiTable (https://solenis.atlassian.net/browse/ESB-600)",
+    "priority": false,
+    "category": 6,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-03-26",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-03-29",
+        "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-03-30",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-03-30",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Today to Wait"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-26T22:59:31.557Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "mncclt1wqkjxxcz2g",
+    "title": "Image Problem: check if JS is removing the src from the images",
+    "description": "Is not the case",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-03-29",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Today to Wait"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-29T22:46:10.772Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mnccmwpdyr3cabvwk",
+    "title": "Talk to Gagan to approve the tickets",
+    "description": "",
+    "priority": false,
+    "category": 4,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-03-29",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-30",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-29T22:47:02.161Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "To Remember"
+  },
+  {
+    "id": "mnccnchr9gtr7af0z",
+    "title": "Talk to Mikael EUVIC new dev",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-03-29",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-03-30",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-03-30",
+        "action": "Moved from Done to Wait"
+      },
+      {
+        "date": "2026-03-31",
+        "action": "Moved from Wait to Done"
+      }
+    ],
+    "createdDate": "2026-03-29T22:47:22.623Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
+  },
+  {
+    "id": "mnh9fs0v1nsoy2ljh",
+    "title": "Add info to the ticket regarding the image problem",
+    "description": "Done",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-04-02",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-03",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-04-02T09:16:21.535Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
   }
 ]
