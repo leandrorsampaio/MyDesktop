@@ -23,6 +23,9 @@
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
 
+    /* === Board Layout === */
+    --column-min-width: 280px;
+
     /* === Typography === */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
@@ -64,7 +67,6 @@ body {
     background-color: var(--color-bg-secondary);
     color: var(--color-text-primary);
     min-height: 100vh;
-    overflow-x: hidden;
     line-height: 1.6;
     font-weight: 400;
 }
@@ -277,6 +279,7 @@ body {
 .appContainer {
     flex: 1;
     padding: 0 40px 40px 40px;
+    overflow-x: auto;
     transition: filter 0.4s ease;
 }
 
@@ -484,10 +487,9 @@ body {
    ========================================== */
 .kanban {
     display: grid;
-    grid-template-columns: repeat(var(--column-count, 4), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--column-count, 4), minmax(var(--column-min-width), 1fr));
     gap: 24px;
     padding: 0;
-    overflow-x: auto;
 }
 
 /* ==========================================
@@ -2108,7 +2110,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 /* External monitor (2304px and above) */
 @media (min-width: 2000px) {
     .kanban {
-        grid-template-columns: repeat(var(--column-count, 4), minmax(0, 1fr));
         gap: 28px;
     }
 
@@ -2124,20 +2125,12 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 
     .kanban {
-        grid-template-columns: repeat(var(--column-count, 4), 1fr);
         gap: 16px;
     }
 
     kanban-column {
         min-height: calc(100vh - 180px);
     }
-
-    /*
-     * Note: Styles for .column__header, .column__title, .taskCard, etc.
-     * were removed because they are inside Shadow DOM and cannot be
-     * styled from global CSS. Add responsive styles to each component's
-     * CSS file if needed, or use CSS custom properties.
-     */
 }
 
 /* ==========================================
@@ -2616,7 +2609,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 
     .kanban {
-        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
     }
 
     kanban-column {
@@ -2632,7 +2625,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     .appHeader {
         padding: 20px;
     }
-
 }
 
 /* ==========================================

@@ -2830,7 +2830,7 @@
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 1,
+    "position": 0,
     "log": [
       {
         "date": "2026-03-23",
@@ -2916,7 +2916,7 @@
     "category": 2,
     "epicId": "mmji2xjk6s7spj1wu",
     "status": "mncchgncxlcix2v96",
-    "position": 2,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-26",
@@ -3130,7 +3130,7 @@
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 0,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-31",
@@ -3139,6 +3139,14 @@
       {
         "date": "2026-04-03",
         "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-04-07",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-04-07",
+        "action": "Moved from In Progress to Today"
       }
     ],
     "createdDate": "2026-03-31T16:10:36.336Z",
@@ -3280,7 +3288,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mncchgncxlcix2v96",
-    "position": 3,
+    "position": 2,
     "log": [
       {
         "date": "2026-04-04",
