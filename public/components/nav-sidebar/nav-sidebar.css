@@ -1,67 +1,44 @@
-/* nav-sidebar component styles — Functional Calm design */
+/* nav-sidebar component styles — permanent icon rail */
 
 :host {
-    display: contents;
+    display: block;
+    width: 48px;
+    flex-shrink: 0;
 }
 
-/* Backdrop — full-screen overlay behind the panel */
-.navSidebar__backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.18);
-    z-index: 200;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-:host([open]) .navSidebar__backdrop {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* Sliding panel */
+/* Panel — static column, full height */
 .navSidebar__panel {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
-    width: 220px;
+    width: 48px;
     background: var(--color-bg-primary, #ffffff);
     border-right: 1px solid var(--color-border, #e5e7eb);
-    z-index: 201;
     display: flex;
     flex-direction: column;
-    transform: translateX(-100%);
-    visibility: hidden;
-    transition: transform 0.22s ease, visibility 0.22s ease;
-}
-
-:host([open]) .navSidebar__panel {
-    transform: translateX(0);
-    visibility: visible;
+    z-index: 100;
 }
 
 /* Navigation links */
 .navSidebar__nav {
     flex: 1;
-    padding: 16px 8px;
+    padding: 12px 6px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     overflow-y: auto;
 }
 
 .navSidebar__item {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-md, 6px);
-    color: var(--color-text-secondary, #4b5563);
-    font-size: 14px;
-    font-weight: 500;
-    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    color: var(--color-text-tertiary, #9ca3af);
     text-decoration: none;
     transition: background 0.15s ease, color 0.15s ease;
     cursor: pointer;
@@ -73,14 +50,39 @@
 }
 
 .navSidebar__item.--active {
-    background: rgba(26, 115, 232, 0.08);
+    background: rgba(26, 115, 232, 0.10);
     color: var(--color-accent-primary, #1a73e8);
-    font-weight: 600;
+}
+
+/* Tooltip — appears on hover to the right of the icon */
+.navSidebar__tooltip {
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 10px;
+    background: var(--color-text-primary, #111827);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    border-radius: var(--radius-sm, 4px);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    z-index: 110;
+}
+
+.navSidebar__item:hover .navSidebar__tooltip {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Footer — config button + submenu */
 .navSidebar__footer {
-    padding: 8px;
+    padding: 6px;
     border-top: 1px solid var(--color-border, #e5e7eb);
     position: relative;
 }
@@ -88,19 +90,15 @@
 .navSidebar__configBtn {
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 12px;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: var(--radius-md, 6px);
     background: transparent;
-    color: var(--color-text-secondary, #4b5563);
-    font-size: 14px;
-    font-weight: 500;
-    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    color: var(--color-text-tertiary, #9ca3af);
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
-    text-align: left;
 }
 
 .navSidebar__configBtn:hover {
@@ -108,13 +106,13 @@
     color: var(--color-text-primary, #111827);
 }
 
-/* Config submenu — pops up above the config button */
+/* Config submenu — pops up to the right of the config button */
 .navSidebar__configMenu {
     display: none;
     position: absolute;
-    bottom: calc(100% + 4px);
-    left: 8px;
-    right: 8px;
+    bottom: 4px;
+    left: calc(100% + 4px);
+    min-width: 200px;
     background: var(--color-bg-primary, #ffffff);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-lg, 8px);

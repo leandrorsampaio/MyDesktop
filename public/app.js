@@ -74,8 +74,7 @@ import {
     // DOM Elements
     // ==========================================
     const elements = {
-        // Navigation Sidebar
-        sidebarBtn: document.querySelector('.js-sidebarBtn'),
+        // Navigation Sidebar (permanent rail — no toggle button needed)
         navSidebar: document.querySelector('.js-navSidebar'),
 
         // Board sidebar (checklist + notes overlay)
@@ -812,10 +811,7 @@ import {
      * Initializes event listeners that are active on all pages (modals, sidebar, profile, etc.).
      */
     function initEventListeners() {
-        // Navigation Sidebar
-        elements.sidebarBtn.addEventListener('click', () => {
-            elements.navSidebar.toggle();
-        });
+        // Navigation Sidebar config actions
         elements.navSidebar.addEventListener('config-action', (e) => {
             handleConfigAction(e.detail.action);
         });
