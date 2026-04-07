@@ -1,4 +1,4 @@
-/* nav-sidebar component styles — permanent icon rail */
+/* nav-sidebar component styles — permanent icon rail + slide-out panel */
 
 :host {
     display: block;
@@ -6,8 +6,10 @@
     flex-shrink: 0;
 }
 
-/* Panel — static column, full height */
-.navSidebar__panel {
+/* ==========================================
+   Rail — fixed narrow column, always visible
+   ========================================== */
+.navSidebar__rail {
     position: fixed;
     top: 0;
     left: 0;
@@ -30,6 +32,10 @@
     overflow-y: auto;
 }
 
+.navSidebar__spacer {
+    flex: 1;
+}
+
 .navSidebar__item {
     position: relative;
     display: flex;
@@ -37,6 +43,8 @@
     justify-content: center;
     width: 36px;
     height: 36px;
+    border: none;
+    background: transparent;
     border-radius: var(--radius-md, 6px);
     color: var(--color-text-tertiary, #9ca3af);
     text-decoration: none;
@@ -80,7 +88,9 @@
     visibility: visible;
 }
 
-/* Footer — config button + submenu */
+/* ==========================================
+   Footer — config button + submenu
+   ========================================== */
 .navSidebar__footer {
     padding: 6px;
     border-top: 1px solid var(--color-border, #e5e7eb);
@@ -143,4 +153,60 @@
 
 .navSidebar__configItem:hover {
     background: rgba(26, 115, 232, 0.06);
+}
+
+/* ==========================================
+   Slide-out panel (checklist + notes)
+   Sits to the right of the rail, over main content
+   ========================================== */
+.navSidebar__panelBackdrop {
+    position: fixed;
+    top: 0;
+    left: 48px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.15);
+    z-index: 98;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+:host(.--panelOpen) .navSidebar__panelBackdrop {
+    opacity: 1;
+    visibility: visible;
+}
+
+.navSidebar__slidePanel {
+    position: fixed;
+    top: 0;
+    left: 48px;
+    bottom: 0;
+    width: 460px;
+    background: var(--color-bg-secondary, #f8f9fa);
+    border-right: 1px solid var(--color-border, #e5e7eb);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+    z-index: 99;
+    transform: translateX(-110%);
+    transition: transform 0.25s ease;
+}
+
+:host(.--panelOpen) .navSidebar__slidePanel {
+    transform: translateX(0);
+}
+
+/* Slotted content styling */
+::slotted(*) {
+    background: var(--color-bg-primary, #ffffff);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);
+    padding: 24px;
+}
+
+::slotted(.--hidden) {
+    display: none;
 }

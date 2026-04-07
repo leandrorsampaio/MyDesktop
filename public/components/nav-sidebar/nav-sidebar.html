@@ -1,4 +1,4 @@
-<nav class="navSidebar__panel">
+<nav class="navSidebar__rail">
     <div class="navSidebar__nav">
         <a class="navSidebar__item js-navItem" data-page="board" href="/" title="Board">
             <svg-icon icon="house" size="18"></svg-icon>
@@ -24,6 +24,11 @@
             <svg-icon icon="lightning" size="18"></svg-icon>
             <span class="navSidebar__tooltip">AI</span>
         </a>
+        <div class="navSidebar__spacer"></div>
+        <button class="navSidebar__item js-panelBtn" type="button" title="Notes &amp; Checklist">
+            <svg-icon icon="list-check" size="18"></svg-icon>
+            <span class="navSidebar__tooltip">Notes &amp; Checklist</span>
+        </button>
     </div>
     <div class="navSidebar__footer">
         <div class="navSidebar__configMenu js-configMenu">
@@ -41,3 +46,9 @@
         </button>
     </div>
 </nav>
+
+<!-- Slide-out panel (checklist + notes) — sits behind the rail, over main content -->
+<div class="navSidebar__panelBackdrop js-panelBackdrop"></div>
+<aside class="navSidebar__slidePanel js-slidePanel">
+    <slot></slot>
+</aside>

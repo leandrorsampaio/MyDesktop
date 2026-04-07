@@ -1,8 +1,8 @@
 /**
  * NavSidebar Web Component
  *
- * Permanent icon-only navigation rail with 6 page links and a config submenu.
- * Always visible — no open/close behavior.
+ * Permanent icon-only navigation rail with 6 page links, a slide-out panel
+ * for checklist/notes (via <slot>), and a config submenu.
  *
  * Attributes:
  *   alias  — profile alias, used to build href values on nav links
@@ -20,6 +20,7 @@ class NavSidebar extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this._boundOutsideClick = this._onOutsideClick.bind(this);
+        this._boundKeydown = this._onKeydown.bind(this);
     }
 
     async connectedCallback() {
@@ -37,6 +38,7 @@ class NavSidebar extends HTMLElement {
 
     disconnectedCallback() {
         document.removeEventListener('click', this._boundOutsideClick);
+        document.removeEventListener('keydown', this._boundKeydown);
     }
 
     attributeChangedCallback(name) {
@@ -48,6 +50,17 @@ class NavSidebar extends HTMLElement {
     // ---- private ----
 
     _init() {
+        // Panel toggle button
+        this.shadowRoot.querySelector('.js-panelBtn')
+            .addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._togglePanel();
+            });
+
+        // Panel backdrop closes panel
+        this.shadowRoot.querySelector('.js-panelBackdrop')
+            .addEventListener('click', () => this._closePanel());
+
         // Config button toggles the config submenu
         this.shadowRoot.querySelector('.js-configBtn')
             .addEventListener('click', (e) => {
@@ -87,10 +100,36 @@ class NavSidebar extends HTMLElement {
         });
     }
 
+    // ---- Panel (slide-out checklist + notes) ----
+
+    _togglePanel() {
+        if (this.classList.contains('--panelOpen')) {
+            this._closePanel();
+        } else {
+            this._openPanel();
+        }
+    }
+
+    _openPanel() {
+        this._closeConfigMenu();
+        this.classList.add('--panelOpen');
+        this.shadowRoot.querySelector('.js-panelBtn').classList.add('--active');
+        document.addEventListener('keydown', this._boundKeydown);
+    }
+
+    _closePanel() {
+        this.classList.remove('--panelOpen');
+        this.shadowRoot.querySelector('.js-panelBtn').classList.remove('--active');
+        document.removeEventListener('keydown', this._boundKeydown);
+    }
+
+    // ---- Config menu ----
+
     _toggleConfigMenu() {
         const menu = this.shadowRoot.querySelector('.js-configMenu');
         const isOpen = menu.classList.toggle('--open');
         if (isOpen) {
+            this._closePanel();
             document.addEventListener('click', this._boundOutsideClick);
         } else {
             document.removeEventListener('click', this._boundOutsideClick);
@@ -103,11 +142,14 @@ class NavSidebar extends HTMLElement {
         document.removeEventListener('click', this._boundOutsideClick);
     }
 
-    /** Close config menu when clicking outside the component */
     _onOutsideClick(e) {
         if (!this.contains(e.target)) {
             this._closeConfigMenu();
         }
+    }
+
+    _onKeydown(e) {
+        if (e.key === 'Escape') this._closePanel();
     }
 }
 
