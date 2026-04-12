@@ -97,64 +97,6 @@
     position: relative;
 }
 
-.navSidebar__configBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
-    border-radius: var(--radius-md, 6px);
-    background: transparent;
-    color: var(--color-text-tertiary, #9ca3af);
-    cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.navSidebar__configBtn:hover {
-    background: var(--color-bg-tertiary, #f3f4f6);
-    color: var(--color-text-primary, #111827);
-}
-
-/* Config submenu — pops up to the right of the config button */
-.navSidebar__configMenu {
-    display: none;
-    position: absolute;
-    bottom: 4px;
-    left: calc(100% + 4px);
-    min-width: 200px;
-    background: var(--color-bg-primary, #ffffff);
-    border: 1px solid var(--color-border, #e5e7eb);
-    border-radius: var(--radius-lg, 8px);
-    padding: 6px;
-    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
-    z-index: 202;
-}
-
-.navSidebar__configMenu.--open {
-    display: block;
-}
-
-.navSidebar__configItem {
-    display: block;
-    width: 100%;
-    padding: 9px 12px;
-    border: none;
-    border-radius: var(--radius-sm, 4px);
-    background: transparent;
-    color: var(--color-text-primary, #111827);
-    font-size: 13px;
-    font-weight: 500;
-    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.15s ease;
-}
-
-.navSidebar__configItem:hover {
-    background: rgba(26, 115, 232, 0.06);
-}
-
 /* ==========================================
    Slide-out panel (checklist + notes)
    Sits to the right of the rail, over main content

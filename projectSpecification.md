@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.36.0
+**Version:** 2.37.0
 **Last Updated:** 2026-04-13
 
 ---
@@ -78,6 +78,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     │   ├── backlog-page.js        # Backlog page — initBacklogPage()
     │   ├── reports-page.js        # Reports page — initReportsPage()
+    │   ├── config-page.js         # Configuration page — initConfigPage()
     │   ├── dashboard-page.js      # Dashboard page — initDashboardPage()
     │   └── ai-page.js             # AI Assistant page — initAiPage()
     └── components/
@@ -371,11 +372,21 @@ These are behaviors not evident from reading the code. Know these before making 
 
 ### Navigation & Routing
 - **`<nav-sidebar>`** is a slide-over overlay (left side). Trigger button is in the top-left of the header. Closes on backdrop click, ESC, or when a config action is selected.
-- **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`. Anything else defaults to `board`.
+- **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`, `config`. Anything else defaults to `board`.
 - **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
 - **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive calls `initArchivePage`; Backlog calls `initBacklogPage`; Dashboard calls `initDashboardPage`; Reports calls `initReportsPage`; AI calls `initAiPage` — all via dynamic import. Unbuilt pages use `renderPlaceholderPage()`.
 - **`pageView.--fullPage`** class modifier removes centering and padding from `.pageView` — applied by page modules that render a full-width layout (archive page sets this on init).
-- **Hamburger menu removed** — all config actions moved to the sidebar's Config submenu. Crisis mode moved from the menu to the toolbar. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
+- **Config submenu removed** — all config sections are now inline on the `/:alias/config` page. The gear icon at the bottom of the sidebar is a direct nav link. Profiles modal is opened from the config page via a "Manage Profiles" button. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
+
+### Configuration Page
+- Route: `/:alias/config` — single scrollable page with 6 inline config sections.
+- `config-page.js` → `initConfigPage(pageViewEl, { elements })`: parallel fetches columns/epics/categories, renders all sections.
+- **Sections (in order):** Columns, Epics, Categories, General Settings, Daily Checklist, AI Configuration.
+- **CRUD sections** (columns, epics, categories): auto-save on blur/change (same behavior as the old modals). Delete uses confirmation modals from `index.html`.
+- **General Settings and Checklist:** manual Save button. Changes take effect on the board when user navigates back (board re-initializes and calls `loadGeneralConfig()`).
+- **AI Configuration:** two-panel list/form inline (same UX as the old modal).
+- **Profiles:** "Manage Profiles" button at the bottom opens the existing profiles modal (kept separate since profile changes can trigger navigation).
+- **Nav-sidebar:** gear icon at bottom is now a nav link (`data-page="config"`), no more config submenu.
 
 ### Reports Page
 - Route: `/:alias/reports` — full list page replacing the "coming soon" placeholder.
@@ -424,8 +435,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Attributes:** `alias` (profile alias, sets href on nav links), `page` (active page name, sets `--active` class)
 - **Boolean attribute:** `open` — managed by `open()` / `close()`. Do not toggle manually.
 - **JS API:** `open()`, `close()`, `toggle()`
-- **Dispatches:** `config-action` (CustomEvent, bubbles+composed) with `detail.action` — one of: `board-config`, `manage-epics`, `manage-categories`, `manage-profiles`, `edit-checklist`, `general-config`, `ai-config`. The component calls `close()` before dispatching.
-- **Behavior:** backdrop click and ESC close the sidebar; the component manages its own ESC listener (attached on `open()`, removed on `close()`). Config submenu opens above the Config button and closes on any action or sidebar close.
+- **Behavior:** The gear icon at the bottom is a nav link to `/:alias/config` (no more submenu). Slide-out panel for checklist/notes uses backdrop click and ESC to close.
 
 ### `<svg-icon>`
 ```html
@@ -760,6 +770,7 @@ New code must go into the correct existing module. Only create a new module if a
 | `crisis-mode.js` | Crisis mode (favicon, CSS class, filter activation)    |
 | `board-config.js`| Board Configuration modal (column CRUD + reorder)      |
 | `reports-page.js`| Reports page (list, view, delete, generate)            |
+| `config-page.js` | Config page (columns, epics, categories, general, checklist, AI) |
 | `app.js`         | Entry point — DOM refs, event listeners, renders       |
 
 ---

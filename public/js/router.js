@@ -5,7 +5,7 @@
  */
 
 /** Sub-pages that live under /:alias/<page>. Board is the default (no segment). */
-export const SUB_PAGES = ['dashboard', 'backlog', 'archive', 'reports', 'ai'];
+export const SUB_PAGES = ['dashboard', 'backlog', 'archive', 'reports', 'ai', 'config'];
 
 /**
  * Parses a pathname into { alias, page }.

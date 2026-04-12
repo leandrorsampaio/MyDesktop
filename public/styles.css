@@ -2273,6 +2273,72 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
+/* ==========================================
+   Block: configPage
+   ========================================== */
+.configPage {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+}
+
+.configPage__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 28px;
+}
+
+.configPage__section {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.configPage__section--profiles {
+    background: transparent;
+    border: none;
+    padding: 0;
+    text-align: center;
+}
+
+.configPage__sectionTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 16px;
+}
+
+.configPage__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.configPage__profilesBtn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.configPage__profilesBtn:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-primary);
+}
+
 /* =========================================================================
    Dashboard Page
    ========================================================================= */

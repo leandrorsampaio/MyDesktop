@@ -1,16 +1,12 @@
 /**
  * NavSidebar Web Component
  *
- * Permanent icon-only navigation rail with 6 page links, a slide-out panel
- * for checklist/notes (via <slot>), and a config submenu.
+ * Permanent icon-only navigation rail with page links, a slide-out panel
+ * for checklist/notes (via <slot>), and a config page link.
  *
  * Attributes:
  *   alias  — profile alias, used to build href values on nav links
- *   page   — active page name ('board'|'dashboard'|'backlog'|'archive'|'reports'|'ai')
- *
- * Dispatches:
- *   config-action (CustomEvent, bubbles+composed)
- *     detail: { action: string }  — one of the data-action values on config items
+ *   page   — active page name ('board'|'dashboard'|'backlog'|'archive'|'reports'|'ai'|'config')
  */
 class NavSidebar extends HTMLElement {
     static templateCache = null;
@@ -19,7 +15,6 @@ class NavSidebar extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this._boundOutsideClick = this._onOutsideClick.bind(this);
         this._boundKeydown = this._onKeydown.bind(this);
     }
 
@@ -37,7 +32,6 @@ class NavSidebar extends HTMLElement {
     }
 
     disconnectedCallback() {
-        document.removeEventListener('click', this._boundOutsideClick);
         document.removeEventListener('keydown', this._boundKeydown);
     }
 
@@ -60,26 +54,6 @@ class NavSidebar extends HTMLElement {
         // Panel backdrop closes panel
         this.shadowRoot.querySelector('.js-panelBackdrop')
             .addEventListener('click', () => this._closePanel());
-
-        // Config button toggles the config submenu
-        this.shadowRoot.querySelector('.js-configBtn')
-            .addEventListener('click', (e) => {
-                e.stopPropagation();
-                this._toggleConfigMenu();
-            });
-
-        // Config menu items dispatch events and close the menu
-        this.shadowRoot.querySelectorAll('.navSidebar__configItem').forEach(item => {
-            item.addEventListener('click', () => {
-                const action = item.dataset.action;
-                this._closeConfigMenu();
-                this.dispatchEvent(new CustomEvent('config-action', {
-                    detail: { action },
-                    bubbles: true,
-                    composed: true,
-                }));
-            });
-        });
 
         this._updateLinks();
         this._updateActive();
@@ -111,7 +85,6 @@ class NavSidebar extends HTMLElement {
     }
 
     _openPanel() {
-        this._closeConfigMenu();
         this.classList.add('--panelOpen');
         this.shadowRoot.querySelector('.js-panelBtn').classList.add('--active');
         document.addEventListener('keydown', this._boundKeydown);
@@ -121,31 +94,6 @@ class NavSidebar extends HTMLElement {
         this.classList.remove('--panelOpen');
         this.shadowRoot.querySelector('.js-panelBtn').classList.remove('--active');
         document.removeEventListener('keydown', this._boundKeydown);
-    }
-
-    // ---- Config menu ----
-
-    _toggleConfigMenu() {
-        const menu = this.shadowRoot.querySelector('.js-configMenu');
-        const isOpen = menu.classList.toggle('--open');
-        if (isOpen) {
-            this._closePanel();
-            document.addEventListener('click', this._boundOutsideClick);
-        } else {
-            document.removeEventListener('click', this._boundOutsideClick);
-        }
-    }
-
-    _closeConfigMenu() {
-        const menu = this.shadowRoot.querySelector('.js-configMenu');
-        if (menu) menu.classList.remove('--open');
-        document.removeEventListener('click', this._boundOutsideClick);
-    }
-
-    _onOutsideClick(e) {
-        if (!this.contains(e.target)) {
-            this._closeConfigMenu();
-        }
     }
 
     _onKeydown(e) {

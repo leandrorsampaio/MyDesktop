@@ -31,18 +31,10 @@
         </button>
     </div>
     <div class="navSidebar__footer">
-        <div class="navSidebar__configMenu js-configMenu">
-            <button class="navSidebar__configItem" data-action="board-config" type="button">Board Configuration</button>
-            <button class="navSidebar__configItem" data-action="manage-epics" type="button">Manage Epics</button>
-            <button class="navSidebar__configItem" data-action="manage-categories" type="button">Manage Categories</button>
-            <button class="navSidebar__configItem" data-action="manage-profiles" type="button">Manage Profiles</button>
-            <button class="navSidebar__configItem" data-action="edit-checklist" type="button">Edit Daily Checklist</button>
-            <button class="navSidebar__configItem" data-action="general-config" type="button">General Configuration</button>
-            <button class="navSidebar__configItem" data-action="ai-config" type="button">AI Configuration</button>
-        </div>
-        <button class="navSidebar__configBtn js-configBtn" type="button" title="Config">
+        <a class="navSidebar__item js-navItem" data-page="config" href="/" title="Configuration">
             <svg-icon icon="gear" size="18"></svg-icon>
-        </button>
+            <span class="navSidebar__tooltip">Config</span>
+        </a>
     </div>
 </nav>
 

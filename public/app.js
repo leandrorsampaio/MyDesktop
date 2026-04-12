@@ -270,63 +270,6 @@ import {
         `;
     }
 
-    /**
-     * Handles a config-action event dispatched by the nav sidebar.
-     * Each action maps to an existing modal or operation.
-     * @param {string} action
-     */
-    function handleConfigAction(action) {
-        switch (action) {
-            case 'board-config':
-                openBoardConfigModal(elements, closeMenu, async () => {
-                    initKanban(columns);
-                    await fetchTasks();
-                });
-                break;
-            case 'manage-epics':
-                openEpicsModal(elements, closeMenu, () => {
-                    renderAllColumns();
-                });
-                break;
-            case 'manage-categories':
-                openCategoriesModal(elements, closeMenu, () => {
-                    if (elements.categoryFilters) {
-                        renderCategoryFilters(elements.categoryFilters, (categoryId) => {
-                            toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
-                        });
-                    }
-                    renderAllColumns();
-                });
-                break;
-            case 'manage-profiles':
-                openProfilesModal(elements, closeMenu, async () => {
-                    const fetchedProfiles = await fetchProfilesApi();
-                    setProfiles(fetchedProfiles);
-                    const current = fetchedProfiles.find(p => p.id === activeProfile?.id);
-                    if (current) {
-                        setActiveProfile(current);
-                        setApiBase(current.alias);
-                        elements.profileSelector.setProfiles(fetchedProfiles);
-                        elements.profileSelector.setActiveProfile(current);
-                        if (current.alias !== parsePath().alias) {
-                            window.location.href = '/' + current.alias;
-                            return;
-                        }
-                    }
-                });
-                break;
-            case 'edit-checklist':
-                openChecklistModal(elements, closeMenu);
-                break;
-            case 'general-config':
-                openGeneralConfigModal();
-                break;
-            case 'ai-config':
-                openAiConfigModal(elements);
-                break;
-        }
-    }
-
     // ==========================================
     // Task Operations
     // ==========================================
@@ -749,11 +692,6 @@ import {
      * Initializes event listeners that are active on all pages (modals, sidebar, profile, etc.).
      */
     function initEventListeners() {
-        // Navigation Sidebar config actions
-        elements.navSidebar.addEventListener('config-action', (e) => {
-            handleConfigAction(e.detail.action);
-        });
-
         // Profile Selector component events
         elements.profileSelector.addEventListener('profile-select', (e) => {
             window.location.href = '/' + e.detail.alias;
@@ -1002,6 +940,12 @@ import {
                     initAiPage(elements.pageView, { elements }).catch(err => {
                         console.error('AI page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load AI page');
+                    });
+                } else if (page === 'config') {
+                    const { initConfigPage } = await import('./js/config-page.js');
+                    initConfigPage(elements.pageView, { elements }).catch(err => {
+                        console.error('Config page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load config page');
                     });
                 } else {
                     renderPlaceholderPage(page);
