@@ -39,181 +39,207 @@ export async function initConfigPage(pageViewEl, { elements }) {
     pageViewEl.classList.add('--fullPage');
     pageViewEl.innerHTML = `
         <div class="configPage">
-            <h2 class="configPage__title">Configuration</h2>
+            <!-- Left tab nav -->
+            <nav class="configPage__nav">
+                <button class="configPage__navItem --active" data-tab="columns">Columns</button>
+                <button class="configPage__navItem" data-tab="epics">Epics</button>
+                <button class="configPage__navItem" data-tab="categories">Categories</button>
+                <button class="configPage__navItem" data-tab="general">General</button>
+                <button class="configPage__navItem" data-tab="checklist">Daily Checklist</button>
+                <button class="configPage__navItem" data-tab="ai">AI Assistant</button>
+                <div class="configPage__navDivider"></div>
+                <button class="configPage__navItem js-cfg-profilesBtn" data-tab="">Profiles</button>
+            </nav>
 
-            <!-- Section: Columns -->
-            <section class="configPage__section">
-                <h3 class="configPage__sectionTitle">Columns</h3>
-                <div class="boardConfigEditor">
-                    <p class="boardConfigEditor__hint">Manage your board columns. Drag to reorder. The first column is the default. Maximum ${MAX_COLUMNS} columns.</p>
-                    <div class="boardConfigEditor__form">
-                        <div class="boardConfigEditor__formRow">
-                            <input type="text" class="boardConfigEditor__nameInput js-cfg-columnNameInput" placeholder="New column name" />
-                            <button type="button" class="btn --save js-cfg-columnAddBtn">Add Column</button>
-                        </div>
-                        <div class="boardConfigEditor__error js-cfg-columnError" style="display: none;"></div>
-                    </div>
-                    <div class="boardConfigEditor__list js-cfg-columnsList"></div>
-                </div>
-            </section>
+            <!-- Right content -->
+            <div class="configPage__content">
 
-            <!-- Section: Epics -->
-            <section class="configPage__section">
-                <h3 class="configPage__sectionTitle">Epics</h3>
-                <div class="epicsEditor">
-                    <p class="epicsEditor__hint">Create and manage epics to group your tasks. Each epic has a unique color. Maximum ${MAX_EPICS} epics.</p>
-                    <div class="epicsEditor__form">
-                        <div class="epicsEditor__formRow">
-                            <input type="text" class="epicsEditor__nameInput js-cfg-epicNameInput" placeholder="Epic name" />
-                            <custom-picker type="color" placeholder="Select color" columns="5" class="js-cfg-epicColorSelect"></custom-picker>
-                            <button type="button" class="btn --save js-cfg-epicAddBtn">Add Epic</button>
-                        </div>
-                        <div class="epicsEditor__alias js-cfg-epicAliasPreview"></div>
-                        <div class="epicsEditor__colorError js-cfg-epicColorError" style="display: none;"></div>
-                    </div>
-                    <div class="epicsEditor__list js-cfg-epicsList"></div>
-                </div>
-            </section>
-
-            <!-- Section: Categories -->
-            <section class="configPage__section">
-                <h3 class="configPage__sectionTitle">Categories</h3>
-                <div class="categoriesEditor">
-                    <p class="categoriesEditor__hint">Create and manage categories to organize your tasks. Each category has an icon. Maximum ${MAX_CATEGORIES} categories.</p>
-                    <div class="categoriesEditor__form">
-                        <div class="categoriesEditor__formRow">
-                            <input type="text" class="categoriesEditor__nameInput js-cfg-categoryNameInput" placeholder="Category name" />
-                            <custom-picker type="icon" placeholder="Select icon" columns="7" class="js-cfg-categoryIconSelect"></custom-picker>
-                            <button type="button" class="btn --save js-cfg-categoryAddBtn">Add Category</button>
-                        </div>
-                        <div class="categoriesEditor__error js-cfg-categoryError" style="display: none;"></div>
-                    </div>
-                    <div class="categoriesEditor__list js-cfg-categoriesList"></div>
-                </div>
-            </section>
-
-            <!-- Section: General Settings -->
-            <section class="configPage__section">
-                <h3 class="configPage__sectionTitle">General Settings</h3>
-                <div class="generalConfig">
-                    <p class="generalConfig__hint">Settings are saved per profile.</p>
-                    <div class="generalConfig__section">
-                        <h4 class="generalConfig__sectionTitle">Interface Visibility</h4>
-                        <div class="generalConfig__options">
-                            <label class="generalConfig__option">
-                                <input type="checkbox" class="js-cfg-showDailyChecklist">
-                                <span>Show Daily Checklist</span>
-                            </label>
-                            <label class="generalConfig__option">
-                                <input type="checkbox" class="js-cfg-showNotes">
-                                <span>Show Notes</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="generalConfig__section">
-                        <h4 class="generalConfig__sectionTitle">Snoozed Tasks Display</h4>
-                        <div class="generalConfig__options">
-                            <label class="generalConfig__option">
-                                <input type="radio" name="cfgSnoozeVisibility" value="hidden">
-                                <span>Hidden — use "Show Snoozed" button to reveal</span>
-                            </label>
-                            <label class="generalConfig__option">
-                                <input type="radio" name="cfgSnoozeVisibility" value="transparent">
-                                <span>Semi-transparent (50% opacity, always visible)</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="generalConfig__section">
-                        <h4 class="generalConfig__sectionTitle">Deadline Urgency Thresholds</h4>
-                        <p class="generalConfig__hint">Deadline chip changes color when the task is due within these hours.</p>
-                        <div class="generalConfig__thresholds">
-                            <div class="generalConfig__thresholdRow">
-                                <span class="generalConfig__thresholdLabel --urgent">Urgent (red)</span>
-                                <input type="number" class="js-cfg-deadlineUrgentHours" min="1" max="999" />
-                                <span>hours</span>
+                <!-- Panel: Columns -->
+                <div class="configPage__panel --active" data-panel="columns">
+                    <h3 class="configPage__panelTitle">Columns</h3>
+                    <p class="configPage__panelHint">Manage your board columns. Drag to reorder. The first column is the default. Maximum ${MAX_COLUMNS}.</p>
+                    <div class="boardConfigEditor">
+                        <div class="boardConfigEditor__form">
+                            <div class="boardConfigEditor__formRow">
+                                <input type="text" class="boardConfigEditor__nameInput js-cfg-columnNameInput" placeholder="New column name" />
+                                <button type="button" class="btn --save js-cfg-columnAddBtn">Add Column</button>
                             </div>
-                            <div class="generalConfig__thresholdRow">
-                                <span class="generalConfig__thresholdLabel --warning">Warning (yellow)</span>
-                                <input type="number" class="js-cfg-deadlineWarningHours" min="1" max="999" />
-                                <span>hours</span>
+                            <div class="boardConfigEditor__error js-cfg-columnError" style="display: none;"></div>
+                        </div>
+                        <div class="boardConfigEditor__list js-cfg-columnsList"></div>
+                    </div>
+                </div>
+
+                <!-- Panel: Epics -->
+                <div class="configPage__panel" data-panel="epics">
+                    <h3 class="configPage__panelTitle">Epics</h3>
+                    <p class="configPage__panelHint">Group tasks by project or initiative. Each epic has a unique color. Maximum ${MAX_EPICS}.</p>
+                    <div class="epicsEditor">
+                        <div class="epicsEditor__form">
+                            <div class="epicsEditor__formRow">
+                                <input type="text" class="epicsEditor__nameInput js-cfg-epicNameInput" placeholder="Epic name" />
+                                <custom-picker type="color" placeholder="Select color" columns="5" class="js-cfg-epicColorSelect"></custom-picker>
+                                <button type="button" class="btn --save js-cfg-epicAddBtn">Add Epic</button>
+                            </div>
+                            <div class="epicsEditor__alias js-cfg-epicAliasPreview"></div>
+                            <div class="epicsEditor__colorError js-cfg-epicColorError" style="display: none;"></div>
+                        </div>
+                        <div class="epicsEditor__list js-cfg-epicsList"></div>
+                    </div>
+                </div>
+
+                <!-- Panel: Categories -->
+                <div class="configPage__panel" data-panel="categories">
+                    <h3 class="configPage__panelTitle">Categories</h3>
+                    <p class="configPage__panelHint">Organize tasks by type. Each category has an icon. Maximum ${MAX_CATEGORIES}.</p>
+                    <div class="categoriesEditor">
+                        <div class="categoriesEditor__form">
+                            <div class="categoriesEditor__formRow">
+                                <input type="text" class="categoriesEditor__nameInput js-cfg-categoryNameInput" placeholder="Category name" />
+                                <custom-picker type="icon" placeholder="Select icon" columns="7" class="js-cfg-categoryIconSelect"></custom-picker>
+                                <button type="button" class="btn --save js-cfg-categoryAddBtn">Add Category</button>
+                            </div>
+                            <div class="categoriesEditor__error js-cfg-categoryError" style="display: none;"></div>
+                        </div>
+                        <div class="categoriesEditor__list js-cfg-categoriesList"></div>
+                    </div>
+                </div>
+
+                <!-- Panel: General -->
+                <div class="configPage__panel" data-panel="general">
+                    <h3 class="configPage__panelTitle">General</h3>
+                    <p class="configPage__panelHint">Settings are saved per profile.</p>
+                    <div class="generalConfig">
+                        <div class="generalConfig__section">
+                            <h4 class="generalConfig__sectionTitle">Interface Visibility</h4>
+                            <div class="generalConfig__options">
+                                <label class="generalConfig__option">
+                                    <input type="checkbox" class="js-cfg-showDailyChecklist">
+                                    <span>Show Daily Checklist</span>
+                                </label>
+                                <label class="generalConfig__option">
+                                    <input type="checkbox" class="js-cfg-showNotes">
+                                    <span>Show Notes</span>
+                                </label>
                             </div>
                         </div>
-                    </div>
-                    <div class="configPage__actions">
-                        <button type="button" class="btn --save js-cfg-generalSave">Save</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section: Daily Checklist -->
-            <section class="configPage__section">
-                <h3 class="configPage__sectionTitle">Daily Checklist</h3>
-                <div class="checklistEditor">
-                    <p class="checklistEditor__hint">Add tasks to your daily checklist. Optionally add a URL to open when clicking the link icon.</p>
-                    <div class="checklistEditor__items js-cfg-checklistItems"></div>
-                    <button type="button" class="checklistEditor__addBtn js-cfg-checklistAddBtn">+ Add Item</button>
-                    <div class="configPage__actions">
-                        <button type="button" class="btn --save js-cfg-checklistSave">Save Checklist</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section: AI Configuration -->
-            <section class="configPage__section">
-                <h3 class="configPage__sectionTitle">AI Configuration</h3>
-                <div class="aiConfig">
-                    <div class="aiConfig__listPanel js-cfg-aiListPanel">
-                        <p class="aiConfig__hint">API keys are stored locally on your machine and never shared.</p>
-                        <div class="aiConfig__entries js-cfg-aiEntries"></div>
-                        <button type="button" class="aiConfig__addBtn js-cfg-aiAddBtn">+ Add configuration</button>
-                    </div>
-                    <div class="aiConfig__formPanel js-cfg-aiFormPanel" style="display:none;">
-                        <button type="button" class="aiConfig__backBtn js-cfg-aiBackBtn">← Back</button>
-                        <div class="aiConfig__group">
-                            <label class="aiConfig__label">Name</label>
-                            <input type="text" class="aiConfig__input js-cfg-aiNameInput" placeholder="e.g. LM Studio - Devstral" maxlength="100" />
+                        <div class="generalConfig__section">
+                            <h4 class="generalConfig__sectionTitle">Snoozed Tasks Display</h4>
+                            <div class="generalConfig__options">
+                                <label class="generalConfig__option">
+                                    <input type="radio" name="cfgSnoozeVisibility" value="hidden">
+                                    <span>Hidden — use "Show Snoozed" button to reveal</span>
+                                </label>
+                                <label class="generalConfig__option">
+                                    <input type="radio" name="cfgSnoozeVisibility" value="transparent">
+                                    <span>Semi-transparent (50% opacity, always visible)</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="aiConfig__group">
-                            <label class="aiConfig__label">Provider</label>
-                            <select class="aiConfig__select js-cfg-aiProviderSel">
-                                <option value="anthropic">Anthropic (Claude)</option>
-                                <option value="openai">OpenAI</option>
-                                <option value="groq">Groq</option>
-                                <option value="google">Google AI Studio (Gemini)</option>
-                                <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
-                            </select>
+                        <div class="generalConfig__section">
+                            <h4 class="generalConfig__sectionTitle">Deadline Urgency Thresholds</h4>
+                            <p class="generalConfig__panelHint" style="margin-bottom:12px">Deadline chip changes color when the task is due within these hours.</p>
+                            <div class="generalConfig__thresholds">
+                                <div class="generalConfig__thresholdRow">
+                                    <span class="generalConfig__thresholdLabel --urgent">Urgent (red)</span>
+                                    <input type="number" class="js-cfg-deadlineUrgentHours" min="1" max="999" />
+                                    <span>hours</span>
+                                </div>
+                                <div class="generalConfig__thresholdRow">
+                                    <span class="generalConfig__thresholdLabel --warning">Warning (yellow)</span>
+                                    <input type="number" class="js-cfg-deadlineWarningHours" min="1" max="999" />
+                                    <span>hours</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="aiConfig__group js-cfg-aiCustomUrlGroup" style="display:none;">
-                            <label class="aiConfig__label">Base URL</label>
-                            <input type="text" class="aiConfig__input js-cfg-aiCustomUrl" placeholder="http://localhost:1234/v1" />
-                            <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
-                        </div>
-                        <div class="aiConfig__group">
-                            <label class="aiConfig__label">Model</label>
-                            <input type="text" class="aiConfig__input js-cfg-aiModelInput" placeholder="Enter model name" />
-                        </div>
-                        <div class="aiConfig__group">
-                            <label class="aiConfig__label">API Key</label>
-                            <input type="password" class="aiConfig__input js-cfg-aiKeyInput" placeholder="Enter API key" autocomplete="off" />
-                            <p class="aiConfig__fieldHint js-cfg-aiKeyHint"></p>
-                        </div>
-                        <div class="aiConfig__error js-cfg-aiError" style="display:none;"></div>
                         <div class="configPage__actions">
-                            <button type="button" class="btn --cancel js-cfg-aiCancel">Cancel</button>
-                            <button type="button" class="btn --save js-cfg-aiSave">Save</button>
+                            <button type="button" class="btn --save js-cfg-generalSave">Save</button>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Profiles link -->
-            <section class="configPage__section configPage__section--profiles">
-                <button type="button" class="configPage__profilesBtn js-cfg-profilesBtn">Manage Profiles →</button>
-            </section>
+                <!-- Panel: Checklist -->
+                <div class="configPage__panel" data-panel="checklist">
+                    <h3 class="configPage__panelTitle">Daily Checklist</h3>
+                    <p class="configPage__panelHint">Add tasks to your daily checklist. Optionally add a URL to open when clicking the link icon.</p>
+                    <div class="checklistEditor">
+                        <div class="checklistEditor__items js-cfg-checklistItems"></div>
+                        <button type="button" class="checklistEditor__addBtn js-cfg-checklistAddBtn">+ Add Item</button>
+                        <div class="configPage__actions">
+                            <button type="button" class="btn --save js-cfg-checklistSave">Save Checklist</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel: AI -->
+                <div class="configPage__panel" data-panel="ai">
+                    <h3 class="configPage__panelTitle">AI Assistant</h3>
+                    <p class="configPage__panelHint">API keys are stored locally on your machine and never shared.</p>
+                    <div class="aiConfig">
+                        <div class="aiConfig__listPanel js-cfg-aiListPanel">
+                            <div class="aiConfig__entries js-cfg-aiEntries"></div>
+                            <button type="button" class="aiConfig__addBtn js-cfg-aiAddBtn">+ Add configuration</button>
+                        </div>
+                        <div class="aiConfig__formPanel js-cfg-aiFormPanel" style="display:none;">
+                            <button type="button" class="aiConfig__backBtn js-cfg-aiBackBtn">← Back</button>
+                            <div class="aiConfig__group">
+                                <label class="aiConfig__label">Name</label>
+                                <input type="text" class="aiConfig__input js-cfg-aiNameInput" placeholder="e.g. LM Studio - Devstral" maxlength="100" />
+                            </div>
+                            <div class="aiConfig__group">
+                                <label class="aiConfig__label">Provider</label>
+                                <select class="aiConfig__select js-cfg-aiProviderSel">
+                                    <option value="anthropic">Anthropic (Claude)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="groq">Groq</option>
+                                    <option value="google">Google AI Studio (Gemini)</option>
+                                    <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
+                                </select>
+                            </div>
+                            <div class="aiConfig__group js-cfg-aiCustomUrlGroup" style="display:none;">
+                                <label class="aiConfig__label">Base URL</label>
+                                <input type="text" class="aiConfig__input js-cfg-aiCustomUrl" placeholder="http://localhost:1234/v1" />
+                                <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
+                            </div>
+                            <div class="aiConfig__group">
+                                <label class="aiConfig__label">Model</label>
+                                <input type="text" class="aiConfig__input js-cfg-aiModelInput" placeholder="Enter model name" />
+                            </div>
+                            <div class="aiConfig__group">
+                                <label class="aiConfig__label">API Key</label>
+                                <input type="password" class="aiConfig__input js-cfg-aiKeyInput" placeholder="Enter API key" autocomplete="off" />
+                                <p class="aiConfig__fieldHint js-cfg-aiKeyHint"></p>
+                            </div>
+                            <div class="aiConfig__error js-cfg-aiError" style="display:none;"></div>
+                            <div class="configPage__actions">
+                                <button type="button" class="btn --cancel js-cfg-aiCancel">Cancel</button>
+                                <button type="button" class="btn --save js-cfg-aiSave">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     `;
 
     const $ = (sel) => pageViewEl.querySelector(sel);
+
+    // ==========================================
+    // Tab switching
+    // ==========================================
+    const navItems = pageViewEl.querySelectorAll('.configPage__navItem[data-tab]');
+    const panels   = pageViewEl.querySelectorAll('.configPage__panel[data-panel]');
+
+    navItems.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            if (!tab) return; // Profiles button handled separately
+            navItems.forEach(b => b.classList.remove('--active'));
+            btn.classList.add('--active');
+            panels.forEach(p => p.classList.toggle('--active', p.dataset.panel === tab));
+        });
+    });
 
     // ==========================================
     // Fetch all data in parallel
