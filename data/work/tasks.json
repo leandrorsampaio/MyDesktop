@@ -2245,8 +2245,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 1,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-03-13",
@@ -2259,6 +2259,10 @@
       {
         "date": "2026-03-22",
         "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from To Do to Done"
       }
     ],
     "createdDate": "2026-03-13T17:57:20.691Z",
@@ -2726,8 +2730,8 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 3,
+    "status": "done",
+    "position": 2,
     "log": [
       {
         "date": "2026-03-22",
@@ -2748,6 +2752,14 @@
       {
         "date": "2026-04-04",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-22T22:19:59.527Z",
@@ -2915,7 +2927,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "mncchgncxlcix2v96",
+    "status": "done",
     "position": 1,
     "log": [
       {
@@ -2937,6 +2949,10 @@
       {
         "date": "2026-04-03",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from Today to Done"
       }
     ],
     "createdDate": "2026-03-26T00:57:13.011Z",
@@ -3102,8 +3118,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 5,
+    "status": "mncchgncxlcix2v96",
+    "position": 2,
     "log": [
       {
         "date": "2026-03-30",
@@ -3116,6 +3132,14 @@
       {
         "date": "2026-03-31",
         "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from Wait to Today"
       }
     ],
     "createdDate": "2026-03-30T09:15:47.852Z",
@@ -3129,8 +3153,8 @@
     "priority": false,
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mncchgncxlcix2v96",
-    "position": 3,
+    "status": "wait",
+    "position": 2,
     "log": [
       {
         "date": "2026-03-31",
@@ -3147,6 +3171,10 @@
       {
         "date": "2026-04-07",
         "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from Today to Wait"
       }
     ],
     "createdDate": "2026-03-31T16:10:36.336Z",
@@ -3179,7 +3207,7 @@
   },
   {
     "id": "mnjkabu7rv3ob3cqf",
-    "title": "ESB-600: OMS table optmization: check if is ready in prod",
+    "title": "ESB-600: OMS table optmization: check if is ready in prod (ADVIC)",
     "description": "https://solenis.atlassian.net/browse/ESB-600",
     "priority": false,
     "category": 3,
@@ -3206,7 +3234,7 @@
   },
   {
     "id": "mnjkbw1ojflak581r",
-    "title": "ESB-605 Order Summary using old layout",
+    "title": "ESB-605 Order Summary using old layout (ADVIC)",
     "description": "https://solenis.atlassian.net/browse/ESB-605",
     "priority": false,
     "category": 3,
@@ -3249,12 +3277,16 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 2,
+    "status": "done",
+    "position": 4,
     "log": [
       {
         "date": "2026-04-04",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-04-04T00:00:00.609Z",
@@ -3268,12 +3300,16 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 4,
+    "status": "done",
+    "position": 3,
     "log": [
       {
         "date": "2026-04-04",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-04-08",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-04-04T00:00:44.420Z",
@@ -3288,7 +3324,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mncchgncxlcix2v96",
-    "position": 2,
+    "position": 1,
     "log": [
       {
         "date": "2026-04-04",
@@ -3306,9 +3342,14 @@
     "priority": false,
     "category": 3,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "todo",
-    "position": 6,
-    "log": [],
+    "status": "wait",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-04-08",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
     "createdDate": "2026-04-04T00:07:54.740Z",
     "deadline": null,
     "snoozeUntil": null

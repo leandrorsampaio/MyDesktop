@@ -34,7 +34,7 @@ import {
     columns,
     setColumns
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, generateReportApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi } from './js/api.js';
 import { openBoardConfigModal, confirmDeleteColumn } from './js/board-config.js';
 import {
     renderCategoryFilters,
@@ -52,7 +52,6 @@ import {
     openDeleteConfirmation,
     confirmDeleteTask,
     createTaskFormSubmitHandler,
-    openReportsModal,
     openArchivedModal,
     openChecklistModal,
     addChecklistItem,
@@ -168,11 +167,6 @@ import {
         profileConfirmMessage: document.querySelector('.js-profileConfirmMessage'),
         profileConfirmCancel: document.querySelector('.js-profileConfirmCancel'),
         profileConfirmDelete: document.querySelector('.js-profileConfirmDelete'),
-
-        // Generate Report (triggered via sidebar config menu)
-        generateReportConfirmModal: document.querySelector('.js-generateReportConfirmModal'),
-        generateReportCancel: document.querySelector('.js-generateReportCancel'),
-        generateReportConfirm: document.querySelector('.js-generateReportConfirm'),
 
         // AI Configuration (triggered via sidebar config menu)
         aiConfigModal:          document.querySelector('.js-aiConfigModal'),
@@ -326,9 +320,6 @@ import {
                 break;
             case 'general-config':
                 openGeneralConfigModal();
-                break;
-            case 'generate-report':
-                handleGenerateReport();
                 break;
             case 'ai-config':
                 openAiConfigModal(elements);
@@ -699,32 +690,6 @@ import {
     // ==========================================
 
     /**
-     * Opens the generate report confirmation modal.
-     */
-    function handleGenerateReport() {
-        closeMenu();
-        elements.generateReportConfirmModal.open();
-    }
-
-    /**
-     * Executes report generation after modal confirmation.
-     */
-    async function executeGenerateReport() {
-        elements.generateReportConfirmModal.close();
-        try {
-            const result = await generateReportApi();
-            if (result.ok) {
-                elements.toaster.success(`Report generated: ${result.data.title}`);
-            } else {
-                elements.toaster.error(result.error);
-            }
-        } catch (error) {
-            console.error('Error generating report:', error);
-            elements.toaster.error('Failed to generate report');
-        }
-    }
-
-    /**
      * Handles the archive button click for a specific column.
      * @param {string} columnId - The column ID to archive tasks from
      */
@@ -812,12 +777,6 @@ import {
         elements.categoryConfirmDelete.addEventListener('click', () => {
             confirmDeleteCategory(elements);
         });
-
-        // Generate Report (triggered via sidebar config menu)
-        elements.generateReportCancel.addEventListener('click', () => {
-            elements.generateReportConfirmModal.close();
-        });
-        elements.generateReportConfirm.addEventListener('click', executeGenerateReport);
 
         // General Configuration (triggered via sidebar config menu)
         elements.generalConfigCancel.addEventListener('click', () => {
@@ -1031,6 +990,12 @@ import {
                     initDashboardPage(elements.pageView).catch(err => {
                         console.error('Dashboard page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load dashboard page');
+                    });
+                } else if (page === 'reports') {
+                    const { initReportsPage } = await import('./js/reports-page.js');
+                    initReportsPage(elements.pageView, { elements }).catch(err => {
+                        console.error('Reports page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load reports page');
                     });
                 } else if (page === 'ai') {
                     const { initAiPage } = await import('./js/ai-page.js');

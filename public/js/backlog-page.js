@@ -33,7 +33,7 @@ export async function initBacklogPage(pageViewEl, { elements }) {
                 <list-header class="js-listHeader"></list-header>
                 <div class="backlogPage__rows js-backlogRows"></div>
             </div>
-            <button type="button" class="backlogPage__fab js-backlogFab" aria-label="Add task">+</button>
+            <page-fab label="Add task" icon="+"></page-fab>
         </div>
     `;
 
@@ -173,8 +173,11 @@ export async function initBacklogPage(pageViewEl, { elements }) {
         }
     });
 
+    // Dynamically import page-fab component
+    await import('/components/page-fab/page-fab.js');
+
     // FAB — open add task modal targeting the backlog column
-    pageViewEl.querySelector('.js-backlogFab').addEventListener('click', () => {
+    pageViewEl.querySelector('page-fab').addEventListener('fab-click', () => {
         openAddTaskModal(
             elements,
             () => openDeleteConfirmation(elements),

@@ -1,0 +1,82 @@
+:host {
+    display: block;
+    background: var(--color-bg-primary);
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+
+:host(:last-of-type) {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* ---- Row Header ---- */
+.reportRow__header {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.reportRow__header:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* ---- Columns ---- */
+.reportRow__col {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.reportRow__col--title {
+    flex: var(--archive-col-title, 4);
+}
+
+.reportRow__col--date {
+    flex: var(--report-col-date, 1.5);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.reportRow__col--actions {
+    flex: 0 0 var(--archive-col-actions, 80px);
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ---- Title ---- */
+.reportRow__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- Buttons ---- */
+.reportRow__btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.reportRow__btn--delete:hover {
+    background: rgba(231, 76, 60, 0.08);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}

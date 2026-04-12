@@ -1,7 +1,7 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.35.0
-**Last Updated:** 2026-03-07
+**Version:** 2.36.0
+**Last Updated:** 2026-04-13
 
 ---
 
@@ -77,6 +77,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     │   ├── backlog-page.js        # Backlog page — initBacklogPage()
+    │   ├── reports-page.js        # Reports page — initReportsPage()
     │   ├── dashboard-page.js      # Dashboard page — initDashboardPage()
     │   └── ai-page.js             # AI Assistant page — initAiPage()
     └── components/
@@ -92,6 +93,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         ├── list-header/           # Inline component — sortable column header for list pages
         ├── archive-row/           # Expandable archived-task row (.html + .css)
         ├── ai-staged-row/         # Flat AI staged-task row (.html + .css)
+        ├── report-row/            # Flat report row (.html + .css)
+        ├── page-fab/              # Reusable floating action button (inline, .js only)
         └── toast-notification/
 ```
 
@@ -352,7 +355,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`). Columns with `isBacklog: true` are filtered out of the board view.
 
 ### Reports & Archive (independent operations)
-- **Report generation** (`Hamburger → Generate Report`) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.
+- **Report generation** (Reports page FAB button) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.
 - **Archive** (`Archive` button on a column with `hasArchive: true`) moves all tasks in that specific column to `archived-tasks.json`. Accepts a `columnId` in the body; falls back to the first `hasArchive: true` column. Does **not** generate a report.
 
 ### General Configuration
@@ -370,9 +373,19 @@ These are behaviors not evident from reading the code. Know these before making 
 - **`<nav-sidebar>`** is a slide-over overlay (left side). Trigger button is in the top-left of the header. Closes on backdrop click, ESC, or when a config action is selected.
 - **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`. Anything else defaults to `board`.
 - **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
-- **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive calls `initArchivePage`; Backlog calls `initBacklogPage`; Dashboard calls `initDashboardPage` — all via dynamic import. Unbuilt pages use `renderPlaceholderPage()`.
+- **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive calls `initArchivePage`; Backlog calls `initBacklogPage`; Dashboard calls `initDashboardPage`; Reports calls `initReportsPage`; AI calls `initAiPage` — all via dynamic import. Unbuilt pages use `renderPlaceholderPage()`.
 - **`pageView.--fullPage`** class modifier removes centering and padding from `.pageView` — applied by page modules that render a full-width layout (archive page sets this on init).
 - **Hamburger menu removed** — all config actions moved to the sidebar's Config submenu. Crisis mode moved from the menu to the toolbar. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
+
+### Reports Page
+- Route: `/:alias/reports` — full list page replacing the "coming soon" placeholder.
+- `reports-page.js` → `initReportsPage(pageViewEl, { elements })`: fetches reports, sorts newest-first by `generatedDate`.
+- `<list-header>` with 3 columns: Title, Generated, Actions (delete button).
+- `<report-row>` component: `setReport(report)`, dispatches `view-report` + `delete-report`.
+- **View report**: clicking a row opens the existing `reportsModal` (`<modal-dialog class="js-reportsModal">`) with `renderReportView()` from `modals.js` — supports both new format (`content.columns`) and legacy format.
+- **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
+- **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
+- **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
 
 ### AI Assistant Page
 - **Conversation history is in-memory only** — cleared on page reload. The server is stateless per request; the client sends the full `messages` array with every chat call.
@@ -411,7 +424,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Attributes:** `alias` (profile alias, sets href on nav links), `page` (active page name, sets `--active` class)
 - **Boolean attribute:** `open` — managed by `open()` / `close()`. Do not toggle manually.
 - **JS API:** `open()`, `close()`, `toggle()`
-- **Dispatches:** `config-action` (CustomEvent, bubbles+composed) with `detail.action` — one of: `board-config`, `manage-epics`, `manage-categories`, `manage-profiles`, `edit-checklist`, `general-config`, `generate-report`. The component calls `close()` before dispatching.
+- **Dispatches:** `config-action` (CustomEvent, bubbles+composed) with `detail.action` — one of: `board-config`, `manage-epics`, `manage-categories`, `manage-profiles`, `edit-checklist`, `general-config`, `ai-config`. The component calls `close()` before dispatching.
 - **Behavior:** backdrop click and ESC close the sidebar; the component manages its own ESC listener (attached on `open()`, removed on `close()`). Config submenu opens above the Config button and closes on any action or sidebar close.
 
 ### `<svg-icon>`
@@ -478,6 +491,25 @@ These are behaviors not evident from reading the code. Know these before making 
 - Column widths match `<list-header>` via `--archive-col-*` CSS custom properties; `.aiPage` overrides `--archive-col-actions: 300px` for the 5-button action bar
 - Epic pill uses `_hexToRgba(epicColor, 0.12)` background + solid `epicColor` text
 
+### `<report-row>`
+```html
+<report-row></report-row>
+```
+- Shadow DOM, loads `report-row.html` + `report-row.css` via fetch (cached in `static templateCache`)
+- **JS API:** `setReport(report)` — sets report data and renders (title, generatedDate)
+- Clicking the row dispatches `view-report`; clicking the Delete button dispatches `delete-report`
+- **Dispatches** (all bubble+composed, `detail: { reportId }`): `view-report`, `delete-report`
+- Column widths: `--archive-col-title` (flex 4), `--report-col-date` (flex 1.5), `--archive-col-actions` (80px on `.reportsPage`)
+
+### `<page-fab>`
+```html
+<page-fab label="Add task" icon="+"></page-fab>
+```
+- Inline Web Component (no external .html/.css) — reusable floating action button for list pages
+- **Attributes:** `label` (aria-label, default "Add"), `icon` (button text, default "+")
+- **Dispatches:** `fab-click` (bubbles+composed)
+- Used in: backlog page (add task), reports page (generate report)
+
 ### `<toast-notification>`
 ```javascript
 elements.toaster.success('msg')  // green
@@ -505,7 +537,6 @@ elements.toaster.info('msg')     // beige
 | `.js-profilesModal`              | Manage profiles CRUD             | large   | Sidebar Config → Manage Profiles                       |
 | `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in profiles modal                               |
 | `.js-checklistModal`             | Edit daily checklist             | large   | Sidebar Config → Edit Daily Checklist                  |
-| `.js-generateReportConfirmModal` | Generate report confirmation     | small   | Sidebar Config → Generate Report                       |
 | `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Sidebar Config → Board Configuration                   |
 | `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal                           |
 | `.js-generalConfigModal`         | Sidebar visibility, snooze mode, deadline thresholds | default | Sidebar Config → General Configuration    |
@@ -728,6 +759,7 @@ New code must go into the correct existing module. Only create a new module if a
 | `modals.js`      | All modal dialog logic                                 |
 | `crisis-mode.js` | Crisis mode (favicon, CSS class, filter activation)    |
 | `board-config.js`| Board Configuration modal (column CRUD + reorder)      |
+| `reports-page.js`| Reports page (list, view, delete, generate)            |
 | `app.js`         | Entry point — DOM refs, event listeners, renders       |
 
 ---

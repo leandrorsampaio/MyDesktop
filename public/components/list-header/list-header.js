@@ -95,6 +95,9 @@ class ListHeader extends HTMLElement {
             .listHeader__col[data-col="createdDate"] {
                 flex: var(--archive-col-date, 1);
             }
+            .listHeader__col[data-col="generatedDate"] {
+                flex: var(--report-col-date, 1.5);
+            }
             .listHeader__col[data-col="actions"] {
                 flex: 0 0 var(--archive-col-actions, 104px);
                 justify-content: flex-end;
