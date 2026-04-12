@@ -1,6 +1,6 @@
 # Task Tracker - Project Specification Document
 
-**Version:** 2.37.0
+**Version:** 2.37.3
 **Last Updated:** 2026-04-13
 
 ---
@@ -321,7 +321,8 @@ These are behaviors not evident from reading the code. Know these before making 
 ### Tasks & Board
 - **Positions are server-managed:** on every move or reorder, the server recalculates positions for all tasks in the affected column. Frontend sorts by `position` field on render.
 - **Drag cross-column** changes `status` and appends a log entry. **Drag within column** reorders `position` only — no log entry.
-- **`applyAllFilters()`** uses AND logic across active filters: cards must match ANY active category AND the priority filter AND the selected epic. Queries through `kanban-column` shadow roots to reach `task-card` elements. All filter state is in-memory — resets on page reload.
+- **`applyAllFilters()`** uses AND logic across active filters: cards must match the selected category AND the priority filter AND the selected epic. Queries through `kanban-column` shadow roots to reach `task-card` elements. All filter state is in-memory — resets on page reload.
+- **Category filter** is a `<custom-picker type="list">` dropdown (same component as epic filter). Shows all categories with their icons. "All categories" clears the filter. Hidden when only the default "Non categorized" category exists. Single-select.
 - **Epic filter picker** always includes "All epics" as its first item (value `''`). Selecting it clears the active epic filter. `renderEpicFilter()` sets `pickerEl.value = activeEpicFilter || ''` so the picker always reflects current state.
 - **Clone Task:** the edit modal has a "Clone" button (indigo, `modifier="clone"`) between Cancel and Save. Clicking it calls `openCloneTaskModal()` which closes the edit modal and reopens in Add mode with all task fields copied except `log`; title is prefixed with `"(Clone) "`; snooze is copied only if still in the future. The resulting form submits as a new task creation.
 - **Send to Backlog:** the edit modal has a "Backlog" button (slate grey, `modifier="backlog"`) between Clone and Update. Only shown for board tasks (not tasks already in the backlog column). Clicking it closes the modal, moves the task to the backlog column at position 0 via `moveTask()`, and shows a success toast. The server generates a log entry: `"Moved from 'X' to 'Backlog'"`.
@@ -378,14 +379,15 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Config submenu removed** — all config sections are now inline on the `/:alias/config` page. The gear icon at the bottom of the sidebar is a direct nav link. Profiles modal is opened from the config page via a "Manage Profiles" button. `closeMenu` is kept as a no-op so existing modal callers require no signature change.
 
 ### Configuration Page
-- Route: `/:alias/config` — single scrollable page with 6 inline config sections.
+- Route: `/:alias/config` — left tab nav (sticky, 180px) + right content panel. One section visible at a time.
 - `config-page.js` → `initConfigPage(pageViewEl, { elements })`: parallel fetches columns/epics/categories, renders all sections.
-- **Sections (in order):** Columns, Epics, Categories, General Settings, Daily Checklist, AI Configuration.
-- **CRUD sections** (columns, epics, categories): auto-save on blur/change (same behavior as the old modals). Delete uses confirmation modals from `index.html`.
+- **Sections (tab order):** Columns, Epics, Categories, General, Daily Checklist, AI Assistant, Profiles (below a divider).
+- **CRUD sections** (columns, epics, categories, profiles): auto-save on blur/change (same behavior as the old modals). Delete uses confirmation modals from `index.html`.
 - **General Settings and Checklist:** manual Save button. Changes take effect on the board when user navigates back (board re-initializes and calls `loadGeneralConfig()`).
 - **AI Configuration:** two-panel list/form inline (same UX as the old modal).
-- **Profiles:** "Manage Profiles" button at the bottom opens the existing profiles modal (kept separate since profile changes can trigger navigation).
+- **Profiles:** inline CRUD section (add, rename, recolor, change letters, set default, delete with confirmation). Deleting the active profile navigates to the first remaining profile's config page.
 - **Nav-sidebar:** gear icon at bottom is now a nav link (`data-page="config"`), no more config submenu.
+- **No nested scrollbars:** editor lists inside config page have `max-height`/`overflow` overridden to `none`/`visible`.
 
 ### Reports Page
 - Route: `/:alias/reports` — full list page replacing the "coming soon" placeholder.
@@ -454,7 +456,8 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Attributes:** `type` (`color`|`icon`|`list`), `placeholder`, `columns` (grid modes, default 5), `size="compact"` (toolbar use)
 - **JS API:** `setItems([{value, label, color?, disabled?}])`, `picker.value` (get/set), `picker.clear()`
 - **Event:** `change` → `CustomEvent({ detail: { value, label } })`, bubbles + composed
-- **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + task modal epic field (`type="list"`)
+- **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + category filter + task modal epic field (`type="list"`)
+- **List item `icon` property:** optional; when set, renders an `<svg-icon>` before the label text (used by category filter dropdown)
 
 ### `<modal-dialog>`
 ```html
