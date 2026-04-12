@@ -2384,7 +2384,8 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .configPage .epicsEditor__list,
 .configPage .categoriesEditor__list,
 .configPage .boardConfigEditor__list,
-.configPage .checklistEditor__items {
+.configPage .checklistEditor__items,
+.configPage .profilesEditor__list {
     max-height: none;
     overflow: visible;
 }
@@ -2395,7 +2396,8 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .configPage .boardConfigEditor__hint,
 .configPage .checklistEditor__hint,
 .configPage .generalConfig__hint,
-.configPage .aiConfig__hint {
+.configPage .aiConfig__hint,
+.configPage .profilesEditor__hint {
     display: none;
 }
 
@@ -2404,7 +2406,8 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .configPage .boardConfigEditor,
 .configPage .checklistEditor,
 .configPage .generalConfig,
-.configPage .aiConfig {
+.configPage .aiConfig,
+.configPage .profilesEditor {
     padding: 0;
 }
 

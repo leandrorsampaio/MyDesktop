@@ -4,21 +4,22 @@
  */
 
 import {
-    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, EPIC_COLORS,
+    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, EPIC_COLORS,
     DEFAULT_CATEGORY_ID, DEFAULT_CHECKLIST_ITEMS,
     DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS
 } from './constants.js';
 import { escapeHtml, toCamelCase } from './utils.js';
 import {
-    columns, setColumns, epics, setEpics, categories, setCategories, tasks, activeProfile
+    columns, setColumns, epics, setEpics, categories, setCategories, tasks,
+    profiles, setProfiles, activeProfile, setActiveProfile
 } from './state.js';
 import {
     fetchColumnsApi, createColumnApi, updateColumnApi, deleteColumnApi, reorderColumnsApi,
     fetchEpicsApi, createEpicApi, updateEpicApi, deleteEpicApi,
     fetchCategoriesApi, createCategoryApi, updateCategoryApi, deleteCategoryApi,
-    fetchAiConfigApi, createAiConfigEntryApi, updateAiConfigEntryApi, deleteAiConfigEntryApi
+    fetchAiConfigApi, createAiConfigEntryApi, updateAiConfigEntryApi, deleteAiConfigEntryApi,
+    fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi
 } from './api.js';
-import { openProfilesModal, confirmDeleteProfile } from './modals.js';
 
 const AI_PROVIDER_DEFAULTS = {
     anthropic: { label: 'Anthropic (Claude)',                  defaultModel: 'claude-haiku-4-5-20251001', requiresKey: true  },
@@ -48,7 +49,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
                 <button class="configPage__navItem" data-tab="checklist">Daily Checklist</button>
                 <button class="configPage__navItem" data-tab="ai">AI Assistant</button>
                 <div class="configPage__navDivider"></div>
-                <button class="configPage__navItem js-cfg-profilesBtn" data-tab="">Profiles</button>
+                <button class="configPage__navItem" data-tab="profiles">Profiles</button>
             </nav>
 
             <!-- Right content -->
@@ -219,6 +220,25 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     </div>
                 </div>
 
+                <!-- Panel: Profiles -->
+                <div class="configPage__panel" data-panel="profiles">
+                    <h3 class="configPage__panelTitle">Profiles</h3>
+                    <p class="configPage__panelHint">Separate your data (e.g., Work vs Personal). Each profile has its own tasks, epics, notes, and reports. Maximum ${MAX_PROFILES}.</p>
+                    <div class="profilesEditor">
+                        <div class="profilesEditor__form">
+                            <div class="profilesEditor__formRow">
+                                <input type="text" class="profilesEditor__nameInput js-cfg-profileNameInput" placeholder="Profile name" />
+                                <input type="text" class="profilesEditor__lettersInput js-cfg-profileLettersInput" placeholder="AB" maxlength="3" />
+                                <custom-picker type="color" placeholder="Select color" columns="5" class="js-cfg-profileColorSelect"></custom-picker>
+                                <button type="button" class="btn --save js-cfg-profileAddBtn">Add Profile</button>
+                            </div>
+                            <div class="profilesEditor__alias js-cfg-profileAliasPreview"></div>
+                            <div class="profilesEditor__error js-cfg-profileError" style="display: none;"></div>
+                        </div>
+                        <div class="profilesEditor__list js-cfg-profilesList"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     `;
@@ -234,7 +254,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
     navItems.forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
-            if (!tab) return; // Profiles button handled separately
+            if (!tab) return;
             navItems.forEach(b => b.classList.remove('--active'));
             btn.classList.add('--active');
             panels.forEach(p => p.classList.toggle('--active', p.dataset.panel === tab));
@@ -965,26 +985,198 @@ export async function initConfigPage(pageViewEl, { elements }) {
     aiShowList();
 
     // ==========================================
-    // Profiles link
+    // Section: Profiles
     // ==========================================
-    const closeMenu = () => {};
-    $('.js-cfg-profilesBtn').addEventListener('click', () => {
-        openProfilesModal(elements, closeMenu, async () => {
-            // After profiles change, the page may need to reload if the current profile was renamed
-            const { fetchProfilesApi, setApiBase } = await import('./api.js');
-            const { setProfiles, setActiveProfile } = await import('./state.js');
-            const { parsePath } = await import('./router.js');
-            const fetchedProfiles = await fetchProfilesApi();
-            setProfiles(fetchedProfiles);
-            const current = fetchedProfiles.find(p => p.id === activeProfile?.id);
-            if (current) {
-                setActiveProfile(current);
-                setApiBase(current.alias);
-                if (current.alias !== parsePath().alias) {
-                    window.location.href = '/' + current.alias + '/config';
+    const profNameInput    = $('.js-cfg-profileNameInput');
+    const profLettersInput = $('.js-cfg-profileLettersInput');
+    const profColorSelect  = $('.js-cfg-profileColorSelect');
+    const profAddBtn       = $('.js-cfg-profileAddBtn');
+    const profAliasPreview = $('.js-cfg-profileAliasPreview');
+    const profError        = $('.js-cfg-profileError');
+    const profList         = $('.js-cfg-profilesList');
+
+    const profConfirmModal   = document.querySelector('.js-profileConfirmModal');
+    const profConfirmMessage = document.querySelector('.js-profileConfirmMessage');
+    const profConfirmCancel  = document.querySelector('.js-profileConfirmCancel');
+    const profConfirmDelete  = document.querySelector('.js-profileConfirmDelete');
+    let pendingProfileDelete = null;
+
+    function populateProfileColorSelect(selectEl, currentProfiles, excludeId) {
+        const usedColors = new Set(currentProfiles.filter(p => p.id !== excludeId).map(p => p.color));
+        const items = EPIC_COLORS.map(color => ({ value: color.hex, label: color.name, disabled: usedColors.has(color.hex) }));
+        selectEl.setItems(items);
+    }
+
+    async function refreshProfiles() {
+        const fetched = await fetchProfilesApi();
+        setProfiles(fetched);
+        return fetched;
+    }
+
+    function renderProfiles() {
+        populateProfileColorSelect(profColorSelect, profiles);
+        profNameInput.value = '';
+        profLettersInput.value = '';
+        profColorSelect.clear();
+        profAliasPreview.textContent = '';
+        profError.style.display = 'none';
+
+        if (profiles.length === 0) {
+            profList.innerHTML = '<div class="emptyState">No profiles created yet</div>';
+            return;
+        }
+
+        profList.innerHTML = profiles.map(profile => `
+            <div class="profilesEditor__item" data-profile-id="${profile.id}">
+                <button class="profilesEditor__defaultBtn js-profDefaultBtn ${profile.isDefault ? '--active' : ''}"
+                        data-profile-id="${profile.id}" title="${profile.isDefault ? 'Default profile' : 'Set as default'}">&#9733;</button>
+                <div class="profilesEditor__itemColor" style="background-color: ${profile.color};">${escapeHtml(profile.letters)}</div>
+                <div class="profilesEditor__itemInfo">
+                    <input type="text" class="profilesEditor__itemName js-profItemName" value="${escapeHtml(profile.name)}" data-profile-id="${profile.id}" />
+                    <span class="profilesEditor__itemAlias">Alias: ${escapeHtml(profile.alias)}</span>
+                </div>
+                <input type="text" class="profilesEditor__itemLetters js-profItemLetters" value="${escapeHtml(profile.letters)}" data-profile-id="${profile.id}" maxlength="3" />
+                <span class="js-profItemColorSlot" data-profile-id="${profile.id}"></span>
+                <button class="profilesEditor__deleteBtn js-profDeleteBtn" data-profile-id="${profile.id}" title="Delete profile">&times;</button>
+            </div>
+        `).join('');
+
+        // Color pickers
+        profList.querySelectorAll('.js-profItemColorSlot').forEach(slot => {
+            const profileId = slot.dataset.profileId;
+            const profile = profiles.find(p => p.id === profileId);
+            const picker = document.createElement('custom-picker');
+            picker.setAttribute('type', 'color');
+            picker.setAttribute('placeholder', 'Select color');
+            picker.setAttribute('columns', '5');
+            picker.dataset.profileId = profileId;
+            slot.replaceWith(picker);
+            populateProfileColorSelect(picker, profiles, profileId);
+            if (profile) picker.value = profile.color;
+        });
+
+        // Name blur
+        profList.querySelectorAll('.js-profItemName').forEach(input => {
+            input.addEventListener('blur', async () => {
+                const name = input.value.trim();
+                if (!name) {
+                    toaster.warning('Profile name cannot be empty');
+                    const p = profiles.find(p => p.id === input.dataset.profileId);
+                    if (p) input.value = p.name;
                     return;
                 }
-            }
+                const result = await updateProfileApi(input.dataset.profileId, { name });
+                if (result.ok) { await refreshProfiles(); renderProfiles(); }
+                else { toaster.error(result.error); }
+            });
         });
+
+        // Letters blur
+        profList.querySelectorAll('.js-profItemLetters').forEach(input => {
+            input.addEventListener('input', () => { input.value = input.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+            input.addEventListener('blur', async () => {
+                const letters = input.value.trim().toUpperCase();
+                if (!letters) {
+                    toaster.warning('Profile letters cannot be empty');
+                    const p = profiles.find(p => p.id === input.dataset.profileId);
+                    if (p) input.value = p.letters;
+                    return;
+                }
+                const result = await updateProfileApi(input.dataset.profileId, { letters });
+                if (result.ok) { await refreshProfiles(); renderProfiles(); }
+                else { toaster.error(result.error); }
+            });
+        });
+
+        // Color change
+        profList.querySelectorAll('custom-picker[data-profile-id]').forEach(picker => {
+            picker.addEventListener('change', async () => {
+                const color = picker.value;
+                if (!color) return;
+                const result = await updateProfileApi(picker.dataset.profileId, { color });
+                if (result.ok) { await refreshProfiles(); renderProfiles(); }
+                else {
+                    toaster.error(result.error);
+                    const p = profiles.find(p => p.id === picker.dataset.profileId);
+                    if (p) picker.value = p.color;
+                }
+            });
+        });
+
+        // Default toggle
+        profList.querySelectorAll('.js-profDefaultBtn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const profile = profiles.find(p => p.id === btn.dataset.profileId);
+                if (profile?.isDefault) return;
+                const result = await updateProfileApi(btn.dataset.profileId, { isDefault: true });
+                if (result.ok) {
+                    await refreshProfiles();
+                    renderProfiles();
+                    toaster.success(`"${profile?.name}" set as default profile`);
+                } else { toaster.error(result.error); }
+            });
+        });
+
+        // Delete
+        profList.querySelectorAll('.js-profDeleteBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (profiles.length <= 1) { toaster.warning('Cannot delete the last profile'); return; }
+                const profile = profiles.find(p => p.id === btn.dataset.profileId);
+                pendingProfileDelete = btn.dataset.profileId;
+                profConfirmMessage.textContent = `Delete profile "${profile?.name || ''}"? All tasks, reports, and data for this profile will be permanently deleted.`;
+                profConfirmModal.open();
+            });
+        });
+    }
+
+    profNameInput.addEventListener('input', () => {
+        const name = profNameInput.value.trim();
+        profAliasPreview.textContent = name ? `Alias: ${toCamelCase(name)}` : '';
     });
+
+    profLettersInput.addEventListener('input', () => {
+        profLettersInput.value = profLettersInput.value.toUpperCase().replace(/[^A-Z]/g, '');
+    });
+
+    profAddBtn.addEventListener('click', async () => {
+        const name = profNameInput.value.trim();
+        const letters = profLettersInput.value.trim().toUpperCase();
+        const color = profColorSelect.value;
+        if (!name) { toaster.warning('Profile name is required'); return; }
+        if (!letters) { toaster.warning('Profile letters are required'); return; }
+        if (!color) { toaster.warning('Please select a color'); return; }
+        if (profiles.length >= MAX_PROFILES) { toaster.warning(`Maximum of ${MAX_PROFILES} profiles allowed`); return; }
+        const result = await createProfileApi({ name, letters, color });
+        if (result.ok) {
+            await refreshProfiles();
+            renderProfiles();
+            toaster.success(`Profile "${name}" created`);
+        } else {
+            profError.textContent = result.error;
+            profError.style.display = 'block';
+        }
+    });
+
+    profConfirmCancel.addEventListener('click', () => { pendingProfileDelete = null; profConfirmModal.close(); });
+    profConfirmDelete.addEventListener('click', async () => {
+        if (!pendingProfileDelete) return;
+        const profileId = pendingProfileDelete;
+        const deletedProfile = profiles.find(p => p.id === profileId);
+        pendingProfileDelete = null;
+        profConfirmModal.close();
+        const result = await deleteProfileApi(profileId);
+        if (result.ok) {
+            await refreshProfiles();
+            renderProfiles();
+            toaster.success('Profile deleted');
+            // If we deleted the active profile, navigate to first remaining
+            if (deletedProfile && activeProfile && deletedProfile.id === activeProfile.id) {
+                if (profiles.length > 0) {
+                    window.location.href = '/' + profiles[0].alias + '/config';
+                }
+            }
+        } else { toaster.error(result.error); }
+    });
+
+    renderProfiles();
 }
