@@ -128,13 +128,3 @@ export function handleEpicFilterChange(pickerEl, applyFilters) {
     setActiveEpicFilter(value);
     applyFilters();
 }
-
-/**
- * Sets the priority filter to a specific state (used by crisis mode).
- * @param {boolean} active - Whether priority filter should be active
- * @param {HTMLElement} priorityBtn - The priority filter button element
- */
-export function setPriorityFilter(active, priorityBtn) {
-    setPriorityFilterActive(active);
-    priorityBtn.classList.toggle('--active', active);
-}

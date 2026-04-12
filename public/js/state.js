@@ -16,9 +16,6 @@ export const activeCategoryFilters = new Set();
 /** @type {boolean} Whether priority filter is active */
 export let priorityFilterActive = false;
 
-/** @type {boolean} Whether crisis mode is active */
-export let crisisModeActive = false;
-
 /** @type {Array<Object>} All categories */
 export let categories = [];
 
@@ -36,9 +33,6 @@ export let activeProfile = null;
 
 /** @type {Array<Object>} Columns for the active profile, sorted by order */
 export let columns = [];
-
-/** @type {string} Original page title (saved when entering crisis mode) */
-export let originalTitle = '';
 
 /**
  * Updates the tasks array with new data.
@@ -137,22 +131,6 @@ export function setEditingTaskId(id) {
  */
 export function setPriorityFilterActive(active) {
     priorityFilterActive = active;
-}
-
-/**
- * Sets the crisis mode state.
- * @param {boolean} active - Whether crisis mode should be active
- */
-export function setCrisisModeActive(active) {
-    crisisModeActive = active;
-}
-
-/**
- * Sets the original title (saved before entering crisis mode).
- * @param {string} title - The original page title
- */
-export function setOriginalTitle(title) {
-    originalTitle = title;
 }
 
 /**

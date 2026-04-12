@@ -30,7 +30,7 @@ This document describes the **current** state of the project. Always edit it to 
 
 ## Project Overview
 
-A local web-based kanban task tracker used as a browser homepage. Features: drag-and-drop board, task categories, epics, daily checklist, notes, report generation, privacy blur, crisis mode, and multiple profiles with separate data.
+A local web-based kanban task tracker used as a browser homepage. Features: drag-and-drop board, task categories, epics, daily checklist, notes, report generation, privacy blur, and multiple profiles with separate data.
 
 ---
 
@@ -72,7 +72,6 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── api.js                 # Pure HTTP functions, no side effects
     │   ├── filters.js             # Category, priority, epic filter logic
     │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
-    │   ├── crisis-mode.js
     │   ├── modals.js              # All modal logic
     │   ├── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
@@ -410,9 +409,8 @@ These are behaviors not evident from reading the code. Know these before making 
 - **`--archive-col-actions`** is overridden to `300px` on `.aiPage` to accommodate the 5-button action bar (Edit, Clone, → Backlog, → Board, Delete).
 - **Rate limit:** `POST /api/:profile/ai/chat` is limited to 10 requests per minute (separate `aiLimiter` from the standard write limiter).
 
-### Crisis Mode & Privacy Toggle
-- Both are purely client-side CSS toggles — no server calls, no persistence.
-- Crisis Mode reuses `applyAllFilters()` to activate the priority filter; it does not duplicate filter logic.
+### Privacy Toggle
+- Purely client-side CSS toggle — no server calls, no persistence.
 
 ### Checklist
 - Resets daily at 6:00 AM by comparing `localStorage.lastRecurrentReset` to today's 6 AM timestamp.
@@ -640,10 +638,10 @@ const cards = Array.from(document.querySelectorAll('kanban-column'))
 
 ```css
 /* WRONG — targets Shadow DOM internals */
-body.--crisisMode .column[data-status="done"] { }
+body.--privacyMode .column[data-status="done"] { }
 
 /* CORRECT — target the custom element */
-body.--crisisMode kanban-column[data-status="done"] { visibility: hidden; }
+body.--privacyMode kanban-column[data-status="done"] { visibility: hidden; }
 ```
 
 ---
@@ -767,7 +765,6 @@ New code must go into the correct existing module. Only create a new module if a
 | `router.js`      | Client-side path parser: `parsePath()`, `buildPath()`  |
 | `filters.js`     | Category, priority, epic filter logic                  |
 | `modals.js`      | All modal dialog logic                                 |
-| `crisis-mode.js` | Crisis mode (favicon, CSS class, filter activation)    |
 | `board-config.js`| Board Configuration modal (column CRUD + reorder)      |
 | `reports-page.js`| Reports page (list, view, delete, generate)            |
 | `config-page.js` | Config page (columns, epics, categories, general, checklist, AI) |

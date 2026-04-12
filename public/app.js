@@ -5,7 +5,6 @@
  * - state.js: Shared application state
  * - api.js: HTTP API functions
  * - filters.js: Category and priority filtering
- * - crisis-mode.js: Crisis mode functionality
  * - modals.js: Modal dialog handling
  */
 
@@ -44,7 +43,6 @@ import {
     renderEpicFilter,
     handleEpicFilterChange
 } from './js/filters.js';
-import { toggleCrisisMode } from './js/crisis-mode.js';
 import {
     openAddTaskModal,
     openEditModal,
@@ -87,7 +85,6 @@ import {
         priorityFilterBtn: null,
         epicFilter:        null,
         snoozeToggleBtn:   null,
-        crisisModeBtn:     null,
         privacyToggleBtn:  null,
 
         // Task Modal
@@ -237,7 +234,7 @@ import {
     // ==========================================
 
     /**
-     * No-op kept so all existing callers (modals, crisis-mode) require no changes.
+     * No-op kept so all existing callers (modals) require no changes.
      * The sidebar closes itself before dispatching config-action events.
      */
     const closeMenu = () => {};
@@ -672,7 +669,6 @@ import {
                 <button class="toolbar__priorityBtn js-priorityFilterBtn" type="button">★ Priority</button>
                 <button class="toolbar__snoozeBtn js-snoozeToggleBtn" style="display:none;" type="button"></button>
                 <div class="toolbar__divider"></div>
-                <button class="toolbar__crisisBtn js-crisisModeBtn" type="button">🚨 Crisis</button>
                 <button class="toolbar__privacyBtn js-privacyToggleBtn" type="button">Hide</button>
             </div>
         `;
@@ -680,7 +676,6 @@ import {
         elements.priorityFilterBtn = mount.querySelector('.js-priorityFilterBtn');
         elements.epicFilter        = mount.querySelector('.js-epicFilter');
         elements.snoozeToggleBtn   = mount.querySelector('.js-snoozeToggleBtn');
-        elements.crisisModeBtn     = mount.querySelector('.js-crisisModeBtn');
         elements.privacyToggleBtn  = mount.querySelector('.js-privacyToggleBtn');
     }
 
@@ -808,11 +803,6 @@ import {
         // Epic Filter
         elements.epicFilter.addEventListener('change', () => {
             handleEpicFilterChange(elements.epicFilter, applyAllFilters);
-        });
-
-        // Crisis Mode
-        elements.crisisModeBtn.addEventListener('click', () => {
-            toggleCrisisMode(elements, closeMenu);
         });
 
         // Privacy Toggle
