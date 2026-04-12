@@ -1,55 +1,48 @@
 /**
  * Filters module for Task Tracker.
- * Handles category and priority filtering of task cards.
+ * Handles category, priority, and epic filtering of task cards.
  */
 
 import { activeCategoryFilters, priorityFilterActive, setPriorityFilterActive, activeEpicFilter, setActiveEpicFilter, epics, categories } from './state.js';
 
 /**
- * Renders category filter buttons in the toolbar.
- * @param {HTMLElement} container - The container element for filter buttons
- * @param {Function} onToggle - Callback function when a filter is toggled
+ * Renders the category filter picker with all available categories.
+ * Hides the picker if only the default category (id=1) exists.
+ * @param {HTMLElement} pickerEl - The custom-picker element
  */
-export function renderCategoryFilters(container, onToggle) {
-    container.innerHTML = '';
+export function renderCategoryFilters(pickerEl) {
+    // Hide if only the default "Non categorized" category exists
+    const nonDefaultCategories = categories.filter(c => c.id !== 1);
+    if (nonDefaultCategories.length === 0) {
+        pickerEl.style.display = 'none';
+        return;
+    }
+    pickerEl.style.display = '';
 
-    categories.forEach(cat => {
-        const btn = document.createElement('button');
-        btn.className = 'toolbar__categoryBtn js-categoryFilterBtn';
-        btn.dataset.category = cat.id;
-        if (cat.icon) {
-            const icon = document.createElement('svg-icon');
-            icon.setAttribute('icon', cat.icon);
-            icon.setAttribute('size', '12');
-            btn.appendChild(icon);
-        }
-        btn.appendChild(document.createTextNode(cat.name));
-        if (activeCategoryFilters.has(cat.id)) {
-            btn.classList.add('--active');
-        }
-        btn.addEventListener('click', () => onToggle(cat.id));
-        container.appendChild(btn);
-    });
+    const items = [
+        { value: '', label: 'All categories' },
+        ...categories.map(cat => ({ value: String(cat.id), label: cat.name, icon: cat.icon }))
+    ];
+    pickerEl.setItems(items);
+
+    // Reflect current filter state
+    const activeId = activeCategoryFilters.size === 1
+        ? String([...activeCategoryFilters][0])
+        : '';
+    pickerEl.value = activeId;
 }
 
 /**
- * Toggles a category filter on or off.
- * @param {number} categoryId - The category ID to toggle (1-6)
- * @param {HTMLElement} filtersContainer - The container with filter buttons
- * @param {Function} applyFilters - Function to apply all filters after toggle
+ * Handles category filter picker change.
+ * @param {HTMLElement} pickerEl - The custom-picker element
+ * @param {Function} applyFilters - Function to apply all filters
  */
-export function toggleCategoryFilter(categoryId, filtersContainer, applyFilters) {
-    if (activeCategoryFilters.has(categoryId)) {
-        activeCategoryFilters.delete(categoryId);
-    } else {
-        activeCategoryFilters.add(categoryId);
+export function handleCategoryFilterChange(pickerEl, applyFilters) {
+    const value = pickerEl.value;
+    activeCategoryFilters.clear();
+    if (value) {
+        activeCategoryFilters.add(Number(value));
     }
-
-    // Update button states
-    filtersContainer.querySelectorAll('.toolbar__categoryBtn').forEach(btn => {
-        btn.classList.toggle('--active', activeCategoryFilters.has(Number(btn.dataset.category)));
-    });
-
     applyFilters();
 }
 
@@ -65,7 +58,7 @@ export function togglePriorityFilter(priorityBtn, applyFilters) {
 }
 
 /**
- * Applies all active filters (category and priority) to task cards.
+ * Applies all active filters (category, priority, epic) to task cards.
  * Queries through kanban-column Shadow DOMs to find task-card elements.
  * Cards that don't match active filters are hidden via the hidden attribute.
  */

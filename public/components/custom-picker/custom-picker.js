@@ -429,6 +429,13 @@ class CustomPicker extends HTMLElement {
                 btn.appendChild(dot);
             }
 
+            if (item.icon) {
+                const icon = document.createElement('svg-icon');
+                icon.setAttribute('icon', item.icon);
+                icon.setAttribute('size', '14');
+                btn.appendChild(icon);
+            }
+
             const label = document.createElement('span');
             label.className = 'customPicker__listLabel';
             label.textContent = item.label;

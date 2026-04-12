@@ -37,7 +37,7 @@ import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCatego
 import { openBoardConfigModal, confirmDeleteColumn } from './js/board-config.js';
 import {
     renderCategoryFilters,
-    toggleCategoryFilter,
+    handleCategoryFilterChange,
     togglePriorityFilter,
     applyAllFilters,
     renderEpicFilter,
@@ -81,7 +81,7 @@ import {
         profileSelector: document.querySelector('.js-profileSelector'),
 
         // Board-only elements — null until initBoardToolbar() populates them
-        categoryFilters:   null,
+        categoryFilter:    null,
         priorityFilterBtn: null,
         epicFilter:        null,
         snoozeToggleBtn:   null,
@@ -664,7 +664,7 @@ import {
         const mount = document.querySelector('.js-toolbarMount');
         mount.innerHTML = `
             <div class="toolbar js-toolbar">
-                <div class="toolbar__filters js-categoryFilters"></div>
+                <custom-picker type="list" placeholder="Categories" size="compact" class="toolbar__categoryFilter js-categoryFilter"></custom-picker>
                 <custom-picker type="list" placeholder="Epics" size="compact" class="toolbar__epicFilter js-epicFilter"></custom-picker>
                 <button class="toolbar__priorityBtn js-priorityFilterBtn" type="button">★ Priority</button>
                 <button class="toolbar__snoozeBtn js-snoozeToggleBtn" style="display:none;" type="button"></button>
@@ -672,7 +672,7 @@ import {
                 <button class="toolbar__privacyBtn js-privacyToggleBtn" type="button">Hide</button>
             </div>
         `;
-        elements.categoryFilters   = mount.querySelector('.js-categoryFilters');
+        elements.categoryFilter    = mount.querySelector('.js-categoryFilter');
         elements.priorityFilterBtn = mount.querySelector('.js-priorityFilterBtn');
         elements.epicFilter        = mount.querySelector('.js-epicFilter');
         elements.snoozeToggleBtn   = mount.querySelector('.js-snoozeToggleBtn');
@@ -798,6 +798,11 @@ import {
         // Priority Filter
         elements.priorityFilterBtn.addEventListener('click', () => {
             togglePriorityFilter(elements.priorityFilterBtn, applyAllFilters);
+        });
+
+        // Category Filter
+        elements.categoryFilter.addEventListener('change', () => {
+            handleCategoryFilterChange(elements.categoryFilter, applyAllFilters);
         });
 
         // Epic Filter
@@ -965,9 +970,7 @@ import {
         }
 
         // Render category filters now that dynamic categories are loaded
-        renderCategoryFilters(elements.categoryFilters, (categoryId) => {
-            toggleCategoryFilter(categoryId, elements.categoryFilters, applyAllFilters);
-        });
+        renderCategoryFilters(elements.categoryFilter);
 
         // Fetch columns and build kanban before rendering tasks
         try {

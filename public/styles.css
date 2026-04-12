@@ -124,43 +124,6 @@ body {
     border-radius: var(--radius-md);
 }
 
-.toolbar__filters {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.toolbar__categoryBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 12px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--color-text-tertiary);
-    font-size: 11px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-}
-
-.toolbar__categoryBtn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: var(--color-text-secondary);
-}
-
-.toolbar__categoryBtn.--active {
-    background: var(--color-accent-primary);
-    color: #ffffff;
-}
-
-.toolbar__categoryBtn.--active:hover {
-    background: var(--color-accent-primary-hover);
-}
-
 .toolbar__priorityBtn {
     padding: 6px 12px;
     border: none;
