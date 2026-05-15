@@ -33,6 +33,7 @@ npm run test:api
 ```
 
 ### Docs (this repo)
+- [AGENTS.md](AGENTS.md) — **point any LLM here first** ("read AGENTS.md, then start"). Stack, rules, doc map, in one page.
 - [SPEC.md](SPEC.md) — source of truth for the current implementation. Edit on every feature change.
 - [VISION.md](VISION.md) — strategic intent, audience, principles, dark-mode plan.
 - [CHANGELOG.md](CHANGELOG.md) — one line per shipped version.

@@ -8,6 +8,7 @@
 ## Doc map
 
 ```
+AGENTS.md     → LLM / coding agent entry point. Start there if you are an AI.
 README.md     → New visitors. Marketing + quickstart only.
 SPEC.md       → THIS FILE. Source of truth for current implementation. Edit on every feature change.
 VISION.md     → Strategic intent. Edit only when direction shifts.
