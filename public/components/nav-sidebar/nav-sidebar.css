@@ -25,10 +25,10 @@
 /* Navigation links */
 .navSidebar__nav {
     flex: 1;
-    padding: 12px 6px;
+    padding: var(--space-12) var(--space-6);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-4);
     overflow-y: auto;
 }
 
@@ -68,11 +68,11 @@
     left: calc(100% + 8px);
     top: 50%;
     transform: translateY(-50%);
-    padding: 4px 10px;
+    padding: var(--space-4) var(--space-10);
     background: var(--color-text-primary, #111827);
     color: #fff;
-    font-size: 12px;
-    font-weight: 500;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
     font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
     border-radius: var(--radius-sm, 4px);
     white-space: nowrap;
@@ -92,7 +92,7 @@
    Footer — config button + submenu
    ========================================== */
 .navSidebar__footer {
-    padding: 6px;
+    padding: var(--space-6);
     border-top: 1px solid var(--color-border, #e5e7eb);
     position: relative;
 }
@@ -127,10 +127,10 @@
     width: 460px;
     background: var(--color-bg-secondary, #f8f9fa);
     border-right: 1px solid var(--color-border, #e5e7eb);
-    padding: 24px;
+    padding: var(--space-24);
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--space-24);
     overflow-y: auto;
     z-index: 99;
     transform: translateX(-110%);
@@ -146,7 +146,7 @@
     background: var(--color-bg-primary, #ffffff);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-lg, 8px);
-    padding: 24px;
+    padding: var(--space-24);
 }
 
 ::slotted(.--hidden) {

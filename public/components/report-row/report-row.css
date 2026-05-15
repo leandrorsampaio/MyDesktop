@@ -14,7 +14,7 @@
 .reportRow__header {
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 var(--space-12);
     min-height: 44px;
     cursor: pointer;
 }
@@ -27,7 +27,7 @@
 .reportRow__col {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-6);
     min-width: 0;
     overflow: hidden;
 }
@@ -38,7 +38,7 @@
 
 .reportRow__col--date {
     flex: var(--report-col-date, 1.5);
-    font-size: 13px;
+    font-size: var(--text-md);
     color: var(--color-text-secondary);
     white-space: nowrap;
 }
@@ -46,13 +46,13 @@
 .reportRow__col--actions {
     flex: 0 0 var(--archive-col-actions, 80px);
     justify-content: flex-end;
-    gap: 4px;
+    gap: var(--space-4);
 }
 
 /* ---- Title ---- */
 .reportRow__title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -61,9 +61,9 @@
 
 /* ---- Buttons ---- */
 .reportRow__btn {
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 500;
+    padding: var(--space-4) var(--space-10);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
     font-family: inherit;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);

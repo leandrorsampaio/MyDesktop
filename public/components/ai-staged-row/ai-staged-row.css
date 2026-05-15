@@ -14,7 +14,7 @@
 .aiStagedRow__header {
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 var(--space-12);
     min-height: 44px;
 }
 
@@ -26,7 +26,7 @@
 .aiStagedRow__col {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-6);
     min-width: 0;
     overflow: hidden;
 }
@@ -46,19 +46,19 @@
 .aiStagedRow__col--actions {
     flex: 0 0 var(--archive-col-actions, 300px);
     justify-content: flex-end;
-    gap: 4px;
+    gap: var(--space-4);
 }
 
 /* ---- Title ---- */
 .aiStagedRow__star {
     color: var(--color-accent-warning);
-    font-size: 13px;
+    font-size: var(--text-md);
     flex-shrink: 0;
 }
 
 .aiStagedRow__title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -68,10 +68,10 @@
 /* ---- Epic pill ---- */
 .aiStagedRow__epicPill {
     display: inline-block;
-    padding: 2px 8px;
+    padding: var(--space-2) var(--space-8);
     border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -80,12 +80,12 @@
 
 /* ---- Category ---- */
 .aiStagedRow__categoryIcon {
-    font-size: 13px;
+    font-size: var(--text-md);
     flex-shrink: 0;
 }
 
 .aiStagedRow__categoryName {
-    font-size: 13px;
+    font-size: var(--text-md);
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -94,9 +94,9 @@
 
 /* ---- Buttons ---- */
 .aiStagedRow__btn {
-    padding: 4px 8px;
-    font-size: 11px;
-    font-weight: 500;
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
     font-family: inherit;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);

@@ -3,11 +3,11 @@
 }
 
 .btn {
-    padding: 10px 20px;
+    padding: var(--space-10) var(--space-20);
     border: none;
     border-radius: var(--radius-md, 6px);
-    font-size: 14px;
-    font-weight: 600;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
     font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
@@ -27,7 +27,7 @@
 .btn[modifier="save"] {
     background-color: var(--color-accent-primary, #1a73e8);
     color: #ffffff;
-    padding: 10px 24px;
+    padding: var(--space-10) var(--space-24);
 }
 
 .btn[modifier="save"]:hover {

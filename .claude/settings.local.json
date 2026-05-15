@@ -19,7 +19,13 @@
       "Bash(xargs kill)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(awk '{print $1}')"
+      "Bash(awk '{print $1}')",
+      "Bash(cp public/styles.css /tmp/styles.css.bak)",
+      "Bash(sed -i.tmp -e 's|var\\(--bg-color\\)|var\\(--color-bg-secondary\\)|g' -e 's|var\\(--column-bg\\)|var\\(--color-bg-primary\\)|g' -e 's|var\\(--text-primary\\)|var\\(--color-text-primary\\)|g' -e 's|var\\(--text-secondary\\)|var\\(--color-text-secondary\\)|g' -e 's|var\\(--text-muted\\)|var\\(--color-text-tertiary\\)|g' -e 's|var\\(--text-light\\)|#ffffff|g' -e 's|var\\(--accent-color\\)|var\\(--color-accent-primary\\)|g' -e 's|var\\(--danger-color\\)|var\\(--color-accent-error\\)|g' -e 's|var\\(--success-color\\)|var\\(--color-accent-success\\)|g' -e 's|var\\(--shadow-soft\\)|var\\(--shadow-sm\\)|g' -e 's|var\\(--shadow-medium\\)|var\\(--shadow-md\\)|g' -e 's|var\\(--shadow-card\\)|var\\(--shadow-sm\\)|g' public/styles.css)",
+      "Bash(rm public/styles.css.tmp)",
+      "Read(//tmp/**)",
+      "Bash(sed -i.tmp 's|padding: 12px 6px;|padding: var\\(--space-12\\) var\\(--space-6\\);|g' public/components/*/*.css)",
+      "Bash(rm public/components/*/*.css.tmp)"
     ]
   }
 }

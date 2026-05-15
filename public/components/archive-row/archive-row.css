@@ -14,7 +14,7 @@
 .archiveRow__header {
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 var(--space-12);
     min-height: 44px;
     cursor: pointer;
     transition: background-color 0.1s;
@@ -28,7 +28,7 @@
 .archiveRow__col {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-6);
     min-width: 0;
     overflow: hidden;
 }
@@ -47,7 +47,7 @@
 
 .archiveRow__col--date {
     flex: var(--archive-col-date, 1);
-    font-size: 13px;
+    font-size: var(--text-md);
     color: var(--color-text-secondary);
     white-space: nowrap;
 }
@@ -55,19 +55,19 @@
 .archiveRow__col--actions {
     flex: 0 0 var(--archive-col-actions, 104px);
     justify-content: flex-end;
-    gap: 4px;
+    gap: var(--space-4);
 }
 
 /* ---- Title ---- */
 .archiveRow__star {
     color: var(--color-accent-warning);
-    font-size: 13px;
+    font-size: var(--text-md);
     flex-shrink: 0;
 }
 
 .archiveRow__title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -77,10 +77,10 @@
 /* ---- Epic pill ---- */
 .archiveRow__epicPill {
     display: inline-block;
-    padding: 2px 8px;
+    padding: var(--space-2) var(--space-8);
     border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -89,12 +89,12 @@
 
 /* ---- Category ---- */
 .archiveRow__categoryIcon {
-    font-size: 13px;
+    font-size: var(--text-md);
     flex-shrink: 0;
 }
 
 .archiveRow__categoryName {
-    font-size: 13px;
+    font-size: var(--text-md);
     color: var(--color-text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -103,9 +103,9 @@
 
 /* ---- Buttons ---- */
 .archiveRow__restoreBtn {
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 500;
+    padding: var(--space-4) var(--space-10);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
     font-family: inherit;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -144,7 +144,7 @@
 }
 
 .archiveRow__chevron {
-    font-size: 10px;
+    font-size: var(--text-xs);
     transition: transform 0.15s;
     display: inline-block;
 }
@@ -167,40 +167,40 @@
     border-top: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-10);
 }
 
 .archiveRow__desc {
-    font-size: 13px;
+    font-size: var(--text-md);
     color: var(--color-text-secondary);
     line-height: 1.6;
     white-space: pre-wrap;
 }
 
 .archiveRow__meta {
-    font-size: 12px;
+    font-size: var(--text-base);
     color: var(--color-text-tertiary);
     display: flex;
-    gap: 16px;
+    gap: var(--space-16);
 }
 
 .archiveRow__logSection {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-4);
 }
 
 .archiveRow__logTitle {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.4px;
     color: var(--color-text-tertiary);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-4);
 }
 
 .archiveRow__logEntry {
-    font-size: 12px;
+    font-size: var(--text-base);
     color: var(--color-text-secondary);
     padding: 3px 0;
     border-bottom: 1px solid var(--color-bg-tertiary);
@@ -212,6 +212,6 @@
 
 .archiveRow__logDate {
     color: var(--color-text-tertiary);
-    font-size: 11px;
-    margin-right: 6px;
+    font-size: var(--text-sm);
+    margin-right: var(--space-6);
 }

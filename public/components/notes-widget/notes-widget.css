@@ -6,24 +6,24 @@
 }
 
 h3 {
-    font-size: 11px;
+    font-size: var(--text-sm);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--color-text-tertiary, #9ca3af);
     margin-bottom: 0;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
 }
 
 .notes__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-16);
 }
 
 .notes__status {
-    font-size: 11px;
-    font-weight: 500;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
     text-transform: none;
     letter-spacing: 0;
     opacity: 0;
@@ -45,12 +45,12 @@ h3 {
     flex: 1;
     min-height: 150px;
     width: 100%;
-    padding: 16px;
+    padding: var(--space-16);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-md, 6px);
     background-color: var(--color-bg-tertiary, #f3f4f6);
     color: var(--color-text-primary, #111827);
-    font-size: 14px;
+    font-size: var(--text-lg);
     font-family: inherit;
     line-height: 1.7;
     resize: vertical;

@@ -26,8 +26,40 @@
     /* === Board Layout === */
     --column-min-width: 280px;
 
-    /* === Typography === */
+    /* === Typography — family === */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+    /* === Typography — size scale === */
+    --text-xs:   10px; /* badges, micro-labels */
+    --text-sm:   11px; /* small labels (toolbar, column titles) */
+    --text-base: 12px; /* secondary body */
+    --text-md:   13px; /* body default — most-used */
+    --text-lg:   14px; /* slightly larger body */
+    --text-xl:   16px; /* section headers */
+    --text-2xl:  18px;
+    --text-3xl:  22px;
+    --text-4xl:  24px; /* page titles */
+
+    /* === Typography — weight === */
+    --font-weight-regular:  400;
+    --font-weight-medium:   500;
+    --font-weight-semibold: 600;
+    --font-weight-bold:     700;
+
+    /* === Spacing — loose 8px grid === */
+    --space-2:   2px;
+    --space-4:   4px;
+    --space-6:   6px;
+    --space-8:   8px;
+    --space-10: 10px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-20: 20px;
+    --space-24: 24px;
+    --space-32: 32px;
+    --space-40: 40px;
+    --space-48: 48px;
+    --space-64: 64px;
 
     /* === Archive / List Page Column Widths === */
     --archive-col-title: 4;
@@ -35,24 +67,6 @@
     --archive-col-category: 1.5;
     --archive-col-date: 1;
     --archive-col-actions: 104px;
-
-    /* === Legacy Aliases (keep existing var() references working) === */
-    --bg-color: var(--color-bg-secondary);
-    --sidebar-bg: var(--color-bg-secondary);
-    --column-bg: var(--color-bg-primary);
-    --card-bg: var(--color-bg-primary);
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-tertiary);
-    --text-light: #ffffff;
-    --text-dark: var(--color-text-primary);
-    --accent-color: var(--color-accent-primary);
-    --accent-hover: var(--color-accent-primary-hover);
-    --danger-color: var(--color-accent-error);
-    --success-color: var(--color-accent-success);
-    --shadow-soft: var(--shadow-sm);
-    --shadow-medium: var(--shadow-md);
-    --shadow-card: var(--shadow-sm);
 }
 
 /* Reset and Base */
@@ -193,8 +207,8 @@ body {
     padding: 6px 14px;
     border-radius: 20px;
     border: none;
-    background: var(--column-bg);
-    color: var(--text-secondary);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
     font-size: 13px;
     font-weight: 500;
     font-family: inherit;
@@ -204,8 +218,8 @@ body {
 }
 
 .toolbar__snoozeBtn.--active {
-    background: var(--accent-color);
-    color: var(--text-light);
+    background: var(--color-accent-primary);
+    color: #ffffff;
 }
 
 /* ==========================================
@@ -277,7 +291,7 @@ body {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 20px;
     font-weight: 600;
 }
@@ -316,7 +330,7 @@ body {
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: var(--accent-color);
+    accent-color: var(--color-accent-primary);
     flex-shrink: 0;
 }
 
@@ -324,7 +338,7 @@ body {
     flex: 1;
     cursor: pointer;
     font-size: 14px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     font-weight: 400;
 }
 
@@ -334,7 +348,7 @@ body {
     justify-content: center;
     width: 28px;
     height: 28px;
-    color: var(--accent-color);
+    color: var(--color-accent-primary);
     opacity: 0.5;
     cursor: pointer;
     transition: opacity 0.3s;
@@ -381,12 +395,12 @@ body {
 }
 
 .notes__status.--saving {
-    color: var(--accent-color);
+    color: var(--color-accent-primary);
     opacity: 1;
 }
 
 .notes__status.--saved {
-    color: var(--success-color);
+    color: var(--color-accent-success);
     opacity: 1;
 }
 
@@ -414,7 +428,7 @@ body {
 }
 
 .notes__textarea::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 /* ==========================================
@@ -494,7 +508,7 @@ body {
 .modal__header h2 {
     font-size: 20px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     letter-spacing: -0.3px;
     margin: 0;
 }
@@ -502,7 +516,7 @@ body {
 .modal__closeBtn {
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 28px;
     cursor: pointer;
     line-height: 1;
@@ -511,7 +525,7 @@ body {
 }
 
 .modal__closeBtn:hover {
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 .modal__body {
@@ -587,7 +601,7 @@ body {
     font-size: 12px;
     font-weight: 600;
     margin-bottom: 10px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -614,7 +628,7 @@ body {
 
 .taskForm__group input::placeholder,
 .taskForm__group textarea::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .taskForm__checkboxGroup label {
@@ -633,7 +647,7 @@ body {
 
 .taskForm__priorityLabel {
     font-size: 15px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     font-weight: 500;
 }
 
@@ -684,7 +698,7 @@ body {
 }
 
 .taskForm__log {
-    background-color: var(--bg-color);
+    background-color: var(--color-bg-secondary);
     border-radius: 12px;
     padding: 16px;
 }
@@ -699,7 +713,7 @@ body {
     padding: 10px 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
 }
 
 .taskForm__logList li:last-child {
@@ -707,7 +721,7 @@ body {
 }
 
 .taskForm__logDate {
-    color: var(--accent-color);
+    color: var(--color-accent-primary);
     font-weight: 600;
 }
 
@@ -734,19 +748,19 @@ body {
 }
 
 .reportsList__item:hover {
-    background-color: var(--bg-color);
+    background-color: var(--color-bg-secondary);
 }
 
 .reportsList__title {
     font-size: 15px;
     font-weight: 500;
     margin-bottom: 6px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 .reportsList__date {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .reportsList__row {
@@ -758,7 +772,7 @@ body {
 .reportsList__deleteBtn {
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 12px;
     font-family: inherit;
     cursor: pointer;
@@ -770,14 +784,14 @@ body {
 }
 
 .reportsList__deleteBtn:hover {
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     background-color: rgba(201, 112, 101, 0.1);
 }
 
 .reportsList__titleEdit {
     background: transparent;
     border: none;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
     font-size: 15px;
     font-weight: 500;
     font-family: inherit;
@@ -789,7 +803,7 @@ body {
 
 .reportsList__titleEdit:focus {
     outline: none;
-    background-color: var(--bg-color);
+    background-color: var(--color-bg-secondary);
 }
 
 /* ==========================================
@@ -809,7 +823,7 @@ body {
 .reportDetail__backBtn {
     background: none;
     border: none;
-    color: var(--accent-color);
+    color: var(--color-accent-primary);
     font-size: 14px;
     font-weight: 500;
     font-family: inherit;
@@ -847,7 +861,7 @@ body {
 .reportDetail__categoryLabel {
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 8px;
     padding: 4px 0;
     font-style: italic;
@@ -864,7 +878,7 @@ body {
 
 .reportDetail__taskId {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-family: monospace;
 }
 
@@ -872,12 +886,12 @@ body {
     font-size: 14px;
     font-weight: 500;
     margin: 6px 0;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 .reportDetail__taskDesc {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
 }
 
 .reportDetail__notesItem {
@@ -886,7 +900,7 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 .reportDetail__notesItem.--checked {
@@ -902,9 +916,9 @@ body {
     word-wrap: break-word;
     margin: 0;
     padding: 16px;
-    background-color: var(--bg-color);
+    background-color: var(--color-bg-secondary);
     border-radius: 12px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 /* ==========================================
@@ -916,7 +930,7 @@ body {
 
 .confirmDialog__message {
     font-size: 15px;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
     line-height: 1.6;
     margin-bottom: 24px;
 }
@@ -938,7 +952,7 @@ body {
 
 .archivedView__count {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 16px;
     padding-bottom: 16px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
@@ -970,7 +984,7 @@ body {
 .archivedView__itemTitle {
     font-size: 14px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 .archivedView__itemStar {
@@ -980,7 +994,7 @@ body {
 
 .archivedView__itemDesc {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 1;
@@ -990,7 +1004,7 @@ body {
 
 .archivedView__itemDate {
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 /* ==========================================
@@ -999,7 +1013,7 @@ body {
 .emptyState {
     text-align: center;
     padding: 48px 24px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 14px;
     font-weight: 500;
 }
@@ -1013,7 +1027,7 @@ body {
 
 .checklistEditor__hint {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -1032,7 +1046,7 @@ body {
     align-items: center;
     gap: 12px;
     padding: 14px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
     border: none;
 }
@@ -1056,7 +1070,7 @@ body {
 }
 
 .checklistEditor__row input[type="text"]::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .checklistEditor__urlInput {
@@ -1073,7 +1087,7 @@ body {
     background: rgba(201, 112, 101, 0.1);
     border: none;
     border-radius: 10px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s;
@@ -1134,7 +1148,7 @@ body {
     display: block;
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin-bottom: 8px;
@@ -1179,7 +1193,7 @@ body {
 }
 
 .taskForm__clearBtn:hover {
-    background: var(--danger-color);
+    background: var(--color-accent-error);
     color: #fff;
 }
 
@@ -1211,7 +1225,7 @@ body {
 .taskForm__timeHint {
     margin-top: 6px;
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-style: italic;
     min-height: 18px;
 }
@@ -1225,7 +1239,7 @@ body {
 
 .epicsEditor__hint {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -1233,7 +1247,7 @@ body {
 .epicsEditor__form {
     margin-bottom: 24px;
     padding: 20px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1262,20 +1276,20 @@ body {
 }
 
 .epicsEditor__nameInput::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .epicsEditor__alias {
     margin-top: 8px;
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-style: italic;
 }
 
 .epicsEditor__colorError {
     margin-top: 8px;
     font-size: 12px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-weight: 500;
 }
 
@@ -1292,7 +1306,7 @@ body {
     align-items: center;
     gap: 12px;
     padding: 14px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1330,7 +1344,7 @@ body {
 
 .epicsEditor__itemAlias {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-style: italic;
     padding-left: 12px;
 }
@@ -1344,7 +1358,7 @@ body {
     background: rgba(201, 112, 101, 0.1);
     border: none;
     border-radius: 10px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s;
@@ -1365,7 +1379,7 @@ body {
 
 .categoriesEditor__hint {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -1373,7 +1387,7 @@ body {
 .categoriesEditor__form {
     margin-bottom: 24px;
     padding: 20px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1402,13 +1416,13 @@ body {
 }
 
 .categoriesEditor__nameInput::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .categoriesEditor__error {
     margin-top: 8px;
     font-size: 12px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-weight: 500;
 }
 
@@ -1425,7 +1439,7 @@ body {
     align-items: center;
     gap: 12px;
     padding: 14px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1463,7 +1477,7 @@ body {
     background: rgba(201, 112, 101, 0.1);
     border: none;
     border-radius: 10px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s;
@@ -1477,7 +1491,7 @@ body {
 
 .categoriesEditor__undeletable {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-style: italic;
     padding-left: 12px;
 }
@@ -1491,7 +1505,7 @@ body {
 
 .profilesEditor__hint {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -1499,7 +1513,7 @@ body {
 .profilesEditor__form {
     margin-bottom: 24px;
     padding: 20px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1528,7 +1542,7 @@ body {
 }
 
 .profilesEditor__nameInput::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .profilesEditor__lettersInput {
@@ -1553,21 +1567,21 @@ body {
 }
 
 .profilesEditor__lettersInput::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-weight: 400;
 }
 
 .profilesEditor__alias {
     margin-top: 8px;
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-style: italic;
 }
 
 .profilesEditor__error {
     margin-top: 8px;
     font-size: 12px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-weight: 500;
 }
 
@@ -1584,7 +1598,7 @@ body {
     align-items: center;
     gap: 12px;
     padding: 14px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1628,7 +1642,7 @@ body {
 
 .profilesEditor__itemAlias {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-style: italic;
     padding-left: 12px;
 }
@@ -1658,7 +1672,7 @@ body {
     background: none;
     border: none;
     font-size: 18px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     cursor: pointer;
     padding: 4px;
     line-height: 1;
@@ -1687,7 +1701,7 @@ body {
     background: rgba(201, 112, 101, 0.1);
     border: none;
     border-radius: 10px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s;
@@ -1708,7 +1722,7 @@ body {
 
 .boardConfigEditor__hint {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -1716,7 +1730,7 @@ body {
 .boardConfigEditor__form {
     margin-bottom: 24px;
     padding: 20px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
 }
 
@@ -1745,13 +1759,13 @@ body {
 }
 
 .boardConfigEditor__nameInput::placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
 }
 
 .boardConfigEditor__error {
     margin-top: 8px;
     font-size: 12px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-weight: 500;
 }
 
@@ -1768,7 +1782,7 @@ body {
     align-items: center;
     gap: 10px;
     padding: 12px 14px;
-    background: var(--bg-color);
+    background: var(--color-bg-secondary);
     border-radius: 12px;
     transition: opacity 0.2s, background-color 0.2s;
     cursor: default;
@@ -1785,7 +1799,7 @@ body {
 }
 
 .boardConfigEditor__dragHandle {
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     font-size: 18px;
     cursor: grab;
     flex-shrink: 0;
@@ -1808,7 +1822,7 @@ body {
 }
 
 .boardConfigEditor__badge.--default {
-    color: var(--accent-color);
+    color: var(--color-accent-primary);
 }
 
 .boardConfigEditor__itemName {
@@ -1835,14 +1849,14 @@ body {
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     cursor: pointer;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
 .boardConfigEditor__archiveToggle input[type="checkbox"] {
-    accent-color: var(--accent-color);
+    accent-color: var(--color-accent-primary);
     cursor: pointer;
 }
 
@@ -1855,7 +1869,7 @@ body {
     background: rgba(201, 112, 101, 0.1);
     border: none;
     border-radius: 10px;
-    color: var(--danger-color);
+    color: var(--color-accent-error);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s;
@@ -1876,7 +1890,7 @@ body {
 
 .generalConfig__hint {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-tertiary);
     margin-bottom: 24px;
     line-height: 1.6;
 }
@@ -1894,20 +1908,20 @@ body {
     gap: 12px;
     cursor: pointer;
     font-size: 15px;
-    color: var(--text-primary);
+    color: var(--color-text-primary);
 }
 
 .generalConfig__option input[type="checkbox"] {
     width: 20px;
     height: 20px;
-    accent-color: var(--accent-color);
+    accent-color: var(--color-accent-primary);
     cursor: pointer;
 }
 
 .generalConfig__option input[type="radio"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--accent-color);
+    accent-color: var(--color-accent-primary);
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -1927,7 +1941,7 @@ body {
 .generalConfig__sectionTitle {
     font-size: 12px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 1px;
     margin: 0 0 14px 0;
@@ -1948,7 +1962,7 @@ body {
 .generalConfig__thresholdLabel {
     flex: 1;
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
 }
 
 .generalConfig__thresholdLabel.--urgent  { color: #C0392B; }

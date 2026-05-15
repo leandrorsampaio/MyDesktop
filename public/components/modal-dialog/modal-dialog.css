@@ -73,8 +73,8 @@
 }
 
 .modal__header h2 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary, #111827);
     letter-spacing: -0.2px;
     margin: 0;
@@ -84,7 +84,7 @@
     background: none;
     border: none;
     color: var(--color-text-tertiary, #9ca3af);
-    font-size: 24px;
+    font-size: var(--text-4xl);
     cursor: pointer;
     line-height: 1;
     padding: 0;

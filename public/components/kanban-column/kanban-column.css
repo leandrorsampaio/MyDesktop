@@ -16,8 +16,8 @@
 }
 
 .column__title {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--color-text-secondary);
@@ -25,7 +25,7 @@
 
 .column__actions {
     display: flex;
-    gap: 8px;
+    gap: var(--space-8);
 }
 
 /* Styles for slotted buttons */
@@ -41,8 +41,8 @@
     border-radius: var(--radius-md);
     background-color: var(--color-accent-primary);
     color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
 }
 
 ::slotted(.column__addBtn:hover) {
@@ -56,8 +56,8 @@
     border-radius: var(--radius-md);
     background: var(--color-bg-tertiary);
     color: var(--color-text-secondary);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
 }
 
 ::slotted(.column__reportBtn:hover) {
@@ -72,8 +72,8 @@
     border-radius: var(--radius-md);
     background: var(--color-bg-tertiary);
     color: var(--color-text-secondary);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
 }
 
 ::slotted(.column__archiveBtn:hover) {
@@ -85,10 +85,10 @@
 
 .column__list {
     flex: 1;
-    padding: 16px;
+    padding: var(--space-16);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--space-10);
     overflow-y: auto;
     min-height: 100px;
 }

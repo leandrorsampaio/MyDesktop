@@ -166,9 +166,43 @@ These are the CURRENT values — the designer should replace them entirely.
 --shadow-sm: 0 1px 3px rgba(0,0,0,0.08)
 --shadow-md: 0 4px 12px rgba(0,0,0,0.1)
 
-/* Typography */
+/* Typography — family */
 --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif
+
+/* Typography — size scale (derived from values in actual use) */
+--text-xs:   10px  /* badges, micro-labels */
+--text-sm:   11px  /* small labels (toolbar, column titles) */
+--text-base: 12px  /* secondary body */
+--text-md:   13px  /* body default — most-used */
+--text-lg:   14px  /* slightly larger body */
+--text-xl:   16px  /* section headers */
+--text-2xl:  18px
+--text-3xl:  22px
+--text-4xl:  24px  /* page titles */
+
+/* Typography — weight */
+--font-weight-regular:  400
+--font-weight-medium:   500
+--font-weight-semibold: 600
+--font-weight-bold:     700
+
+/* Spacing — loose 8px grid */
+--space-2:   2px
+--space-4:   4px
+--space-6:   6px
+--space-8:   8px
+--space-10: 10px
+--space-12: 12px
+--space-16: 16px
+--space-20: 20px
+--space-24: 24px
+--space-32: 32px
+--space-40: 40px
+--space-48: 48px
+--space-64: 64px
 ```
+
+**Note**: 14 raw-px declarations remain across the 14 component CSS files where the value is off the scale (e.g., `padding: 7px 12px`, `padding: 10px 18px`, `padding: 12px 14px 14px 14px`). These are intentional one-offs. The designer can either fold those values into the scale or rewrite the affected components.
 
 ### Current Responsive Breakpoints
 
