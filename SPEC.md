@@ -1,7 +1,20 @@
-# Task Tracker - Project Specification Document
+# SPEC — Project Specification
 
 **Version:** 2.37.3
 **Last Updated:** 2026-04-13
+
+---
+
+## Doc map
+
+```
+README.md     → New visitors. Marketing + quickstart only.
+SPEC.md       → THIS FILE. Source of truth for current implementation. Edit on every feature change.
+VISION.md     → Strategic intent. Edit only when direction shifts.
+CHANGELOG.md  → One-line entry per shipped version.
+FUTURE.md     → Deferred ideas. Move to active when picked up.
+docs/design/  → Live design hire engagement (DESIGN_BRIEF, COMPONENT_CATALOG, DESIGN_PROMPTS).
+```
 
 ---
 
@@ -11,7 +24,8 @@ This document describes the **current** state of the project. Always edit it to 
 
 - **New version shipped:** add a row to `CHANGELOG.md` + bump the version header above.
 - **Feature changed:** update the relevant section here directly — no changenotes in body text.
-- **CSS/visual work:** see `design-system.md` for colors, typography, and breakpoints.
+- **CSS/visual work:** see `docs/design/COMPONENT_CATALOG.md` for the current UI state catalog and `docs/design/DESIGN_BRIEF.md § Current Design Tokens` for live tokens.
+- **Strategic shift (audience, principles, dark-mode plan, naming):** update `VISION.md`.
 
 ---
 
@@ -44,9 +58,12 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 ```
 /
 ├── server.js
+├── README.md
+├── SPEC.md                        # This file
+├── VISION.md
+├── FUTURE.md
 ├── CHANGELOG.md
-├── projectSpecification.md        # This file
-├── design-system.md
+├── docs/design/                   # DESIGN_BRIEF.md, COMPONENT_CATALOG.md, DESIGN_PROMPTS.md
 ├── data/
 │   ├── profiles.json
 │   ├── ai-config.json             # gitignored — provider/model/API key (never served statically)

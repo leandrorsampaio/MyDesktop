@@ -1,267 +1,94 @@
-# Task Tracker
+# MyDesktop
 
-A lightweight, self-hosted kanban board designed for personal productivity. Built with vanilla JavaScript, CSS, and HTML — no frameworks, no dependencies, no complexity.
+A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components + Node/Express. No framework, no build step, no cloud.
 
-**Your data stays on your machine. No accounts. No subscriptions. No tracking.**
-
----
-
-## Why Task Tracker?
-
-In an era of subscription fatigue and data privacy concerns, Task Tracker offers a refreshing alternative: a simple, powerful task management tool that you own completely.
-
-- **Self-Hosted**: Runs locally on your machine. Your tasks never leave your computer.
-- **Zero Dependencies**: Pure vanilla JavaScript, CSS, and HTML. No npm packages to update, no security vulnerabilities from third-party code.
-- **No Vendor Lock-in**: Your data is stored in plain JSON files. Export, backup, or migrate anytime.
-- **Privacy First**: No analytics, no telemetry, no tracking. What you do is your business.
-- **Free Forever**: No premium tiers, no feature gates, no "upgrade to unlock" prompts.
-
----
-
-## Features
-
-### Core Functionality
-- **Kanban Board**: Four-column workflow (To Do, Wait, In Progress, Done)
-- **Drag and Drop**: Intuitive task movement between columns with visual feedback
-- **Task Categories**: Organize tasks into 6 customizable categories
-- **Priority Marking**: Flag important tasks with priority indicators
-- **Activity Logging**: Automatic tracking of task movements and category changes
-
-### Productivity Tools
-- **Daily Checklist**: Configurable recurring tasks that reset each morning
-- **Notes Widget**: Free-form note-taking with auto-save
-- **Crisis Mode**: Focus mode that shows only priority tasks with distraction-free UI
-- **Privacy Mode**: One-click blur overlay when someone walks by
-
-### Reporting
-- **Report Generation**: Snapshot reports of your current board state
-- **Task Archiving**: Move completed tasks to archive while preserving history
-- **Report History**: Browse and search past reports
-
-### Design
-- **Clean Interface**: Minimal, distraction-free design with a calm color palette
-- **Position-Based Gradients**: Visual indication of task age within each column
-- **Responsive Layout**: Works on various screen sizes
-- **Browser Homepage Ready**: Designed to be your browser's start page
-
----
-
-## Quick Start
-
-### Prerequisites
-- Node.js (v14 or higher)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/task-tracker.git
-cd task-tracker
-
-# Install dependencies (only Express.js for the server)
-npm install
-
-# Start the server
-node server.js
+```
+http://localhost:3001
 ```
 
-Open your browser and navigate to `http://localhost:3001`
-
-### Set as Browser Homepage
-
-For the best experience, set `http://localhost:3001` as your browser's homepage. Task Tracker is designed to be the first thing you see when you open your browser.
-
 ---
 
-## Configuration
-
-### Server Port
-
-The default port is 3001. To use a different port:
+## Daily use
 
 ```bash
+npm run dev          # node --watch — auto-restarts on file save
+node server.js       # one-shot
 PORT=4000 node server.js
 ```
 
-### Daily Checklist
+`StartDesktop.command` (macOS) opens the default profile in the browser.
 
-Click the hamburger menu and select "Edit Daily Checklist" to customize your recurring tasks. Each item can include an optional URL link.
+Set `http://localhost:3001` as the browser homepage to land on the board on every new window.
 
-### Data Location
+### Where things live
+- **Data:** `data/profiles.json` (global) + `data/{alias}/` per profile — `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`, `categories.json`, `ai-staged-tasks.json`.
+- **AI config:** `data/ai-config.json` — gitignored. Stores provider, model, API key.
+- **Backups:** just copy `data/`.
 
-All data is stored in the `./data/` directory:
-- `tasks.json` — Active tasks
-- `archived-tasks.json` — Completed and archived tasks
-- `reports.json` — Generated reports
-- `notes.json` — Your notes
-
-Back up this directory to preserve your data.
-
----
-
-## Technology
-
-Task Tracker is intentionally built with minimal technology:
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | Vanilla JavaScript (ES Modules), CSS3, HTML5 |
-| Backend | Node.js with Express |
-| Data Storage | JSON files |
-| Components | Web Components with Shadow DOM |
-
-### Why No Framework?
-
-- **Simplicity**: The codebase is readable and maintainable without framework-specific knowledge
-- **Performance**: No framework overhead, minimal bundle size
-- **Longevity**: No framework deprecation cycles or breaking changes
-- **Learning**: Great example of what modern vanilla JavaScript can accomplish
-
----
-
-## Project Structure
-
-```
-task-tracker/
-├── server.js                 # Express server
-├── package.json
-├── data/                     # Data storage (created automatically)
-│   ├── tasks.json
-│   ├── archived-tasks.json
-│   ├── reports.json
-│   └── notes.json
-└── public/
-    ├── index.html            # Single-page application
-    ├── app.js                # Main application logic
-    ├── styles.css            # Global styles
-    ├── favicon.png
-    ├── js/                   # Modular JavaScript
-    │   ├── constants.js      # Shared constants
-    │   ├── utils.js          # Utility functions
-    │   ├── state.js          # State management
-    │   ├── api.js            # API functions
-    │   ├── filters.js        # Filtering logic
-    │   ├── crisis-mode.js    # Crisis mode
-    │   └── modals.js         # Modal handling
-    └── components/           # Web Components
-        ├── button/
-        ├── task-card/
-        ├── kanban-column/
-        ├── modal-dialog/
-        ├── toast-notification/
-        ├── daily-checklist/
-        └── notes-widget/
+### Tests
+```bash
+npm test              # all (API tests need the server running)
+npm run test:unit
+npm run test:api
 ```
 
----
-
-## API Reference
-
-Task Tracker exposes a simple REST API:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/tasks` | Get all active tasks |
-| POST | `/api/tasks` | Create a new task |
-| PUT | `/api/tasks/:id` | Update a task |
-| DELETE | `/api/tasks/:id` | Delete a task |
-| POST | `/api/tasks/:id/move` | Move task between columns |
-| POST | `/api/tasks/archive` | Archive completed tasks |
-| GET | `/api/archived` | Get archived tasks |
-| GET | `/api/reports` | Get all reports |
-| POST | `/api/reports/generate` | Generate a new report |
-| GET | `/api/notes` | Get notes |
-| POST | `/api/notes` | Save notes |
+### Docs (this repo)
+- [SPEC.md](SPEC.md) — source of truth for the current implementation. Edit on every feature change.
+- [VISION.md](VISION.md) — strategic intent, audience, principles, dark-mode plan.
+- [CHANGELOG.md](CHANGELOG.md) — one line per shipped version.
+- [FUTURE.md](FUTURE.md) — deferred ideas.
+- [docs/design/](docs/design/) — live design hire engagement (brief, component catalog, prompts).
 
 ---
 
-## Contributing
+## About this project
 
-Contributions are welcome. Please read the guidelines below before submitting.
+A solo-use kanban built around a single belief: **your daily task tool should live on your machine, in plain JSON, with no account in between**. Designed to replace the "browser new tab page" with a real board you trust enough to look at every morning.
 
-### Development Setup
+### What's in the app
 
-1. Fork the repository
-2. Clone your fork
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+| Area | Features |
+|---|---|
+| Workflow | Multi-page app: Board, Dashboard, Backlog, Archive, Reports, AI Assistant, Configuration |
+| Lifecycle | `AI Staging → Backlog → Board` — one direction, one verb ("Promote") |
+| Profiles | Multiple profile sandboxes (e.g. Work, Personal) with separate data folders, URLs (`/:alias/...`), and colour avatars |
+| Tasks | Title, description, priority, category, epic, deadline, snooze-until, activity log |
+| Board | Drag-and-drop columns (dynamic per profile, max 15), epic pill, deadline urgency chip, priority star, category badge |
+| AI | Paste meeting notes → AI proposes tasks → review in AI Staging → promote to backlog or board. Provider-agnostic (Anthropic, OpenAI, Groq, LM Studio, Ollama, Jan) |
+| Reliability | Optimistic UI with rollback, race-condition lock on drag, server-side input validation, DIY rate limiting, 146 tests via `node:test` |
 
-### Code Style
+### Architecture in one paragraph
 
-- Vanilla JavaScript only — no frameworks or libraries
-- Follow existing code patterns and naming conventions
-- Use JSDoc comments for functions
-- Keep the codebase simple and readable
+Single Express server on port 3001 serves a single-page app shell at `/:alias/:page`. The client is a flat tree of ES modules (`app.js` wires `state.js` + `api.js` + per-page modules) and ~15 Web Components with Shadow DOM. Each component fetches its own `.html` + `.css` at runtime (cached as a Promise). Profiles are URL-scoped; data is per-profile JSON in `data/{alias}/`. No build tools — open the file, edit, refresh.
 
-### What We Accept
+For the full file tree, API surface, data models, and code rules, see [SPEC.md](SPEC.md).
 
-- Bug fixes
-- Performance improvements
-- Accessibility improvements
-- Documentation updates
-- New features that align with the project philosophy
+### Design philosophy
 
-### What We Avoid
+"Functional Calm" — restraint over decoration. 1px borders, system font, semantic colour (epic colour + priority dot only), 8px grid. Currently light-mode only; dark mode is the next major design milestone. See [VISION.md](VISION.md) and [docs/design/DESIGN_BRIEF.md](docs/design/DESIGN_BRIEF.md).
 
-- Framework dependencies
-- External CSS libraries
-- Features that compromise privacy
-- Complexity for complexity's sake
+### Stack
 
----
+| Layer | Tech |
+|---|---|
+| Frontend | Vanilla JS (ES modules), CSS, Web Components (Shadow DOM) |
+| Backend | Node.js + Express |
+| Storage | JSON files |
+| Tests | `node:test` (no external test runner) |
+| Dependencies | Express only |
 
-## Roadmap
+### Conventions
 
-Potential future enhancements (contributions welcome):
+- BEM camelCase: `.blockName__elementName`, `.--modifierName`, `.js-hookName`.
+- No `alert()` / `confirm()` — use `<modal-dialog>` + toast notifications.
+- No `window.fn` exports or inline `onclick` — event delegation only.
+- Optimistic UI with rollback for every task operation.
+- Server/client function duplications must carry a `// Source of truth: ...` JSDoc.
 
-- [ ] Keyboard shortcuts for power users
-- [ ] Dark mode
-- [ ] Export to PDF/Markdown
-- [ ] Task search
-- [ ] Due dates
-- [ ] Multiple boards
-- [ ] Docker container
-
----
-
-## Philosophy
-
-Task Tracker exists because productivity tools have become overcomplicated. We believe:
-
-1. **You own your data.** It should live on your machine, in formats you can read.
-2. **Software should be simple.** If a feature adds complexity without clear value, we skip it.
-3. **Privacy is not optional.** Your task list is personal. It should stay that way.
-4. **Free means free.** No trials, no tiers, no upsells.
-
----
-
-## Comparison
-
-| Feature | Task Tracker | SaaS Alternatives |
-|---------|--------------|-------------------|
-| Price | Free | $5-25/month |
-| Data Location | Your machine | Their servers |
-| Privacy | Complete | Terms apply |
-| Offline Access | Always | Sometimes |
-| Dependencies | 1 (Express) | Unknown |
-| Vendor Lock-in | None | High |
+Full rule list in [SPEC.md § Code Rules](SPEC.md#code-rules).
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
-
-Use it, modify it, share it. No attribution required (but appreciated).
-
----
-
-## Support
-
-- **Issues**: Report bugs or suggest features via GitHub Issues
-- **Discussions**: Ask questions or share ideas in GitHub Discussions
-
----
-
-**Task Tracker** — Simple task management for people who value their privacy and their time.
+MIT.

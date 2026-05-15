@@ -18,7 +18,7 @@
 
 ## The Project Being Discussed
 
-A vanilla JavaScript kanban task tracker — no frameworks, no build tools, ES modules, Web Components with Shadow DOM, Node.js/Express backend, JSON file persistence. Full spec in `projectSpecification.md` at the project root.
+A vanilla JavaScript kanban task tracker — no frameworks, no build tools, ES modules, Web Components with Shadow DOM, Node.js/Express backend, JSON file persistence. Full spec in `SPEC.md` at the project root.
 
 ### Key Files Reference
 

@@ -57,7 +57,7 @@ Restraint over decoration. Every visual element earns its place. Clean physical 
 
 Sidebar navigation (left, slide-over overlay). Closed by default. Opens on button click. Closes on backdrop click or Escape. No "always open" mode — board gets full screen width.
 
-6 destinations + config submenu:
+6 destinations + a dedicated config page:
 
 | # | Page | URL Pattern | Status |
 |---|------|-------------|--------|
@@ -65,20 +65,20 @@ Sidebar navigation (left, slide-over overlay). Closed by default. Opens on butto
 | 2 | Dashboard | `/:alias/dashboard` | Built |
 | 3 | Backlog | `/:alias/backlog` | Built |
 | 4 | Archive | `/:alias/archive` | Built |
-| 5 | Reports | `/:alias/reports` | Planned |
+| 5 | Reports | `/:alias/reports` | Built |
 | 6 | AI Assistant | `/:alias/ai` | Built |
+| — | Configuration | `/:alias/config` | Built (full page; replaced sidebar config submenu in v2.37.0) |
 
-Config submenu (bottom of sidebar, opens as popover):
-- Board Configuration
-- Manage Epics
-- Manage Categories
-- Manage Profiles
-- Edit Daily Checklist
-- General Configuration
-- AI Configuration
-- Generate Report (action)
+Configuration page sections (left tabs, right content panel):
+- Columns (CRUD + drag-reorder)
+- Epics (CRUD with color picker)
+- Categories (CRUD with icon picker)
+- General Settings (visibility toggles, snooze mode, deadline thresholds)
+- Daily Checklist (item editor)
+- AI Configuration (provider, model, API key)
+- Profiles (CRUD with color/letters picker, default toggle)
 
-All config items open as modals, not pages.
+Generate Report is now a FAB on the Reports page, not a config action. The sidebar gear icon is a nav link to the config page, no popover submenu.
 
 ### Global Header
 

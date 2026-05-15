@@ -6,7 +6,7 @@ Prompts for working with the design AI specialist. Use in sequence.
 
 ## PROMPT 1 — Initial Briefing + Discovery
 
-Copy and paste the contents of `DESIGN_BRIEF.md` and `DESIGN_COMPONENT_CATALOG.md` along with this prompt:
+Copy and paste the contents of `DESIGN_BRIEF.md` and `COMPONENT_CATALOG.md` along with this prompt:
 
 ---
 
@@ -14,7 +14,7 @@ I'm hiring you as a UI/UX design specialist for a complete visual redesign of a 
 
 I've attached two documents:
 - **DESIGN_BRIEF.md** — project context, design philosophy, audience, constraints, and a full deliverables checklist
-- **DESIGN_COMPONENT_CATALOG.md** — every component, page layout, interaction pattern, and visual state in the application
+- **COMPONENT_CATALOG.md** — every component, page layout, interaction pattern, and visual state in the application
 
 Please read both documents thoroughly before responding.
 

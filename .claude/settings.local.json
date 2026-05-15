@@ -18,7 +18,8 @@
       "Bash(ps:*)",
       "Bash(xargs kill)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(awk '{print $1}')"
     ]
   }
 }
