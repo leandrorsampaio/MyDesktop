@@ -28,5 +28,17 @@
     "name": "Marketing Cloud",
     "color": "#2E86DE",
     "alias": "marketingCloud"
+  },
+  {
+    "id": "moq8dy5b65p58w331",
+    "name": "Management",
+    "color": "#2D3436",
+    "alias": "management"
+  },
+  {
+    "id": "moq8k175szmfa7njw",
+    "name": "Dev Team",
+    "color": "#00CEC9",
+    "alias": "devTeam"
   }
 ]

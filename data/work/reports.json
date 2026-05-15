@@ -1536,5 +1536,791 @@
       ]
     },
     "notes": "ToS: LWC lifecycle hooks"
+  },
+  {
+    "id": "mnx1vlnacdbplls22",
+    "title": "Week 16 (Apr 13-19)",
+    "generatedDate": "2026-04-13T10:29:01.653Z",
+    "weekNumber": 16,
+    "dateRange": "Apr 13-19",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "New Components SDS (SOL-XX)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": [
+            {
+              "id": "mnetcss0ara8i0ote",
+              "title": "Flosum access Sebastian and Tanu",
+              "description": "",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkabu7rv3ob3cqf",
+              "title": "ESB-600: OMS table optmization: check if is ready in prod (ADVIC)",
+              "description": "https://solenis.atlassian.net/browse/ESB-600",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkbw1ojflak581r",
+              "title": "ESB-605 Order Summary using old layout (ADVIC)",
+              "description": "https://solenis.atlassian.net/browse/ESB-605",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkq6b8565trcmqe",
+              "title": "ESB-594 Wishlist Bugs (follow up with Tanu)",
+              "description": "https://solenis.atlassian.net/browse/ESB-594",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mmji2xjk6s7spj1wu"
+            }
+          ]
+        },
+        {
+          "columnId": "mncchgncxlcix2v96",
+          "columnName": "Today",
+          "tasks": [
+            {
+              "id": "mn3u7s4ojcb20va5z",
+              "title": "Update tasks from notebook",
+              "description": "Update all tasks from my notebook from yesterday",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mncz3i18yhd8e5ne9",
+              "title": "Deelip: Images on Feature innovation (imgs beign replaced)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkivba2dod88y8m",
+              "title": "SDS Check why table does not have all components (Json error?)",
+              "description": "https://designsystem.solenis.com/?path=/story/lwc-components-package-component-list--component-list",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            }
+          ]
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": []
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "mmp78qeryf39ufy0b",
+              "title": "EIPP Beautification",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bl6078z3z4ulca",
+              "title": "ESB-588 New videos for SDS Category",
+              "description": "https://solenis.atlassian.net/browse/ESB-588\n\nfinal videos in the email",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6riwxflkgqpt1mg",
+              "title": "Image error on Export Function",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mnjkg0gwwj3swqz9p",
+              "title": "ESB-619: PDP Image Error",
+              "description": "https://solenis.atlassian.net/browse/ESB-619",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkgy9w07ct44p8n",
+              "title": "ESB-597 Pools Videos (check with Rob)",
+              "description": "https://solenis.atlassian.net/browse/ESB-597",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmizdeoc9qv4hpepp",
+              "title": "Rob/Balzac: Logo's to interactive movies",
+              "description": "What to do here? ticket?",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bfhjmu7czequ2f",
+              "title": "ESB-594 Product List Export Feature: Bugs list",
+              "description": "https://solenis.atlassian.net/browse/ESB-594",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjke4wf7mey7rz9u",
+              "title": "ESB-599 Quick Wins for Header",
+              "description": "https://solenis.atlassian.net/browse/ESB-599\n\n(probably deprecated)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "ToS: LWC lifecycle hooks\n\nEPIC: https://solenis.atlassian.net/browse/ESB-628"
+  },
+  {
+    "id": "moq89ofusgfgueqf3",
+    "title": "Week 18 (Apr 27 - May 3)",
+    "generatedDate": "2026-05-03T20:33:15.257Z",
+    "weekNumber": 18,
+    "dateRange": "Apr 27 - May 3",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "New Components SDS (SOL-XX)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mncz3i18yhd8e5ne9",
+              "title": "Deelip: Images on Feature innovation (imgs beign replaced)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mo1b54al5y6gsk42w",
+              "title": "New ticket for Deelip",
+              "description": "2 new tickets to Deelip:\n\n\n1) mobile images for banners and heros. If there is not mobile image uses the normal one in mobile. \n\n\n2) be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\n3) Hero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "molhf9i7zs9j90uav",
+              "title": "Pawell follow up",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": []
+        },
+        {
+          "columnId": "mncchgncxlcix2v96",
+          "columnName": "Today",
+          "tasks": []
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": []
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "mn3u7s4ojcb20va5z",
+              "title": "Update tasks from notebook",
+              "description": "Update all tasks from my notebook from yesterday",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnetcss0ara8i0ote",
+              "title": "Flosum access Sebastian and Tanu",
+              "description": "",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkabu7rv3ob3cqf",
+              "title": "ESB-600: OMS table optmization: check if is ready in prod (ADVIC)",
+              "description": "https://solenis.atlassian.net/browse/ESB-600",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkbw1ojflak581r",
+              "title": "ESB-605 Order Summary using old layout (ADVIC)",
+              "description": "https://solenis.atlassian.net/browse/ESB-605",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjkivba2dod88y8m",
+              "title": "SDS Check why table does not have all components (Json error?)",
+              "description": "https://designsystem.solenis.com/?path=/story/lwc-components-package-component-list--component-list\n---- waiting EUVIC feedback",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mnjkq6b8565trcmqe",
+              "title": "ESB-594 Wishlist Bugs (follow up with Tanu)",
+              "description": "https://solenis.atlassian.net/browse/ESB-594",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "moaouy2rkku3cuob0",
+              "title": "Ticket to Devs:",
+              "description": "CSS base for Filip\nWishlist review for Piotr",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moaovq6nn8tyxqpsb",
+              "title": "Check Product page Old compoenet return (Alex request)",
+              "description": "https://solenis-my.sharepoint.com/:x:/r/personal/aiancu_contractor_solenis_com/_layouts/15/Doc.aspx?sourcedoc=%7B915CE68A-EF70-4ADF-8B3E-E4CBD4E82374%7D&file=Order%20Portal%20Feedback%20tracking.xlsx&fromShare=true&action=default&mobileredirect=true",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmizdeoc9qv4hpepp",
+              "title": "Rob/Balzac: Logo's to interactive movies",
+              "description": "What to do here? ticket?",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bfhjmu7czequ2f",
+              "title": "ESB-594 Product List Export Feature: Bugs list",
+              "description": "https://solenis.atlassian.net/browse/ESB-594",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjke4wf7mey7rz9u",
+              "title": "ESB-599 Quick Wins for Header",
+              "description": "https://solenis.atlassian.net/browse/ESB-599\n\n(probably deprecated)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "ToS: LWC lifecycle hooks\n\nEPIC: https://solenis.atlassian.net/browse/ESB-628"
+  },
+  {
+    "id": "mp2bnkixvuf336mdj",
+    "title": "Week 20 (May 11-17)",
+    "generatedDate": "2026-05-12T07:41:16.328Z",
+    "weekNumber": 20,
+    "dateRange": "May 11-17",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": []
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": [
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mncz3i18yhd8e5ne9",
+              "title": "Deelip: Images on Feature innovation (imgs beign replaced)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mo1b54al5y6gsk42w",
+              "title": "New ticket for Deelip",
+              "description": "2 new tickets to Deelip:\n\n\n1) mobile images for banners and heros. If there is not mobile image uses the normal one in mobile. \n\n\n2) be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\n3) Hero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "molhf9i7zs9j90uav",
+              "title": "Pawell UAT follow up with Alex",
+              "description": "https://solenis.atlassian.net/browse/ESB-672",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "moq8glylftjjfswtn",
+              "title": "Check Deploy New Wishlist",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "moqtkj8u3jgcmbzbe",
+              "title": "ESB-625 - Certificate should only show images",
+              "description": "https://solenis.atlassian.net/browse/ESB-625",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moqwjghvyw0n70bpy",
+              "title": "PR from Piotr (Wishlist)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "moq8k175szmfa7njw"
+            }
+          ]
+        },
+        {
+          "columnId": "mncchgncxlcix2v96",
+          "columnName": "Today",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "Plan Work with SDS (create tickets in our Jira board)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "moqruh9gd5u9a2slx",
+              "title": "SDS New ticket: CSS error",
+              "description": "--color-bgSurface: var(--color-blue-50)",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "moqrzwwfte2qa6t5o",
+              "title": "Update WIKI (1 hour Max)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "movjyqdfwrja969ka",
+              "title": "More tickets to Piotr/Filip",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8k175szmfa7njw"
+            },
+            {
+              "id": "movjzeyxzoc7ax2gd",
+              "title": "Check request from Daniel",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mp07inxvp50im6fs0",
+              "title": "ROADMAP",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            }
+          ]
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": []
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "moq8f6dh7k3k3m2yj",
+              "title": "ORG Emails Solenis",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "moq8fk9wukqdbsfwd",
+              "title": "GMAIL + Desktop Org",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "moq8hbuxl79qxzbyn",
+              "title": "Payments + Check voting",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "moq8i0iu9wgm6ay0v",
+              "title": "Tanu Task: email to Advic",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moq8ik2xyisb8ujx5",
+              "title": "uiTable: changes from Quinton",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moq8jeu7s7nsptdig",
+              "title": "New Tasks to Filip and Piotr",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8k175szmfa7njw"
+            },
+            {
+              "id": "moq8kymy1rp2445n5",
+              "title": "Clean up PRs (check and close the PRs)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moq8r4r0rns2yq8ui",
+              "title": "[Follow Up] Road Map Balzac",
+              "description": "Follow up with Mikael",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moq8t0rkv6vj5n319",
+              "title": "NEW CR: wishlist updates",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "moqwk7c8itjpgvzqo",
+              "title": "PR from Filip (uiStyles)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "moq8k175szmfa7njw"
+            },
+            {
+              "id": "morpgteqkbzm5kvup",
+              "title": "Wishlist: Fix PDF (layout + missing fields)",
+              "description": "Compare with the one in prod)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mosdfykyxvva3h18c",
+              "title": "Talk with Brandon",
+              "description": "Idea: comeetee\n10 min present to the tem on next Thu. (send content beforehand)",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "movjwjimo3subkf6h",
+              "title": "Create Branches Flosum",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjke4wf7mey7rz9u",
+              "title": "ESB-599 Quick Wins for Header",
+              "description": "https://solenis.atlassian.net/browse/ESB-599\n\n(probably deprecated)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "ToS: LWC lifecycle hooks\n\nEPIC: https://solenis.atlassian.net/browse/ESB-628"
   }
 ]

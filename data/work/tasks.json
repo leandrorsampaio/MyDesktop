@@ -1889,12 +1889,20 @@
     "priority": false,
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 2,
+    "status": "wait",
+    "position": 4,
     "log": [
       {
         "date": "2026-03-22",
         "action": "Moved from To Do to Backlog"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Backlog to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
       }
     ],
     "createdDate": "2026-02-28T00:26:27.033Z",
@@ -1924,25 +1932,6 @@
     "deadline": null,
     "snoozeUntil": null,
     "categoryName": "Non categorized"
-  },
-  {
-    "id": "mmizdeoc9qv4hpepp",
-    "title": "Rob/Balzac: Logo's to interactive movies",
-    "description": "What to do here? ticket?",
-    "priority": false,
-    "category": 1,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 4,
-    "log": [
-      {
-        "date": "2026-03-22",
-        "action": "Moved from To Do to Backlog"
-      }
-    ],
-    "createdDate": "2026-03-09T09:30:24.780Z",
-    "deadline": null,
-    "snoozeUntil": null
   },
   {
     "id": "mmj15hwrzqybghg12",
@@ -1989,10 +1978,10 @@
   },
   {
     "id": "mmjhed2ps7btakkok",
-    "title": "New Components SDS (SOL-XX)",
+    "title": "Plan Work with SDS (create tickets in our Jira board)",
     "description": "",
     "priority": false,
-    "category": 2,
+    "category": 5,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "todo",
     "position": 0,
@@ -2004,6 +1993,26 @@
       {
         "date": "2026-03-22",
         "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Category changed from Development to Planning"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Today to To Do"
       }
     ],
     "createdDate": "2026-03-09T17:55:02.449Z",
@@ -2245,7 +2254,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -2267,7 +2276,8 @@
     ],
     "createdDate": "2026-03-13T17:57:20.691Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mmtaxbbagd27gkp26",
@@ -2670,12 +2680,22 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 9,
-    "log": [],
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Backlog to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Done"
+      }
+    ],
     "createdDate": "2026-03-22T22:15:34.546Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mn2bhjfcp25vydl8h",
@@ -2730,7 +2750,7 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 2,
     "log": [
       {
@@ -2764,7 +2784,8 @@
     ],
     "createdDate": "2026-03-22T22:19:59.527Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mn2bn3vyp4vkpw04f",
@@ -2841,8 +2862,8 @@
     "priority": false,
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mncchgncxlcix2v96",
-    "position": 0,
+    "status": "archived",
+    "position": 5,
     "log": [
       {
         "date": "2026-03-23",
@@ -2871,11 +2892,20 @@
       {
         "date": "2026-04-03",
         "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-03-23T23:49:13.896Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "To Remember"
   },
   {
     "id": "mn6qxljexs331p8d1",
@@ -2908,12 +2938,28 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mmf9c0aaza1snpz8c",
-    "position": 0,
+    "status": "wait",
+    "position": 1,
     "log": [
       {
         "date": "2026-04-04",
         "action": "Moved from To Do to Backlog"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Backlog to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
       }
     ],
     "createdDate": "2026-03-26T00:44:02.881Z",
@@ -2927,7 +2973,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "done",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -2957,7 +3003,8 @@
     ],
     "createdDate": "2026-03-26T00:57:13.011Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mn7k1ykioo8i95fe9",
@@ -3118,7 +3165,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mncchgncxlcix2v96",
+    "status": "wait",
     "position": 2,
     "log": [
       {
@@ -3140,6 +3187,30 @@
       {
         "date": "2026-04-08",
         "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-04-13",
+        "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
       }
     ],
     "createdDate": "2026-03-30T09:15:47.852Z",
@@ -3153,7 +3224,7 @@
     "priority": false,
     "category": 4,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
+    "status": "archived",
     "position": 2,
     "log": [
       {
@@ -3175,11 +3246,16 @@
       {
         "date": "2026-04-08",
         "action": "Moved from Today to Wait"
+      },
+      {
+        "date": "2026-04-22",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-03-31T16:10:36.336Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "To Remember"
   },
   {
     "id": "mnh9fs0v1nsoy2ljh",
@@ -3212,8 +3288,8 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 0,
+    "status": "archived",
+    "position": 6,
     "log": [
       {
         "date": "2026-04-03",
@@ -3226,11 +3302,16 @@
       {
         "date": "2026-04-03",
         "action": "Moved from Today to Wait"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-04-03T23:55:35.407Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mnjkbw1ojflak581r",
@@ -3239,17 +3320,22 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 1,
+    "status": "archived",
+    "position": 7,
     "log": [
       {
         "date": "2026-04-03",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-04-03T23:56:48.252Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mnjke4wf7mey7rz9u",
@@ -3277,7 +3363,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 4,
     "log": [
       {
@@ -3291,7 +3377,8 @@
     ],
     "createdDate": "2026-04-04T00:00:00.609Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mnjkgy9w07ct44p8n",
@@ -3300,7 +3387,7 @@
     "priority": false,
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 3,
     "log": [
       {
@@ -3314,26 +3401,40 @@
     ],
     "createdDate": "2026-04-04T00:00:44.420Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mnjkivba2dod88y8m",
     "title": "SDS Check why table does not have all components (Json error?)",
-    "description": "https://designsystem.solenis.com/?path=/story/lwc-components-package-component-list--component-list",
+    "description": "https://designsystem.solenis.com/?path=/story/lwc-components-package-component-list--component-list\n---- waiting EUVIC feedback",
     "priority": false,
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "mncchgncxlcix2v96",
+    "status": "archived",
     "position": 1,
     "log": [
       {
         "date": "2026-04-04",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-13",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-04-13",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-04-22",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-04-04T00:02:13.894Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mnjkq6b8565trcmqe",
@@ -3342,15 +3443,905 @@
     "priority": false,
     "category": 3,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "wait",
-    "position": 4,
+    "status": "archived",
+    "position": 3,
     "log": [
       {
         "date": "2026-04-08",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-04-13",
+        "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-04-13",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-04-22",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-04-04T00:07:54.740Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "mo1b54al5y6gsk42w",
+    "title": "New ticket for Deelip",
+    "description": "2 new tickets to Deelip:\n\n\n1) mobile images for banners and heros. If there is not mobile image uses the normal one in mobile. \n\n\n2) be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\n3) Hero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-04-22",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from In Progress to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Wait to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-04-16T09:59:26.973Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moaouy2rkku3cuob0",
+    "title": "Ticket to Devs:",
+    "description": "CSS base for Filip\nWishlist review for Piotr",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-04-22",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-04-22T23:33:22.563Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Planning"
+  },
+  {
+    "id": "moaovq6nn8tyxqpsb",
+    "title": "Check Product page Old compoenet return (Alex request)",
+    "description": "https://solenis-my.sharepoint.com/:x:/r/personal/aiancu_contractor_solenis_com/_layouts/15/Doc.aspx?sourcedoc=%7B915CE68A-EF70-4ADF-8B3E-E4CBD4E82374%7D&file=Order%20Portal%20Feedback%20tracking.xlsx&fromShare=true&action=default&mobileredirect=true",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-04-22",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-04-27",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-04-22T23:33:58.991Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "molhf9i7zs9j90uav",
+    "title": "Pawell UAT Ticket",
+    "description": "https://solenis.atlassian.net/browse/ESB-672",
+    "priority": false,
+    "category": 3,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "done",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Category changed from Non categorized to Communication"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-04-30T12:50:41.503Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moq8f6dh7k3k3m2yj",
+    "title": "ORG Emails Solenis",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "archived",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:37:31.781Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "moq8fk9wukqdbsfwd",
+    "title": "GMAIL + Desktop Org",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "archived",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:37:49.796Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "moq8glylftjjfswtn",
+    "title": "Check Deploy New Wishlist",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mmji2xjk6s7spj1wu",
+    "status": "inprogress",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Wait to In Progress"
+      }
+    ],
+    "createdDate": "2026-05-03T20:38:38.637Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moq8hbuxl79qxzbyn",
+    "title": "Payments + Check voting",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "archived",
+    "position": 11,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:39:12.201Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "moq8i0iu9wgm6ay0v",
+    "title": "Tanu Task: email to Advic",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:39:44.166Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "moq8ik2xyisb8ujx5",
+    "title": "uiTable: changes from Quinton",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-08",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:40:09.513Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
+  },
+  {
+    "id": "moq8jeu7s7nsptdig",
+    "title": "New Tasks to Filip and Piotr",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "moq8k175szmfa7njw",
+    "status": "archived",
+    "position": 10,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:40:49.375Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Planning"
+  },
+  {
+    "id": "moq8kymy1rp2445n5",
+    "title": "Clean up PRs (check and close the PRs)",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:42:01.690Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Planning"
+  },
+  {
+    "id": "moq8r4r0rns2yq8ui",
+    "title": "[Follow Up] Road Map Balzac",
+    "description": "Follow up with Mikael",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 12,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-05",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:46:49.548Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "moq8t0rkv6vj5n319",
+    "title": "NEW CR: wishlist updates",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": "mmji2xjk6s7spj1wu",
+    "status": "archived",
+    "position": 8,
+    "log": [
+      {
+        "date": "2026-05-03",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-03",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-03T20:48:17.696Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
+  },
+  {
+    "id": "moqruh9gd5u9a2slx",
+    "title": "SDS New ticket: CSS error",
+    "description": "--color-bgSurface: var(--color-blue-50)",
+    "priority": false,
+    "category": 6,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "done",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-05-07",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-04T05:41:18.436Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moqrzwwfte2qa6t5o",
+    "title": "Update WIKI (1 hour Max)",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-05-07",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-04T05:45:31.983Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moqtkj8u3jgcmbzbe",
+    "title": "ESB-625 - Certificate should only show images",
+    "description": "https://solenis.atlassian.net/browse/ESB-625",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-05-04",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-05-04T06:29:33.678Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moqwjghvyw0n70bpy",
+    "title": "PR from Piotr (Wishlist)",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "moq8k175szmfa7njw",
+    "status": "todo",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-05-04",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to Wait"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from Today to To Do"
+      }
+    ],
+    "createdDate": "2026-05-04T07:52:42.307Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "moqwk7c8itjpgvzqo",
+    "title": "PR from Filip (uiStyles)",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "moq8k175szmfa7njw",
+    "status": "archived",
+    "position": 9,
+    "log": [
+      {
+        "date": "2026-05-04",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-04T07:53:17.096Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "morpgteqkbzm5kvup",
+    "title": "Wishlist: Fix PDF (layout + missing fields)",
+    "description": "Compare with the one in prod)",
+    "priority": false,
+    "category": 2,
+    "epicId": "mmji2xjk6s7spj1wu",
+    "status": "archived",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-05-04",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-04",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-04T21:22:27.938Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Development"
+  },
+  {
+    "id": "mosdfykyxvva3h18c",
+    "title": "Talk with Brandon",
+    "description": "Idea: comeetee\n10 min present to the tem on next Thu. (send content beforehand)",
+    "priority": true,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-05-05",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-05T08:33:38.770Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Communication"
+  },
+  {
+    "id": "movjwjimo3subkf6h",
+    "title": "Create Branches Flosum",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "archived",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-05-07",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-07",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-08",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-07T13:57:48.622Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
+  },
+  {
+    "id": "movjyqdfwrja969ka",
+    "title": "More tickets to Piotr/Filip",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "moq8k175szmfa7njw",
+    "status": "mncchgncxlcix2v96",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-05-07",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-10",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from In Progress to Today"
+      }
+    ],
+    "createdDate": "2026-05-07T13:59:30.819Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "movjzeyxzoc7ax2gd",
+    "title": "Check request from Daniel",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "mncchgncxlcix2v96",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-05-07",
+        "action": "Moved from To Do to Today"
+      }
+    ],
+    "createdDate": "2026-05-07T14:00:02.697Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mp07inxvp50im6fs0",
+    "title": "ROADMAP plan meetig with Rob and Alex",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mncchgncxlcix2v96",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-05-10",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Category changed from Non categorized to Planning"
+      }
+    ],
+    "createdDate": "2026-05-10T20:09:56.659Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mp2concvkw190uwg1",
+    "title": "Prepare the list of translations",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mmji2xjk6s7spj1wu",
+    "status": "done",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-05-12",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-13",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-12T08:10:06.271Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mp2cpj9xb46wtf6je",
+    "title": "SOW presentation",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-05-12",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-15",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-12T08:10:47.637Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mp2crxto5ehwp89q7",
+    "title": "Org emails, msgs and desktop",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "done",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-05-12",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-13",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-13",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-12T08:12:39.804Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mp2cslg5l00dh8ngo",
+    "title": "Check PRs",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-05-12",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-13",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-12T08:13:10.421Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mp2hf4smfdacqa2c2",
+    "title": "CRs: send to Alex",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-05-12",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-05-12",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-12T10:22:40.390Z",
     "deadline": null,
     "snoozeUntil": null
   }
