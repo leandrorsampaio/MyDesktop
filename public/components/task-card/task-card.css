@@ -43,12 +43,12 @@
 
 .taskCard__epicBar {
     display: inline-block;
-    padding: 3px 8px;
+    padding: 3px var(--space-8);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.3px;
-    margin: 10px 14px 0 14px;
+    margin: var(--space-10) 14px 0 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -57,7 +57,7 @@
 .taskCard__body {
     display: flex;
     gap: var(--space-10);
-    padding: 12px 14px 14px 14px;
+    padding: var(--space-12) 14px 14px 14px;
 }
 
 .taskCard__handle {
@@ -144,8 +144,8 @@
 
 .taskCard__editBtn {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: var(--space-10);
+    right: var(--space-10);
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);

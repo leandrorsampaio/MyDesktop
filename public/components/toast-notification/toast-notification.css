@@ -1,7 +1,7 @@
 :host {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: var(--space-24);
+    right: var(--space-24);
     z-index: 2000;
     pointer-events: none;
 }
@@ -118,9 +118,9 @@
 /* Responsive */
 @media (max-width: 768px) {
     :host {
-        bottom: 16px;
-        right: 16px;
-        left: 16px;
+        bottom: var(--space-16);
+        right: var(--space-16);
+        left: var(--space-16);
     }
 
     .toast {

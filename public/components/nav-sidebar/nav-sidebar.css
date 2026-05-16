@@ -104,7 +104,7 @@
 .navSidebar__panelBackdrop {
     position: fixed;
     top: 0;
-    left: 48px;
+    left: var(--space-48);
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.15);
@@ -122,7 +122,7 @@
 .navSidebar__slidePanel {
     position: fixed;
     top: 0;
-    left: 48px;
+    left: var(--space-48);
     bottom: 0;
     width: 460px;
     background: var(--color-bg-secondary, #f8f9fa);

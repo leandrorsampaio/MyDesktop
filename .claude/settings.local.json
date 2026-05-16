@@ -25,7 +25,9 @@
       "Bash(rm public/styles.css.tmp)",
       "Read(//tmp/**)",
       "Bash(sed -i.tmp 's|padding: 12px 6px;|padding: var\\(--space-12\\) var\\(--space-6\\);|g' public/components/*/*.css)",
-      "Bash(rm public/components/*/*.css.tmp)"
+      "Bash(rm public/components/*/*.css.tmp)",
+      "Bash(python3 /tmp/tokenize_css.py /Users/leandrorossisampaio/Desktop/+++/LeandroGit/MyDesktop/public/styles.css)",
+      "Bash(python3 *)"
     ]
   }
 }

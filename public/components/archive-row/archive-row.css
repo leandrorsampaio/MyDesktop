@@ -163,7 +163,7 @@
 }
 
 .archiveRow__panelInner {
-    padding: 12px 16px 14px;
+    padding: var(--space-12) var(--space-16) 14px;
     border-top: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;

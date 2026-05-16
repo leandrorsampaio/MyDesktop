@@ -118,7 +118,7 @@
     font-size: var(--text-xl);
     cursor: pointer;
     padding: var(--space-4) var(--space-6);
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     line-height: 1;
     flex-shrink: 0;
     transition: color 0.2s, background 0.2s;

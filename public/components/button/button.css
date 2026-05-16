@@ -39,7 +39,7 @@
 .btn[modifier="clone"] {
     background-color: #5758BB;
     color: #ffffff;
-    padding: 10px 18px;
+    padding: var(--space-10) 18px;
 }
 
 .btn[modifier="clone"]:hover {
@@ -51,7 +51,7 @@
 .btn[modifier="backlog"] {
     background-color: #636E72;
     color: #ffffff;
-    padding: 10px 18px;
+    padding: var(--space-10) 18px;
 }
 
 .btn[modifier="backlog"]:hover {
@@ -63,7 +63,7 @@
 .btn[modifier="delete"] {
     background-color: var(--color-accent-error, #ef4444);
     color: #ffffff;
-    padding: 10px 18px;
+    padding: var(--space-10) 18px;
 }
 
 .btn[modifier="delete"]:hover {
