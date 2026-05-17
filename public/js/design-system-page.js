@@ -22,7 +22,31 @@ const FONT_WEIGHTS = [
     { token: '--font-weight-bold',     value: 700, label: 'Bold' },
 ];
 
+const TYPE_CLASSES = [
+    { cls: 'title --xl', selector: '.title.--xl', size: '24px (--text-4xl)', weight: 'Semibold', use: 'Page titles' },
+    { cls: 'title --lg', selector: '.title.--lg', size: '18px (--text-2xl)', weight: 'Semibold', use: 'Major section headers' },
+    { cls: 'title --md', selector: '.title.--md', size: '16px (--text-xl)',  weight: 'Semibold', use: 'Subsection / card headers' },
+    { cls: 'title --sm', selector: '.title.--sm', size: '14px (--text-lg)',  weight: 'Semibold', use: 'Small headings, strong labels' },
+    { cls: 'text --lg',  selector: '.text.--lg',  size: '14px (--text-lg)',  weight: 'Regular',  use: 'Emphasised body copy' },
+    { cls: 'text --md',  selector: '.text.--md',  size: '13px (--text-md)',  weight: 'Regular',  use: 'Default body — most common' },
+    { cls: 'text --sm',  selector: '.text.--sm',  size: '12px (--text-base)',weight: 'Regular',  use: 'Secondary text, button labels' },
+    { cls: 'text --xs',  selector: '.text.--xs',  size: '11px (--text-sm)',  weight: 'Medium',   use: 'Metadata, micro-labels' },
+];
+
 function renderTypographySection() {
+    const classRows = TYPE_CLASSES.map(t => `
+        <div class="designSystemPage__row">
+            <div class="designSystemPage__meta">
+                <code class="designSystemPage__token">${t.selector}</code>
+                <span class="designSystemPage__value">${t.size} · ${t.weight}</span>
+                <span class="designSystemPage__use">${t.use}</span>
+            </div>
+            <div class="${t.cls}">
+                The quick brown fox jumps over the lazy dog
+            </div>
+        </div>
+    `).join('');
+
     const sizeRows = TEXT_SIZES.map(s => `
         <div class="designSystemPage__row">
             <div class="designSystemPage__meta">
@@ -51,14 +75,23 @@ function renderTypographySection() {
 
     return `
         <section class="designSystemPage__section">
-            <h3 class="designSystemPage__sectionTitle">Typography — Sizes</h3>
-            <p class="designSystemPage__sectionLead">Nine size tokens, all relative to the system font stack defined by <code>--font-family</code>.</p>
+            <h3 class="designSystemPage__sectionTitle">Typography Classes — what to use</h3>
+            <p class="designSystemPage__sectionLead">
+                Composable BEM blocks. Apply one of these to every piece of copy. Example: <code>&lt;h2 class="title --lg"&gt;</code>.
+                <code>.title</code> for headings, <code>.text</code> for body and button labels.
+            </p>
+            <div class="designSystemPage__table">${classRows}</div>
+        </section>
+
+        <section class="designSystemPage__section">
+            <h3 class="designSystemPage__sectionTitle">Underlying Size Tokens</h3>
+            <p class="designSystemPage__sectionLead">Primitives. Used by the classes above. Reach for these only when a one-off size is genuinely needed.</p>
             <div class="designSystemPage__table">${sizeRows}</div>
         </section>
 
         <section class="designSystemPage__section">
-            <h3 class="designSystemPage__sectionTitle">Typography — Weights</h3>
-            <p class="designSystemPage__sectionLead">Four weight tokens. Body text uses Regular; buttons and headers use Semibold.</p>
+            <h3 class="designSystemPage__sectionTitle">Underlying Weight Tokens</h3>
+            <p class="designSystemPage__sectionLead">Primitives. The class system above picks weight per class — you rarely need to touch these directly.</p>
             <div class="designSystemPage__table">${weightRows}</div>
         </section>
 
