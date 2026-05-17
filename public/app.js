@@ -942,6 +942,12 @@ import {
                         console.error('Config page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load config page');
                     });
+                } else if (page === 'design-system') {
+                    const { initDesignSystemPage } = await import('./js/design-system-page.js');
+                    initDesignSystemPage(elements.pageView).catch(err => {
+                        console.error('Design System page error:', err);
+                        if (elements.toaster) elements.toaster.error('Failed to load design system page');
+                    });
                 } else {
                     renderPlaceholderPage(page);
                 }

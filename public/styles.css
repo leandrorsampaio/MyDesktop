@@ -2221,6 +2221,216 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 }
 
 /* ==========================================
+   Block: designSystemPage
+   ========================================== */
+.designSystemPage {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: var(--space-32) var(--space-24) var(--space-64);
+}
+
+.designSystemPage__header {
+    margin-bottom: var(--space-32);
+}
+
+.designSystemPage__title {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-8);
+}
+
+.designSystemPage__subtitle {
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+    max-width: 640px;
+}
+
+.designSystemPage__subtitle code,
+.designSystemPage__sectionLead code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--color-bg-tertiary);
+    padding: 1px var(--space-4);
+    border-radius: var(--radius-sm);
+}
+
+.designSystemPage__nav {
+    display: flex;
+    gap: var(--space-8);
+    margin-bottom: var(--space-32);
+    padding-bottom: var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.designSystemPage__navLink {
+    padding: var(--space-6) var(--space-12);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-medium);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.designSystemPage__navLink:hover {
+    background: var(--color-border);
+    color: var(--color-text-primary);
+}
+
+.designSystemPage__anchor {
+    scroll-margin-top: var(--space-24);
+}
+
+.designSystemPage__section {
+    margin-bottom: var(--space-48);
+}
+
+.designSystemPage__sectionTitle {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-6);
+}
+
+.designSystemPage__sectionLead {
+    font-size: var(--text-md);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-20);
+    max-width: 720px;
+}
+
+.designSystemPage__table {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.designSystemPage__row {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    align-items: center;
+    gap: var(--space-24);
+    padding: var(--space-16) var(--space-20);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.designSystemPage__row:last-child {
+    border-bottom: none;
+}
+
+.designSystemPage__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.designSystemPage__token {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--text-base);
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.designSystemPage__value {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.designSystemPage__use {
+    font-size: var(--text-base);
+    color: var(--color-text-tertiary);
+}
+
+.designSystemPage__sample {
+    color: var(--color-text-primary);
+    line-height: 1.4;
+}
+
+.designSystemPage__familySample {
+    padding: var(--space-16) var(--space-20);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.designSystemPage__buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-16);
+}
+
+.designSystemPage__buttonCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding: var(--space-20);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.designSystemPage__buttonStage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-8);
+    min-height: 56px;
+    padding: var(--space-12);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.designSystemPage__buttonStage--fab {
+    justify-content: center;
+    min-height: 96px;
+}
+
+.designSystemPage__fabReplica {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-accent-primary);
+    color: #fff;
+    font-size: var(--text-4xl);
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.15s, transform 0.1s;
+    font-family: inherit;
+}
+
+.designSystemPage__fabReplica:hover {
+    background: var(--color-accent-primary-hover);
+    transform: scale(1.08);
+}
+
+.designSystemPage__buttonClass {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--text-base);
+    color: var(--color-accent-primary);
+    word-break: break-all;
+}
+
+.designSystemPage__buttonLabel {
+    font-size: var(--text-base);
+    color: var(--color-text-tertiary);
+}
+
+/* ==========================================
    Block: configPage — left tabs + right content
    ========================================== */
 .configPage {
