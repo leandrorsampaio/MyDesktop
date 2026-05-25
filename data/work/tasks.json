@@ -1983,8 +1983,8 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "todo",
-    "position": 0,
+    "status": "mncchgncxlcix2v96",
+    "position": 5,
     "log": [
       {
         "date": "2026-03-09",
@@ -2013,6 +2013,10 @@
       {
         "date": "2026-05-12",
         "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-05-19",
+        "action": "Moved from To Do to Today"
       }
     ],
     "createdDate": "2026-03-09T17:55:02.449Z",
@@ -3471,12 +3475,12 @@
   {
     "id": "mo1b54al5y6gsk42w",
     "title": "New ticket for Deelip",
-    "description": "2 new tickets to Deelip:\n\n\n1) mobile images for banners and heros. If there is not mobile image uses the normal one in mobile. \n\n\n2) be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\n3) Hero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
+    "description": "be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\nHero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
     "priority": false,
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 3,
+    "status": "todo",
+    "position": 1,
     "log": [
       {
         "date": "2026-04-22",
@@ -3513,6 +3517,10 @@
       {
         "date": "2026-05-03",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-05-19",
+        "action": "Moved from Wait to To Do"
       }
     ],
     "createdDate": "2026-04-16T09:59:26.973Z",
@@ -3582,7 +3590,7 @@
     "priority": false,
     "category": 3,
     "epicId": "moq8dy5b65p58w331",
-    "status": "done",
+    "status": "archived",
     "position": 0,
     "log": [
       {
@@ -3636,7 +3644,8 @@
     ],
     "createdDate": "2026-04-30T12:50:41.503Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "moq8f6dh7k3k3m2yj",
@@ -3713,8 +3722,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "inprogress",
-    "position": 1,
+    "status": "archived",
+    "position": 0,
     "log": [
       {
         "date": "2026-05-03",
@@ -3727,11 +3736,16 @@
       {
         "date": "2026-05-12",
         "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-05-19",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-05-03T20:38:38.637Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "moq8hbuxl79qxzbyn",
@@ -3940,7 +3954,7 @@
     "priority": false,
     "category": 6,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "done",
+    "status": "archived",
     "position": 1,
     "log": [
       {
@@ -3954,7 +3968,8 @@
     ],
     "createdDate": "2026-05-04T05:41:18.436Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Generic Task"
   },
   {
     "id": "moqrzwwfte2qa6t5o",
@@ -3963,7 +3978,7 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 2,
     "log": [
       {
@@ -3977,7 +3992,8 @@
     ],
     "createdDate": "2026-05-04T05:45:31.983Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Planning"
   },
   {
     "id": "moqtkj8u3jgcmbzbe",
@@ -4006,7 +4022,7 @@
     "category": 2,
     "epicId": "moq8k175szmfa7njw",
     "status": "todo",
-    "position": 1,
+    "position": 0,
     "log": [
       {
         "date": "2026-05-04",
@@ -4156,8 +4172,8 @@
     "priority": false,
     "category": 5,
     "epicId": "moq8k175szmfa7njw",
-    "status": "mncchgncxlcix2v96",
-    "position": 5,
+    "status": "inprogress",
+    "position": 1,
     "log": [
       {
         "date": "2026-05-07",
@@ -4170,6 +4186,10 @@
       {
         "date": "2026-05-12",
         "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-05-19",
+        "action": "Moved from Today to In Progress"
       }
     ],
     "createdDate": "2026-05-07T13:59:30.819Z",
@@ -4184,7 +4204,7 @@
     "category": 6,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mncchgncxlcix2v96",
-    "position": 6,
+    "position": 3,
     "log": [
       {
         "date": "2026-05-07",
@@ -4203,7 +4223,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-05-10",
@@ -4229,7 +4249,7 @@
     "priority": false,
     "category": 3,
     "epicId": "mmji2xjk6s7spj1wu",
-    "status": "done",
+    "status": "archived",
     "position": 5,
     "log": [
       {
@@ -4243,7 +4263,8 @@
     ],
     "createdDate": "2026-05-12T08:10:06.271Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Communication"
   },
   {
     "id": "mp2cpj9xb46wtf6je",
@@ -4252,7 +4273,7 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 7,
     "log": [
       {
@@ -4266,7 +4287,8 @@
     ],
     "createdDate": "2026-05-12T08:10:47.637Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Planning"
   },
   {
     "id": "mp2crxto5ehwp89q7",
@@ -4275,7 +4297,7 @@
     "priority": false,
     "category": 1,
     "epicId": "moq8dy5b65p58w331",
-    "status": "done",
+    "status": "archived",
     "position": 4,
     "log": [
       {
@@ -4297,7 +4319,8 @@
     ],
     "createdDate": "2026-05-12T08:12:39.804Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
   },
   {
     "id": "mp2cslg5l00dh8ngo",
@@ -4306,7 +4329,7 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 6,
     "log": [
       {
@@ -4320,7 +4343,8 @@
     ],
     "createdDate": "2026-05-12T08:13:10.421Z",
     "deadline": null,
-    "snoozeUntil": null
+    "snoozeUntil": null,
+    "categoryName": "Development"
   },
   {
     "id": "mp2hf4smfdacqa2c2",
@@ -4329,7 +4353,7 @@
     "priority": false,
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
+    "status": "archived",
     "position": 3,
     "log": [
       {
@@ -4342,6 +4366,99 @@
       }
     ],
     "createdDate": "2026-05-12T10:22:40.390Z",
+    "deadline": null,
+    "snoozeUntil": null,
+    "categoryName": "Non categorized"
+  },
+  {
+    "id": "mpcmw09ctzf9rrthm",
+    "title": "PPT Mikael",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-05-19",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-20",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-19T12:53:27.504Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mpcmx0ccsfnmmsktr",
+    "title": "Deelip Ticket (news)",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mncchgncxlcix2v96",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-05-19",
+        "action": "Moved from To Do to Today"
+      }
+    ],
+    "createdDate": "2026-05-19T12:54:14.268Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mpcmy2dsruoz19yvr",
+    "title": "ticket: Henk Jan images",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-05-19",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-19",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-05-20",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-05-19T12:55:03.568Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mpcmzfnv9f4rs4j40",
+    "title": "Update Tickets Board + Team communication",
+    "description": "- Update board Jira\n- Todo list for Team",
+    "priority": false,
+    "category": 1,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "done",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-05-19",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-05-21",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-05-19T12:56:07.435Z",
     "deadline": null,
     "snoozeUntil": null
   }

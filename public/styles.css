@@ -662,6 +662,115 @@ body {
     background-color: #dc2626;
 }
 
+/* ==========================================
+   Button system — variants / sizes / shapes
+   --------------------------------------------------
+   Composable on top of `.btn`. Example:
+     <button class="btn --primary --sm">Filter</button>
+     <button class="btn --secondary --pill">Snooze</button>
+     <button class="btn --ghost --icon" aria-label="Close">×</button>
+
+   The base `.btn` carries the medium-size defaults
+   (padding/font-size). `--sm` / `--lg` override.
+   ========================================== */
+
+/* Variants */
+.btn.--primary {
+    background-color: var(--color-accent-primary);
+    color: #ffffff;
+}
+
+.btn.--primary:hover {
+    background-color: var(--color-accent-primary-hover);
+}
+
+.btn.--secondary {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
+}
+
+.btn.--secondary:hover {
+    background-color: var(--color-border);
+    color: var(--color-text-primary);
+}
+
+.btn.--danger {
+    background-color: var(--color-accent-error);
+    color: #ffffff;
+}
+
+.btn.--danger:hover {
+    background-color: #dc2626;
+}
+
+.btn.--ghost {
+    background-color: transparent;
+    color: var(--color-text-secondary);
+}
+
+.btn.--ghost:hover {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+/* Sizes (md is the default carried by `.btn` itself) */
+.btn.--sm {
+    padding: var(--space-6) var(--space-12);
+    font-size: var(--text-sm);
+}
+
+.btn.--lg {
+    padding: var(--space-12) var(--space-24);
+    font-size: var(--text-xl);
+}
+
+/* Shape modifiers */
+.btn.--pill {
+    border-radius: 999px;
+}
+
+.btn.--icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn.--icon.--sm {
+    width: 28px;
+    height: 28px;
+}
+
+.btn.--icon.--lg {
+    width: 44px;
+    height: 44px;
+}
+
+.btn.--block {
+    display: block;
+    width: 100%;
+}
+
+/* Disabled state — works across all variants */
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover,
+.btn[disabled]:hover {
+    transform: none;
+    /* Reset variant hover bg by re-applying the base of each variant */
+}
+
+.btn.--primary:disabled:hover  { background-color: var(--color-accent-primary); }
+.btn.--secondary:disabled:hover { background-color: var(--color-bg-tertiary); color: var(--color-text-secondary); }
+.btn.--danger:disabled:hover   { background-color: var(--color-accent-error); }
+.btn.--ghost:disabled:hover    { background-color: transparent; color: var(--color-text-secondary); }
+
 .taskForm {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
@@ -2489,6 +2598,12 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .designSystemPage__buttonLabel {
     font-size: var(--text-base);
     color: var(--color-text-tertiary);
+}
+
+.designSystemPage__legacyDivider {
+    margin: var(--space-48) 0 var(--space-24);
+    padding-top: var(--space-32);
+    border-top: 1px solid var(--color-border);
 }
 
 /* ==========================================

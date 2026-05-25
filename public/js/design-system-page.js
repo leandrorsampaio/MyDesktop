@@ -125,6 +125,48 @@ function buttonCard(label, className, inner) {
     `;
 }
 
+function renderButtonSystem() {
+    const variants = [
+        buttonCard('Primary',   '.btn.--primary',   '<button type="button" class="btn --primary">Save</button>'),
+        buttonCard('Secondary', '.btn.--secondary', '<button type="button" class="btn --secondary">Cancel</button>'),
+        buttonCard('Danger',    '.btn.--danger',    '<button type="button" class="btn --danger">Delete</button>'),
+        buttonCard('Ghost',     '.btn.--ghost',     '<button type="button" class="btn --ghost">Clear</button>'),
+    ].join('');
+
+    const sizes = [
+        buttonCard('Small',   '.btn.--primary.--sm', '<button type="button" class="btn --primary --sm">Filter</button>'),
+        buttonCard('Medium (default)', '.btn.--primary', '<button type="button" class="btn --primary">Save Task</button>'),
+        buttonCard('Large',   '.btn.--primary.--lg', '<button type="button" class="btn --primary --lg">Generate Report</button>'),
+    ].join('');
+
+    const shapes = [
+        buttonCard('Pill', '.btn.--secondary.--pill', '<button type="button" class="btn --secondary --pill">Snooze</button>'),
+        buttonCard('Icon-only', '.btn.--ghost.--icon', '<button type="button" class="btn --ghost --icon" aria-label="Close">×</button>'),
+        buttonCard('Icon (small)', '.btn.--danger.--icon.--sm', '<button type="button" class="btn --danger --icon --sm" aria-label="Remove">×</button>'),
+        buttonCard('Block (full width)', '.btn.--primary.--block', '<button type="button" class="btn --primary --block">Continue</button>'),
+    ].join('');
+
+    const states = [
+        buttonCard('Disabled (any variant)', '.btn.--primary[disabled]', '<button type="button" class="btn --primary" disabled>Send</button>'),
+        buttonCard('Disabled ghost', '.btn.--ghost[disabled]', '<button type="button" class="btn --ghost" disabled>Clear</button>'),
+    ].join('');
+
+    const combos = [
+        buttonCard('Compact filter (active)', '.btn.--primary.--sm', '<button type="button" class="btn --primary --sm">High</button>'),
+        buttonCard('Compact filter (inactive)', '.btn.--ghost.--sm', '<button type="button" class="btn --ghost --sm">All</button>'),
+        buttonCard('Destructive icon', '.btn.--danger.--icon', '<button type="button" class="btn --danger --icon" aria-label="Delete">×</button>'),
+        buttonCard('Large CTA', '.btn.--primary.--lg', '<button type="button" class="btn --primary --lg">Continue</button>'),
+    ].join('');
+
+    return `
+        ${buttonGroup('Button System — Variants', 'Four intent variants on the <code>.btn</code> block. Default size is medium — combine with <code>.--sm</code> or <code>.--lg</code> as needed.', variants)}
+        ${buttonGroup('Button System — Sizes', 'Three sizes. <code>.--md</code> is implicit on plain <code>.btn</code>; use <code>.--sm</code> for compact controls (filters, toolbar) and <code>.--lg</code> for primary CTAs.', sizes)}
+        ${buttonGroup('Button System — Shape Modifiers', 'Stackable on top of any variant + size. <code>.--pill</code> rounds the ends, <code>.--icon</code> makes it a square icon button, <code>.--block</code> stretches to container width.', shapes)}
+        ${buttonGroup('Button System — Disabled State', 'Works on any variant via <code>:disabled</code> or <code>[disabled]</code> attribute. Hover effect is suppressed.', states)}
+        ${buttonGroup('Button System — Combinations', 'Real-world combos. The point of the system: one block, many modifiers, no bespoke CSS per button.', combos)}
+    `;
+}
+
 function renderButtonsSection() {
     // Modal / form action buttons (.btn family)
     const modalBtns = [
@@ -244,7 +286,16 @@ function renderButtonsSection() {
     `;
 
     return `
-        ${buttonGroup('Modal / Form Actions', 'The <code>.btn</code> family — used at the foot of every modal. <code>.--save</code> is the primary, <code>.--cancel</code> is neutral, <code>.--delete</code> is destructive.', modalBtns)}
+        ${renderButtonSystem()}
+
+        <div class="designSystemPage__legacyDivider">
+            <h3 class="designSystemPage__sectionTitle">Bespoke / Legacy Buttons</h3>
+            <p class="designSystemPage__sectionLead">
+                Buttons that pre-date the system above. Each has its own CSS rules. Long-term these should be migrated to <code>.btn</code> + modifiers, but for now they're documented here for reference.
+            </p>
+        </div>
+
+        ${buttonGroup('Modal / Form Actions (legacy names)', 'The original <code>.btn</code> modifiers — <code>.--save</code>, <code>.--cancel</code>, <code>.--delete</code>. Visually identical to <code>.--primary</code> / <code>.--secondary</code> / <code>.--danger</code> in the new system.', modalBtns)}
         ${buttonGroup('Toolbar Buttons', 'Compact buttons used in the board toolbar. Filters use <code>.--active</code> to indicate selection.', toolbarBtns)}
         ${buttonGroup('Editor &amp; Inline Buttons', 'Buttons that live inside forms, editors, and config panels.', editorBtns)}
         ${buttonGroup('Icon-Only &amp; Minimal', 'Low-emphasis or icon-only controls. Most have a hover state that reveals colour.', minimalBtns)}
