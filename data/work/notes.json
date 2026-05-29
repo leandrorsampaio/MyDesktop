@@ -1,3 +1,3 @@
 {
-  "content": "ToS: LWC lifecycle hooks\n\nEPIC: https://solenis.atlassian.net/browse/ESB-628"
+  "content": "ToS: LWC lifecycle hooks\n\nTo deploy: \neshopProductExportController\neshopProductExportControllerTest\nuiProductExportPdf\nuiExportSizeWarning\n\nFilip\ndeliveryListNewData\ninvoiceListNewData\norderListNewData\nuiPdpProductPanel\nuiTable\nstaticresources/baseStyles/base__lesseau.css\n\n\n\n\n\nHTML table: add button to select and deselact all\n\nPDF: call out for number of products\n\nexcel has HTML in some of the columns\n\ncheck the prefer solution for front images and other images. "
 }
