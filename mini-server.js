@@ -96,6 +96,14 @@ function staticMiddleware(rootDir) {
 }
 
 /**
+ * Maximum request body size, in bytes. Requests exceeding this are rejected
+ * with 413 Payload Too Large. Protects against trivial DoS (filling memory
+ * with a multi-GB POST). 1 MiB is well above any legitimate JSON payload in
+ * this app — task descriptions cap at 2k chars, notes at 10k.
+ */
+const MAX_BODY_SIZE = 1024 * 1024;
+
+/**
  * Read the request body and parse JSON if the Content-Type says so.
  * Sets req.body. Empty bodies → `{}` (matches Express's body-parser default,
  * so handlers can safely do `req.body.foo` without a null guard).
@@ -104,8 +112,20 @@ function parseBody(req) {
     return new Promise((resolve, reject) => {
         const contentType = (req.headers['content-type'] || '').toLowerCase();
         const chunks = [];
-        req.on('data', chunk => chunks.push(chunk));
+        let totalBytes = 0;
+        let oversize = false;
+        req.on('data', chunk => {
+            if (oversize) return;          // drop further data after limit hit
+            totalBytes += chunk.length;
+            if (totalBytes > MAX_BODY_SIZE) {
+                oversize = true;
+                chunks.length = 0;          // free memory
+                return reject(new HttpError(413, 'Request body too large'));
+            }
+            chunks.push(chunk);
+        });
         req.on('end', () => {
+            if (oversize) return;          // already rejected
             const raw = Buffer.concat(chunks).toString('utf8');
             if (!raw) { req.body = {}; return resolve(); }
             if (contentType.includes('application/json')) {

@@ -3508,7 +3508,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 3,
+    "position": 2,
     "log": [
       {
         "date": "2026-04-22",
@@ -4272,7 +4272,7 @@
     "category": 6,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "todo",
-    "position": 1,
+    "position": 0,
     "log": [
       {
         "date": "2026-05-07",
@@ -4574,7 +4574,7 @@
     "category": 5,
     "epicId": "moq8dy5b65p58w331",
     "status": "todo",
-    "position": 4,
+    "position": 3,
     "log": [
       {
         "date": "2026-05-26",
@@ -4625,7 +4625,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 2,
+    "position": 1,
     "log": [
       {
         "date": "2026-05-27",
@@ -5167,7 +5167,7 @@
     "category": 1,
     "epicId": null,
     "status": "todo",
-    "position": 5,
+    "position": 4,
     "log": [],
     "createdDate": "2026-06-05T00:15:21.614Z",
     "deadline": null,
@@ -5181,37 +5181,23 @@
     "category": 1,
     "epicId": null,
     "status": "todo",
-    "position": 6,
+    "position": 5,
     "log": [],
     "createdDate": "2026-06-05T00:15:35.404Z",
     "deadline": null,
     "snoozeUntil": null
   },
   {
-    "id": "mq4g8taht90yqmipv",
-    "title": "shim-smoke-test",
+    "id": "mq50ll73tqt586kms",
+    "title": "Error with uiTable",
     "description": "",
     "priority": false,
     "category": 1,
     "epicId": null,
     "status": "todo",
-    "position": 7,
+    "position": 6,
     "log": [],
-    "createdDate": "2026-06-08T00:05:00.617Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mq4g8tazsukjen18x",
-    "title": "x",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 8,
-    "log": [],
-    "createdDate": "2026-06-08T00:05:00.635Z",
+    "createdDate": "2026-06-08T09:34:48.975Z",
     "deadline": null,
     "snoozeUntil": null
   }

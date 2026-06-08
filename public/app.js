@@ -34,7 +34,7 @@ import {
     setColumns
 } from './js/state.js';
 import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi } from './js/api.js';
-import { openBoardConfigModal, confirmDeleteColumn } from './js/board-config.js';
+import { confirmDeleteColumn } from './js/board-config.js';
 import {
     renderCategoryFilters,
     handleCategoryFilterChange,
@@ -50,18 +50,12 @@ import {
     openDeleteConfirmation,
     confirmDeleteTask,
     createTaskFormSubmitHandler,
-    openArchivedModal,
-    openChecklistModal,
     addChecklistItem,
     saveChecklist,
-    openEpicsModal,
     confirmDeleteEpic,
-    openCategoriesModal,
     confirmDeleteCategory,
-    openProfilesModal,
     confirmDeleteProfile,
-    setQuickDateTime,
-    openAiConfigModal
+    setQuickDateTime
 } from './js/modals.js';
 
 (function() {
@@ -234,10 +228,11 @@ import {
     // ==========================================
 
     /**
-     * No-op kept so all existing callers (modals) require no changes.
-     * The sidebar closes itself before dispatching config-action events.
+     * Sidebar closes itself before dispatching config-action events.
+     * (Historical: this was a no-op shim kept after the v2.30 sidebar
+     * migration when callers still received a closeMenu function. All
+     * dead callers were removed in v2.38.2 along with this shim.)
      */
-    const closeMenu = () => {};
 
     /**
      * Renders a "coming soon" placeholder into the pageView container.
@@ -577,7 +572,6 @@ import {
      * Opens the General Configuration modal, pre-populated with current settings.
      */
     function openGeneralConfigModal() {
-        closeMenu();
         const alias = activeProfile.alias;
 
         // Existing toggles

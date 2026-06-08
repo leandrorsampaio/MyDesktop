@@ -1,6 +1,6 @@
 # SPEC — Project Specification
 
-**Version:** 2.38.1
+**Version:** 2.38.2
 **Last Updated:** 2026-06-08
 
 ---
@@ -187,8 +187,11 @@ DELETE /api/:profile/columns/:id         - Delete column; tasks moved to first c
 
 ### AI Assistant (global config + profile-scoped staged tasks)
 ```
-GET    /api/ai/config                              - Get AI config metadata (provider, model, hasKey: bool — key never returned)
-POST   /api/ai/config                              - Save AI config (body: { provider, model, apiKey?, customUrl? }); empty apiKey = keep existing key
+GET    /api/ai/config                              - Get AI config (returns { activeConfigId, configs: [{ id, name, provider, model, customUrl?, hasKey: bool }] } — key never returned)
+POST   /api/ai/config/entries                      - Create new config entry (body: { name, provider, model, apiKey?, customUrl? })
+PUT    /api/ai/config/entries/:id                  - Update a config entry; empty apiKey preserves existing key
+DELETE /api/ai/config/entries/:id                  - Delete a config entry
+PUT    /api/ai/config/active                       - Set the active config (body: { configId })
 POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[] }; rate-limited 10 req/min (body: { messages: [{role,content}] })
 GET    /api/:profile/ai/staged                     - Get all staged tasks
 POST   /api/:profile/ai/staged                     - Create staged task manually (body: StagedTask fields)

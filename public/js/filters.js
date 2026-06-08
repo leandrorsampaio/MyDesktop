@@ -58,43 +58,44 @@ export function togglePriorityFilter(priorityBtn, applyFilters) {
 }
 
 /**
+ * Pure decision function — does a card match the active filter set?
+ * Extracted so the AND-logic can be unit tested without a DOM.
+ *
+ * @param {Object} card - { category: number, priority: boolean, epicId: string|null }
+ * @param {Object} filters - { activeCategoryFilters: Set<number>, priorityFilterActive: boolean, activeEpicFilter: string|null }
+ * @returns {boolean} true if the card should be hidden from view.
+ */
+export function shouldHideCard(card, filters) {
+    if (filters.activeCategoryFilters.size > 0 && !filters.activeCategoryFilters.has(card.category)) {
+        return true;
+    }
+    if (filters.priorityFilterActive && !card.priority) {
+        return true;
+    }
+    if (filters.activeEpicFilter && (card.epicId || '') !== filters.activeEpicFilter) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * Applies all active filters (category, priority, epic) to task cards.
  * Queries through kanban-column Shadow DOMs to find task-card elements.
  * Cards that don't match active filters are hidden via the hidden attribute.
  */
 export function applyAllFilters() {
-    // Task cards are inside kanban-column Shadow DOMs, so we need to query through them
     const columns = document.querySelectorAll('kanban-column');
     const cards = Array.from(columns).flatMap(col =>
         Array.from(col.shadowRoot?.querySelectorAll('task-card') || [])
     );
-    const hasCategoryFilters = activeCategoryFilters.size > 0;
+    const filters = { activeCategoryFilters, priorityFilterActive, activeEpicFilter };
 
     cards.forEach(card => {
-        let hidden = false;
-
-        // Category filter
-        if (hasCategoryFilters) {
-            const cardCategory = Number(card.dataset.category);
-            if (!activeCategoryFilters.has(cardCategory)) {
-                hidden = true;
-            }
-        }
-
-        // Priority filter
-        if (priorityFilterActive && card.dataset.priority !== 'true') {
-            hidden = true;
-        }
-
-        // Epic filter
-        if (activeEpicFilter) {
-            const cardEpicId = card.dataset.epicId || '';
-            if (cardEpicId !== activeEpicFilter) {
-                hidden = true;
-            }
-        }
-
-        card.hidden = hidden;
+        card.hidden = shouldHideCard({
+            category: Number(card.dataset.category),
+            priority: card.dataset.priority === 'true',
+            epicId: card.dataset.epicId || null
+        }, filters);
     });
 }
 

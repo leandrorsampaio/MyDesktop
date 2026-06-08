@@ -29,7 +29,10 @@
       "Bash(python3 /tmp/tokenize_css.py /Users/leandrorossisampaio/Desktop/+++/LeandroGit/MyDesktop/public/styles.css)",
       "Bash(python3 *)",
       "Bash(pkill -f \"node server.js\")",
-      "Bash(RATE_LIMIT_DISABLED=1 node server.js)"
+      "Bash(RATE_LIMIT_DISABLED=1 node server.js)",
+      "Bash(awk '/^export.*open\\(Archived|Checklist|Epics|Categories|Profiles|Reports\\)Modal/,/^}$/' /Users/leandrorossisampaio/Desktop/+++/LeandroGit/MyDesktop/public/js/modals.js)",
+      "Bash(awk '/^export.*openBoardConfigModal/,/^}$/' /Users/leandrorossisampaio/Desktop/+++/LeandroGit/MyDesktop/public/js/board-config.js)",
+      "Bash(awk '/^1[0-3][0-9][0-9]:/')"
     ]
   }
 }

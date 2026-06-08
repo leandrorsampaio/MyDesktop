@@ -313,10 +313,26 @@ async function readJsonFile(filePath, defaultValue = []) {
     }
 }
 
+/**
+ * Atomic JSON write: write to a temp file, then rename into place. POSIX
+ * rename is atomic for files on the same filesystem, so the target file
+ * is either the old contents or the new contents — never partial or empty.
+ * Survives process kill, OS crash, or write failure mid-stream. Cross-file
+ * atomicity is still not guaranteed (no transactions on plain JSON), but
+ * each individual file stays internally valid.
+ */
 async function writeJsonFile(filePath, data) {
     const dir = path.dirname(filePath);
     await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+    const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+    try {
+        await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+        await fs.rename(tmpPath, filePath);
+    } catch (err) {
+        // Best-effort cleanup if rename never ran
+        try { await fs.unlink(tmpPath); } catch {}
+        throw err;
+    }
 }
 
 function generateId() {
@@ -845,9 +861,15 @@ app.delete('/api/profiles/:id', writeLimiter, async (req, res) => {
 
         await writeJsonFile(PROFILES_FILE, profiles);
 
-        // Remove profile data directory
+        // Remove profile data directory — best effort. If this fails the
+        // profile is still gone from app state; the orphaned directory is
+        // just disk clutter and doesn't break anything.
         const profileDir = path.join(DATA_DIR, alias);
-        await fs.rm(profileDir, { recursive: true, force: true });
+        try {
+            await fs.rm(profileDir, { recursive: true, force: true });
+        } catch (rmErr) {
+            console.warn(`Profile ${alias} removed; data directory cleanup failed:`, rmErr.message);
+        }
 
         res.json({ success: true });
     } catch (error) {
@@ -1635,15 +1657,24 @@ app.delete('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req
             return res.status(404).json({ error: 'Column not found' });
         }
 
+        // Guard: don't allow deleting the last NON-backlog column. The board
+        // page filters out backlog columns, so leaving only backlog would
+        // render an empty board with no way to add tasks via the UI.
+        const nonBacklogCount = columns.filter(c => c.id !== req.params.id && !c.isBacklog).length;
+        if (nonBacklogCount === 0) {
+            return res.status(400).json({ error: 'Cannot delete the last board column' });
+        }
+
         const deletedColumn = columns[colIndex];
         const sorted = [...columns].sort((a, b) => a.order - b.order);
-        // Default column is first (order 0), skip the one being deleted
-        const defaultColumn = sorted.find(c => c.id !== deletedColumn.id);
+        // Default column is first non-deleted, non-backlog column (board page
+        // can't show backlog, so moving tasks there would hide them).
+        const defaultColumn = sorted.find(c => c.id !== deletedColumn.id && !c.isBacklog);
 
         // Move all tasks in the deleted column to the default column
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
         const today = new Date().toISOString().split('T')[0];
-        let tasksUpdated = false;
+        let movedCount = 0;
 
         // Get max position in default column for appending
         const defaultColTasks = tasks.filter(t => t.status === defaultColumn.id);
@@ -1660,11 +1691,11 @@ app.delete('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req
                     date: today,
                     action: `Column '${deletedColumn.name}' deleted – moved to '${defaultColumn.name}'`
                 });
-                tasksUpdated = true;
+                movedCount++;
             }
         }
 
-        if (tasksUpdated) {
+        if (movedCount > 0) {
             await writeJsonFile(req.profileFiles.tasks, tasks);
         }
 
@@ -1681,7 +1712,7 @@ app.delete('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req
 
         res.json({
             success: true,
-            movedCount: tasksUpdated ? tasks.filter(t => t.status === defaultColumn.id).length : 0,
+            movedCount,
             defaultColumnName: defaultColumn.name
         });
     } catch (error) {
