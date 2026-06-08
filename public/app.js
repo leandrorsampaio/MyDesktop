@@ -34,7 +34,8 @@ import {
     setColumns
 } from './js/state.js';
 import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi } from './js/api.js';
-import { confirmDeleteColumn } from './js/board-config.js';
+// Column-delete confirmation is fully handled inside config-page.js — no
+// separate import needed since the v2.38.3 dead-modal cleanup.
 import {
     renderCategoryFilters,
     handleCategoryFilterChange,
@@ -50,11 +51,6 @@ import {
     openDeleteConfirmation,
     confirmDeleteTask,
     createTaskFormSubmitHandler,
-    addChecklistItem,
-    saveChecklist,
-    confirmDeleteEpic,
-    confirmDeleteCategory,
-    confirmDeleteProfile,
     setQuickDateTime
 } from './js/modals.js';
 
@@ -689,21 +685,8 @@ import {
             window.open('/' + e.detail.alias, '_blank');
         });
 
-        // Profile Confirm Delete Modal
-        elements.profileConfirmCancel.addEventListener('click', () => {
-            elements.profileConfirmModal.close();
-        });
-        elements.profileConfirmDelete.addEventListener('click', () => {
-            confirmDeleteProfile(elements);
-        });
-
-        // Category Confirm Delete Modal
-        elements.categoryConfirmCancel.addEventListener('click', () => {
-            elements.categoryConfirmModal.close();
-        });
-        elements.categoryConfirmDelete.addEventListener('click', () => {
-            confirmDeleteCategory(elements);
-        });
+        // Profile/Category/Epic delete-confirmation modals are wired inside
+        // config-page.js — that page owns the entire CRUD flow.
 
         // General Configuration (triggered via sidebar config menu)
         elements.generalConfigCancel.addEventListener('click', () => {
@@ -732,24 +715,9 @@ import {
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
 
-        // Column Delete Confirmation
-        elements.columnConfirmCancel.addEventListener('click', () => {
-            elements.columnConfirmModal.close();
-        });
-        elements.columnConfirmDelete.addEventListener('click', () => {
-            confirmDeleteColumn(elements);
-        });
-
-        // Checklist Modal (triggered via sidebar config menu)
-        elements.addChecklistItemBtn.addEventListener('click', () => {
-            addChecklistItem(elements);
-        });
-        elements.checklistCancelBtn.addEventListener('click', () => {
-            elements.checklistModal.close();
-        });
-        elements.checklistSaveBtn.addEventListener('click', () => {
-            saveChecklist(elements);
-        });
+        // Column delete confirmation is wired inside config-page.js.
+        // Checklist editing also lives in config-page.js now (the old modal
+        // editor was removed in v2.38.3).
 
         // Confirm Delete Modal (task)
         elements.confirmCancel.addEventListener('click', () => {
@@ -757,14 +725,6 @@ import {
         });
         elements.confirmDelete.addEventListener('click', () => {
             confirmDeleteTask(elements, renderAllColumns, removeTask);
-        });
-
-        // Confirm Delete Modal (epic)
-        elements.epicConfirmCancel.addEventListener('click', () => {
-            elements.epicConfirmModal.close();
-        });
-        elements.epicConfirmDelete.addEventListener('click', () => {
-            confirmDeleteEpic(elements);
         });
     }
 

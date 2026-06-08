@@ -5,6 +5,7 @@
  * weekday, and ISO week number. Self-contained — no public API or attributes.
  */
 class AppWelcome extends HTMLElement {
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — see SPEC Code Rule 7 */
     static templateCache = null;
 
     constructor() {
@@ -14,13 +15,13 @@ class AppWelcome extends HTMLElement {
 
     async connectedCallback() {
         if (!AppWelcome.templateCache) {
-            AppWelcome.templateCache = await Promise.all([
+            AppWelcome.templateCache = Promise.all([
                 fetch('/components/app-welcome/app-welcome.html').then(r => r.text()),
                 fetch('/components/app-welcome/app-welcome.css').then(r => r.text()),
             ]);
         }
 
-        const [html, css] = AppWelcome.templateCache;
+        const [html, css] = await AppWelcome.templateCache;
         this.shadowRoot.innerHTML = `<style>${css}</style>${html}`;
         this._initDate();
     }

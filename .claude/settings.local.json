@@ -32,7 +32,13 @@
       "Bash(RATE_LIMIT_DISABLED=1 node server.js)",
       "Bash(awk '/^export.*open\\(Archived|Checklist|Epics|Categories|Profiles|Reports\\)Modal/,/^}$/' /Users/leandrorossisampaio/Desktop/+++/LeandroGit/MyDesktop/public/js/modals.js)",
       "Bash(awk '/^export.*openBoardConfigModal/,/^}$/' /Users/leandrorossisampaio/Desktop/+++/LeandroGit/MyDesktop/public/js/board-config.js)",
-      "Bash(awk '/^1[0-3][0-9][0-9]:/')"
+      "Bash(awk '/^1[0-3][0-9][0-9]:/')",
+      "Bash(awk *)",
+      "Bash(cp public/js/modals.js /tmp/modals.js.bak)",
+      "Bash(sed -i '' -e 446,531d -e 648,712d -e 727,758d -e 826,1023d -e 1057,1258d -e 1315,1586d -e 1614,1826d public/js/modals.js)",
+      "Bash(sed -n '190,205p' public/js/dashboard-page.js)",
+      "Bash(sed -n '210,225p' public/js/modals.js)",
+      "Bash(sed -n '280,295p' public/js/dashboard-page.js)"
     ]
   }
 }

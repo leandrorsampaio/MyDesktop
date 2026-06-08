@@ -320,13 +320,21 @@ async function readJsonFile(filePath, defaultValue = []) {
  * Survives process kill, OS crash, or write failure mid-stream. Cross-file
  * atomicity is still not guaranteed (no transactions on plain JSON), but
  * each individual file stays internally valid.
+ *
+ * @param {string} filePath - Absolute path to the file.
+ * @param {*} data - JSON-serializable payload.
+ * @param {Object} [opts]
+ * @param {number} [opts.mode] - Optional file mode (e.g., 0o600 for owner-only).
+ *                               Applied to the temp file before rename so the
+ *                               restrictive mode is in place atomically.
  */
-async function writeJsonFile(filePath, data) {
+async function writeJsonFile(filePath, data, opts = {}) {
     const dir = path.dirname(filePath);
     await fs.mkdir(dir, { recursive: true });
     const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
     try {
         await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf8');
+        if (opts.mode) await fs.chmod(tmpPath, opts.mode);
         await fs.rename(tmpPath, filePath);
     } catch (err) {
         // Best-effort cleanup if rename never ran
@@ -2162,7 +2170,7 @@ app.post('/api/ai/config/entries', writeLimiter, async (req, res) => {
         config.configs.push(entry);
         if (!config.activeConfigId) config.activeConfigId = id;
 
-        await writeJsonFile(AI_CONFIG_FILE, config);
+        await writeJsonFile(AI_CONFIG_FILE, config, { mode: 0o600 });
         res.json({ activeConfigId: config.activeConfigId, entry: safeConfigEntry(entry) });
     } catch (error) {
         res.status(500).json({ error: 'Failed to create AI config entry' });
@@ -2204,7 +2212,7 @@ app.put('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
             baseUrl: provider === 'custom' ? baseUrl.trim().replace(/\/+$/, '') : ''
         };
 
-        await writeJsonFile(AI_CONFIG_FILE, config);
+        await writeJsonFile(AI_CONFIG_FILE, config, { mode: 0o600 });
         res.json({ entry: safeConfigEntry(config.configs[idx]) });
     } catch (error) {
         res.status(500).json({ error: 'Failed to update AI config entry' });
@@ -2230,7 +2238,7 @@ app.delete('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
             config.activeConfigId = config.configs[0]?.id || null;
         }
 
-        await writeJsonFile(AI_CONFIG_FILE, config);
+        await writeJsonFile(AI_CONFIG_FILE, config, { mode: 0o600 });
         res.json({ activeConfigId: config.activeConfigId });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete AI config entry' });
@@ -2251,7 +2259,7 @@ app.put('/api/ai/config/active', writeLimiter, async (req, res) => {
         if (!found) return res.status(404).json({ error: 'Config entry not found' });
 
         config.activeConfigId = configId;
-        await writeJsonFile(AI_CONFIG_FILE, config);
+        await writeJsonFile(AI_CONFIG_FILE, config, { mode: 0o600 });
         res.json({ activeConfigId: configId });
     } catch (error) {
         res.status(500).json({ error: 'Failed to set active AI config' });
@@ -2593,8 +2601,16 @@ app.get('/:alias', async (req, res) => {
 // Start server
 async function startServer() {
     await ensureDefaultProfile();
-    app.listen(PORT, () => {
-        console.log(`Task Tracker server running at http://localhost:${PORT}`);
+    // Bind to localhost-only by default — anyone on the same LAN would
+    // otherwise see and mutate the kanban. Set HOST=0.0.0.0 (or a specific
+    // interface) if you intentionally want LAN access (e.g., to view from
+    // your phone on the same wifi).
+    const HOST = process.env.HOST || '127.0.0.1';
+    app.listen(PORT, HOST, () => {
+        const url = HOST === '127.0.0.1'
+            ? `http://localhost:${PORT}`
+            : `http://${HOST}:${PORT} (also reachable at http://localhost:${PORT})`;
+        console.log(`Task Tracker server running at ${url}`);
     });
 }
 

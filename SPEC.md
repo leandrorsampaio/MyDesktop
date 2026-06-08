@@ -1,6 +1,6 @@
 # SPEC — Project Specification
 
-**Version:** 2.38.2
+**Version:** 2.38.3
 **Last Updated:** 2026-06-08
 
 ---
@@ -121,8 +121,9 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 
 **Server start:**
 ```bash
-node server.js          # http://localhost:3001
+node server.js                   # http://localhost:3001 (binds to 127.0.0.1 by default)
 PORT=4000 node server.js
+HOST=0.0.0.0 node server.js      # also accept LAN connections (off by default for safety)
 ```
 
 **Tests** (vanilla `node:test`, no external packages):

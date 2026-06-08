@@ -1,7 +1,7 @@
 import { DEBOUNCE_DELAY_MS } from '../../js/constants.js';
 
 class NotesWidget extends HTMLElement {
-    /** @type {[string, string]|null} Cached [html, css] templates */
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — see SPEC Code Rule 7 */
     static templateCache = null;
 
     constructor() {
@@ -13,12 +13,12 @@ class NotesWidget extends HTMLElement {
 
     async connectedCallback() {
         if (!NotesWidget.templateCache) {
-            NotesWidget.templateCache = await Promise.all([
+            NotesWidget.templateCache = Promise.all([
                 fetch('/components/notes-widget/notes-widget.html').then(response => response.text()),
                 fetch('/components/notes-widget/notes-widget.css').then(response => response.text())
             ]);
         }
-        const [html, css] = NotesWidget.templateCache;
+        const [html, css] = await NotesWidget.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

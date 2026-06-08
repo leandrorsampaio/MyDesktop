@@ -134,12 +134,6 @@
     </modal-dialog>
 
     <!-- Archived Tasks Modal -->
-    <modal-dialog class="js-archivedModal" size="large">
-        <span slot="title">All Completed Tasks</span>
-        <div class="archivedView js-archivedContainer">
-            <!-- Archived tasks list will be rendered here -->
-        </div>
-    </modal-dialog>
 
     <!-- Delete Confirmation Modal -->
     <modal-dialog class="js-confirmModal" size="small">
@@ -166,43 +160,8 @@
     </modal-dialog>
 
     <!-- Manage Epics Modal -->
-    <modal-dialog class="js-epicsModal" size="large">
-        <span slot="title">Manage Epics</span>
-        <div class="epicsEditor">
-            <p class="epicsEditor__hint">Create and manage epics to group your tasks. Each epic has a unique color. Maximum 20 epics.</p>
-            <div class="epicsEditor__form js-epicForm">
-                <div class="epicsEditor__formRow">
-                    <input type="text" class="epicsEditor__nameInput js-epicNameInput" placeholder="Epic name" />
-                    <custom-picker type="color" placeholder="Select color" columns="5" class="js-epicColorSelect"></custom-picker>
-                    <button type="button" class="btn --save js-epicAddBtn">Add Epic</button>
-                </div>
-                <div class="epicsEditor__alias js-epicAliasPreview"></div>
-                <div class="epicsEditor__colorError js-epicColorError" style="display: none;"></div>
-            </div>
-            <div class="epicsEditor__list js-epicsList">
-                <!-- Epics list rendered by JS -->
-            </div>
-        </div>
-    </modal-dialog>
 
     <!-- Manage Categories Modal -->
-    <modal-dialog class="js-categoriesModal" size="large">
-        <span slot="title">Manage Categories</span>
-        <div class="categoriesEditor">
-            <p class="categoriesEditor__hint">Create and manage categories to organize your tasks. Each category has an icon. Maximum 20 categories.</p>
-            <div class="categoriesEditor__form js-categoryForm">
-                <div class="categoriesEditor__formRow">
-                    <input type="text" class="categoriesEditor__nameInput js-categoryNameInput" placeholder="Category name" />
-                    <custom-picker type="icon" placeholder="Select icon" columns="7" class="js-categoryIconSelect"></custom-picker>
-                    <button type="button" class="btn --save js-categoryAddBtn">Add Category</button>
-                </div>
-                <div class="categoriesEditor__error js-categoryError" style="display: none;"></div>
-            </div>
-            <div class="categoriesEditor__list js-categoriesList">
-                <!-- Categories list rendered by JS -->
-            </div>
-        </div>
-    </modal-dialog>
 
     <!-- Category Delete Confirmation Modal -->
     <modal-dialog class="js-categoryConfirmModal" size="small">
@@ -217,43 +176,8 @@
     </modal-dialog>
 
     <!-- Edit Checklist Modal -->
-    <modal-dialog class="js-checklistModal" size="large">
-        <span slot="title">Edit Daily Checklist</span>
-        <div class="checklistEditor">
-            <p class="checklistEditor__hint">Add tasks to your daily checklist. Optionally add a URL to open when clicking the link icon.</p>
-            <div class="checklistEditor__items js-checklistItemsContainer">
-                <!-- Checklist items will be rendered here -->
-            </div>
-            <button type="button" class="checklistEditor__addBtn js-addChecklistItemBtn">+ Add Item</button>
-            <div class="modal__actions">
-                <div class="modal__actionsRight">
-                    <button type="button" class="btn --cancel js-checklistCancelBtn">Cancel</button>
-                    <button type="button" class="btn --save js-checklistSaveBtn">Save Checklist</button>
-                </div>
-            </div>
-        </div>
-    </modal-dialog>
 
     <!-- Manage Profiles Modal -->
-    <modal-dialog class="js-profilesModal" size="large">
-        <span slot="title">Manage Profiles</span>
-        <div class="profilesEditor">
-            <p class="profilesEditor__hint">Create and manage profiles to separate your data (e.g., Work vs Personal). Each profile has its own tasks, epics, notes, and reports. Maximum 20 profiles.</p>
-            <div class="profilesEditor__form js-profileForm">
-                <div class="profilesEditor__formRow">
-                    <input type="text" class="profilesEditor__nameInput js-profileNameInput" placeholder="Profile name" />
-                    <input type="text" class="profilesEditor__lettersInput js-profileLettersInput" placeholder="AB" maxlength="3" />
-                    <custom-picker type="color" placeholder="Select color" columns="5" class="js-profileColorSelect"></custom-picker>
-                    <button type="button" class="btn --save js-profileAddBtn">Add Profile</button>
-                </div>
-                <div class="profilesEditor__alias js-profileAliasPreview"></div>
-                <div class="profilesEditor__error js-profileError" style="display: none;"></div>
-            </div>
-            <div class="profilesEditor__list js-profilesList">
-                <!-- Profiles list rendered by JS -->
-            </div>
-        </div>
-    </modal-dialog>
 
     <!-- Profile Delete Confirmation Modal -->
     <modal-dialog class="js-profileConfirmModal" size="small">
@@ -268,22 +192,6 @@
     </modal-dialog>
 
     <!-- Board Configuration Modal -->
-    <modal-dialog class="js-boardConfigModal" size="large">
-        <span slot="title">Board Configuration</span>
-        <div class="boardConfigEditor">
-            <p class="boardConfigEditor__hint">Manage your board columns. Drag to reorder. The first column is the default where new tasks are created. Maximum 15 columns.</p>
-            <div class="boardConfigEditor__form js-columnForm">
-                <div class="boardConfigEditor__formRow">
-                    <input type="text" class="boardConfigEditor__nameInput js-columnNameInput" placeholder="New column name" />
-                    <button type="button" class="btn --save js-columnAddBtn">Add Column</button>
-                </div>
-                <div class="boardConfigEditor__error js-columnError" style="display: none;"></div>
-            </div>
-            <div class="boardConfigEditor__list js-columnsList">
-                <!-- Column rows rendered by JS -->
-            </div>
-        </div>
-    </modal-dialog>
 
     <!-- General Configuration Modal -->
     <modal-dialog class="js-generalConfigModal">
@@ -361,56 +269,6 @@
     </modal-dialog>
 
     <!-- AI Configuration Modal -->
-    <modal-dialog class="js-aiConfigModal">
-        <span slot="title">AI Configuration</span>
-        <div class="aiConfig">
-            <!-- Panel 1: List view -->
-            <div class="aiConfig__listPanel js-aiConfigListPanel">
-                <p class="aiConfig__hint">API keys are stored locally on your machine and never shared.</p>
-                <div class="aiConfig__entries js-aiConfigEntries"></div>
-                <button type="button" class="aiConfig__addBtn js-aiConfigAddBtn">+ Add configuration</button>
-            </div>
-            <!-- Panel 2: Form view (add / edit) -->
-            <div class="aiConfig__formPanel js-aiConfigFormPanel" style="display:none;">
-                <button type="button" class="aiConfig__backBtn js-aiConfigBackBtn">← Back</button>
-                <div class="aiConfig__group">
-                    <label class="aiConfig__label">Name</label>
-                    <input type="text" class="aiConfig__input js-aiConfigNameInput" placeholder="e.g. LM Studio - Devstral" maxlength="100" />
-                </div>
-                <div class="aiConfig__group">
-                    <label class="aiConfig__label">Provider</label>
-                    <select class="aiConfig__select js-aiConfigProviderSel">
-                        <option value="anthropic">Anthropic (Claude)</option>
-                        <option value="openai">OpenAI</option>
-                        <option value="groq">Groq</option>
-                        <option value="google">Google AI Studio (Gemini)</option>
-                        <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
-                    </select>
-                </div>
-                <div class="aiConfig__group js-aiConfigCustomUrlGroup" style="display:none;">
-                    <label class="aiConfig__label">Base URL</label>
-                    <input type="text" class="aiConfig__input js-aiConfigCustomUrl" placeholder="http://localhost:1234/v1" />
-                    <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
-                </div>
-                <div class="aiConfig__group">
-                    <label class="aiConfig__label">Model</label>
-                    <input type="text" class="aiConfig__input js-aiConfigModelInput" placeholder="Enter model name" />
-                </div>
-                <div class="aiConfig__group">
-                    <label class="aiConfig__label">API Key</label>
-                    <input type="password" class="aiConfig__input js-aiConfigKeyInput" placeholder="Enter API key" autocomplete="off" />
-                    <p class="aiConfig__fieldHint js-aiConfigKeyHint"></p>
-                </div>
-                <div class="aiConfig__error js-aiConfigError" style="display:none;"></div>
-                <div class="modal__actions">
-                    <div class="modal__actionsRight">
-                        <button type="button" class="btn --cancel js-aiConfigCancel">Cancel</button>
-                        <button type="button" class="btn --save js-aiConfigSave">Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </modal-dialog>
 
     <!-- Toast Notifications -->
     <toast-notification class="js-toaster"></toast-notification>

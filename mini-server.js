@@ -269,7 +269,7 @@ function createApp() {
             return app;
         },
 
-        listen(port, cb) {
+        listen(port, ...rest) {
             const server = http.createServer(async (req, res) => {
                 wrapResponse(res);
                 req.ip = inferIp(req);
@@ -325,7 +325,8 @@ function createApp() {
                     res.end(JSON.stringify({ error: err.message || 'Internal error' }));
                 }
             });
-            server.listen(port, cb);
+            // Signature: listen(port, cb) OR listen(port, host, cb) — matches Express.
+            server.listen(port, ...rest);
             return server;
         }
     };

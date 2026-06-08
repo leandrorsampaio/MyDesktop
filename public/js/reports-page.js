@@ -93,12 +93,12 @@ export async function initReportsPage(pageViewEl, { elements }) {
         const { reportId } = e.detail;
         const report = reports.find(r => r.id === reportId);
         if (!report) return;
-        renderReportView(report, reports, elements);
-        // Override "Back to Reports" button to close modal instead of rendering list
+        renderReportView(report, elements);
+        // Attach back button → close modal (renderReportView no longer
+        // attaches its own handler; v2.38.3 deleted the dead modal-list path)
         const backBtn = elements.reportsContainer.querySelector('.js-backToReportsBtn');
         if (backBtn) {
-            backBtn.replaceWith(backBtn.cloneNode(true));
-            elements.reportsContainer.querySelector('.js-backToReportsBtn').addEventListener('click', () => {
+            backBtn.addEventListener('click', () => {
                 elements.reportsModal.close();
             });
         }
