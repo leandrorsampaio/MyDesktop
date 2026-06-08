@@ -1,6 +1,6 @@
 # MyDesktop
 
-A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components + Node/Express. No framework, no build step, no cloud.
+A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components + Node (built-in `http`). No framework, no build step, no cloud, **zero npm dependencies**.
 
 ```
 http://localhost:3001
@@ -73,10 +73,10 @@ For the full file tree, API surface, data models, and code rules, see [SPEC.md](
 | Layer | Tech |
 |---|---|
 | Frontend | Vanilla JS (ES modules), CSS, Web Components (Shadow DOM) |
-| Backend | Node.js + Express |
+| Backend | Node.js built-in `http` (via `mini-server.js` — a hand-written Express-compatible shim) |
 | Storage | JSON files |
 | Tests | `node:test` (no external test runner) |
-| Dependencies | Express only |
+| Dependencies | **None.** Clone the repo, run `node server.js` — no `npm install` required. |
 
 ### Conventions
 

@@ -6,9 +6,9 @@
 
 ## What this project is
 
-A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node/Express. **No framework, no build step, no bundler.** Edit a file, refresh the page.
+A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.37.3 (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.38.1 (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
@@ -49,13 +49,16 @@ If a doc disagrees with the code, **the code wins** — then update the doc.
 npm run dev              # node --watch — auto-restarts on save (use this in dev)
 node server.js           # one-shot
 PORT=4000 node server.js
-npm test                 # all tests (API tests need server running)
+RATE_LIMIT_DISABLED=1 node server.js   # test-mode: bypass rate limiter so the test suite doesn't 429 itself
+npm test                 # all tests (API tests need server running in test-mode)
 npm run test:unit
 npm run test:api
 ```
 
+API tests run sequentially against a dedicated `tests` profile (`data/tests/`, gitignored). The profile is created idempotently on first run.
+
 - **Frontend:** ES modules in `public/js/`, Web Components in `public/components/`. Entry: `public/app.js`.
-- **Backend:** `server.js`. Express only. JSON file persistence in `data/`.
+- **Backend:** `server.js` + `mini-server.js` (tiny Express-compatible shim built on Node's `http` module — see "House style" below). JSON file persistence in `data/`.
 - **Data:** `data/profiles.json` (global) + `data/{alias}/*.json` per profile.
 - **Routing:** server serves `index.html` for `/`, `/:alias`, `/:alias/:page`. Client parses `window.location.pathname` via `public/js/router.js`.
 
@@ -121,8 +124,9 @@ Backend includes: optimistic UI, rate limiting, input validation, race-condition
 ## House style for agent output
 
 - **Match existing patterns.** Copy from a neighbouring component or module before inventing. The codebase is consistent on purpose.
-- **No new dependencies.** Express is the only npm dep. Don't suggest adding a test runner, CSS preprocessor, or bundler — they were deliberately rejected.
+- **No new dependencies.** The project has **zero npm deps** as of v2.38.0 — `mini-server.js` is a hand-written Express-compatible shim over Node's built-in `http`. Don't suggest adding Express, a test runner, a CSS preprocessor, or a bundler — they were deliberately rejected.
 - **No frameworks.** This is a stake-in-the-ground choice. Don't propose React/Vue/Svelte/etc.
+- **Extending `mini-server.js`** is fine when a route needs something the shim doesn't expose (e.g., `req.query` — it's set but undocumented). Keep additions small and match the existing API shape so swapping back to real Express remains theoretically possible.
 - **Edit, don't add.** Prefer editing an existing file to creating a new one. Especially: don't create new markdown docs unless explicitly asked.
 - **Commit only when asked.** Always create new commits — never `--amend` or `git push --force` without explicit instruction.
 - **Update CHANGELOG when shipping.** One row, newest first, matching the existing terse single-sentence style.

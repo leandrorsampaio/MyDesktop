@@ -1,7 +1,7 @@
 # SPEC — Project Specification
 
-**Version:** 2.37.3
-**Last Updated:** 2026-04-13
+**Version:** 2.38.1
+**Last Updated:** 2026-06-08
 
 ---
 
@@ -32,7 +32,7 @@ This document describes the **current** state of the project. Always edit it to 
 
 ## Quick Context
 
-**Stack:** Vanilla JS + Web Components (Shadow DOM) + Node.js/Express. No framework, no build step.
+**Stack:** Vanilla JS + Web Components (Shadow DOM) + Node.js (built-in `http`, no Express — see `mini-server.js`). No framework, no build step, zero npm dependencies.
 **Port:** 3001. **Data:** JSON files in `data/{alias}/`. No auth. Single user, local only.
 **CSS:** BEM camelCase (`.blockName__elementName` / `.--modifier` / `.js-hook`). No IDs.
 
@@ -52,13 +52,14 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 ## Technical Stack & File Structure
 
 - **Frontend:** HTML5, Vanilla CSS, Vanilla JS — ES modules, no build step
-- **Backend:** Node.js + Express, port 3001
+- **Backend:** Node.js built-in `http` module, wrapped by `mini-server.js` (Express-compatible shim), port 3001
 - **Data:** JSON files in `./data/{profileAlias}/` (profile-scoped); `./data/profiles.json` (global)
-- **No external CSS/JS libraries**
+- **No external CSS/JS libraries. Zero npm dependencies.**
 
 ```
 /
 ├── server.js
+├── mini-server.js                # Express-compatible shim over Node's `http`. Zero-dep.
 ├── README.md
 ├── SPEC.md                        # This file
 ├── VISION.md
@@ -126,10 +127,18 @@ PORT=4000 node server.js
 
 **Tests** (vanilla `node:test`, no external packages):
 ```bash
+# Start the server in test mode (rate limit bypassed so the suite doesn't 429 itself):
+RATE_LIMIT_DISABLED=1 node server.js
+
+# Then in another terminal:
 npm test          # all (API tests require server running)
 npm run test:unit # unit only
 npm run test:api  # API only
 ```
+
+API tests run sequentially (`--test-concurrency=1`) against a dedicated `tests` profile (`data/tests/`, gitignored). The profile is created on first run via `POST /api/profiles` and never deleted — re-running is safe. Real user profiles are never touched.
+
+When `RATE_LIMIT_DISABLED=1` is set, the server also exposes `POST /api/_test/reset-rate-limit` (used by `rate-limit.test.js` to verify the `X-RateLimit-Remaining` header decreases from a fresh counter). The endpoint is not registered in normal mode.
 
 ---
 

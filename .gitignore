@@ -1,1 +1,13 @@
 data/ai-config.json
+data/tests/
+
+# Node — should never be tracked. Project is zero-dep as of v2.38.0,
+# but ignore these so an accidental `npm install` doesn't re-introduce them.
+node_modules/
+package-lock.json
+
+# OS / editor noise
+.DS_Store
+.vscode/
+.idea/
+*.log

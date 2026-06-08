@@ -74,5 +74,50 @@
         "isBacklog": false
       }
     ]
+  },
+  {
+    "id": "mq4gk1fnq82mt6hfp",
+    "name": "Tests",
+    "color": "#636E72",
+    "letters": "TST",
+    "alias": "tests",
+    "isDefault": false,
+    "columns": [
+      {
+        "id": "todo",
+        "name": "To Do",
+        "order": 0,
+        "hasArchive": false,
+        "isBacklog": false
+      },
+      {
+        "id": "wait",
+        "name": "Wait",
+        "order": 1,
+        "hasArchive": false,
+        "isBacklog": false
+      },
+      {
+        "id": "inprogress",
+        "name": "In Progress",
+        "order": 2,
+        "hasArchive": false,
+        "isBacklog": false
+      },
+      {
+        "id": "done",
+        "name": "Done",
+        "order": 3,
+        "hasArchive": true,
+        "isBacklog": false
+      },
+      {
+        "id": "backlog",
+        "name": "Backlog",
+        "order": 4,
+        "hasArchive": false,
+        "isBacklog": true
+      }
+    ]
   }
 ]

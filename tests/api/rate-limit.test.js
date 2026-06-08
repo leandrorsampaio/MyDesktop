@@ -22,8 +22,10 @@ const http = require('node:http');
 // Configuration
 // ===========================================
 const BASE_URL = 'http://localhost:3001';
+const TEST_PROFILE = 'tests';
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+const PROFILE_DIR = path.join(DATA_DIR, TEST_PROFILE);
+const TASKS_FILE = path.join(PROFILE_DIR, 'tasks.json');
 
 // ===========================================
 // HTTP Helper
@@ -74,6 +76,8 @@ describe('Rate Limiting', () => {
     let originalTasks;
 
     before(async () => {
+        await post('/api/profiles', { name: 'Tests', color: '#636E72', letters: 'TST' });
+        await fs.mkdir(PROFILE_DIR, { recursive: true });
         try {
             originalTasks = await fs.readFile(TASKS_FILE, 'utf8');
         } catch {
@@ -83,6 +87,9 @@ describe('Rate Limiting', () => {
 
     beforeEach(async () => {
         await fs.writeFile(TASKS_FILE, '[]');
+        // Reset the rate-limit counter so header-decrease assertions start fresh.
+        // Endpoint is only registered when the server runs with RATE_LIMIT_DISABLED=1.
+        await post('/api/_test/reset-rate-limit');
     });
 
     after(async () => {
@@ -95,7 +102,7 @@ describe('Rate Limiting', () => {
     describe('Rate limit headers', () => {
 
         it('includes X-RateLimit-Limit header', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
 
             assert.ok(
                 response.headers['x-ratelimit-limit'],
@@ -104,7 +111,7 @@ describe('Rate Limiting', () => {
         });
 
         it('includes X-RateLimit-Remaining header', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
 
             assert.ok(
                 response.headers['x-ratelimit-remaining'],
@@ -113,7 +120,7 @@ describe('Rate Limiting', () => {
         });
 
         it('includes X-RateLimit-Reset header', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
 
             assert.ok(
                 response.headers['x-ratelimit-reset'],
@@ -122,10 +129,10 @@ describe('Rate Limiting', () => {
         });
 
         it('X-RateLimit-Remaining decreases with each request', async () => {
-            const response1 = await get('/api/tasks');
+            const response1 = await get('/api/tests/tasks');
             const remaining1 = parseInt(response1.headers['x-ratelimit-remaining']);
 
-            const response2 = await get('/api/tasks');
+            const response2 = await get('/api/tests/tasks');
             const remaining2 = parseInt(response2.headers['x-ratelimit-remaining']);
 
             assert.ok(
@@ -141,14 +148,14 @@ describe('Rate Limiting', () => {
     describe('Write operation limits', () => {
 
         it('allows normal write operations', async () => {
-            const response = await post('/api/tasks', { title: 'Test task' });
+            const response = await post('/api/tests/tasks', { title: 'Test task' });
 
             assert.strictEqual(response.status, 201);
         });
 
         it('tracks write operations separately', async () => {
             // Make a write request
-            const writeResponse = await post('/api/tasks', { title: 'Test' });
+            const writeResponse = await post('/api/tests/tasks', { title: 'Test' });
 
             // Check that it has rate limit headers
             assert.ok(
@@ -173,7 +180,7 @@ describe('Rate Limiting', () => {
 
             const requests = [];
             for (let i = 0; i < 35; i++) {
-                requests.push(post('/api/tasks', { title: `Task ${i}` }));
+                requests.push(post('/api/tests/tasks', { title: `Task ${i}` }));
             }
 
             const responses = await Promise.all(requests);
@@ -199,7 +206,7 @@ describe('Rate Limiting', () => {
     describe('Rate limit configuration (informational)', () => {
 
         it('documents the current limits', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
             const limit = response.headers['x-ratelimit-limit'];
 
             console.log(`\n  Current rate limit: ${limit} requests per minute`);

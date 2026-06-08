@@ -5,7 +5,7 @@
  *
  * To run:
  *   Terminal 1: node server.js
- *   Terminal 2: node --test tests/api/reports.test.js
+ *   Terminal 2: node --test tests/api/tests/reports.test.js
  */
 
 const { describe, it, before, after, beforeEach } = require('node:test');
@@ -18,10 +18,13 @@ const http = require('node:http');
 // Configuration
 // ===========================================
 const BASE_URL = 'http://localhost:3001';
+const TEST_PROFILE = 'tests';
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
-const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
+const PROFILE_DIR = path.join(DATA_DIR, TEST_PROFILE);
+const REPORTS_FILE = path.join(PROFILE_DIR, 'reports.json');
+const TASKS_FILE = path.join(PROFILE_DIR, 'tasks.json');
+const NOTES_FILE = path.join(PROFILE_DIR, 'notes.json');
+const ARCHIVED_FILE = path.join(PROFILE_DIR, 'archived-tasks.json');
 
 // ===========================================
 // HTTP Helper
@@ -75,6 +78,8 @@ describe('Reports API', () => {
     let originalNotes;
 
     before(async () => {
+        await post('/api/profiles', { name: 'Tests', color: '#636E72', letters: 'TST' });
+        await fs.mkdir(PROFILE_DIR, { recursive: true });
         try {
             originalReports = await fs.readFile(REPORTS_FILE, 'utf8');
         } catch {
@@ -96,6 +101,7 @@ describe('Reports API', () => {
         await fs.writeFile(REPORTS_FILE, '[]');
         await fs.writeFile(TASKS_FILE, '[]');
         await fs.writeFile(NOTES_FILE, '{"content":""}');
+        await fs.writeFile(ARCHIVED_FILE, '[]');
     });
 
     after(async () => {
@@ -105,44 +111,44 @@ describe('Reports API', () => {
     });
 
     // -------------------------------------------
-    // GET /api/reports
+    // GET /api/tests/reports
     // -------------------------------------------
-    describe('GET /api/reports', () => {
+    describe('GET /api/tests/reports', () => {
 
         it('returns 200 status', async () => {
-            const response = await get('/api/reports');
+            const response = await get('/api/tests/reports');
             assert.strictEqual(response.status, 200);
         });
 
         it('returns empty array when no reports exist', async () => {
-            const response = await get('/api/reports');
+            const response = await get('/api/tests/reports');
             assert.deepStrictEqual(response.body, []);
         });
 
         it('returns all reports', async () => {
             // Generate two reports
-            await post('/api/reports/generate');
-            await post('/api/reports/generate');
+            await post('/api/tests/reports/generate');
+            await post('/api/tests/reports/generate');
 
-            const response = await get('/api/reports');
+            const response = await get('/api/tests/reports');
             assert.strictEqual(response.body.length, 2);
         });
     });
 
     // -------------------------------------------
-    // POST /api/reports/generate
+    // POST /api/tests/reports/generate
     // -------------------------------------------
-    describe('POST /api/reports/generate', () => {
+    describe('POST /api/tests/reports/generate', () => {
 
         it('generates a report', async () => {
-            const response = await post('/api/reports/generate');
+            const response = await post('/api/tests/reports/generate');
 
             assert.strictEqual(response.status, 200);
             assert.ok(response.body.id, 'Report should have an ID');
         });
 
         it('includes week number in title', async () => {
-            const response = await post('/api/reports/generate');
+            const response = await post('/api/tests/reports/generate');
 
             assert.ok(
                 response.body.title.includes('Week'),
@@ -151,7 +157,7 @@ describe('Reports API', () => {
         });
 
         it('includes date range in title', async () => {
-            const response = await post('/api/reports/generate');
+            const response = await post('/api/tests/reports/generate');
 
             // Should have format like "Week 6 (Feb 2-8)"
             assert.ok(
@@ -162,7 +168,7 @@ describe('Reports API', () => {
 
         it('sets generatedDate', async () => {
             const before = new Date().toISOString();
-            const response = await post('/api/reports/generate');
+            const response = await post('/api/tests/reports/generate');
             const after = new Date().toISOString();
 
             assert.ok(response.body.generatedDate, 'Should have generatedDate');
@@ -172,88 +178,91 @@ describe('Reports API', () => {
             );
         });
 
-        it('includes content sections', async () => {
-            const response = await post('/api/reports/generate');
+        it('includes columns array in content', async () => {
+            const response = await post('/api/tests/reports/generate');
 
             assert.ok('content' in response.body, 'Should have content');
-            assert.ok('archived' in response.body.content, 'Should have archived section');
-            assert.ok('inProgress' in response.body.content, 'Should have inProgress section');
-            assert.ok('waiting' in response.body.content, 'Should have waiting section');
-            assert.ok('todo' in response.body.content, 'Should have todo section');
+            assert.ok(Array.isArray(response.body.content.columns), 'content.columns should be an array');
+            // Default profile has 5 columns: todo, wait, inprogress, done, backlog.
+            const ids = response.body.content.columns.map(c => c.columnId);
+            assert.ok(ids.includes('todo'), 'Should include todo column');
+            assert.ok(ids.includes('done'), 'Should include done column');
         });
 
         it('captures tasks in report', async () => {
             // Create tasks in different columns
-            await post('/api/tasks', { title: 'Todo Task' });
+            await post('/api/tests/tasks', { title: 'Todo Task' });
 
-            const createDone = await post('/api/tasks', { title: 'Done Task' });
-            await post(`/api/tasks/${createDone.body.id}/move`, {
+            const createDone = await post('/api/tests/tasks', { title: 'Done Task' });
+            await post(`/api/tests/tasks/${createDone.body.id}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
 
-            const response = await post('/api/reports/generate');
+            const response = await post('/api/tests/reports/generate');
 
-            assert.strictEqual(response.body.content.todo.length, 1);
-            assert.strictEqual(response.body.content.archived.length, 1);
+            const todoCol = response.body.content.columns.find(c => c.columnId === 'todo');
+            const doneCol = response.body.content.columns.find(c => c.columnId === 'done');
+            assert.strictEqual(todoCol.tasks.length, 1);
+            assert.strictEqual(doneCol.tasks.length, 1);
         });
 
         it('captures notes in report', async () => {
-            await post('/api/notes', { content: 'My test notes' });
+            await post('/api/tests/notes', { content: 'My test notes' });
 
-            const response = await post('/api/reports/generate');
+            const response = await post('/api/tests/reports/generate');
 
             assert.strictEqual(response.body.notes, 'My test notes');
         });
 
         it('does not archive tasks (snapshot only)', async () => {
-            const createTask = await post('/api/tasks', { title: 'Test' });
-            await post(`/api/tasks/${createTask.body.id}/move`, {
+            const createTask = await post('/api/tests/tasks', { title: 'Test' });
+            await post(`/api/tests/tasks/${createTask.body.id}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
 
-            await post('/api/reports/generate');
+            await post('/api/tests/reports/generate');
 
             // Task should still be in tasks list
-            const tasksResponse = await get('/api/tasks');
+            const tasksResponse = await get('/api/tests/tasks');
             assert.strictEqual(tasksResponse.body.length, 1);
             assert.strictEqual(tasksResponse.body[0].status, 'done');
         });
     });
 
     // -------------------------------------------
-    // GET /api/reports/:id
+    // GET /api/tests/reports/:id
     // -------------------------------------------
-    describe('GET /api/reports/:id', () => {
+    describe('GET /api/tests/reports/:id', () => {
 
         it('returns specific report', async () => {
-            const generated = await post('/api/reports/generate');
+            const generated = await post('/api/tests/reports/generate');
             const reportId = generated.body.id;
 
-            const response = await get(`/api/reports/${reportId}`);
+            const response = await get(`/api/tests/reports/${reportId}`);
 
             assert.strictEqual(response.status, 200);
             assert.strictEqual(response.body.id, reportId);
         });
 
         it('returns 404 for non-existent report', async () => {
-            const response = await get('/api/reports/nonexistent123');
+            const response = await get('/api/tests/reports/nonexistent123');
 
             assert.strictEqual(response.status, 404);
         });
     });
 
     // -------------------------------------------
-    // PUT /api/reports/:id
+    // PUT /api/tests/reports/:id
     // -------------------------------------------
-    describe('PUT /api/reports/:id', () => {
+    describe('PUT /api/tests/reports/:id', () => {
 
         it('updates report title', async () => {
-            const generated = await post('/api/reports/generate');
+            const generated = await post('/api/tests/reports/generate');
             const reportId = generated.body.id;
 
-            const response = await put(`/api/reports/${reportId}`, {
+            const response = await put(`/api/tests/reports/${reportId}`, {
                 title: 'Custom Report Title'
             });
 
@@ -262,10 +271,10 @@ describe('Reports API', () => {
         });
 
         it('trims title whitespace', async () => {
-            const generated = await post('/api/reports/generate');
+            const generated = await post('/api/tests/reports/generate');
             const reportId = generated.body.id;
 
-            const response = await put(`/api/reports/${reportId}`, {
+            const response = await put(`/api/tests/reports/${reportId}`, {
                 title: '  Trimmed Title  '
             });
 
@@ -273,7 +282,7 @@ describe('Reports API', () => {
         });
 
         it('returns 404 for non-existent report', async () => {
-            const response = await put('/api/reports/nonexistent123', {
+            const response = await put('/api/tests/reports/nonexistent123', {
                 title: 'New Title'
             });
 
@@ -282,115 +291,115 @@ describe('Reports API', () => {
     });
 
     // -------------------------------------------
-    // DELETE /api/reports/:id
+    // DELETE /api/tests/reports/:id
     // -------------------------------------------
-    describe('DELETE /api/reports/:id', () => {
+    describe('DELETE /api/tests/reports/:id', () => {
 
         it('deletes a report', async () => {
-            const generated = await post('/api/reports/generate');
+            const generated = await post('/api/tests/reports/generate');
             const reportId = generated.body.id;
 
-            const deleteResponse = await del(`/api/reports/${reportId}`);
+            const deleteResponse = await del(`/api/tests/reports/${reportId}`);
             assert.strictEqual(deleteResponse.status, 200);
 
             // Verify it's gone
-            const getResponse = await get('/api/reports');
+            const getResponse = await get('/api/tests/reports');
             assert.strictEqual(getResponse.body.length, 0);
         });
 
         it('returns success: true', async () => {
-            const generated = await post('/api/reports/generate');
+            const generated = await post('/api/tests/reports/generate');
 
-            const response = await del(`/api/reports/${generated.body.id}`);
+            const response = await del(`/api/tests/reports/${generated.body.id}`);
 
             assert.strictEqual(response.body.success, true);
         });
 
         it('returns 404 for non-existent report', async () => {
-            const response = await del('/api/reports/nonexistent123');
+            const response = await del('/api/tests/reports/nonexistent123');
 
             assert.strictEqual(response.status, 404);
         });
     });
 
     // -------------------------------------------
-    // POST /api/tasks/archive
+    // POST /api/tests/tasks/archive
     // -------------------------------------------
-    describe('POST /api/tasks/archive', () => {
+    describe('POST /api/tests/tasks/archive', () => {
 
         it('archives done tasks', async () => {
-            const task = await post('/api/tasks', { title: 'Test' });
-            await post(`/api/tasks/${task.body.id}/move`, {
+            const task = await post('/api/tests/tasks', { title: 'Test' });
+            await post(`/api/tests/tasks/${task.body.id}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
 
-            const response = await post('/api/tasks/archive');
+            const response = await post('/api/tests/tasks/archive');
 
             assert.strictEqual(response.status, 200);
             assert.strictEqual(response.body.archivedCount, 1);
         });
 
         it('removes archived tasks from active tasks', async () => {
-            const task = await post('/api/tasks', { title: 'Test' });
-            await post(`/api/tasks/${task.body.id}/move`, {
+            const task = await post('/api/tests/tasks', { title: 'Test' });
+            await post(`/api/tests/tasks/${task.body.id}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
 
-            await post('/api/tasks/archive');
+            await post('/api/tests/tasks/archive');
 
-            const tasksResponse = await get('/api/tasks');
+            const tasksResponse = await get('/api/tests/tasks');
             assert.strictEqual(tasksResponse.body.length, 0);
         });
 
         it('moves tasks to archived file', async () => {
-            const task = await post('/api/tasks', { title: 'Test' });
-            await post(`/api/tasks/${task.body.id}/move`, {
+            const task = await post('/api/tests/tasks', { title: 'Test' });
+            await post(`/api/tests/tasks/${task.body.id}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
 
-            await post('/api/tasks/archive');
+            await post('/api/tests/tasks/archive');
 
-            const archivedResponse = await get('/api/archived');
+            const archivedResponse = await get('/api/tests/archived');
             assert.strictEqual(archivedResponse.body.length, 1);
             assert.strictEqual(archivedResponse.body[0].status, 'archived');
         });
 
         it('returns 400 when no done tasks', async () => {
             // Create a task but don't move it to done
-            await post('/api/tasks', { title: 'Still todo' });
+            await post('/api/tests/tasks', { title: 'Still todo' });
 
-            const response = await post('/api/tasks/archive');
+            const response = await post('/api/tests/tasks/archive');
 
             assert.strictEqual(response.status, 400);
             assert.ok(response.body.error, 'Should have error message');
         });
 
         it('does not archive non-done tasks', async () => {
-            await post('/api/tasks', { title: 'Todo task' });
+            await post('/api/tests/tasks', { title: 'Todo task' });
 
-            const inProgress = await post('/api/tasks', { title: 'In progress' });
-            await post(`/api/tasks/${inProgress.body.id}/move`, {
+            const inProgress = await post('/api/tests/tasks', { title: 'In progress' });
+            await post(`/api/tests/tasks/${inProgress.body.id}/move`, {
                 newStatus: 'inprogress',
                 newPosition: 0
             });
 
-            const done = await post('/api/tasks', { title: 'Done task' });
-            await post(`/api/tasks/${done.body.id}/move`, {
+            const done = await post('/api/tests/tasks', { title: 'Done task' });
+            await post(`/api/tests/tasks/${done.body.id}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
 
-            await post('/api/tasks/archive');
+            await post('/api/tests/tasks/archive');
 
             // Only done task should be archived
-            const archivedResponse = await get('/api/archived');
+            const archivedResponse = await get('/api/tests/archived');
             assert.strictEqual(archivedResponse.body.length, 1);
 
             // Other tasks should remain
-            const tasksResponse = await get('/api/tasks');
+            const tasksResponse = await get('/api/tests/tasks');
             assert.strictEqual(tasksResponse.body.length, 2);
         });
     });

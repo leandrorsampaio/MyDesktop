@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('./mini-server');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -77,14 +77,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ===========================================
 
 /**
- * Rate limit configuration
- * Generous limits since this is a local-only app
+ * Rate limit configuration.
+ * Generous limits since this is a local-only app.
+ *
+ * For tests: start the server with `RATE_LIMIT_DISABLED=1 node server.js`
+ * to bypass the limiter entirely (headers are still emitted so header-presence
+ * assertions keep working). The integration test suite trips the default
+ * 30-writes/min budget otherwise.
  */
 const RATE_LIMIT = {
     WINDOW_MS: 60 * 1000,    // 1 minute window
     MAX_REQUESTS: 100,        // Max requests per window (read operations)
     MAX_WRITES: 30            // Max write operations per window (POST/PUT/DELETE)
 };
+const RATE_LIMIT_DISABLED = process.env.RATE_LIMIT_DISABLED === '1';
 
 /**
  * In-memory store for rate limiting
@@ -129,9 +135,9 @@ function createRateLimiter({ maxRequests, isWriteOperation = false }) {
             entry.writeCount++;
         }
 
-        // Check limits
+        // Check limits (unless explicitly disabled for tests)
         const currentCount = isWriteOperation ? entry.writeCount : entry.count;
-        if (currentCount > maxRequests) {
+        if (!RATE_LIMIT_DISABLED && currentCount > maxRequests) {
             const retryAfter = Math.ceil((entry.windowStart + RATE_LIMIT.WINDOW_MS - now) / 1000);
             res.set('Retry-After', retryAfter);
             return res.status(429).json({
@@ -157,6 +163,15 @@ const aiLimiter = createRateLimiter({ maxRequests: 10, isWriteOperation: true })
 
 // Apply rate limiting to all API routes
 app.use('/api/', readLimiter);
+
+// Test-only: clear the rate limit counter store. Only registered when
+// RATE_LIMIT_DISABLED=1 so it can't be reached in production.
+if (RATE_LIMIT_DISABLED) {
+    app.post('/api/_test/reset-rate-limit', (req, res) => {
+        rateLimitStore.clear();
+        res.json({ success: true });
+    });
+}
 
 // ===========================================
 // Input Validation
@@ -1127,6 +1142,10 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
             return res.status(400).json({ error: 'No tasks to archive in this column' });
         }
 
+        // Capture IDs BEFORE mutating, since doneTasks holds references into tasks.
+        // Filtering by `t.status !== 'done'` after the loop would keep them (status
+        // is now 'archived'), and hardcoding 'done' breaks archive from other columns.
+        const archivedIds = new Set(doneTasks.map(t => t.id));
         for (const task of doneTasks) {
             task.status = 'archived';
             // Store category name so it persists even if category is later deleted
@@ -1134,7 +1153,7 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
             archivedTasks.push(task);
         }
 
-        const activeTasks = tasks.filter(t => t.status !== 'done');
+        const activeTasks = tasks.filter(t => !archivedIds.has(t.id));
 
         await writeJsonFile(req.profileFiles.tasks, activeTasks);
         await writeJsonFile(req.profileFiles.archived, archivedTasks);

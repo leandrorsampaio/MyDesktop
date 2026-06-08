@@ -5,7 +5,7 @@
  *
  * To run:
  *   Terminal 1: node server.js
- *   Terminal 2: node --test tests/api/notes.test.js
+ *   Terminal 2: node --test tests/api/tests/notes.test.js
  */
 
 const { describe, it, before, after, beforeEach } = require('node:test');
@@ -18,8 +18,10 @@ const http = require('node:http');
 // Configuration
 // ===========================================
 const BASE_URL = 'http://localhost:3001';
+const TEST_PROFILE = 'tests';
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
+const PROFILE_DIR = path.join(DATA_DIR, TEST_PROFILE);
+const NOTES_FILE = path.join(PROFILE_DIR, 'notes.json');
 
 // ===========================================
 // HTTP Helper
@@ -69,6 +71,8 @@ describe('Notes API', () => {
     let originalNotes;
 
     before(async () => {
+        await post('/api/profiles', { name: 'Tests', color: '#636E72', letters: 'TST' });
+        await fs.mkdir(PROFILE_DIR, { recursive: true });
         try {
             originalNotes = await fs.readFile(NOTES_FILE, 'utf8');
         } catch {
@@ -85,40 +89,40 @@ describe('Notes API', () => {
     });
 
     // -------------------------------------------
-    // GET /api/notes
+    // GET /api/tests/notes
     // -------------------------------------------
-    describe('GET /api/notes', () => {
+    describe('GET /api/tests/notes', () => {
 
         it('returns 200 status', async () => {
-            const response = await get('/api/notes');
+            const response = await get('/api/tests/notes');
             assert.strictEqual(response.status, 200);
         });
 
         it('returns object with content property', async () => {
-            const response = await get('/api/notes');
+            const response = await get('/api/tests/notes');
             assert.ok('content' in response.body, 'Should have content property');
         });
 
         it('returns empty content when no notes exist', async () => {
-            const response = await get('/api/notes');
+            const response = await get('/api/tests/notes');
             assert.strictEqual(response.body.content, '');
         });
 
         it('returns saved notes content', async () => {
-            await post('/api/notes', { content: 'My notes' });
+            await post('/api/tests/notes', { content: 'My notes' });
 
-            const response = await get('/api/notes');
+            const response = await get('/api/tests/notes');
             assert.strictEqual(response.body.content, 'My notes');
         });
     });
 
     // -------------------------------------------
-    // POST /api/notes
+    // POST /api/tests/notes
     // -------------------------------------------
-    describe('POST /api/notes', () => {
+    describe('POST /api/tests/notes', () => {
 
         it('saves notes content', async () => {
-            const response = await post('/api/notes', {
+            const response = await post('/api/tests/notes', {
                 content: 'Test notes content'
             });
 
@@ -127,43 +131,43 @@ describe('Notes API', () => {
         });
 
         it('overwrites existing notes', async () => {
-            await post('/api/notes', { content: 'First' });
-            await post('/api/notes', { content: 'Second' });
+            await post('/api/tests/notes', { content: 'First' });
+            await post('/api/tests/notes', { content: 'Second' });
 
-            const response = await get('/api/notes');
+            const response = await get('/api/tests/notes');
             assert.strictEqual(response.body.content, 'Second');
         });
 
         it('handles empty content', async () => {
-            await post('/api/notes', { content: 'Something' });
-            const response = await post('/api/notes', { content: '' });
+            await post('/api/tests/notes', { content: 'Something' });
+            const response = await post('/api/tests/notes', { content: '' });
 
             assert.strictEqual(response.body.content, '');
         });
 
         it('handles multiline content', async () => {
             const multiline = 'Line 1\nLine 2\nLine 3';
-            const response = await post('/api/notes', { content: multiline });
+            const response = await post('/api/tests/notes', { content: multiline });
 
             assert.strictEqual(response.body.content, multiline);
         });
 
         it('handles special characters', async () => {
             const special = 'Notes with "quotes" and \'apostrophes\' and <brackets>';
-            const response = await post('/api/notes', { content: special });
+            const response = await post('/api/tests/notes', { content: special });
 
             assert.strictEqual(response.body.content, special);
         });
 
         it('handles unicode characters', async () => {
             const unicode = 'Notes with emoji  and symbols';
-            const response = await post('/api/notes', { content: unicode });
+            const response = await post('/api/tests/notes', { content: unicode });
 
             assert.strictEqual(response.body.content, unicode);
         });
 
         it('handles missing content property', async () => {
-            const response = await post('/api/notes', {});
+            const response = await post('/api/tests/notes', {});
 
             // Should default to empty string
             assert.strictEqual(response.body.content, '');

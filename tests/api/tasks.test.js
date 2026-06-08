@@ -5,10 +5,11 @@
  *
  * To run:
  *   Terminal 1: node server.js
- *   Terminal 2: node --test tests/api/tasks.test.js
+ *   Terminal 2: node --test tests/api/tests/tasks.test.js
  *
- * These tests will modify the tasks.json file. They save and restore
- * the original data, but it's recommended to run against a test instance.
+ * Tests run against a dedicated "tests" profile (data/tests/). The profile
+ * is created on first run (idempotent — re-running is safe) and never deleted.
+ * Real user data in other profiles is never touched.
  */
 
 const { describe, it, before, after, beforeEach } = require('node:test');
@@ -21,8 +22,10 @@ const http = require('node:http');
 // Configuration
 // ===========================================
 const BASE_URL = 'http://localhost:3001';
+const TEST_PROFILE = 'tests';
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+const PROFILE_DIR = path.join(DATA_DIR, TEST_PROFILE);
+const TASKS_FILE = path.join(PROFILE_DIR, 'tasks.json');
 
 // ===========================================
 // HTTP Helper (vanilla replacement for supertest)
@@ -87,8 +90,11 @@ const del = (path) => makeRequest('DELETE', path);
 describe('Tasks API', () => {
     let originalTasks;
 
-    // Save original tasks before all tests
+    // Ensure the test profile exists, then save its tasks file.
     before(async () => {
+        // Idempotent: 400 if it already exists, 201 on first run — either is fine.
+        await post('/api/profiles', { name: 'Tests', color: '#636E72', letters: 'TST' });
+        await fs.mkdir(PROFILE_DIR, { recursive: true });
         try {
             originalTasks = await fs.readFile(TASKS_FILE, 'utf8');
         } catch {
@@ -107,41 +113,41 @@ describe('Tasks API', () => {
     });
 
     // -------------------------------------------
-    // GET /api/tasks
+    // GET /api/tests/tasks
     // -------------------------------------------
-    describe('GET /api/tasks', () => {
+    describe('GET /api/tests/tasks', () => {
 
         it('returns 200 status', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
             assert.strictEqual(response.status, 200);
         });
 
         it('returns empty array when no tasks exist', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
             assert.deepStrictEqual(response.body, []);
         });
 
         it('returns all tasks', async () => {
             // Create two tasks
-            await post('/api/tasks', { title: 'Task 1' });
-            await post('/api/tasks', { title: 'Task 2' });
+            await post('/api/tests/tasks', { title: 'Task 1' });
+            await post('/api/tests/tasks', { title: 'Task 2' });
 
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
 
             assert.strictEqual(response.status, 200);
             assert.strictEqual(response.body.length, 2);
         });
 
         it('returns tasks as array', async () => {
-            const response = await get('/api/tasks');
+            const response = await get('/api/tests/tasks');
             assert.ok(Array.isArray(response.body), 'Response should be an array');
         });
     });
 
     // -------------------------------------------
-    // POST /api/tasks
+    // POST /api/tests/tasks
     // -------------------------------------------
-    describe('POST /api/tasks', () => {
+    describe('POST /api/tests/tasks', () => {
 
         it('creates a new task with valid data', async () => {
             const newTask = {
@@ -151,7 +157,7 @@ describe('Tasks API', () => {
                 priority: true
             };
 
-            const response = await post('/api/tasks', newTask);
+            const response = await post('/api/tests/tasks', newTask);
 
             assert.strictEqual(response.status, 201);
             assert.strictEqual(response.body.title, 'Test Task');
@@ -161,7 +167,7 @@ describe('Tasks API', () => {
         });
 
         it('generates an ID for new task', async () => {
-            const response = await post('/api/tasks', { title: 'Test' });
+            const response = await post('/api/tests/tasks', { title: 'Test' });
 
             assert.ok(response.body.id, 'Task should have an ID');
             assert.strictEqual(typeof response.body.id, 'string');
@@ -169,44 +175,44 @@ describe('Tasks API', () => {
         });
 
         it('sets default status to "todo"', async () => {
-            const response = await post('/api/tasks', { title: 'Test' });
+            const response = await post('/api/tests/tasks', { title: 'Test' });
 
             assert.strictEqual(response.body.status, 'todo');
         });
 
         it('sets default position to 0 for first task', async () => {
-            const response = await post('/api/tasks', { title: 'Test' });
+            const response = await post('/api/tests/tasks', { title: 'Test' });
 
             assert.strictEqual(response.body.position, 0);
         });
 
         it('increments position for subsequent tasks', async () => {
-            await post('/api/tasks', { title: 'Task 1' });
-            const response = await post('/api/tasks', { title: 'Task 2' });
+            await post('/api/tests/tasks', { title: 'Task 1' });
+            const response = await post('/api/tests/tasks', { title: 'Task 2' });
 
             assert.strictEqual(response.body.position, 1);
         });
 
         it('sets default category to 1 if not provided', async () => {
-            const response = await post('/api/tasks', { title: 'No category' });
+            const response = await post('/api/tests/tasks', { title: 'No category' });
 
             assert.strictEqual(response.body.category, 1);
         });
 
         it('sets default priority to false if not provided', async () => {
-            const response = await post('/api/tasks', { title: 'No priority' });
+            const response = await post('/api/tests/tasks', { title: 'No priority' });
 
             assert.strictEqual(response.body.priority, false);
         });
 
         it('sets default description to empty string if not provided', async () => {
-            const response = await post('/api/tasks', { title: 'No description' });
+            const response = await post('/api/tests/tasks', { title: 'No description' });
 
             assert.strictEqual(response.body.description, '');
         });
 
         it('initializes empty log array', async () => {
-            const response = await post('/api/tasks', { title: 'Test' });
+            const response = await post('/api/tests/tasks', { title: 'Test' });
 
             assert.ok(Array.isArray(response.body.log), 'Log should be an array');
             assert.strictEqual(response.body.log.length, 0, 'Log should be empty');
@@ -214,7 +220,7 @@ describe('Tasks API', () => {
 
         it('sets createdDate', async () => {
             const before = new Date().toISOString();
-            const response = await post('/api/tasks', { title: 'Test' });
+            const response = await post('/api/tests/tasks', { title: 'Test' });
             const after = new Date().toISOString();
 
             assert.ok(response.body.createdDate, 'Should have createdDate');
@@ -225,41 +231,41 @@ describe('Tasks API', () => {
         });
 
         it('trims whitespace from title', async () => {
-            const response = await post('/api/tasks', { title: '  Trimmed Title  ' });
+            const response = await post('/api/tests/tasks', { title: '  Trimmed Title  ' });
 
             assert.strictEqual(response.body.title, 'Trimmed Title');
         });
 
         it('returns 400 when title is missing', async () => {
-            const response = await post('/api/tasks', { description: 'No title' });
+            const response = await post('/api/tests/tasks', { description: 'No title' });
 
             assert.strictEqual(response.status, 400);
             assert.ok(response.body.error, 'Should return error message');
         });
 
         it('returns 400 when title is empty string', async () => {
-            const response = await post('/api/tasks', { title: '' });
+            const response = await post('/api/tests/tasks', { title: '' });
 
             assert.strictEqual(response.status, 400);
         });
 
         it('returns 400 when title is whitespace only', async () => {
-            const response = await post('/api/tasks', { title: '   ' });
+            const response = await post('/api/tests/tasks', { title: '   ' });
 
             assert.strictEqual(response.status, 400);
         });
     });
 
     // -------------------------------------------
-    // PUT /api/tasks/:id
+    // PUT /api/tests/tasks/:id
     // -------------------------------------------
-    describe('PUT /api/tasks/:id', () => {
+    describe('PUT /api/tests/tasks/:id', () => {
 
         it('updates task title', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Original' });
+            const createResponse = await post('/api/tests/tasks', { title: 'Original' });
             const taskId = createResponse.body.id;
 
-            const updateResponse = await put(`/api/tasks/${taskId}`, {
+            const updateResponse = await put(`/api/tests/tasks/${taskId}`, {
                 title: 'Updated Title'
             });
 
@@ -268,10 +274,10 @@ describe('Tasks API', () => {
         });
 
         it('updates task description', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Test' });
+            const createResponse = await post('/api/tests/tasks', { title: 'Test' });
             const taskId = createResponse.body.id;
 
-            const updateResponse = await put(`/api/tasks/${taskId}`, {
+            const updateResponse = await put(`/api/tests/tasks/${taskId}`, {
                 description: 'New Description'
             });
 
@@ -279,10 +285,10 @@ describe('Tasks API', () => {
         });
 
         it('updates task priority', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Test', priority: false });
+            const createResponse = await post('/api/tests/tasks', { title: 'Test', priority: false });
             const taskId = createResponse.body.id;
 
-            const updateResponse = await put(`/api/tasks/${taskId}`, {
+            const updateResponse = await put(`/api/tests/tasks/${taskId}`, {
                 priority: true
             });
 
@@ -290,10 +296,10 @@ describe('Tasks API', () => {
         });
 
         it('logs category change', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Test', category: 1 });
+            const createResponse = await post('/api/tests/tasks', { title: 'Test', category: 1 });
             const taskId = createResponse.body.id;
 
-            const updateResponse = await put(`/api/tasks/${taskId}`, {
+            const updateResponse = await put(`/api/tests/tasks/${taskId}`, {
                 category: 2
             });
 
@@ -306,7 +312,7 @@ describe('Tasks API', () => {
         });
 
         it('returns 404 for non-existent task', async () => {
-            const response = await put('/api/tasks/nonexistent123', {
+            const response = await put('/api/tests/tasks/nonexistent123', {
                 title: 'Updated'
             });
 
@@ -314,14 +320,14 @@ describe('Tasks API', () => {
         });
 
         it('preserves fields not included in update', async () => {
-            const createResponse = await post('/api/tasks', {
+            const createResponse = await post('/api/tests/tasks', {
                 title: 'Test',
                 description: 'Original Description',
                 priority: true
             });
             const taskId = createResponse.body.id;
 
-            const updateResponse = await put(`/api/tasks/${taskId}`, {
+            const updateResponse = await put(`/api/tests/tasks/${taskId}`, {
                 title: 'New Title'
             });
 
@@ -332,45 +338,45 @@ describe('Tasks API', () => {
     });
 
     // -------------------------------------------
-    // DELETE /api/tasks/:id
+    // DELETE /api/tests/tasks/:id
     // -------------------------------------------
-    describe('DELETE /api/tasks/:id', () => {
+    describe('DELETE /api/tests/tasks/:id', () => {
 
         it('deletes an existing task', async () => {
-            const createResponse = await post('/api/tasks', { title: 'To Delete' });
+            const createResponse = await post('/api/tests/tasks', { title: 'To Delete' });
             const taskId = createResponse.body.id;
 
-            const deleteResponse = await del(`/api/tasks/${taskId}`);
+            const deleteResponse = await del(`/api/tests/tasks/${taskId}`);
             assert.strictEqual(deleteResponse.status, 200);
 
             // Verify it's gone
-            const getResponse = await get('/api/tasks');
+            const getResponse = await get('/api/tests/tasks');
             assert.strictEqual(getResponse.body.length, 0);
         });
 
         it('returns success: true on deletion', async () => {
-            const createResponse = await post('/api/tasks', { title: 'To Delete' });
+            const createResponse = await post('/api/tests/tasks', { title: 'To Delete' });
             const taskId = createResponse.body.id;
 
-            const deleteResponse = await del(`/api/tasks/${taskId}`);
+            const deleteResponse = await del(`/api/tests/tasks/${taskId}`);
 
             assert.strictEqual(deleteResponse.body.success, true);
         });
 
         it('returns 404 for non-existent task', async () => {
-            const response = await del('/api/tasks/nonexistent123');
+            const response = await del('/api/tests/tasks/nonexistent123');
 
             assert.strictEqual(response.status, 404);
         });
 
         it('only deletes the specified task', async () => {
-            await post('/api/tasks', { title: 'Task 1' });
-            const toDelete = await post('/api/tasks', { title: 'Task 2' });
-            await post('/api/tasks', { title: 'Task 3' });
+            await post('/api/tests/tasks', { title: 'Task 1' });
+            const toDelete = await post('/api/tests/tasks', { title: 'Task 2' });
+            await post('/api/tests/tasks', { title: 'Task 3' });
 
-            await del(`/api/tasks/${toDelete.body.id}`);
+            await del(`/api/tests/tasks/${toDelete.body.id}`);
 
-            const remaining = await get('/api/tasks');
+            const remaining = await get('/api/tests/tasks');
             assert.strictEqual(remaining.body.length, 2);
             assert.ok(
                 remaining.body.every(t => t.id !== toDelete.body.id),
@@ -380,15 +386,15 @@ describe('Tasks API', () => {
     });
 
     // -------------------------------------------
-    // POST /api/tasks/:id/move
+    // POST /api/tests/tasks/:id/move
     // -------------------------------------------
-    describe('POST /api/tasks/:id/move', () => {
+    describe('POST /api/tests/tasks/:id/move', () => {
 
         it('moves task to different status', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Test' });
+            const createResponse = await post('/api/tests/tasks', { title: 'Test' });
             const taskId = createResponse.body.id;
 
-            const moveResponse = await post(`/api/tasks/${taskId}/move`, {
+            const moveResponse = await post(`/api/tests/tasks/${taskId}/move`, {
                 newStatus: 'inprogress',
                 newPosition: 0
             });
@@ -398,10 +404,10 @@ describe('Tasks API', () => {
         });
 
         it('logs status change', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Test' });
+            const createResponse = await post('/api/tests/tasks', { title: 'Test' });
             const taskId = createResponse.body.id;
 
-            const moveResponse = await post(`/api/tasks/${taskId}/move`, {
+            const moveResponse = await post(`/api/tests/tasks/${taskId}/move`, {
                 newStatus: 'done',
                 newPosition: 0
             });
@@ -414,10 +420,10 @@ describe('Tasks API', () => {
         });
 
         it('updates position', async () => {
-            const createResponse = await post('/api/tasks', { title: 'Test' });
+            const createResponse = await post('/api/tests/tasks', { title: 'Test' });
             const taskId = createResponse.body.id;
 
-            const moveResponse = await post(`/api/tasks/${taskId}/move`, {
+            const moveResponse = await post(`/api/tests/tasks/${taskId}/move`, {
                 newStatus: 'todo',
                 newPosition: 5
             });
@@ -426,7 +432,7 @@ describe('Tasks API', () => {
         });
 
         it('returns 404 for non-existent task', async () => {
-            const response = await post('/api/tasks/nonexistent123/move', {
+            const response = await post('/api/tests/tasks/nonexistent123/move', {
                 newStatus: 'done'
             });
 
