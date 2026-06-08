@@ -33,7 +33,8 @@ If the task is small (typo, copy edit, a single CSS tweak), this file alone is u
 | [SPEC.md](SPEC.md) | Current implementation: file tree, API endpoints, data models, code rules, component APIs, non-obvious behaviors. **Source of truth.** | Any code change. |
 | [VISION.md](VISION.md) | Strategic intent: audience, principles, task lifecycle, "Functional Calm" design philosophy, dark-mode plan, name candidates. | Direction questions, taste calls, UX proposals. |
 | [CHANGELOG.md](CHANGELOG.md) | One line per shipped version. | "When did X ship?" / "What did v2.X do?" |
-| [FUTURE.md](FUTURE.md) | Deferred ideas not yet picked up. | Considering a feature that may already be parked. |
+| [FUTURE.md](FUTURE.md) | Deferred feature ideas not yet picked up. | Considering a feature that may already be parked. |
+| [RELEASE.md](RELEASE.md) | Pre-public-release polish checklist (dark mode, CI, naming, screenshots, etc.). | Preparing to open-source / post publicly. |
 | [README.md](README.md) | Public-facing readme + quickstart. | Rarely needed for code work. |
 | [docs/design/DESIGN_BRIEF.md](docs/design/DESIGN_BRIEF.md) | Brief for the active design-hire engagement (dark-mode redesign). Includes current tokens. | Design work, token changes, dark mode. |
 | [docs/design/COMPONENT_CATALOG.md](docs/design/COMPONENT_CATALOG.md) | Exhaustive catalog of every UI component, state, and page layout. | Touching any component's CSS or markup. |
