@@ -1,5 +1,7 @@
 class ModalDialog extends HTMLElement {
-    /** @type {[string, string]|null} Cached [html, css] templates */
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — store
+     * the Promise (not the resolved value) so concurrent connectedCallback()
+     * calls don't each trigger their own fetch. See SPEC Code Rule 7. */
     static templateCache = null;
 
     constructor() {
@@ -10,12 +12,12 @@ class ModalDialog extends HTMLElement {
 
     async connectedCallback() {
         if (!ModalDialog.templateCache) {
-            ModalDialog.templateCache = await Promise.all([
+            ModalDialog.templateCache = Promise.all([
                 fetch('/components/modal-dialog/modal-dialog.html').then(response => response.text()),
                 fetch('/components/modal-dialog/modal-dialog.css').then(response => response.text())
             ]);
         }
-        const [html, css] = ModalDialog.templateCache;
+        const [html, css] = await ModalDialog.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

@@ -104,6 +104,13 @@ describe('mini-server: routing', () => {
         const r = await request(inst.port, 'POST', '/hello');
         assert.strictEqual(r.status, 404);
     });
+
+    // Regression: decodeURIComponent('%') used to throw a URIError that
+    // surfaced as a 500 — malformed encoding in a param is a 404, not a crash
+    it('malformed percent-encoding in a param returns 404, not 500', async () => {
+        const r = await request(inst.port, 'GET', '/users/%');
+        assert.strictEqual(r.status, 404);
+    });
 });
 
 // =======================================================================
@@ -254,6 +261,30 @@ describe('mini-server: static files', () => {
         // in as /server.js and looks inside /public for it (not found = 404).
         // The important assertion: never serves files outside rootDir.
         assert.notStrictEqual(r.status, 200, 'never 200 for escape attempt');
+    });
+
+    // ----- Conditional GET (Last-Modified / If-Modified-Since → 304) -----
+    it('sends Last-Modified and Cache-Control on static files', async () => {
+        const r = await request(inst.port, 'GET', '/index.html');
+        assert.ok(r.headers['last-modified'], 'Last-Modified header present');
+        assert.strictEqual(r.headers['cache-control'], 'no-cache');
+    });
+
+    it('returns 304 with no body when If-Modified-Since matches', async () => {
+        const first = await request(inst.port, 'GET', '/index.html');
+        const r = await request(inst.port, 'GET', '/index.html', {
+            headers: { 'If-Modified-Since': first.headers['last-modified'] }
+        });
+        assert.strictEqual(r.status, 304);
+        assert.strictEqual(r.raw, '', '304 has no body');
+    });
+
+    it('returns 200 with full body when If-Modified-Since is older than the file', async () => {
+        const r = await request(inst.port, 'GET', '/index.html', {
+            headers: { 'If-Modified-Since': new Date(0).toUTCString() }
+        });
+        assert.strictEqual(r.status, 200);
+        assert.ok(r.raw.length > 0, 'body is served');
     });
 });
 

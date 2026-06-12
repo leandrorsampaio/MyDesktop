@@ -16,12 +16,29 @@ export function setApiBase(alias) {
 }
 
 /**
+ * Parses a fetch Response, throwing on non-2xx status (with the server's
+ * error message when available). Used by the throwing-style wrappers so
+ * callers' try/catch rollback paths actually fire on HTTP errors — without
+ * this, a 400/429 resolves with the error body and silently corrupts state.
+ * The { ok, error } wrappers below handle errors inline instead.
+ * @param {Response} response
+ * @returns {Promise<any>} Parsed JSON body
+ */
+async function parseOrThrow(response) {
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `Request failed (${response.status})`);
+    }
+    return response.json();
+}
+
+/**
  * Fetches all active tasks from the server.
  * @returns {Promise<Array<Object>>} Array of task objects
  */
 export async function fetchTasksApi() {
     const response = await fetch(`${apiBase}/tasks`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -39,7 +56,7 @@ export async function createTaskApi(taskData) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskData)
     });
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -54,7 +71,7 @@ export async function updateTaskApi(id, taskData) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskData)
     });
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -64,7 +81,7 @@ export async function updateTaskApi(id, taskData) {
  */
 export async function deleteTaskApi(id) {
     const response = await fetch(`${apiBase}/tasks/${id}`, { method: 'DELETE' });
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -80,7 +97,7 @@ export async function moveTaskApi(id, newStatus, newPosition) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newStatus, newPosition })
     });
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -129,7 +146,7 @@ export async function archiveTasksApi(columnId) {
  */
 export async function fetchArchivedTasksApi() {
     const response = await fetch(`${apiBase}/archived`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -158,7 +175,7 @@ export async function restoreArchivedTaskApi(id) {
  */
 export async function fetchReportsApi() {
     const response = await fetch(`${apiBase}/reports`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -173,7 +190,7 @@ export async function updateReportTitleApi(id, title) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title })
     });
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -183,7 +200,7 @@ export async function updateReportTitleApi(id, title) {
  */
 export async function deleteReportApi(id) {
     const response = await fetch(`${apiBase}/reports/${id}`, { method: 'DELETE' });
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 // ===========================================
@@ -196,7 +213,7 @@ export async function deleteReportApi(id) {
  */
 export async function fetchCategoriesApi() {
     const response = await fetch(`${apiBase}/categories`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -268,7 +285,7 @@ export async function deleteCategoryApi(id) {
  */
 export async function fetchEpicsApi() {
     const response = await fetch(`${apiBase}/epics`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -340,7 +357,7 @@ export async function deleteEpicApi(id) {
  */
 export async function fetchProfilesApi() {
     const response = await fetch('/api/profiles');
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -412,7 +429,7 @@ export async function deleteProfileApi(id) {
  */
 export async function fetchColumnsApi() {
     const response = await fetch(`${apiBase}/columns`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -502,7 +519,7 @@ export async function deleteColumnApi(id) {
  */
 export async function fetchAiConfigApi() {
     const response = await fetch('/api/ai/config');
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**
@@ -593,7 +610,9 @@ export async function sendAiChatApi(messages) {
     });
 
     if (!response.ok) {
-        const error = await response.json();
+        // .catch guards against non-JSON error bodies (e.g. an HTML 502
+        // page from a local provider proxy like LM Studio/Ollama)
+        const error = await response.json().catch(() => ({}));
         return { ok: false, error: error.error || 'AI request failed' };
     }
 
@@ -610,7 +629,7 @@ export async function sendAiChatApi(messages) {
  */
 export async function fetchStagedTasksApi() {
     const response = await fetch(`${apiBase}/ai/staged`);
-    return await response.json();
+    return parseOrThrow(response);
 }
 
 /**

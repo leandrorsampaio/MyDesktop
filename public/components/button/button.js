@@ -1,5 +1,7 @@
 class CustomButton extends HTMLElement {
-    /** @type {[string, string]|null} Cached [html, css] templates */
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — store
+     * the Promise (not the resolved value) so concurrent connectedCallback()
+     * calls don't each trigger their own fetch. See SPEC Code Rule 7. */
     static templateCache = null;
 
     constructor() {
@@ -13,12 +15,12 @@ class CustomButton extends HTMLElement {
 
     async connectedCallback() {
         if (!CustomButton.templateCache) {
-            CustomButton.templateCache = await Promise.all([
+            CustomButton.templateCache = Promise.all([
                 fetch('/components/button/button.html').then(response => response.text()),
                 fetch('/components/button/button.css').then(response => response.text())
             ]);
         }
-        const [html, css] = CustomButton.templateCache;
+        const [html, css] = await CustomButton.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

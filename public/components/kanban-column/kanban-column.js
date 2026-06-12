@@ -1,5 +1,7 @@
 class KanbanColumn extends HTMLElement {
-    /** @type {[string, string]|null} Cached [html, css] templates */
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — store
+     * the Promise (not the resolved value) so concurrent connectedCallback()
+     * calls don't each trigger their own fetch. See SPEC Code Rule 7. */
     static templateCache = null;
 
     constructor() {
@@ -8,16 +10,18 @@ class KanbanColumn extends HTMLElement {
         this._ready = new Promise(resolve => this._resolveReady = resolve);
         this._dropIndicator = null;
         this._currentIndicatorPosition = -1;
+        this._dragRafId = null;
+        this._lastDragY = 0;
     }
 
     async connectedCallback() {
         if (!KanbanColumn.templateCache) {
-            KanbanColumn.templateCache = await Promise.all([
+            KanbanColumn.templateCache = Promise.all([
                 fetch('/components/kanban-column/kanban-column.html').then(response => response.text()),
                 fetch('/components/kanban-column/kanban-column.css').then(response => response.text())
             ]);
         }
-        const [html, css] = KanbanColumn.templateCache;
+        const [html, css] = await KanbanColumn.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;
@@ -110,10 +114,23 @@ class KanbanColumn extends HTMLElement {
      * Removes the drop indicator from the column.
      */
     removeDropIndicator() {
+        // Cancel any pending dragover frame so it can't re-insert the
+        // indicator after the drag has ended
+        if (this._dragRafId !== null) {
+            cancelAnimationFrame(this._dragRafId);
+            this._dragRafId = null;
+        }
         if (this._dropIndicator && this._dropIndicator.parentNode) {
             this._dropIndicator.remove();
         }
         this._currentIndicatorPosition = -1;
+    }
+
+    disconnectedCallback() {
+        if (this._dragRafId !== null) {
+            cancelAnimationFrame(this._dragRafId);
+            this._dragRafId = null;
+        }
     }
 
     // Drag and Drop Handlers
@@ -121,8 +138,15 @@ class KanbanColumn extends HTMLElement {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
-        const position = this._getDropPosition(e.clientY);
-        this._showDropIndicator(position);
+        // dragover fires per mousemove; the position calculation reads
+        // getBoundingClientRect on every card, so throttle it to one
+        // calculation per animation frame to avoid layout-read jank
+        this._lastDragY = e.clientY;
+        if (this._dragRafId !== null) return;
+        this._dragRafId = requestAnimationFrame(() => {
+            this._dragRafId = null;
+            this._showDropIndicator(this._getDropPosition(this._lastDragY));
+        });
     }
 
     handleDragEnter(e) {

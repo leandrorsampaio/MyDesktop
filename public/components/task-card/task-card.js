@@ -1,5 +1,7 @@
 class TaskCard extends HTMLElement {
-    /** @type {[string, string]|null} Cached [html, css] templates */
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — store
+     * the Promise (not the resolved value) so concurrent connectedCallback()
+     * calls don't each trigger their own fetch. See SPEC Code Rule 7. */
     static templateCache = null;
 
     constructor() {
@@ -9,12 +11,12 @@ class TaskCard extends HTMLElement {
 
     async connectedCallback() {
         if (!TaskCard.templateCache) {
-            TaskCard.templateCache = await Promise.all([
+            TaskCard.templateCache = Promise.all([
                 fetch('/components/task-card/task-card.html').then(response => response.text()),
                 fetch('/components/task-card/task-card.css').then(response => response.text())
             ]);
         }
-        const [html, css] = TaskCard.templateCache;
+        const [html, css] = await TaskCard.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;

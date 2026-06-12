@@ -70,7 +70,13 @@ const PROFILE_LETTERS_REGEX = /^[A-Z]{1,3}$/;
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Skip the static handler for API routes — no file under public/ can ever
+// match /api/*, so the fs.stat lookup would be a guaranteed miss per request
+const staticHandler = express.static(path.join(__dirname, 'public'));
+app.use((req, res, next) => {
+    if (req.pathname && req.pathname.startsWith('/api/')) return next();
+    return staticHandler(req, res, next);
+});
 
 // ===========================================
 // Rate Limiting (DIY - no external packages)
@@ -1062,6 +1068,7 @@ app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (re
             const today = new Date().toISOString().split('T')[0];
             const oldName = columnNameMap.get(oldStatus) || oldStatus;
             const newName = columnNameMap.get(newStatus) || newStatus;
+            if (!task.log) task.log = []; // legacy/imported tasks may lack the field
             task.log.push({
                 date: today,
                 action: `Moved from ${oldName} to ${newName}`
@@ -1185,8 +1192,11 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
 
         const activeTasks = tasks.filter(t => !archivedIds.has(t.id));
 
-        await writeJsonFile(req.profileFiles.tasks, activeTasks);
+        // Write archived first: per-file writes are atomic but the pair is
+        // not, so a crash between the two must fail toward a harmless
+        // duplicate (task in both files) — never toward loss (task in neither)
         await writeJsonFile(req.profileFiles.archived, archivedTasks);
+        await writeJsonFile(req.profileFiles.tasks, activeTasks);
 
         res.json({ success: true, archivedCount: doneTasks.length });
     } catch (error) {
@@ -1546,6 +1556,11 @@ app.post('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res)
         if (name.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
             return res.status(400).json({ error: `Column name must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less` });
         }
+        // Exactly one backlog column per profile — a second one breaks
+        // task-status lookups and the backlog page's single-column assumption
+        if (isBacklog && columns.some(c => c.isBacklog)) {
+            return res.status(400).json({ error: 'Profile already has a backlog column' });
+        }
 
         const newColumn = {
             id: generateId(),
@@ -1595,8 +1610,12 @@ app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, r
             columns[colIndex].hasArchive = Boolean(hasArchive);
         }
 
-        if (isBacklog !== undefined) {
-            columns[colIndex].isBacklog = Boolean(isBacklog);
+        // isBacklog is immutable after creation: unsetting it on the real
+        // backlog column makes resolveProfile push a second column with
+        // id "backlog" on the next request (duplicate ids), and setting it
+        // on another column breaks the single-backlog invariant
+        if (isBacklog !== undefined && Boolean(isBacklog) !== Boolean(columns[colIndex].isBacklog)) {
+            return res.status(400).json({ error: 'isBacklog cannot be changed after creation' });
         }
 
         const profiles = await readJsonFile(PROFILES_FILE, []);
@@ -1625,6 +1644,20 @@ app.put('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res) 
         for (const col of incomingColumns) {
             if (!existingIds.has(col.id)) {
                 return res.status(400).json({ error: `Unknown column id: ${col.id}` });
+            }
+        }
+
+        // The incoming array must contain every existing column exactly once —
+        // a subset (or a duplicate id padding the count) would silently drop
+        // the omitted columns, orphaning their tasks and potentially deleting
+        // the permanent backlog column
+        const incomingIds = new Set(incomingColumns.map(c => c.id));
+        if (incomingIds.size !== incomingColumns.length) {
+            return res.status(400).json({ error: 'Duplicate column ids in reorder' });
+        }
+        for (const col of req.profile.columns) {
+            if (!incomingIds.has(col.id)) {
+                return res.status(400).json({ error: `Reorder is missing column: ${col.id}` });
             }
         }
 
@@ -2153,6 +2186,11 @@ app.post('/api/ai/config/entries', writeLimiter, async (req, res) => {
         if (provider === 'custom' && (!baseUrl || typeof baseUrl !== 'string' || !baseUrl.trim())) {
             return res.status(400).json({ error: 'Base URL is required for custom provider' });
         }
+        // Only http(s) targets — the server fetches this URL itself, so other
+        // schemes (file:, etc.) would let a LAN client turn it into a proxy
+        if (provider === 'custom' && !/^https?:\/\//i.test(baseUrl.trim())) {
+            return res.status(400).json({ error: 'Base URL must start with http:// or https://' });
+        }
 
         const raw = await readJsonFile(AI_CONFIG_FILE, {});
         const config = migrateAiConfig(raw);
@@ -2194,6 +2232,11 @@ app.put('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
         }
         if (provider === 'custom' && (!baseUrl || typeof baseUrl !== 'string' || !baseUrl.trim())) {
             return res.status(400).json({ error: 'Base URL is required for custom provider' });
+        }
+        // Only http(s) targets — the server fetches this URL itself, so other
+        // schemes (file:, etc.) would let a LAN client turn it into a proxy
+        if (provider === 'custom' && !/^https?:\/\//i.test(baseUrl.trim())) {
+            return res.status(400).json({ error: 'Base URL must start with http:// or https://' });
         }
 
         const raw = await readJsonFile(AI_CONFIG_FILE, {});

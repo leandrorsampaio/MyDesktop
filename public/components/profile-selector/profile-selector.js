@@ -14,6 +14,9 @@
  *     detail: { alias: string }  — alias of the profile to open in a new tab
  */
 class ProfileSelector extends HTMLElement {
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — store
+     * the Promise (not the resolved value) so concurrent connectedCallback()
+     * calls don't each trigger their own fetch. See SPEC Code Rule 7. */
     static templateCache = null;
 
     constructor() {
@@ -27,13 +30,13 @@ class ProfileSelector extends HTMLElement {
 
     async connectedCallback() {
         if (!ProfileSelector.templateCache) {
-            ProfileSelector.templateCache = await Promise.all([
+            ProfileSelector.templateCache = Promise.all([
                 fetch('/components/profile-selector/profile-selector.html').then(r => r.text()),
                 fetch('/components/profile-selector/profile-selector.css').then(r => r.text()),
             ]);
         }
 
-        const [html, css] = ProfileSelector.templateCache;
+        const [html, css] = await ProfileSelector.templateCache;
         this.shadowRoot.innerHTML = `<style>${css}</style>${html}`;
         this._init();
         // Render any data set before connectedCallback fired

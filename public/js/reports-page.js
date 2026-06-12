@@ -32,6 +32,7 @@ export async function initReportsPage(pageViewEl, { elements }) {
 
     // Dynamically import components
     await Promise.all([
+        import('/components/list-header/list-header.js'),
         import('/components/report-row/report-row.js'),
         import('/components/page-fab/page-fab.js')
     ]);

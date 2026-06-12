@@ -7,6 +7,15 @@
     <title>My Desktop</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="styles.css">
+    <!-- Preload app.js's import chain — without these the browser only
+         discovers the modules after app.js itself downloads and parses -->
+    <link rel="modulepreload" href="js/constants.js">
+    <link rel="modulepreload" href="js/router.js">
+    <link rel="modulepreload" href="js/utils.js">
+    <link rel="modulepreload" href="js/state.js">
+    <link rel="modulepreload" href="js/api.js">
+    <link rel="modulepreload" href="js/filters.js">
+    <link rel="modulepreload" href="js/modals.js">
 </head>
 <body>
     <div class="appShell">
@@ -285,10 +294,9 @@
     <script type="module" src="components/daily-checklist/daily-checklist.js"></script>
     <script type="module" src="components/notes-widget/notes-widget.js"></script>
     <script type="module" src="components/kanban-column/kanban-column.js"></script>
-    <script type="module" src="components/list-header/list-header.js"></script>
-    <script type="module" src="components/archive-row/archive-row.js"></script>
-    <script type="module" src="components/backlog-row/backlog-row.js"></script>
-    <script type="module" src="components/ai-staged-row/ai-staged-row.js"></script>
+    <!-- list-header / archive-row / backlog-row / ai-staged-row are sub-page
+         only — their page modules import them lazily, so the board cold start
+         doesn't pay for them -->
     <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -96,10 +96,14 @@ export async function initArchivePage(pageViewEl) {
 
     let tasks, epics, categories;
     try {
+        // Page components load in parallel with the data (lazy: they're not
+        // in index.html so the board cold-start doesn't pay for them)
         [tasks, epics, categories] = await Promise.all([
             fetchArchivedTasksApi(),
             fetchEpicsApi(),
-            fetchCategoriesApi()
+            fetchCategoriesApi(),
+            import('/components/list-header/list-header.js'),
+            import('/components/archive-row/archive-row.js')
         ]);
     } catch (err) {
         console.error('Archive page: failed to load data', err);

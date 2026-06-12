@@ -262,7 +262,10 @@ class SvgIcon extends HTMLElement {
     }
 
     attributeChangedCallback() {
-        if (this.shadowRoot) {
+        // Skip renders while detached — setAttribute('icon') + ('size') before
+        // insertion would each trigger a full innerHTML parse, tripling the
+        // work per icon; connectedCallback renders once on insertion instead
+        if (this.isConnected) {
             this.render();
         }
     }

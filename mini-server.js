@@ -64,9 +64,15 @@ function matchPattern(compiled, pathname) {
     const m = compiled.regex.exec(pathname);
     if (!m) return null;
     const params = {};
-    compiled.paramNames.forEach((name, i) => {
-        params[name] = decodeURIComponent(m[i + 1]);
-    });
+    try {
+        compiled.paramNames.forEach((name, i) => {
+            params[name] = decodeURIComponent(m[i + 1]);
+        });
+    } catch {
+        // Malformed percent-encoding in a param segment (e.g. /api/%/tasks)
+        // is a non-matching URL, not a server error — fall through to 404
+        return null;
+    }
     return params;
 }
 
@@ -75,6 +81,12 @@ function matchPattern(compiled, pathname) {
  * URL path. If the file doesn't exist or escapes the root, calls next().
  */
 function staticMiddleware(rootDir) {
+    // Resolve symlinks in the root once, so the per-request realpath check
+    // below compares against the true on-disk location (on macOS even
+    // ordinary paths can pass through symlinks like /var → /private/var)
+    let realRoot;
+    try { realRoot = fs.realpathSync(rootDir); } catch { realRoot = rootDir; }
+
     return (req, res, next) => {
         if (req.method !== 'GET' && req.method !== 'HEAD') return next();
 
@@ -87,10 +99,35 @@ function staticMiddleware(rootDir) {
 
         fs.stat(safePath, (err, stat) => {
             if (err || !stat.isFile()) return next();
-            res.setHeader('Content-Type', mimeFor(safePath));
-            res.setHeader('Content-Length', stat.size);
-            if (req.method === 'HEAD') return res.end();
-            fs.createReadStream(safePath).on('error', () => res.end()).pipe(res);
+
+            // The startsWith check above validates the *requested* path, but
+            // streams follow symlinks — re-check the real target so a symlink
+            // planted inside the root can't serve files from outside it
+            fs.realpath(safePath, (rpErr, realPath) => {
+                if (rpErr) return next();
+                if (!realPath.startsWith(realRoot + path.sep) && realPath !== realRoot) {
+                    return next();
+                }
+
+                // Conditional GET: no-cache forces revalidation (never
+                // staleness); matching If-Modified-Since gets a bodyless 304
+                // so a "browser homepage" reload doesn't re-download every
+                // script and template. HTTP dates have 1s resolution, so
+                // truncate mtime before comparing.
+                const lastModified = stat.mtime.toUTCString();
+                res.setHeader('Last-Modified', lastModified);
+                res.setHeader('Cache-Control', 'no-cache');
+                const ims = Date.parse(req.headers['if-modified-since'] || '');
+                if (!isNaN(ims) && Math.floor(stat.mtime.getTime() / 1000) * 1000 <= ims) {
+                    res.statusCode = 304;
+                    return res.end();
+                }
+
+                res.setHeader('Content-Type', mimeFor(safePath));
+                res.setHeader('Content-Length', stat.size);
+                if (req.method === 'HEAD') return res.end();
+                fs.createReadStream(realPath).on('error', () => res.end()).pipe(res);
+            });
         });
     };
 }

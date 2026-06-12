@@ -37,14 +37,17 @@ export async function initBacklogPage(pageViewEl, { elements }) {
         </div>
     `;
 
-    // Fetch all data in parallel
+    // Fetch all data in parallel (page components load alongside — lazy:
+    // they're not in index.html so the board cold-start doesn't pay for them)
     let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories;
     try {
         [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories] = await Promise.all([
             fetchTasksApi(),
             fetchColumnsApi(),
             fetchEpicsApi(),
-            fetchCategoriesApi()
+            fetchCategoriesApi(),
+            import('/components/list-header/list-header.js'),
+            import('/components/backlog-row/backlog-row.js')
         ]);
     } catch (err) {
         console.error('Backlog page: failed to load data', err);

@@ -109,12 +109,15 @@ class DailyChecklist extends HTMLElement {
             const isChecked = checkedItems[index];
             if (isChecked) li.classList.add('--checked');
 
-            const hasUrl = task.url && task.url.trim() !== '';
+            // Only http(s) URLs render as links — escapeHtml prevents attribute
+            // breakout but not a stored javascript: scheme executing on click
+            const url = (task.url || '').trim();
+            const hasUrl = /^https?:\/\//i.test(url);
 
             li.innerHTML = `
                 <input type="checkbox" ${isChecked ? 'checked' : ''} />
                 <span class="dailyChecklist__text">${escapeHtml(task.text)}</span>
-                ${hasUrl ? `<a href="${escapeHtml(task.url)}" target="_blank" class="dailyChecklist__link" title="Open link">↗</a>` : ''}
+                ${hasUrl ? `<a href="${escapeHtml(url)}" target="_blank" class="dailyChecklist__link" title="Open link">↗</a>` : ''}
             `;
 
             li.querySelector('input').addEventListener('change', (e) => {

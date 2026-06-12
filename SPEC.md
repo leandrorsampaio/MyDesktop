@@ -1,7 +1,7 @@
 # SPEC — Project Specification
 
-**Version:** 2.38.3
-**Last Updated:** 2026-06-08
+**Version:** 2.38.4
+**Last Updated:** 2026-06-12
 
 ---
 
@@ -117,7 +117,9 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         └── toast-notification/
 ```
 
-**Component loading:** Each component's `.js` fetches its own `.html`/`.css` at runtime and injects them into Shadow DOM. Inline components (e.g., `svg-icon`, `custom-picker`) define HTML/CSS directly in JS to avoid extra requests.
+**Component loading:** Each component's `.js` fetches its own `.html`/`.css` at runtime and injects them into Shadow DOM. Inline components (e.g., `svg-icon`, `custom-picker`) define HTML/CSS directly in JS to avoid extra requests. Sub-page-only components (`list-header`, `archive-row`, `backlog-row`, `ai-staged-row`, `report-row`, `page-fab`) are NOT in `index.html` — their page modules import them lazily, so the board cold start doesn't pay for them. `index.html` also `modulepreload`s app.js's import chain.
+
+**Static file serving:** every static response carries `Last-Modified` + `Cache-Control: no-cache`; a matching `If-Modified-Since` gets a bodyless `304`, so browser-homepage reloads revalidate instead of re-downloading every script and template.
 
 **Server start:**
 ```bash
@@ -384,11 +386,14 @@ These are behaviors not evident from reading the code. Know these before making 
 - `task.status` now equals a **column ID** (any string), not one of four hardcoded values.
 - Profiles without a `columns` field are auto-migrated to `DEFAULT_COLUMNS` by `resolveProfile` middleware on first request. Profiles that have columns but lack a backlog column get one auto-added.
 - The **backlog column** is permanent: it cannot be deleted (server returns 400), and it is hidden from the Board Configuration modal. It is always created as part of `DEFAULT_COLUMNS`.
+- **Column reorder (`PUT /api/:profile/columns`) must include every existing column exactly once** — subsets, missing ids, and duplicate ids are rejected with 400. Accepting a subset would silently drop the omitted columns (orphaning their tasks, and potentially deleting the backlog column).
+- **`isBacklog` is immutable after creation** (PUT rejects changes with 400 — unsetting it on the real backlog column would make `resolveProfile` push a second column with id `backlog` on the next request). POST rejects creating a second backlog column.
 - `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`). Columns with `isBacklog: true` are filtered out of the board view.
 
 ### Reports & Archive (independent operations)
 - **Report generation** (Reports page FAB button) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.
 - **Archive** (`Archive` button on a column with `hasArchive: true`) moves all tasks in that specific column to `archived-tasks.json`. Accepts a `columnId` in the body; falls back to the first `hasArchive: true` column. Does **not** generate a report.
+- **Archive writes `archived-tasks.json` before `tasks.json`** — per-file writes are atomic but the pair is not, so a crash between the two fails toward a harmless duplicate (task in both files), never toward loss.
 
 ### General Configuration
 - Accessed via Hamburger → General Configuration; opens a default-size modal with three sections.
@@ -435,6 +440,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Dual output** via Tool Use / Function Calling: the `propose_tasks` tool forces the AI to return both a `narrative` (text reply) and a `tasks` array (structured JSON) in a single response. If the model ignores tool calls, `extractTasksFromText` attempts to parse raw JSON from the response text as a fallback.
 - **Two provider formats:** `anthropic` calls the Anthropic Messages API directly; `openai-compatible` calls any OpenAI-format REST endpoint (covers OpenAI, Groq, LM Studio, Ollama, Jan, LocalAI). The `custom` provider is an alias for `openai-compatible` with a user-defined `baseUrl`.
 - **API key security:** `data/ai-config.json` is gitignored and never served statically. `GET /api/ai/config` returns `hasKey: true/false` but never the raw key. Saving with an empty `apiKey` field preserves the existing key.
+- **Custom provider `baseUrl` must start with `http://` or `https://`** — the server fetches the URL itself, so other schemes are rejected with 400 (SSRF guard).
 - **System prompt is dynamic:** `buildAiSystemPrompt()` injects the profile's current epics and categories so the AI returns valid IDs. The prompt instructs it to propose tasks only — never delete or move.
 - **`normaliseStagedTask()`** validates AI output server-side: invalid category IDs fall back to 1, invalid epic IDs are coerced to null, title is truncated to 200 chars.
 - **Staged task edits do not sync back to the conversation.** Editing a staged task updates `ai-staged-tasks.json` only; the AI has no awareness of user edits.

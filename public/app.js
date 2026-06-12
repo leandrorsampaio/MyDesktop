@@ -286,11 +286,13 @@ import {
      * @param {string} id - The task ID to move
      * @param {string} newStatus - Target column status (todo, wait, inprogress, done)
      * @param {number} newPosition - Zero-based position in the target column
-     * @returns {Promise<Object|undefined>} The moved task object, or undefined on error
+     * @returns {Promise<boolean>} true if the move succeeded, false if it
+     *     failed or was dropped by the lock — callers must not report success
+     *     on false
      */
     async function moveTask(id, newStatus, newPosition) {
         // Prevent race condition: ignore if already processing a move
-        if (isMoving) return;
+        if (isMoving) return false;
         isMoving = true;
 
         // Save snapshot for potential rollback
@@ -298,7 +300,7 @@ import {
         const task = findTask(id);
         if (!task) {
             isMoving = false;
-            return;
+            return false;
         }
 
         const oldStatus = task.status;
@@ -306,7 +308,9 @@ import {
         // Optimistic update: Update task locally
         updateTaskInState(id, { status: newStatus, position: newPosition });
 
-        // Reorder positions in affected columns
+        // Reorder positions in affected columns. Mutates position directly on
+        // the live task objects — O(n) instead of updateTaskInState's
+        // findIndex-per-call O(n²); the snapshot above covers rollback.
         const affectedStatuses = new Set([oldStatus, newStatus]);
         affectedStatuses.forEach(status => {
             const columnTasks = tasks
@@ -315,7 +319,7 @@ import {
 
             columnTasks.forEach((t, idx) => {
                 if (t.id !== id) {
-                    updateTaskInState(t.id, { position: idx >= newPosition && status === newStatus ? idx + 1 : idx });
+                    t.position = idx >= newPosition && status === newStatus ? idx + 1 : idx;
                 }
             });
         });
@@ -327,12 +331,14 @@ import {
             await moveTaskApi(id, newStatus, newPosition);
             // Fetch fresh data to get accurate positions from server
             await fetchTasks();
+            return true;
         } catch (error) {
             // Rollback on failure
             restoreTasksFromSnapshot(previousTasks);
             renderAllColumns();
             console.error('Error moving task:', error);
             elements.toaster.error('Failed to move task. Changes have been reverted.');
+            return false;
         } finally {
             // Always unlock, even if error occurred
             isMoving = false;
@@ -342,11 +348,16 @@ import {
     /**
      * Sends a board task to the backlog column.
      * Closes the edit modal, moves the task via the existing moveTask flow.
+     * Only toasts success when the move actually succeeded — moveTask shows
+     * its own error toast on failure and returns false when the lock drops
+     * the request.
      */
     async function sendTaskToBacklog(taskId, backlogColumnId) {
         elements.taskModal.close();
-        await moveTask(taskId, backlogColumnId, 0);
-        elements.toaster.success('Task sent to backlog');
+        const moved = await moveTask(taskId, backlogColumnId, 0);
+        if (moved) {
+            elements.toaster.success('Task sent to backlog');
+        }
     }
 
     // ==========================================
@@ -829,6 +840,10 @@ import {
     async function init() {
         initEventListeners();
 
+        /** @type {Object|null} Active profile, hoisted out of the try block so
+         * the board-data loading below can read its columns array */
+        let boardProfile = null;
+
         // Fetch profiles and determine active profile from URL
         try {
             const fetchedProfiles = await fetchProfilesApi();
@@ -846,6 +861,7 @@ import {
             }
 
             setActiveProfile(matchedProfile);
+            boardProfile = matchedProfile;
             setApiBase(matchedProfile.alias);
             document.body.classList.add('profile-' + matchedProfile.alias);
             elements.profileSelector.setProfiles(fetchedProfiles);
@@ -915,33 +931,42 @@ import {
         initBoardToolbar();
         initBoardEventListeners();
 
-        // Fetch data (categories and epics first so cards can reference them)
+        // Columns ship with the profile payload (GET /api/profiles includes
+        // each profile's columns array) — no separate request needed. Legacy
+        // profiles without a columns field fall back to the columns endpoint,
+        // which runs the server-side migration.
         try {
-            const fetchedCategories = await fetchCategoriesApi();
-            setCategories(fetchedCategories);
+            let boardColumns = boardProfile?.columns;
+            if (!boardColumns || !boardColumns.length) {
+                boardColumns = await fetchColumnsApi();
+            }
+            setColumns(boardColumns);
+            initKanban(columns);
         } catch (error) {
-            console.error('Error fetching categories:', error);
+            console.error('Error loading columns:', error);
+            elements.toaster.error('Failed to load board columns');
         }
-        try {
-            const fetchedEpics = await fetchEpicsApi();
-            setEpics(fetchedEpics);
-        } catch (error) {
-            console.error('Error fetching epics:', error);
+
+        // Fetch the remaining board data in parallel — independent requests;
+        // awaiting them sequentially tripled cold-start latency.
+        const [categoriesResult, epicsResult, tasksResult] = await Promise.allSettled([
+            fetchCategoriesApi(),
+            fetchEpicsApi(),
+            fetchTasksApi()
+        ]);
+        if (categoriesResult.status === 'fulfilled') setCategories(categoriesResult.value);
+        else console.error('Error fetching categories:', categoriesResult.reason);
+        if (epicsResult.status === 'fulfilled') setEpics(epicsResult.value);
+        else console.error('Error fetching epics:', epicsResult.reason);
+        if (tasksResult.status === 'fulfilled') setTasks(tasksResult.value);
+        else console.error('Error fetching tasks:', tasksResult.reason);
+        if ([categoriesResult, epicsResult, tasksResult].some(r => r.status === 'rejected')) {
+            elements.toaster.error('Some board data failed to load');
         }
 
         // Render category filters now that dynamic categories are loaded
         renderCategoryFilters(elements.categoryFilter);
-
-        // Fetch columns and build kanban before rendering tasks
-        try {
-            const fetchedColumns = await fetchColumnsApi();
-            setColumns(fetchedColumns);
-            initKanban(columns);
-        } catch (error) {
-            console.error('Error fetching columns:', error);
-        }
-
-        await fetchTasks();
+        renderAllColumns();
 
         // Snooze expiry scheduler — re-render when snoozed tasks wake up
         let _snoozedIds = new Set(

@@ -161,6 +161,61 @@ describe('Columns API', () => {
         assert.strictEqual(res.status, 400);
     });
 
+    // ----- Regression: reorder with a subset silently dropped columns -----
+    it('PUT (collection) rejects a reorder missing existing columns', async () => {
+        // Send only 2 of the 5 columns — accepting this would permanently
+        // delete the other 3 (including the permanent backlog column)
+        const res = await put(`/api/${TEST_PROFILE}/columns`, {
+            columns: [
+                { ...DEFAULT_COLUMNS[0], order: 0 },
+                { ...DEFAULT_COLUMNS[1], order: 1 }
+            ]
+        });
+        assert.strictEqual(res.status, 400);
+        // Verify nothing was dropped
+        const list = await get(`/api/${TEST_PROFILE}/columns`);
+        assert.strictEqual(list.body.length, 5, 'all 5 columns still present');
+    });
+
+    it('PUT (collection) rejects duplicate column ids', async () => {
+        // Duplicates could pad the count to pass a naive length check while
+        // still dropping a column
+        const res = await put(`/api/${TEST_PROFILE}/columns`, {
+            columns: [
+                { ...DEFAULT_COLUMNS[0], order: 0 },
+                { ...DEFAULT_COLUMNS[0], order: 1 },
+                { ...DEFAULT_COLUMNS[1], order: 2 },
+                { ...DEFAULT_COLUMNS[2], order: 3 },
+                { ...DEFAULT_COLUMNS[3], order: 4 }
+            ]
+        });
+        assert.strictEqual(res.status, 400);
+    });
+
+    // ----- Regression: isBacklog was freely toggleable, breaking the
+    // single-backlog invariant (resolveProfile would then push a second
+    // column with id "backlog") -----
+    it('PUT rejects unsetting isBacklog on the backlog column', async () => {
+        const res = await put(`/api/${TEST_PROFILE}/columns/backlog`, { isBacklog: false });
+        assert.strictEqual(res.status, 400);
+    });
+
+    it('PUT rejects setting isBacklog on a board column', async () => {
+        const res = await put(`/api/${TEST_PROFILE}/columns/todo`, { isBacklog: true });
+        assert.strictEqual(res.status, 400);
+    });
+
+    it('PUT accepts an unchanged isBacklog value alongside other fields', async () => {
+        const res = await put(`/api/${TEST_PROFILE}/columns/todo`, { name: 'Renamed', isBacklog: false });
+        assert.strictEqual(res.status, 200);
+        assert.strictEqual(res.body.name, 'Renamed');
+    });
+
+    it('POST rejects a second backlog column', async () => {
+        const res = await post(`/api/${TEST_PROFILE}/columns`, { name: 'Backlog 2', isBacklog: true });
+        assert.strictEqual(res.status, 400);
+    });
+
     // -------------------------------------------
     // DELETE
     // -------------------------------------------

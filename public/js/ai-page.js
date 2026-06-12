@@ -100,7 +100,8 @@ export async function initAiPage(pageViewEl, { elements }) {
     const headerEl     = pageViewEl.querySelector('.js-listHeader');
     const modelSelectEl = pageViewEl.querySelector('.js-aiModelSelect');
 
-    // ---- Fetch initial data ----
+    // ---- Fetch initial data (page components load alongside — lazy: they're
+    // not in index.html so the board cold-start doesn't pay for them) ----
     let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig;
     try {
         [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig] = await Promise.all([
@@ -109,7 +110,9 @@ export async function initAiPage(pageViewEl, { elements }) {
             fetchEpicsApi(),
             fetchCategoriesApi(),
             fetchStagedTasksApi(),
-            fetchAiConfigApi()
+            fetchAiConfigApi(),
+            import('/components/list-header/list-header.js'),
+            import('/components/ai-staged-row/ai-staged-row.js')
         ]);
     } catch (err) {
         if (toaster) toaster.error('Failed to load AI page data');
@@ -306,8 +309,15 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
         .filter(m => m.role !== '__thinking__')
         .map(m => ({ role: m.role, content: m.content }));
 
-    // Call AI
-    const result = await sendAiChatApi(apiMessages);
+    // Call AI — sendAiChatApi throws on network failure; without this catch
+    // an unhandled rejection would leave the Send button disabled and the
+    // thinking indicator stuck until page reload
+    let result;
+    try {
+        result = await sendAiChatApi(apiMessages);
+    } catch {
+        result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
+    }
 
     // Remove thinking indicator
     conversationHistory = conversationHistory.filter(m => m.role !== '__thinking__');

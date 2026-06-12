@@ -18,7 +18,9 @@
  *   toaster.show('Quick message', 'success', 2000);
  */
 class ToastNotification extends HTMLElement {
-    /** @type {[string, string]|null} Cached [html, css] templates */
+    /** @type {Promise<[string, string]>|null} Cached templates Promise — store
+     * the Promise (not the resolved value) so concurrent connectedCallback()
+     * calls don't each trigger their own fetch. See SPEC Code Rule 7. */
     static templateCache = null;
 
     constructor() {
@@ -26,16 +28,20 @@ class ToastNotification extends HTMLElement {
         this.attachShadow({ mode: 'open' });
         this.toasts = [];
         this._timeoutIds = new Set(); // Track auto-dismiss timeouts for cleanup
+        // Resolved once connectedCallback has built the shadow DOM — show()
+        // awaits this so a toast fired during page load doesn't hit a
+        // null container and throw
+        this._ready = new Promise(resolve => { this._resolveReady = resolve; });
     }
 
     async connectedCallback() {
         if (!ToastNotification.templateCache) {
-            ToastNotification.templateCache = await Promise.all([
+            ToastNotification.templateCache = Promise.all([
                 fetch('/components/toast-notification/toast-notification.html').then(r => r.text()),
                 fetch('/components/toast-notification/toast-notification.css').then(r => r.text())
             ]);
         }
-        const [html, css] = ToastNotification.templateCache;
+        const [html, css] = await ToastNotification.templateCache;
 
         const style = document.createElement('style');
         style.textContent = css;
@@ -44,6 +50,7 @@ class ToastNotification extends HTMLElement {
         this.shadowRoot.prepend(style);
 
         this.container = this.shadowRoot.querySelector('.toast__container');
+        this._resolveReady();
     }
 
     /**
@@ -52,7 +59,8 @@ class ToastNotification extends HTMLElement {
      * @param {string} type - Type of toast: 'success', 'error', 'info', 'warning'
      * @param {number} duration - How long to show the toast in ms (default: 4000)
      */
-    show(message, type = 'info', duration = 4000) {
+    async show(message, type = 'info', duration = 4000) {
+        await this._ready;
         const toast = document.createElement('div');
         toast.className = `toast --${type}`;
 
