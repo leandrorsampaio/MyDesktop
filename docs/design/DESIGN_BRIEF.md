@@ -4,7 +4,7 @@
 
 Self-hosted personal kanban task tracker. Runs locally as a browser homepage (new tab page). No account, no cloud, no external dependencies. Single user, local only. Target: replace Trello/Jira for solo professionals.
 
-Stack: Vanilla JS + Web Components (Shadow DOM) + Node.js/Express. No framework, no build tools. All styling is vanilla CSS with BEM naming. Components use Shadow DOM so global CSS does not pierce into them — each component has its own `.css` file injected into its shadow root.
+Stack: Vanilla JS + Web Components (Shadow DOM) + Node.js (zero npm dependencies — built-in `http` via a hand-written shim). No framework, no build tools. All styling is vanilla CSS with BEM naming. Components use Shadow DOM so global CSS does not pierce into them — each component has its own `.css` file injected into its shadow root.
 
 **Current state:** functional but visually inconsistent, layout bugs, does not match the intended design vision. Needs a complete visual redesign.
 
@@ -55,7 +55,7 @@ Restraint over decoration. Every visual element earns its place. Clean physical 
 
 ### Navigation Model
 
-Sidebar navigation (left, slide-over overlay). Closed by default. Opens on button click. Closes on backdrop click or Escape. No "always open" mode — board gets full screen width.
+**Permanent icon-only navigation rail** (left edge, every page). Always visible; icon links with hover tooltips; active page highlighted. The rail also hosts a slide-out panel for the daily checklist + notes (opens over content, closes on backdrop click or Escape) and footer links to the config and design-system pages. The rail is deliberately narrow so the board keeps nearly full screen width.
 
 6 destinations + a dedicated config page:
 
@@ -297,15 +297,15 @@ One spec per component with: anatomy diagram, all visual states, spacing/sizing 
 | 21 | Priority Indicator | star or dot — visual treatment for priority flag |
 | 22 | Deadline Chip | 3 levels: normal (no urgency), warning (approaching), urgent (imminent/overdue) |
 | 23 | FAB (Floating Action Button) | default, hover — fixed position bottom-left, for adding tasks on list pages |
-| 24 | App Header | layout, sidebar trigger button, welcome text, toolbar area, profile selector area |
-| 25 | Board Toolbar | category filter buttons (active/inactive), priority toggle, epic picker, snooze toggle, crisis mode button, privacy toggle |
+| 24 | App Header | layout, welcome text, toolbar area, profile selector area |
+| 25 | Board Toolbar | category picker, epic picker, priority toggle (active/inactive), snooze toggle, privacy toggle |
 | 26 | Drag Handle | visual affordance for draggable items (task cards, column reorder items) |
 
 ### E. Page Layouts
 
 | # | Page | Layout Description |
 |---|------|--------------------|
-| 1 | Board | 2-column: left sidebar (checklist + notes, ~300-560px) + right kanban (N columns, scroll horizontal if needed). Toolbar in header area. Columns are equal-width grid. |
+| 1 | Board | Nav rail (left edge) + kanban (N columns, scroll horizontal if needed). Toolbar in header area. Columns are equal-width grid. Checklist + notes live in the rail's slide-out panel, not a fixed sidebar. |
 | 2 | Dashboard | Full-width. Stats row (4 metric cards). Epic progress section (cards with progress bars). Deadline groups (overdue/soon/this-week). Column load chart. Stale tasks collapsible. No-epic tasks collapsible. |
 | 3 | Backlog | Full-width list. Sortable header + flat rows. FAB bottom-left for adding. |
 | 4 | Archive | Full-width list. Sortable header + expandable rows. |
@@ -318,17 +318,16 @@ One spec per component with: anatomy diagram, all visual states, spacing/sizing 
 |---|-------------------|------------------|
 | 1 | Drag-and-Drop (cards) | Card lift state, placeholder/ghost, column drop-target highlight, cross-column move animation |
 | 2 | Drag-and-Drop (column reorder) | Item lift state, reorder preview, drop indicator |
-| 3 | Crisis Mode | What hides (toolbar, done column, non-priority tasks, checklist, notes). What changes visually (border colour, favicon — conceptual only). |
-| 4 | Privacy Mode | Blur/mask treatment for text content. What gets masked vs what stays visible. |
-| 5 | Snooze States | Hidden mode (card invisible), transparent mode (card at reduced opacity), snooze toggle button state |
-| 6 | Filter Active States | Category buttons (multi-select), priority toggle (on/off), epic picker (selected/all) |
-| 7 | Empty States | No tasks in column, no tasks on page, no epics, no reports, no staged tasks, no checklist items |
-| 8 | Loading States | Skeleton or spinner pattern for async operations |
-| 9 | Modal Open/Close | Entrance animation (fade + slide), exit animation, backdrop |
-| 10 | Sidebar Open/Close | Slide-in from left, backdrop fade, transition timing |
-| 11 | Toast Entrance/Exit | Slide-in from right, stack upward, auto-dismiss, manual close |
-| 12 | Inline Editing | Blur-to-save pattern for names/titles in management modals |
-| 13 | Form Validation | Error state styling, error message placement |
+| 3 | Privacy Mode | Blur/mask treatment for text content. What gets masked vs what stays visible. |
+| 4 | Snooze States | Hidden mode (card invisible), transparent mode (card at reduced opacity), snooze toggle button state |
+| 5 | Filter Active States | Category picker (single-select), priority toggle (on/off), epic picker (selected/all) |
+| 6 | Empty States | No tasks in column, no tasks on page, no epics, no reports, no staged tasks, no checklist items |
+| 7 | Loading States | Skeleton or spinner pattern for async operations |
+| 8 | Modal Open/Close | Entrance animation (fade + slide), exit animation, backdrop |
+| 9 | Rail Panel Open/Close | Slide-out from the rail, backdrop fade, transition timing |
+| 10 | Toast Entrance/Exit | Slide-in from right, stack upward, auto-dismiss, manual close |
+| 11 | Inline Editing | Blur-to-save pattern for names/titles in config-page editors |
+| 12 | Form Validation | Error state styling, error message placement |
 
 ### G. Documentation & Guidelines
 

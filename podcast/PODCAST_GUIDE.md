@@ -2,6 +2,8 @@
 
 **Purpose:** This document provides all the context, rules, and parameters for any AI assistant to produce new podcast episodes for this series. Read this file completely before writing any episode.
 
+> **Staleness note (2026-06-12):** existing episodes describe the codebase as it was when they were recorded — they are intentionally NOT updated. Things that have since changed: **Crisis Mode was removed** (v2.37.2, `crisis-mode.js` deleted), **Express was replaced** by the zero-dep `mini-server.js` shim (v2.38.0), the nav sidebar became a **permanent icon rail**, and most CRUD modals moved inline to the config page. When producing a NEW episode, verify against the current code and `SPEC.md`, not against older episodes.
+
 ---
 
 ## About the Listener

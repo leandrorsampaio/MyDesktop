@@ -1,8 +1,10 @@
 # Vision
 
-**Last updated:** 2026-05-16
+**Last updated:** 2026-06-12
 
 This is the strategic doc — what the product is trying to be, for whom, and why. Implementation details live in [SPEC.md](SPEC.md). Version history lives in [CHANGELOG.md](CHANGELOG.md).
+
+**Altitude rule:** this document states intent and principles, never implementation specifics (component behavior, modal lists, pixel values). Those live in SPEC.md, which is updated with every code change. This split exists because implementation details written here go stale silently — the navigation section below described a component that had been redesigned months before anyone noticed.
 
 ---
 
@@ -39,7 +41,7 @@ A clean, self-hosted, open-source personal task management tool. No account, no 
 
 ## Task lifecycle
 
-Three tiers, one direction:
+Three tiers, forward by default:
 
 ```
 AI Staging  →  Backlog  →  Board
@@ -50,9 +52,11 @@ AI Staging  →  Backlog  →  Board
 - **Backlog** — tasks you've decided to build, but not now. Out of sight, out of mind, but not forgotten.
 - **Board** — tasks you're actively working on. The only view that demands your attention daily.
 
-**"Promote"** is the consistent verb for moving a task forward:
-- Promote from AI Staging → Backlog
+**"Promote"** is the concept for moving a task forward — tasks advance intentionally, they are never pushed:
+- Promote from AI Staging → Backlog or Board
 - Promote from Backlog → Board (always lands in first column)
+
+**One deliberate exception:** a board task can be sent back to the Backlog (the edit modal's "Backlog" action). Plans change; a task that turned out to be "not now" shouldn't have to be deleted and recreated. Demotion is an escape hatch, not a workflow — there is no demotion *into* AI Staging, ever.
 
 ---
 
@@ -91,31 +95,19 @@ Restraint over decoration. Every visual element earns its place. The interface s
 
 ## Navigation model
 
-### Sidebar (left, slide-over overlay)
-Closed by default. Opens on button click. Closes on backdrop click or Escape. **No "always open" mode** — the board gets full screen width at all times. The sidebar is present on every page.
+**Principle: navigation stays out of the board's way.** The board is the center; getting anywhere else must cost one click and near-zero screen space. Navigation is present on every page and never competes with content for attention.
 
-Six destinations:
-
-| # | Page       | URL                  |
-|---|------------|----------------------|
-| 1 | Board      | `/:alias`            |
-| 2 | Dashboard  | `/:alias/dashboard`  |
-| 3 | Backlog    | `/:alias/backlog`    |
-| 4 | Archive    | `/:alias/archive`    |
-| 5 | Reports    | `/:alias/reports`    |
-| 6 | AI         | `/:alias/ai`         |
+Six destinations: Board (home), Dashboard, Backlog, Archive, Reports, AI — plus Configuration via the gear icon. (Exact component behavior and routes live in [SPEC.md § Navigation & Routing](SPEC.md).)
 
 ### Configuration
-A dedicated full page at `/:alias/config` (left tabs + right panel layout), opened via the gear icon at the bottom of the sidebar. Settings used to be a submenu of modals; that pattern was replaced in v2.37.0 because too much per-feature state was hidden three clicks deep.
-
-The top bar carries only contextual board toggles (privacy, snooze) plus the profile selector. All global settings live in the config page.
+A dedicated full page (not modals), reached from the navigation. Settings used to be a submenu of modals; that pattern was replaced in v2.37.0 because too much per-feature state was hidden three clicks deep. The board's top bar carries only contextual toggles (privacy, snooze) plus the profile selector — all global settings live in the config page.
 
 ---
 
 ## What stays the same
 
 - Vanilla JS, no framework, no build step.
-- Local, self-hosted, no external runtime dependencies beyond Node + Express.
+- Local, self-hosted, **zero dependencies beyond Node itself** (Express was replaced by a hand-written shim in v2.38.0 — clone and run, no `npm install`).
 - Board is always the default/home view.
 - Profile system unchanged — all pages are profile-scoped.
 - Existing features (daily checklist, notes widget, privacy toggle, snooze) remain on the Board page.

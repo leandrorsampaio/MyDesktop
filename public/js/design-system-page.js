@@ -317,12 +317,22 @@ export async function initDesignSystemPage(pageViewEl) {
             </header>
 
             <nav class="designSystemPage__nav">
-                <a href="#typography" class="designSystemPage__navLink">Typography</a>
-                <a href="#buttons" class="designSystemPage__navLink">Buttons</a>
+                <button type="button" class="designSystemPage__navLink js-dsNavLink" data-section="typography">Typography</button>
+                <button type="button" class="designSystemPage__navLink js-dsNavLink" data-section="buttons">Buttons</button>
             </nav>
 
-            <div id="typography" class="designSystemPage__anchor">${renderTypographySection()}</div>
-            <div id="buttons" class="designSystemPage__anchor">${renderButtonsSection()}</div>
+            <div class="designSystemPage__anchor js-dsSection" data-section="typography">${renderTypographySection()}</div>
+            <div class="designSystemPage__anchor js-dsSection" data-section="buttons">${renderButtonsSection()}</div>
         </div>
     `;
+
+    // scrollIntoView instead of fragment hrefs: with <base href="/"> in the
+    // head, href="#typography" resolves to /#typography and navigates back to
+    // the board. (Also keeps the page free of id attributes per Code Rules.)
+    pageViewEl.querySelectorAll('.js-dsNavLink').forEach(link => {
+        link.addEventListener('click', () => {
+            const target = pageViewEl.querySelector(`.js-dsSection[data-section="${link.dataset.section}"]`);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
 }

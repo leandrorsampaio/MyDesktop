@@ -2,6 +2,8 @@
 
 Prompts for working with the design AI specialist. Use in sequence.
 
+> **Staleness note (2026-06-12):** some prompts below predate the v2.37–v2.38 changes and mention features that no longer exist: the navigation is now a **permanent icon rail** (not a slide-over overlay — question 9 is answered), **Crisis Mode was removed** (v2.37.2), most CRUD modals moved **inline to the config page**, and Express was replaced by a zero-dep shim. If re-sending a prompt, cross-check against the updated `DESIGN_BRIEF.md` / `COMPONENT_CATALOG.md` first.
+
 ---
 
 ## PROMPT 1 — Initial Briefing + Discovery

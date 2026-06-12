@@ -56,11 +56,11 @@ A solo-use kanban built around a single belief: **your daily task tool should li
 | Tasks | Title, description, priority, category, epic, deadline, snooze-until, activity log |
 | Board | Drag-and-drop columns (dynamic per profile, max 15), epic pill, deadline urgency chip, priority star, category badge |
 | AI | Paste meeting notes → AI proposes tasks → review in AI Staging → promote to backlog or board. Provider-agnostic (Anthropic, OpenAI, Groq, LM Studio, Ollama, Jan) |
-| Reliability | Optimistic UI with rollback, race-condition lock on drag, server-side input validation, DIY rate limiting, 146 tests via `node:test` |
+| Reliability | Optimistic UI with rollback, race-condition lock on drag, server-side input validation, DIY rate limiting, 300+ tests via `node:test` |
 
 ### Architecture in one paragraph
 
-Single Express server on port 3001 serves a single-page app shell at `/:alias/:page`. The client is a flat tree of ES modules (`app.js` wires `state.js` + `api.js` + per-page modules) and ~15 Web Components with Shadow DOM. Each component fetches its own `.html` + `.css` at runtime (cached as a Promise). Profiles are URL-scoped; data is per-profile JSON in `data/{alias}/`. No build tools — open the file, edit, refresh.
+A single zero-dependency Node server (built-in `http` via the `mini-server.js` shim) on port 3001 serves a single-page app shell at `/:alias/:page`. The client is a flat tree of ES modules (`app.js` wires `state.js` + `api.js` + per-page modules) and ~15 Web Components with Shadow DOM. Each component fetches its own `.html` + `.css` at runtime (cached as a Promise). Profiles are URL-scoped; data is per-profile JSON in `data/{alias}/`. No build tools — open the file, edit, refresh.
 
 For the full file tree, API surface, data models, and code rules, see [SPEC.md](SPEC.md).
 

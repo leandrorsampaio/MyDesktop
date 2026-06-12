@@ -2355,12 +2355,15 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 
 .designSystemPage__navLink {
     padding: var(--space-6) var(--space-12);
+    border: none;
     border-radius: var(--radius-sm);
     background: var(--color-bg-tertiary);
     color: var(--color-text-secondary);
     text-decoration: none;
+    font-family: inherit;
     font-size: var(--text-md);
     font-weight: var(--font-weight-medium);
+    cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
 }
 

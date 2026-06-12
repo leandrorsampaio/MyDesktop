@@ -86,6 +86,15 @@ Closing it is roughly 1-2 weeks of focused part-time effort.
 - [ ] **Stress-test with N=1000 tasks.** No one knows yet whether the board
       stays smooth past a few hundred tasks. Either confirm it's fine OR
       document a soft cap. Either is fine; silence is bad.
+      *(Note: do this AFTER the v2.38.4 perf fixes — before them the test
+      would mostly measure the now-fixed duplicate template fetches.)*
+
+- [ ] **Accessibility baseline.** `modal-dialog` has no `role="dialog"` /
+      `aria-modal`, no focus trap, no focus-restore on close; the nav rail
+      has no `aria-current`; drag-and-drop has no keyboard alternative.
+      OSS reviewers check this. The cheap 80%: dialog roles + focus restore
+      + `aria-current` is under a day. Keyboard card navigation is tracked
+      in FUTURE.md § Keyboard shortcuts (same `tabindex` work serves both).
 
 ## Priority D — nice signals
 
@@ -101,6 +110,12 @@ Closing it is roughly 1-2 weeks of focused part-time effort.
 - [ ] **Add a "How it's structured" section** in README briefly mapping the
       `public/`, `data/`, `tests/` dirs so people can navigate without
       `tree`-ing the repo.
+
+- [ ] **Surface the backup/export story.** "Your data, your machine" is the
+      core promise but the README only has a one-liner ("copy `data/`").
+      Give it a visible "Your data" section: plain JSON, where it lives,
+      how to back up, how to migrate machines. A one-click JSON export
+      button is optional polish on top.
 
 - [ ] **Pick a primary color / favicon** that matches the design. Current
       favicon may not survive the renaming.

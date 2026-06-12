@@ -8,7 +8,7 @@
 
 A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.38.3 (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.38.5 (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
@@ -116,7 +116,9 @@ All 6 planned pages have shipped:
 | AI Assistant | `/:alias/ai` | v2.35.0 |
 | Configuration | `/:alias/config` | v2.37.0 |
 
-Backend includes: optimistic UI, rate limiting, input validation, race-condition lock, AI provider abstraction (Anthropic + OpenAI-compatible), 146 tests via `node:test`.
+Plus an internal style-guide page at `/:alias/design-system` (linked from the nav rail footer) — typography + button reference rendered from the live token set.
+
+Backend includes: optimistic UI, rate limiting, input validation, race-condition lock, AI provider abstraction (Anthropic + OpenAI-compatible), 300+ tests via `node:test` (don't hardcode the exact count here — run `npm test` for the current number).
 
 **Not yet built:** dark mode (designed, not implemented), streaming AI responses, drag-resize handle between AI chat/staged sections.
 

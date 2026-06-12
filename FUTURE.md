@@ -4,6 +4,25 @@ Backlog of nice-to-have features deferred from active development. Review before
 
 ---
 
+## Keyboard shortcuts
+**Added:** 2026-06-12 (full-review finding)
+
+The app currently has almost no keyboard support (only Escape-to-close and Enter-to-send in AI chat). For the target audience (Linear / Raycast / Things 3 users) this is the biggest craft gap after dark mode — a tool that's open 8 hours a day should be drivable without the mouse.
+
+**Candidate set, roughly in value order:**
+- `n` or `c` — quick-add task (opens the task modal from anywhere on the board)
+- `/` or `Cmd+K` — command palette / search (jump to page, find task)
+- `g` then `b/d/l/a/r/i` — go to Board/Dashboard/Backlog/Archive/Reports/AI (Linear-style chords)
+- `j`/`k` or arrows — move focus between cards; `Enter` opens the focused card
+- `?` — shortcut cheat-sheet overlay
+
+**Implementation notes:**
+- Document-level `keydown` listener in `app.js`, skipped while any modal is open or focus is in an input/textarea
+- Card focus navigation requires making `task-card` focusable (`tabindex`) — doubles as the keyboard alternative to drag-and-drop that accessibility needs
+- No library needed; a small key→action map in a new `shortcuts.js` module
+
+---
+
 ## AI Page
 
 ### Streaming AI responses
@@ -12,7 +31,7 @@ Backlog of nice-to-have features deferred from active development. Review before
 Stream the narrative portion of the AI response token-by-token so the chat feels live, instead of waiting for the full response. Tasks are only added to the staged list once the full response (including the tool call) is received and parsed.
 
 **Implementation notes:**
-- Use Server-Sent Events (SSE) or chunked Transfer-Encoding from the Express endpoint
+- Use Server-Sent Events (SSE) or chunked Transfer-Encoding from the server endpoint (mini-server exposes the raw Node response, so streaming writes work)
 - The `/api/:profile/ai/chat` endpoint switches to a streaming response; the client reads it via `EventSource` or `fetch` with `response.body.getReader()`
 - Only the `narrative` text streams; `tasks` are emitted as a final event once the tool call resolves
 - Anthropic and OpenAI-compatible providers both support streaming with `stream: true`; the server handles format differences transparently

@@ -11,32 +11,34 @@ Machine-readable reference for every UI element, interaction pattern, and visual
 ```
 <html>
   <body>
-    <header class="appHeader">           ← fixed top bar, all pages
-      <div class="appHeader__left">
-        <button class="appHeader__sidebarBtn">  ← hamburger icon, opens nav-sidebar
-        <app-welcome>                     ← "Welcome, {Name}" + date/weekday/week#
-      </div>
-      <div class="appHeader__actions">
-        <div class="toolbar">             ← board-only: filter buttons, toggles
-        <profile-selector>                ← avatar + dropdown, all pages
-      </div>
-    </header>
+    <div class="appShell">                ← full-viewport flex row
+      <nav-sidebar>                       ← permanent icon-only rail, left, all pages
+        <daily-checklist>                 ← slotted into the rail's slide-out panel
+        <notes-widget>                    ← slotted into the rail's slide-out panel
+      </nav-sidebar>
 
-    <nav-sidebar>                         ← slide-over left panel, all pages
+      <div class="appShell__main">        ← header + content column
+        <header class="appHeader">        ← top bar, all pages
+          <div class="appHeader__left">
+            <app-welcome>                 ← "Welcome, {Name}" + date/weekday/week#
+          </div>
+          <div class="appHeader__actions">
+            <div class="js-toolbarMount"> ← board-only toolbar injected here at runtime
+            <profile-selector>            ← avatar + dropdown, all pages
+          </div>
+        </header>
 
-    <div class="appContainer">            ← board page only
-      <aside class="sidebar">            ← left panel: checklist + notes
-        <daily-checklist>
-        <notes-widget>
-      </aside>
-      <main class="kanban">              ← right panel: columns grid
-        <kanban-column> x N
-      </main>
+        <div class="appContainer">        ← board page only
+          <main class="kanban">           ← columns grid
+            <kanban-column> x N
+          </main>
+        </div>
+
+        <div class="pageView">            ← non-board pages (dashboard, backlog, archive, reports, ai, config, design-system)
+      </div>
     </div>
 
-    <div class="pageView">               ← non-board pages (dashboard, backlog, archive, reports, ai)
-
-    <modal-dialog> x 15                   ← various modals (see section 6)
+    <modal-dialog> x 8                    ← task, report viewer, 5 delete confirms, 1 legacy (see section 6)
     <toast-notification>                  ← notification stack, bottom-right
   </body>
 </html>
@@ -46,10 +48,9 @@ Machine-readable reference for every UI element, interaction pattern, and visual
 
 | Element | Description | Visual |
 |---------|-------------|--------|
-| `.appHeader` | Fixed top bar, full width | Flex, space-between, white bg, bottom border |
-| `.appHeader__sidebarBtn` | 36x36px button, 3 horizontal bars (hamburger icon) | Grey bars, hover: darker |
+| `.appHeader` | Top bar, full width of `.appShell__main` | Flex, space-between, white bg, bottom border |
 | `<app-welcome>` | Shadow DOM component | Title: "Welcome, {name}" (22px, weight 600). Subtitle: date + weekday + "Week {n}" separated by bullets (14px, grey) |
-| `.toolbar` | Board-page-only filter bar | Flex row, gap 8px. Contains: category buttons, priority toggle, epic picker, snooze toggle, crisis button, privacy toggle |
+| `.toolbar` | Board-page-only filter bar (injected into `.js-toolbarMount` at runtime) | Flex row, gap 8px. Contains: category dropdown, epic dropdown, priority toggle, snooze toggle, privacy toggle |
 | `<profile-selector>` | Shadow DOM component | 40px coloured circle (profile colour bg, white letters text, weight 700). Click → dropdown. Hover: scale 1.05 + shadow |
 
 ### 1.3 Profile Selector Dropdown
@@ -64,43 +65,42 @@ Machine-readable reference for every UI element, interaction pattern, and visual
 
 ---
 
-## 2. Navigation Sidebar
+## 2. Navigation Rail (`<nav-sidebar>`)
 
-Shadow DOM component. Slide-over overlay from left.
+Shadow DOM component. **Permanent icon-only rail** on the left edge, present on every page. The old slide-over overlay + config submenu pattern was replaced (v2.37) — the rail is always visible and the board content sits beside it.
 
 ### 2.1 Anatomy
 
 ```
-.navSidebar__backdrop         ← full-screen semi-transparent overlay
-.navSidebar__panel            ← 220px fixed panel, left side
-  .navSidebar__nav            ← navigation links
-    .navSidebar__item x 6     ← Board, Dashboard, Backlog, Archive, Reports, AI
+.navSidebar__rail              ← the rail itself: fixed narrow column, full height
+  .navSidebar__nav
+    .navSidebar__item x 6      ← Board, Dashboard, Backlog, Archive, Reports, AI (svg-icon + tooltip)
+    .navSidebar__spacer
+    .js-panelBtn               ← toggle for the slide-out panel (checklist + notes)
   .navSidebar__footer
-    .navSidebar__configMenu   ← popover submenu (hidden by default)
-      .navSidebar__configItem x 8
-    .navSidebar__configBtn    ← "Config" button, opens submenu
+    design-system link         ← internal style-guide page
+    config gear                ← plain nav link to /:alias/config
+.navSidebar__panelBackdrop     ← backdrop behind the open panel
+.navSidebar__slidePanel        ← slide-out panel; <slot> renders checklist + notes
 ```
 
 ### 2.2 States
 
 | State | Visual |
 |-------|--------|
-| Closed | Panel at translateX(-100%), backdrop invisible |
-| Open | Panel at translateX(0), backdrop visible rgba(0,0,0,0.18) |
-| Nav item default | Grey text, 12px padding, flex row |
-| Nav item hover | Light grey bg |
-| Nav item active | Light blue bg, blue text, weight 600 |
-| Config menu closed | Hidden |
-| Config menu open | Positioned above config button, white bg, border, shadow |
-| Config item hover | Light grey bg |
+| Rail | Always visible; no open/closed state |
+| Nav item default | Grey icon |
+| Nav item hover | Light grey bg + tooltip with page name |
+| Nav item active | Accent treatment on the icon for the current page |
+| Panel closed | Panel hidden, backdrop invisible |
+| Panel open | `--panelOpen` on host; panel slides out beside the rail, backdrop visible |
 
 ### 2.3 Interactions
 
-- Open: click sidebar trigger button
-- Close: click backdrop, press Escape, or select a config action
 - Nav items: standard links (enable right-click → open new tab)
-- Config button: toggles config submenu visibility
-- Config items: dispatch event with action name → opens corresponding modal
+- Panel button: toggles the checklist/notes slide-out panel
+- Panel close: click backdrop or press Escape
+- Gear + design-system: plain navigation links (full page loads)
 
 ---
 
@@ -177,16 +177,15 @@ Injected into `.appHeader__actions` on board page only. Not visible on other pag
 
 | Element | Type | Behaviour |
 |---------|------|-----------|
-| Category filter buttons | Multiple toggle buttons | One per category. Click toggles active. Active = filled bg. Multiple can be active (OR logic). |
-| Priority filter button | Single toggle | Click toggles. Active = filled bg with star icon. |
+| Category filter picker | `<custom-picker type="list">` | Dropdown with category icons. "All categories" clears the filter. Hidden when only the default category exists. Single-select. |
 | Epic filter picker | `<custom-picker type="list">` | Dropdown. "All epics" option clears filter. Selecting an epic filters to that epic only. |
+| Priority filter button | Single toggle | Click toggles. Active = filled bg with star icon. |
 | Snooze toggle button | Single toggle | Shows/hides snoozed tasks. Hidden in "transparent" mode (when body has `.--snoozeTransparent`). |
-| Crisis mode button | Single toggle | Activates crisis mode (see section 7.1). |
 | Privacy toggle button | Single toggle | Activates privacy blur (see section 7.2). |
 
-### 3.4 Left Sidebar (Board Page Only)
+### 3.4 Checklist & Notes (rail slide-out panel)
 
-Fixed-width panel (`sidebar` class). Contains two sections.
+The daily checklist and notes widget are slotted into the nav rail's slide-out panel (see §2) — available on every page, opened via the rail's panel button. They were previously a fixed board-page sidebar.
 
 #### Daily Checklist (`<daily-checklist>`)
 
@@ -486,9 +485,11 @@ Actions column: 300px (5 buttons).
 
 ---
 
-## 6. Modals
+## 6. Modals & Config-Page Editors
 
 All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px), default (680px), large (960px). All clamped with min/max.
+
+> **Note (v2.37+):** the CRUD editors in §6.3–6.7 are **no longer modals** — they render inline as sections of the Configuration page (`/:alias/config`, left tabs + right panel). Their element anatomy and visual specs below still apply to the inline versions. The only modals left in the app are the task modal (§6.2), the report viewer, and the small delete-confirmation modals (§6.8).
 
 ### 6.1 Modal Dialog Component
 
@@ -541,7 +542,7 @@ Size: default. The most complex modal.
 
 **Quick datetime buttons:** `+1h`, `+3h`, `+1d`, `Morning` (next 9am), `Next Monday` (next Monday 9am). Click sets the datetime input value.
 
-### 6.3 Management Modals (Epics, Categories, Profiles)
+### 6.3 Management Editors (Epics, Categories, Profiles) — inline on Config page
 
 Size: large. All follow the same CRUD list pattern.
 
@@ -565,7 +566,7 @@ Size: large. All follow the same CRUD list pattern.
 - Last profile: delete button hidden
 - Default profile: star button highlighted
 
-### 6.4 Board Configuration Modal
+### 6.4 Columns Editor — inline on Config page
 
 Size: large. Column CRUD with drag-to-reorder.
 
@@ -586,7 +587,7 @@ Backlog column is NOT shown in this list (hidden, permanent).
 - Dragging: `.--dragging` (opacity reduced)
 - Drop target: `.--dragOver` (highlight border/bg)
 
-### 6.5 Checklist Editor Modal
+### 6.5 Checklist Editor — inline on Config page
 
 Size: large.
 
@@ -600,7 +601,7 @@ Size: large.
 [Save button]                    ← saves to localStorage, refreshes component
 ```
 
-### 6.6 General Configuration Modal
+### 6.6 General Settings — inline on Config page
 
 Size: default. Three settings sections. All profile-scoped, stored in localStorage.
 
@@ -621,7 +622,7 @@ Section 3: Deadline Urgency Thresholds
 [Save button]
 ```
 
-### 6.7 AI Configuration Modal
+### 6.7 AI Configuration — inline on Config page
 
 Size: default.
 
@@ -668,22 +669,9 @@ Delete button
 
 ## 7. Special Modes & Visual States
 
-### 7.1 Crisis Mode
+### 7.1 Crisis Mode — REMOVED (v2.37.2)
 
-Activated by crisis mode button in toolbar. Purely CSS-driven.
-
-**What changes when `.--crisisMode` is on `<body>`:**
-- Page title changes to "!!!"
-- Favicon changes to red star (dynamically generated via canvas)
-- Priority filter auto-activates (only priority tasks visible)
-- Done column hidden (via CSS)
-- Toolbar hidden (except crisis button itself)
-- Checklist hidden
-- Notes hidden
-- Non-priority cards hidden (via filter system)
-- Optional: red border or accent to indicate crisis state
-
-**Exit:** Click crisis button again. Restores title, favicon, deactivates priority filter.
+Crisis Mode was deleted from the product. Do not design for it. (The priority filter in the toolbar covers the "show only what's urgent" need.)
 
 ### 7.2 Privacy Mode
 
@@ -906,8 +894,8 @@ Current icons used:
 
 Additional icons needed for:
 - Navigation items (board, dashboard, backlog, archive, reports, AI)
-- Toolbar actions (filter, crisis, privacy, snooze)
-- Config menu items
+- Toolbar actions (filter, privacy, snooze)
+- Config page tabs
 - Promote/move actions
 - Search (if added)
 - Sort indicators

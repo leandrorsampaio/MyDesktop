@@ -1,6 +1,6 @@
 # SPEC — Project Specification
 
-**Version:** 2.38.4
+**Version:** 2.38.5
 **Last Updated:** 2026-06-12
 
 ---
@@ -78,8 +78,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── categories.json
 │       └── ai-staged-tasks.json   # AI-proposed tasks awaiting promotion
 ├── tests/
-│   ├── unit/                      # utils.test.js, validation.test.js, router.test.js, archive-page.test.js
-│   └── api/                       # tasks, notes, reports, rate-limit
+│   ├── unit/                      # utils, validation, router, archive-page, mini-server, state, filters
+│   └── api/                       # tasks, notes, reports, rate-limit, profiles, epics, categories, columns, archived, ai-staged
 └── public/
     ├── index.html                 # `<base href="/">` ensures relative assets resolve correctly on sub-pages (/:alias/:page)
     ├── app.js                     # Main entry — wires everything
@@ -92,13 +92,13 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── filters.js             # Category, priority, epic filter logic
     │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
     │   ├── modals.js              # All modal logic
-    │   ├── board-config.js        # Board Configuration modal (column CRUD + drag-to-reorder)
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     │   ├── backlog-page.js        # Backlog page — initBacklogPage()
     │   ├── reports-page.js        # Reports page — initReportsPage()
     │   ├── config-page.js         # Configuration page — initConfigPage()
     │   ├── dashboard-page.js      # Dashboard page — initDashboardPage()
-    │   └── ai-page.js             # AI Assistant page — initAiPage()
+    │   ├── ai-page.js             # AI Assistant page — initAiPage()
+    │   └── design-system-page.js  # Internal style-guide page — initDesignSystemPage()
     └── components/
         ├── button/
         ├── task-card/
@@ -106,7 +106,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         ├── daily-checklist/
         ├── notes-widget/
         ├── kanban-column/
-        ├── nav-sidebar/           # Navigation sidebar (slide-over overlay)
+        ├── nav-sidebar/           # Permanent icon-only navigation rail
         ├── custom-picker/         # Inline component (no .html/.css)
         ├── svg-icon/              # Inline component (no .html/.css)
         ├── list-header/           # Inline component — sortable column header for list pages
@@ -208,7 +208,7 @@ POST   /api/:profile/ai/staged/:id/promote/board   - Promote to first non-backlo
 ```
 GET    /              - Redirect to default profile alias
 GET    /:alias        - Serve index.html if profile exists, else redirect
-GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, archive, reports, ai)
+GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, archive, reports, ai, config, design-system)
 ```
 
 ---
@@ -407,8 +407,8 @@ These are behaviors not evident from reading the code. Know these before making 
 **Snoze visibility is CSS-driven (not JS):** snoozed `task-card` elements receive the class `--snoozed` from `createTaskCard()`. The `task-card.css` `:host(.--snoozed)` rule reads CSS custom properties `--snoozed-card-display` and `--snoozed-card-opacity` that are defined on `:root` and overridden by `.kanban.--showSnoozed` (toggle active) and `body.--snoozeTransparent` (transparent mode). These custom properties inherit through Shadow DOM boundaries, so no JS traversal is needed. `task-card.css` also has `:host([hidden]) { display: none !important }` to keep filter-hidden cards hidden regardless of snooze state.
 
 ### Navigation & Routing
-- **`<nav-sidebar>`** is a slide-over overlay (left side). Trigger button is in the top-left of the header. Closes on backdrop click, ESC, or when a config action is selected.
-- **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`, `config`. Anything else defaults to `board`.
+- **`<nav-sidebar>`** is a permanent icon-only navigation rail (left side), present on every page. It contains the page links, a toggle button for a slide-out panel holding the checklist/notes (slotted light DOM; panel closes on backdrop click or ESC), the gear link to the config page, and a footer link to the internal design-system page.
+- **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`, `config`, `design-system`. Anything else defaults to `board`.
 - **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
 - **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive calls `initArchivePage`; Backlog calls `initBacklogPage`; Dashboard calls `initDashboardPage`; Reports calls `initReportsPage`; AI calls `initAiPage` — all via dynamic import. Unbuilt pages use `renderPlaceholderPage()`.
 - **`pageView.--fullPage`** class modifier removes centering and padding from `.pageView` — applied by page modules that render a full-width layout (archive page sets this on init).
@@ -448,6 +448,12 @@ These are behaviors not evident from reading the code. Know these before making 
 - **`--archive-col-actions`** is overridden to `300px` on `.aiPage` to accommodate the 5-button action bar (Edit, Clone, → Backlog, → Board, Delete).
 - **Rate limit:** `POST /api/:profile/ai/chat` is limited to 10 requests per minute (separate `aiLimiter` from the standard write limiter).
 
+### Design System Page
+- Route: `/:alias/design-system` — an **internal style-guide page** (live reference for typography classes and the full button system, rendered from the current `:root` token set). Linked from the nav rail footer.
+- `design-system-page.js` → `initDesignSystemPage(pageViewEl)`. Read-only; no API calls.
+- Section nav uses `js-` hooks + `scrollIntoView` — fragment hrefs (`#typography`) would resolve against `<base href="/">` and navigate back to the board.
+- Audience: development and the design engagement, not end users. Kept in the nav because this is a single-user tool.
+
 ### Privacy Toggle
 - Purely client-side CSS toggle — no server calls, no persistence.
 
@@ -467,12 +473,31 @@ These are behaviors not evident from reading the code. Know these before making 
 
 ### `<nav-sidebar>`
 ```html
-<nav-sidebar class="js-navSidebar"></nav-sidebar>
+<nav-sidebar class="js-navSidebar">
+    <!-- light DOM children are slotted into the slide-out panel -->
+    <daily-checklist></daily-checklist>
+    <notes-widget></notes-widget>
+</nav-sidebar>
 ```
-- **Attributes:** `alias` (profile alias, sets href on nav links), `page` (active page name, sets `--active` class)
-- **Boolean attribute:** `open` — managed by `open()` / `close()`. Do not toggle manually.
-- **JS API:** `open()`, `close()`, `toggle()`
-- **Behavior:** The gear icon at the bottom is a nav link to `/:alias/config` (no more submenu). Slide-out panel for checklist/notes uses backdrop click and ESC to close.
+- **Permanent icon-only rail** — always visible on the left of every page; there is no open/close API for the rail itself.
+- **Attributes:** `alias` (profile alias, builds href values on nav links), `page` (active page name, sets `--active` on the matching link)
+- **Slide-out panel:** the panel button toggles a `--panelOpen` class on the host; slotted children (checklist, notes) render inside it. Closes on backdrop click or ESC (document listener added on open, removed on close/disconnect).
+- **Gear icon** at the bottom is a plain nav link to `/:alias/config`; the footer also links to `/:alias/design-system`.
+
+### `<profile-selector>`
+```html
+<profile-selector class="js-profileSelector"></profile-selector>
+```
+- Avatar button + profile name + dropdown for switching profiles
+- **JS API:** `setProfiles(profiles)`, `setActiveProfile(profile)` — safe to call before connection (renders on connect)
+- **Dispatches** (bubble+composed, `detail: { alias }`): `profile-select` (navigate to profile), `profile-open-new-tab`
+- ESC + click-outside close the dropdown; document listeners cleaned up in `disconnectedCallback`
+
+### `<app-welcome>`
+```html
+<app-welcome></app-welcome>
+```
+- Static greeting + date/weekday/week-number header. No attributes, no JS API, no events.
 
 ### `<svg-icon>`
 ```html
@@ -529,6 +554,16 @@ These are behaviors not evident from reading the code. Know these before making 
 - Column widths match `<list-header>` via the same `--archive-col-*` CSS custom properties (inherit through Shadow DOM)
 - Epic pill uses `_hexToRgba(epicColor, 0.12)` background + solid `epicColor` text (same as task-card)
 
+### `<backlog-row>`
+```html
+<backlog-row></backlog-row>
+```
+- Shadow DOM, loads `backlog-row.html` + `backlog-row.css` via fetch (cached in `static templateCache`)
+- **JS API:** `setTask(task, { epicName, epicColor, categoryName, categoryIcon })` — sets data and renders
+- Flat row (no expand): title, epic pill, category icon, created date, Edit + Promote buttons
+- **Dispatches** (bubble+composed, `detail: { taskId }`): `backlog-edit`, `backlog-promote`
+- Column widths match `<list-header>` via the `--archive-col-*` CSS custom properties
+
 ### `<ai-staged-row>`
 ```html
 <ai-staged-row></ai-staged-row>
@@ -572,23 +607,18 @@ elements.toaster.info('msg')     // beige
 
 ## Modals Reference
 
+All CRUD editors (categories, epics, profiles, columns, checklist, AI config, general settings) live **inline on the config page** since v2.37.0 — only confirmations and the task/report viewers remain as modals. The 8 modals below are everything in `index.html`.
+
 | JS hook                          | Purpose                          | Size    | Trigger                                    |
 |----------------------------------|----------------------------------|---------|--------------------------------------------|
-| `.js-taskModal`                  | Add / Edit / Clone task          | default | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add |
-| `.js-reportsModal`               | View reports                     | large   | Reports page (modal; will be replaced by full page)    |
-| `.js-archivedModal`              | View archived tasks (legacy modal) | large | Still in DOM for backward compat; the real Archive page is `/:alias/archive` |
+| `.js-taskModal`                  | Add / Edit / Clone task          | default | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add; also reused by backlog + AI pages |
+| `.js-reportsModal`               | View a report                    | large   | Clicking a row on the Reports page                     |
 | `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                            |
-| `.js-categoriesModal`            | Manage categories CRUD           | large   | Sidebar Config → Manage Categories                     |
-| `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in categories modal                             |
-| `.js-epicsModal`                 | Manage epics CRUD                | large   | Sidebar Config → Manage Epics                          |
-| `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in epics modal                                  |
-| `.js-profilesModal`              | Manage profiles CRUD             | large   | Sidebar Config → Manage Profiles                       |
-| `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in profiles modal                               |
-| `.js-checklistModal`             | Edit daily checklist             | large   | Sidebar Config → Edit Daily Checklist                  |
-| `.js-boardConfigModal`           | Column CRUD + drag-to-reorder    | large   | Sidebar Config → Board Configuration                   |
-| `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in board config modal                           |
-| `.js-generalConfigModal`         | Sidebar visibility, snooze mode, deadline thresholds | default | Sidebar Config → General Configuration    |
-| `.js-aiConfigModal`              | AI provider, model, API key configuration            | default | Sidebar Config → AI Configuration         |
+| `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in config page → Epics                          |
+| `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in config page → Categories                     |
+| `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in config page → Profiles                       |
+| `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in config page → Columns                        |
+| `.js-generalConfigModal`         | **Dead** — general settings moved to the config page; `openGeneralConfigModal()` in app.js has no callers. Flagged for the next dead-code sweep. | default | (none) |
 
 ---
 
@@ -805,9 +835,7 @@ New code must go into the correct existing module. Only create a new module if a
 | `router.js`      | Client-side path parser: `parsePath()`, `buildPath()`  |
 | `filters.js`     | Category, priority, epic filter logic                  |
 | `modals.js`      | All modal dialog logic                                 |
-| `board-config.js`| Board Configuration modal (column CRUD + reorder)      |
-| `reports-page.js`| Reports page (list, view, delete, generate)            |
-| `config-page.js` | Config page (columns, epics, categories, general, checklist, AI) |
+| `*-page.js`      | One module per sub-page: archive, backlog, dashboard, reports, ai, config, design-system — each exports `init<Name>Page(pageViewEl, …)` |
 | `app.js`         | Entry point — DOM refs, event listeners, renders       |
 
 ---
