@@ -1890,7 +1890,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 11,
+    "position": 17,
     "log": [
       {
         "date": "2026-03-22",
@@ -1988,7 +1988,7 @@
     "category": 5,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mncchgncxlcix2v96",
-    "position": 1,
+    "position": 0,
     "log": [
       {
         "date": "2026-03-09",
@@ -3194,7 +3194,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 9,
+    "position": 15,
     "log": [
       {
         "date": "2026-03-30",
@@ -4039,7 +4039,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 10,
+    "position": 16,
     "log": [
       {
         "date": "2026-05-04",
@@ -4061,8 +4061,8 @@
     "priority": false,
     "category": 2,
     "epicId": "moq8k175szmfa7njw",
-    "status": "mncchgncxlcix2v96",
-    "position": 5,
+    "status": "done",
+    "position": 2,
     "log": [
       {
         "date": "2026-05-04",
@@ -4099,6 +4099,10 @@
       {
         "date": "2026-06-03",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from Today to Done"
       }
     ],
     "createdDate": "2026-05-04T07:52:42.307Z",
@@ -4224,8 +4228,8 @@
     "priority": false,
     "category": 5,
     "epicId": "moq8k175szmfa7njw",
-    "status": "inprogress",
-    "position": 0,
+    "status": "done",
+    "position": 5,
     "log": [
       {
         "date": "2026-05-07",
@@ -4262,6 +4266,10 @@
       {
         "date": "2026-06-08",
         "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-05-07T13:59:30.819Z",
@@ -4483,7 +4491,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 7,
+    "position": 5,
     "log": [
       {
         "date": "2026-05-19",
@@ -4828,7 +4836,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 8,
+    "position": 14,
     "log": [
       {
         "date": "2026-05-29",
@@ -4863,7 +4871,7 @@
     "category": 1,
     "epicId": "moq8dy5b65p58w331",
     "status": "done",
-    "position": 5,
+    "position": 11,
     "log": [
       {
         "date": "2026-06-02",
@@ -4890,7 +4898,7 @@
     "category": 5,
     "epicId": "moq8dy5b65p58w331",
     "status": "done",
-    "position": 6,
+    "position": 12,
     "log": [
       {
         "date": "2026-05-29",
@@ -4929,7 +4937,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 1,
+    "position": 7,
     "log": [
       {
         "date": "2026-06-02",
@@ -4956,7 +4964,7 @@
     "category": 1,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 4,
+    "position": 10,
     "log": [
       {
         "date": "2026-06-02",
@@ -4983,7 +4991,7 @@
     "category": 1,
     "epicId": "mmji2xjk6s7spj1wu",
     "status": "done",
-    "position": 7,
+    "position": 13,
     "log": [
       {
         "date": "2026-06-02",
@@ -5006,7 +5014,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 12,
+    "position": 18,
     "log": [
       {
         "date": "2026-06-02",
@@ -5033,7 +5041,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 3,
+    "position": 9,
     "log": [
       {
         "date": "2026-06-03",
@@ -5064,7 +5072,7 @@
     "category": 6,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 3,
+    "position": 1,
     "log": [
       {
         "date": "2026-06-03",
@@ -5083,7 +5091,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 4,
+    "position": 2,
     "log": [
       {
         "date": "2026-06-03",
@@ -5102,7 +5110,7 @@
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mncchgncxlcix2v96",
-    "position": 6,
+    "position": 4,
     "log": [
       {
         "date": "2026-06-03",
@@ -5121,7 +5129,7 @@
     "category": 5,
     "epicId": "mmji2xjk6s7spj1wu",
     "status": "done",
-    "position": 2,
+    "position": 8,
     "log": [
       {
         "date": "2026-06-04",
@@ -5148,7 +5156,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 0,
+    "position": 6,
     "log": [
       {
         "date": "2026-06-04",
@@ -5184,24 +5192,127 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "todo",
-    "position": 5,
-    "log": [],
+    "status": "wait",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-06-10",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
     "createdDate": "2026-06-05T00:15:35.404Z",
     "deadline": null,
     "snoozeUntil": null
   },
   {
     "id": "mq50ll73tqt586kms",
-    "title": "Error with uiTable",
+    "title": "ESB-720 Error with uiTable",
     "description": "",
     "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 6,
-    "log": [],
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "inprogress",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-06-10",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Category changed from Non categorized to Development"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-06-11",
+        "action": "Moved from In Progress to Done"
+      },
+      {
+        "date": "2026-06-11",
+        "action": "Moved from Done to In Progress"
+      }
+    ],
     "createdDate": "2026-06-08T09:34:48.975Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mq81fk6tf2werwpes",
+    "title": "CR",
+    "description": "Script\nemail\nmessage group",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-06-10",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-06-10T12:21:25.877Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mq81xwa2f4fpy0zhc",
+    "title": "SDS check automation",
+    "description": "+ communication",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "done",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-06-10",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-06-10",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-06-10T12:35:41.354Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mq85udgrj0ajctfbm",
+    "title": "Test Cursor",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-06-10",
+        "action": "Moved from To Do to In Progress"
+      },
+      {
+        "date": "2026-06-11",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-06-10T14:24:55.467Z",
     "deadline": null,
     "snoozeUntil": null
   }
