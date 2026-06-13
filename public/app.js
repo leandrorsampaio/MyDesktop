@@ -10,6 +10,7 @@
 
 import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, SNOOZE_CHECK_INTERVAL_MS } from './js/constants.js';
 import { parsePath } from './js/router.js';
+import { initShortcuts } from './js/shortcuts.js';
 import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue } from './js/utils.js';
 import {
     tasks,
@@ -805,6 +806,20 @@ import {
             }
         });
 
+        // Keyboard shortcuts — board page gets the full set (quick-add,
+        // card focus navigation, Cmd/Ctrl+arrow card moves)
+        initShortcuts({
+            alias: activeProfile?.alias || '',
+            board: {
+                quickAdd: () => openAddTaskModal(
+                    elements,
+                    () => openDeleteConfirmation(elements),
+                    handleTaskFormSubmit
+                ),
+                moveCard: (taskId, newStatus, newPosition) => moveTask(taskId, newStatus, newPosition)
+            }
+        });
+
         // Listen for edit requests from task-card components
         elements.kanban.addEventListener('request-edit', (e) => {
             const taskId = e.detail.taskId;
@@ -874,6 +889,8 @@ import {
 
             // Routing: show board or placeholder page
             if (page !== 'board') {
+                // Non-board pages get the global shortcuts (g-chords + ? help)
+                initShortcuts({ alias: matchedProfile.alias });
                 elements.appContainer.style.display = 'none';
                 elements.pageView.style.display = '';
                 if (page === 'archive') {

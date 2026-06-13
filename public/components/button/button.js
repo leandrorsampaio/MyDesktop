@@ -6,7 +6,9 @@ class CustomButton extends HTMLElement {
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
+        // delegatesFocus: host.focus() forwards to the inner <button>, so the
+        // host participates in modal focus traps and programmatic focus
+        this.attachShadow({ mode: 'open', delegatesFocus: true });
     }
 
     static get observedAttributes() {

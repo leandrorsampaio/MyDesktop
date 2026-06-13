@@ -18,7 +18,8 @@ import {
     fetchEpicsApi, createEpicApi, updateEpicApi, deleteEpicApi,
     fetchCategoriesApi, createCategoryApi, updateCategoryApi, deleteCategoryApi,
     fetchAiConfigApi, createAiConfigEntryApi, updateAiConfigEntryApi, deleteAiConfigEntryApi,
-    fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi
+    fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi,
+    fetchProfileExportApi
 } from './api.js';
 
 const AI_PROVIDER_DEFAULTS = {
@@ -155,6 +156,11 @@ export async function initConfigPage(pageViewEl, { elements }) {
                         </div>
                         <div class="configPage__actions">
                             <button type="button" class="btn --save js-cfg-generalSave">Save</button>
+                        </div>
+                        <div class="generalConfig__section">
+                            <h4 class="generalConfig__sectionTitle">Your Data</h4>
+                            <p class="configPage__panelHint" style="margin-bottom:12px">Everything lives in plain JSON on your machine (<code>data/</code> folder — copy it to back up). Export downloads this profile's data as a single JSON file.</p>
+                            <button type="button" class="btn js-cfg-exportData">Export data (JSON)</button>
                         </div>
                     </div>
                 </div>
@@ -788,6 +794,24 @@ export async function initConfigPage(pageViewEl, { elements }) {
         }
         localStorage.setItem(`${alias}:deadlineThresholds`, JSON.stringify([urgent, warning]));
         toaster.success('Settings saved');
+    });
+
+    // Your Data — export the profile as a single JSON download
+    $('.js-cfg-exportData').addEventListener('click', async () => {
+        try {
+            const bundle = await fetchProfileExportApi();
+            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mydesktop-${alias}-${bundle.exportedAt.split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toaster.success('Data exported');
+        } catch (err) {
+            console.error('Export error:', err);
+            toaster.error('Failed to export data');
+        }
     });
 
     // ==========================================

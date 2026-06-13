@@ -1215,6 +1215,42 @@ app.get('/api/:profile/archived', resolveProfile, async (req, res) => {
     }
 });
 
+// GET full profile data export — one JSON bundle of everything the profile
+// owns. Backs the "your data, your machine" promise with a one-click export;
+// restoring is manual for now (copy data/{alias}/ back, or import is a
+// possible future feature).
+app.get('/api/:profile/export', resolveProfile, async (req, res) => {
+    try {
+        const [tasks, archivedTasks, epics, categories, notes, reports, stagedTasks] = await Promise.all([
+            readJsonFile(req.profileFiles.tasks, []),
+            readJsonFile(req.profileFiles.archived, []),
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
+            readJsonFile(req.profileFiles.notes, { content: '' }),
+            readJsonFile(req.profileFiles.reports, []),
+            readJsonFile(req.profileFiles.aiStaged, [])
+        ]);
+
+        const date = new Date().toISOString().split('T')[0];
+        // Content-Disposition lets the endpoint double as a direct download link
+        res.set('Content-Disposition', `attachment; filename="mydesktop-${req.params.profile}-${date}.json"`);
+        res.json({
+            formatVersion: 1,
+            exportedAt: new Date().toISOString(),
+            profile: req.profile, // includes columns
+            tasks,
+            archivedTasks,
+            epics,
+            categories,
+            notes,
+            reports,
+            stagedTasks
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to export profile data' });
+    }
+});
+
 // POST restore archived task to the first column
 app.post('/api/:profile/archived/:id/restore', resolveProfile, writeLimiter, async (req, res) => {
     try {

@@ -20,10 +20,15 @@ PORT=4000 node server.js
 
 Set `http://localhost:3001` as the browser homepage to land on the board on every new window.
 
-### Where things live
-- **Data:** `data/profiles.json` (global) + `data/{alias}/` per profile — `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`, `categories.json`, `ai-staged-tasks.json`.
-- **AI config:** `data/ai-config.json` — gitignored. Stores provider, model, API key.
-- **Backups:** just copy `data/`.
+### Your data
+
+Everything is **plain JSON on your machine** — no account, no cloud, no database, no lock-in.
+
+- **Where it lives:** `data/profiles.json` (global) + `data/{alias}/` per profile — `tasks.json`, `archived-tasks.json`, `reports.json`, `notes.json`, `epics.json`, `categories.json`, `ai-staged-tasks.json`. Open any of them in a text editor; they're human-readable.
+- **AI config:** `data/ai-config.json` — gitignored, file mode `0600`. Stores provider, model, API key. Never leaves your machine except in your own requests to the AI provider you configured.
+- **Back up:** copy the `data/` folder. That's the whole backup.
+- **Restore / migrate machines:** paste the `data/` folder into a fresh clone and start the server.
+- **One-click export:** Config page → General → **Export data (JSON)** downloads the active profile as a single JSON file (also available at `GET /api/:profile/export`).
 
 ### Tests
 ```bash

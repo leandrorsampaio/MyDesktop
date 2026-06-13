@@ -89,12 +89,12 @@ Closing it is roughly 1-2 weeks of focused part-time effort.
       *(Note: do this AFTER the v2.38.4 perf fixes — before them the test
       would mostly measure the now-fixed duplicate template fetches.)*
 
-- [ ] **Accessibility baseline.** `modal-dialog` has no `role="dialog"` /
-      `aria-modal`, no focus trap, no focus-restore on close; the nav rail
-      has no `aria-current`; drag-and-drop has no keyboard alternative.
-      OSS reviewers check this. The cheap 80%: dialog roles + focus restore
-      + `aria-current` is under a day. Keyboard card navigation is tracked
-      in FUTURE.md § Keyboard shortcuts (same `tabindex` work serves both).
+- [x] **Accessibility baseline — SHIPPED v2.39.0 + v2.40.0.** Dialog roles +
+      aria-label, focus trap + focus restore, topmost-only ESC on stacked
+      modals, `aria-current` on the nav rail, `aria-live` toast announcements,
+      `delegatesFocus` on custom controls. v2.40.0 closed the last gap:
+      cards are focusable and `Cmd/Ctrl+←/→` is the keyboard alternative
+      to drag-and-drop.
 
 ## Priority D — nice signals
 
@@ -111,11 +111,11 @@ Closing it is roughly 1-2 weeks of focused part-time effort.
       `public/`, `data/`, `tests/` dirs so people can navigate without
       `tree`-ing the repo.
 
-- [ ] **Surface the backup/export story.** "Your data, your machine" is the
-      core promise but the README only has a one-liner ("copy `data/`").
-      Give it a visible "Your data" section: plain JSON, where it lives,
-      how to back up, how to migrate machines. A one-click JSON export
-      button is optional polish on top.
+- [x] **Surface the backup/export story — SHIPPED v2.40.0.** README has a
+      "Your data" section (plain JSON, backup = copy `data/`, restore,
+      migrate), plus one-click export: Config → General → "Export data
+      (JSON)" backed by `GET /api/:profile/export`. Import remains a
+      FUTURE.md item.
 
 - [ ] **Pick a primary color / favicon** that matches the design. Current
       favicon may not survive the renaming.

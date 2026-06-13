@@ -70,7 +70,15 @@ class NavSidebar extends HTMLElement {
     _updateActive() {
         const page = this.getAttribute('page') || 'board';
         this.shadowRoot.querySelectorAll('.js-navItem').forEach(item => {
-            item.classList.toggle('--active', item.dataset.page === page);
+            const isActive = item.dataset.page === page;
+            item.classList.toggle('--active', isActive);
+            // aria-current tells assistive tech which page link is active —
+            // the --active class is visual-only
+            if (isActive) {
+                item.setAttribute('aria-current', 'page');
+            } else {
+                item.removeAttribute('aria-current');
+            }
         });
     }
 

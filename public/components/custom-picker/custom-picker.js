@@ -29,7 +29,9 @@ class CustomPicker extends HTMLElement {
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
+        // delegatesFocus: host.focus() forwards to the trigger button, so the
+        // host participates in modal focus traps and programmatic focus
+        this.attachShadow({ mode: 'open', delegatesFocus: true });
         this._items = [];
         this._value = '';
         this._open = false;

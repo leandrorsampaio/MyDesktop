@@ -170,6 +170,16 @@ export async function restoreArchivedTaskApi(id) {
 }
 
 /**
+ * Fetches the full profile data export bundle (tasks, archive, epics,
+ * categories, notes, reports, staged tasks + the profile itself).
+ * @returns {Promise<Object>} The export bundle
+ */
+export async function fetchProfileExportApi() {
+    const response = await fetch(`${apiBase}/export`);
+    return parseOrThrow(response);
+}
+
+/**
  * Fetches all reports from the server.
  * @returns {Promise<Array<Object>>} Array of report objects
  */

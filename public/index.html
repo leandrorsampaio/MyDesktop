@@ -280,6 +280,47 @@
     <!-- AI Configuration Modal -->
 
     <!-- Toast Notifications -->
+    <!-- Keyboard Shortcuts Help Modal (opened with "?") -->
+    <modal-dialog class="js-shortcutsModal">
+        <h2 slot="title">Keyboard Shortcuts</h2>
+        <div class="shortcutsHelp">
+            <h3 class="shortcutsHelp__group">Everywhere</h3>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>g</kbd> then <kbd>b</kbd> <kbd>d</kbd> <kbd>l</kbd> <kbd>a</kbd> <kbd>r</kbd> <kbd>i</kbd> <kbd>c</kbd></span>
+                <span>Go to Board / Dashboard / Backlog / Archive / Reports / AI / Config</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>?</kbd></span>
+                <span>Show this help</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>Esc</kbd></span>
+                <span>Close modals and panels</span>
+            </div>
+            <h3 class="shortcutsHelp__group">Board</h3>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>n</kbd></span>
+                <span>Add a new task</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>j</kbd> / <kbd>k</kbd> or <kbd>↓</kbd> / <kbd>↑</kbd></span>
+                <span>Focus next / previous card</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>h</kbd> / <kbd>l</kbd> or <kbd>←</kbd> / <kbd>→</kbd></span>
+                <span>Focus card in adjacent column</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>Enter</kbd></span>
+                <span>Open the focused card</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>⌘/Ctrl</kbd> + <kbd>←</kbd> / <kbd>→</kbd></span>
+                <span>Move the focused card to the adjacent column</span>
+            </div>
+        </div>
+    </modal-dialog>
+
     <toast-notification class="js-toaster"></toast-notification>
 
     <script type="module" src="components/app-welcome/app-welcome.js"></script>

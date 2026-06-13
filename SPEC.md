@@ -1,6 +1,6 @@
 # SPEC — Project Specification
 
-**Version:** 2.38.5
+**Version:** 2.40.0
 **Last Updated:** 2026-06-12
 
 ---
@@ -90,6 +90,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── state.js               # Centralized state + optimistic UI helpers
     │   ├── api.js                 # Pure HTTP functions, no side effects
     │   ├── filters.js             # Category, priority, epic filter logic
+    │   ├── shortcuts.js           # Keyboard shortcuts — initShortcuts()
     │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
     │   ├── modals.js              # All modal logic
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
@@ -167,6 +168,10 @@ POST   /api/:profile/tasks/archive       - Archive all done tasks
 POST   /api/:profile/reports/generate    - Generate report snapshot
 GET    /api/:profile/archived            - Get archived tasks
 POST   /api/:profile/archived/:id/restore - Restore task to first column (adds log entry)
+GET    /api/:profile/export              - Full profile data export: one JSON bundle
+                                           ({ formatVersion, exportedAt, profile, tasks,
+                                           archivedTasks, epics, categories, notes, reports,
+                                           stagedTasks }) with a download Content-Disposition
 GET    /api/:profile/reports             - Get all reports
 GET    /api/:profile/reports/:id         - Get report by ID
 PUT    /api/:profile/reports/:id         - Update report title (body: { title })
@@ -420,6 +425,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Sections (tab order):** Columns, Epics, Categories, General, Daily Checklist, AI Assistant, Profiles (below a divider).
 - **CRUD sections** (columns, epics, categories, profiles): auto-save on blur/change (same behavior as the old modals). Delete uses confirmation modals from `index.html`.
 - **General Settings and Checklist:** manual Save button. Changes take effect on the board when user navigates back (board re-initializes and calls `loadGeneralConfig()`).
+- **Your Data (General section):** "Export data (JSON)" button calls `GET /api/:profile/export` and downloads the bundle as `mydesktop-{alias}-{date}.json` via a Blob + anchor click. Restore is manual (copy `data/{alias}/` back); import is a possible future feature.
 - **AI Configuration:** two-panel list/form inline (same UX as the old modal).
 - **Profiles:** inline CRUD section (add, rename, recolor, change letters, set default, delete with confirmation). Deleting the active profile navigates to the first remaining profile's config page.
 - **Nav-sidebar:** gear icon at bottom is now a nav link (`data-page="config"`), no more config submenu.
@@ -447,6 +453,13 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Clone from staged** opens the standard task modal pre-filled, saves directly to the first non-backlog board column — it does NOT create another staged task.
 - **`--archive-col-actions`** is overridden to `300px` on `.aiPage` to accommodate the 5-button action bar (Edit, Clone, → Backlog, → Board, Delete).
 - **Rate limit:** `POST /api/:profile/ai/chat` is limited to 10 requests per minute (separate `aiLimiter` from the standard write limiter).
+
+### Keyboard Shortcuts
+- `shortcuts.js` → `initShortcuts({ alias, board })` — one document-level `keydown` listener; calling again replaces the previous handler. Wired by `app.js`: board page passes `board` actions (quickAdd + moveCard via `moveTask`), other pages pass only `alias`.
+- **Global:** `g` then `b/d/l/a/r/i/c` navigates pages (1s chord window); `?` opens the cheat-sheet modal (`.js-shortcutsModal` in `index.html`).
+- **Board:** `n` quick-add; `j/k`/`↓↑` focus cards within a column; `h/l`/`←→` across columns (same row index, clamped); `Enter` opens the focused card (handled by `<task-card>` itself — host has `tabindex="0"` and dispatches `request-edit` on Enter); `Cmd/Ctrl+←/→` moves the focused card to the adjacent column at position 0 and refocuses it after re-render. This is the keyboard alternative to drag-and-drop.
+- **Guards:** all shortcuts are ignored while typing (checked via `e.composedPath()[0]` so shadow-DOM inputs are detected) or while any `modal-dialog[open]` exists. `Cmd/Ctrl+arrow` is only intercepted when a card is focused, so browser history navigation keeps working.
+- **Focus ring:** `task-card.css` `:host(:focus-visible)` — keyboard-only outline, no ring on mouse click/drag.
 
 ### Design System Page
 - Route: `/:alias/design-system` — an **internal style-guide page** (live reference for typography classes and the full button system, rendered from the current `:root` token set). Linked from the nav rail footer.
@@ -483,6 +496,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Attributes:** `alias` (profile alias, builds href values on nav links), `page` (active page name, sets `--active` on the matching link)
 - **Slide-out panel:** the panel button toggles a `--panelOpen` class on the host; slotted children (checklist, notes) render inside it. Closes on backdrop click or ESC (document listener added on open, removed on close/disconnect).
 - **Gear icon** at the bottom is a plain nav link to `/:alias/config`; the footer also links to `/:alias/design-system`.
+- **Accessibility:** the rail `<nav>` has `aria-label="Main navigation"`; the active link carries `aria-current="page"` (kept in sync by `_updateActive`); the slide-out panel is an `<aside aria-label="Checklist and notes">`.
 
 ### `<profile-selector>`
 ```html
@@ -532,6 +546,8 @@ These are behaviors not evident from reading the code. Know these before making 
 - `size`: `"large"`, `"small"`, or omit for default
 - Handles close button, backdrop click, and ESC key internally
 - **Never** open/close by toggling classes directly
+- **Accessibility (v2.39.0):** host carries `role="dialog"` + `aria-modal="true"`; `aria-label` is computed from the slotted title's text on every open (titles change — "Add Task"/"Edit Task"). Focus moves into the dialog on open, Tab is trapped inside (wraps both ends; `custom-button`/`custom-picker` participate via `delegatesFocus`), and focus is restored to the pre-open element on close.
+- **Stacked modals:** a static open-stack means ESC and the focus trap only act on the **topmost** modal — a confirmation layered over the task modal no longer closes both on one keypress.
 
 ### `<list-header>`
 ```html
@@ -602,6 +618,7 @@ elements.toaster.info('msg')     // beige
 ```
 - Single instance in `index.html`: `<toast-notification class="js-toaster">`
 - Auto-dismisses after 4s; stacks multiple toasts; has close button
+- Container is a `role="status"` / `aria-live="polite"` region, so screen readers announce toasts
 
 ---
 
@@ -618,6 +635,7 @@ All CRUD editors (categories, epics, profiles, columns, checklist, AI config, ge
 | `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in config page → Categories                     |
 | `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in config page → Profiles                       |
 | `.js-columnConfirmModal`         | Column delete confirmation       | small   | Delete in config page → Columns                        |
+| `.js-shortcutsModal`             | Keyboard shortcuts cheat-sheet  | default | `?` key (any page)                                     |
 | `.js-generalConfigModal`         | **Dead** — general settings moved to the config page; `openGeneralConfigModal()` in app.js has no callers. Flagged for the next dead-code sweep. | default | (none) |
 
 ---
@@ -834,6 +852,7 @@ New code must go into the correct existing module. Only create a new module if a
 | `utils.js`       | Shared pure utilities                                  |
 | `router.js`      | Client-side path parser: `parsePath()`, `buildPath()`  |
 | `filters.js`     | Category, priority, epic filter logic                  |
+| `shortcuts.js`   | Keyboard shortcuts (chords, card navigation, help)     |
 | `modals.js`      | All modal dialog logic                                 |
 | `*-page.js`      | One module per sub-page: archive, backlog, dashboard, reports, ai, config, design-system — each exports `init<Name>Page(pageViewEl, …)` |
 | `app.js`         | Entry point — DOM refs, event listeners, renders       |

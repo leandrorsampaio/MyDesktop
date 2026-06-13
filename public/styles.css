@@ -3508,3 +3508,52 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .aiPage__modelSelect:focus {
     border-color: var(--color-accent-primary);
 }
+/* ==========================================
+   Keyboard Shortcuts Help Modal
+   ========================================== */
+.shortcutsHelp {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.shortcutsHelp__group {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold, 600);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-text-secondary);
+    margin: var(--space-12) 0 var(--space-4);
+}
+
+.shortcutsHelp__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-16);
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--color-bg-tertiary);
+}
+
+.shortcutsHelp__keys {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.shortcutsHelp__row > span:last-child {
+    color: var(--color-text-secondary);
+    text-align: right;
+}
+
+.shortcutsHelp kbd {
+    display: inline-block;
+    min-width: 18px;
+    padding: 2px 6px;
+    border: 1px solid var(--color-border);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-secondary);
+    font-family: var(--font-family);
+    font-size: var(--text-sm);
+    text-align: center;
+}

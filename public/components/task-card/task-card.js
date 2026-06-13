@@ -24,6 +24,19 @@ class TaskCard extends HTMLElement {
         this.shadowRoot.innerHTML = html;
         this.shadowRoot.prepend(style);
 
+        // Keyboard access: the card is focusable (j/k navigation in
+        // shortcuts.js) and Enter opens it for editing
+        if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '0');
+        this.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.composedPath()[0] === this) {
+                this.dispatchEvent(new CustomEvent('request-edit', {
+                    bubbles: true,
+                    composed: true,
+                    detail: { taskId: this.dataset.taskId }
+                }));
+            }
+        });
+
         this.shadowRoot.querySelector('.taskCard__editBtn').addEventListener('click', (e) => {
             e.stopPropagation();
             this.dispatchEvent(new CustomEvent('request-edit', {

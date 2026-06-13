@@ -11,6 +11,13 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Keyboard focus ring (j/k navigation) — :focus-visible only, so mouse
+   clicks and drags don't paint an outline */
+:host(:focus-visible) {
+    outline: 2px solid var(--color-accent-primary, #1a73e8);
+    outline-offset: 2px;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

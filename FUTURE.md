@@ -4,22 +4,20 @@ Backlog of nice-to-have features deferred from active development. Review before
 
 ---
 
-## Keyboard shortcuts
-**Added:** 2026-06-12 (full-review finding)
+## Keyboard shortcuts — remaining tiers
+**Updated:** 2026-06-12 — Tiers 1–2 SHIPPED in v2.40.0 (`shortcuts.js`): `n` quick-add, `g`-chords for page navigation, `?` cheat-sheet, `j/k/h/l` + arrow card focus, `Enter` to open, `Cmd/Ctrl+←/→` card move (the keyboard drag alternative).
 
-The app currently has almost no keyboard support (only Escape-to-close and Enter-to-send in AI chat). For the target audience (Linear / Raycast / Things 3 users) this is the biggest craft gap after dark mode — a tool that's open 8 hours a day should be drivable without the mouse.
+**Still deferred (Tier 3):**
+- `Cmd+K` command palette — jump to page, find a task by title, run actions. Highest ceiling, biggest build; do it after the basics prove themselves.
+- Single-key actions on the focused card: `p` toggle priority, `s` snooze, `b` send to backlog, `Backspace` delete-with-confirm.
+- `n` quick-add on the Backlog page (currently board-only; backlog has its own FAB + submit handler to wire through).
 
-**Candidate set, roughly in value order:**
-- `n` or `c` — quick-add task (opens the task modal from anywhere on the board)
-- `/` or `Cmd+K` — command palette / search (jump to page, find task)
-- `g` then `b/d/l/a/r/i` — go to Board/Dashboard/Backlog/Archive/Reports/AI (Linear-style chords)
-- `j`/`k` or arrows — move focus between cards; `Enter` opens the focused card
-- `?` — shortcut cheat-sheet overlay
+---
 
-**Implementation notes:**
-- Document-level `keydown` listener in `app.js`, skipped while any modal is open or focus is in an input/textarea
-- Card focus navigation requires making `task-card` focusable (`tabindex`) — doubles as the keyboard alternative to drag-and-drop that accessibility needs
-- No library needed; a small key→action map in a new `shortcuts.js` module
+## Profile data import
+**Added:** 2026-06-12 (counterpart to the export shipped in v2.40.0)
+
+`GET /api/:profile/export` produces a single-JSON bundle; import is deliberately not built yet. A real import needs: `formatVersion` handling, ID-collision strategy (merge vs replace), validation that `task.status` values reference columns present in the bundle, and category/epic referential checks. Until then the restore story is "copy `data/{alias}/` back", documented in the README.
 
 ---
 

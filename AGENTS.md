@@ -8,7 +8,7 @@
 
 A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.38.5 (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.40.0 (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
