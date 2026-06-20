@@ -120,3 +120,57 @@ export function getDeadlineLevel(isoString, thresholds) {
     if (diffHours <= thresholds[1]) return 'warning';
     return 'upcoming';
 }
+
+/* ============================================================================
+ * Theme — profile-scoped.
+ *
+ * Stored per profile at localStorage `${alias}:theme` with values
+ * 'light' | 'dark' | 'auto'. 'auto' (the default when unset) follows the OS
+ * `prefers-color-scheme`. The resolved theme is applied as `data-theme` on
+ * <html>; the CSS custom properties under `[data-theme="dark"]` do the rest.
+ *
+ * Source of truth for this logic. The inline bootstrap in index.html duplicates
+ * only the *resolve* step (read key → fall back to OS) because it must run
+ * before ES modules load to avoid a flash of the wrong theme.
+ * ========================================================================== */
+
+/** Reads a profile's stored theme choice. Returns 'light' | 'dark' | 'auto'. */
+export function getStoredTheme(alias) {
+    try {
+        return localStorage.getItem(`${alias}:theme`) || 'auto';
+    } catch (e) {
+        return 'auto';
+    }
+}
+
+/** Whether the OS currently prefers a dark colour scheme. */
+export function systemPrefersDark() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+/** Resolves a stored value ('light'|'dark'|'auto') to an applied theme ('light'|'dark'). */
+export function resolveTheme(value) {
+    return value === 'light' || value === 'dark'
+        ? value
+        : (systemPrefersDark() ? 'dark' : 'light');
+}
+
+/**
+ * Applies the given profile's resolved theme to <html> and fires a
+ * `themechanged` event on document so live UI (e.g. the rail toggle) can sync.
+ * Returns the resolved theme ('light'|'dark').
+ */
+export function applyTheme(alias) {
+    const resolved = resolveTheme(getStoredTheme(alias));
+    document.documentElement.setAttribute('data-theme', resolved);
+    document.dispatchEvent(new CustomEvent('themechanged', { detail: { theme: resolved } }));
+    return resolved;
+}
+
+/** Persists a theme choice ('light'|'dark'|'auto') for a profile and applies it. */
+export function setStoredTheme(alias, value) {
+    try {
+        localStorage.setItem(`${alias}:theme`, value);
+    } catch (e) { /* private mode — still apply below */ }
+    return applyTheme(alias);
+}

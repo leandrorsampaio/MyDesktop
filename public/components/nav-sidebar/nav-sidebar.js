@@ -8,6 +8,8 @@
  *   alias  — profile alias, used to build href values on nav links
  *   page   — active page name ('board'|'dashboard'|'backlog'|'archive'|'reports'|'ai'|'config')
  */
+import { getStoredTheme, setStoredTheme, applyTheme } from '../../js/utils.js';
+
 class NavSidebar extends HTMLElement {
     static templateCache = null;
     static observedAttributes = ['alias', 'page'];
@@ -16,6 +18,9 @@ class NavSidebar extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this._boundKeydown = this._onKeydown.bind(this);
+        this._boundThemeChanged = this._syncThemeToggle.bind(this);
+        this._boundMediaChange = this._onMediaChange.bind(this);
+        this._mql = null;
     }
 
     async connectedCallback() {
@@ -33,6 +38,8 @@ class NavSidebar extends HTMLElement {
 
     disconnectedCallback() {
         document.removeEventListener('keydown', this._boundKeydown);
+        document.removeEventListener('themechanged', this._boundThemeChanged);
+        this._mql?.removeEventListener('change', this._boundMediaChange);
     }
 
     attributeChangedCallback(name) {
@@ -55,10 +62,18 @@ class NavSidebar extends HTMLElement {
         this.shadowRoot.querySelector('.js-panelBackdrop')
             .addEventListener('click', () => this._closePanel());
 
-        // Theme toggle (light <-> dark). The chosen theme is applied to <html>
-        // and persisted globally; CSS custom properties do the rest.
+        // Theme toggle (light <-> dark) — per profile. Applies to <html> and
+        // persists at `${alias}:theme`; CSS custom properties do the rest.
         this.shadowRoot.querySelector('.js-themeToggle')
             .addEventListener('click', () => this._toggleTheme());
+
+        // Keep the toggle icon in sync when the theme changes from anywhere
+        // (config selector, OS change), and follow the OS while on 'auto'.
+        document.addEventListener('themechanged', this._boundThemeChanged);
+        if (window.matchMedia) {
+            this._mql = window.matchMedia('(prefers-color-scheme: dark)');
+            this._mql.addEventListener('change', this._boundMediaChange);
+        }
 
         this._updateLinks();
         this._updateActive();
@@ -67,15 +82,26 @@ class NavSidebar extends HTMLElement {
 
     // ---- Theme ----
 
+    _alias() {
+        return this.getAttribute('alias')
+            || window.location.pathname.split('/').filter(Boolean)[0]
+            || '';
+    }
+
     _currentTheme() {
         return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
     }
 
     _toggleTheme() {
+        // The rail toggle is the quick switch: it always sets an explicit
+        // light/dark (overriding 'auto'). 'Auto' lives in Config → General.
         const next = this._currentTheme() === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        try { localStorage.setItem('theme', next); } catch (e) { /* private mode */ }
-        this._syncThemeToggle();
+        setStoredTheme(this._alias(), next);  // fires 'themechanged' → _syncThemeToggle
+    }
+
+    _onMediaChange() {
+        // Only react to OS changes when this profile is on 'auto'.
+        if (getStoredTheme(this._alias()) === 'auto') applyTheme(this._alias());
     }
 
     _syncThemeToggle() {

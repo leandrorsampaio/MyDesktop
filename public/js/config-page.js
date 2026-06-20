@@ -8,7 +8,7 @@ import {
     DEFAULT_CATEGORY_ID, DEFAULT_CHECKLIST_ITEMS,
     DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS
 } from './constants.js';
-import { escapeHtml, toCamelCase } from './utils.js';
+import { escapeHtml, toCamelCase, getStoredTheme, setStoredTheme } from './utils.js';
 import {
     columns, setColumns, epics, setEpics, categories, setCategories, tasks,
     profiles, setProfiles, activeProfile, setActiveProfile
@@ -112,6 +112,24 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     <h3 class="configPage__panelTitle">General</h3>
                     <p class="configPage__panelHint">Settings are saved per profile.</p>
                     <div class="generalConfig">
+                        <div class="generalConfig__section">
+                            <h4 class="generalConfig__sectionTitle">Appearance</h4>
+                            <p class="generalConfig__panelHint" style="margin-bottom:12px">Theme for this profile — applies instantly. "Auto" follows your system setting.</p>
+                            <div class="generalConfig__options">
+                                <label class="generalConfig__option">
+                                    <input type="radio" name="cfgTheme" value="light">
+                                    <span>Light</span>
+                                </label>
+                                <label class="generalConfig__option">
+                                    <input type="radio" name="cfgTheme" value="dark">
+                                    <span>Dark</span>
+                                </label>
+                                <label class="generalConfig__option">
+                                    <input type="radio" name="cfgTheme" value="auto">
+                                    <span>Auto (follow system)</span>
+                                </label>
+                            </div>
+                        </div>
                         <div class="generalConfig__section">
                             <h4 class="generalConfig__sectionTitle">Interface Visibility</h4>
                             <div class="generalConfig__options">
@@ -758,6 +776,16 @@ export async function initConfigPage(pageViewEl, { elements }) {
     // Section: General Settings
     // ==========================================
     const alias = activeProfile?.alias || window.location.pathname.split('/').filter(Boolean)[0] || 'default';
+
+    // Appearance (theme) — per profile, applies immediately on change (no Save).
+    const currentTheme = getStoredTheme(alias);
+    const themeRadio = pageViewEl.querySelector(`input[name="cfgTheme"][value="${currentTheme}"]`);
+    if (themeRadio) themeRadio.checked = true;
+    pageViewEl.querySelectorAll('input[name="cfgTheme"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.checked) setStoredTheme(alias, radio.value);
+        });
+    });
 
     const showChecklistToggle  = $('.js-cfg-showDailyChecklist');
     const showNotesToggle      = $('.js-cfg-showNotes');

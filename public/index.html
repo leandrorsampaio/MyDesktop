@@ -7,11 +7,15 @@
     <title>My Desktop</title>
     <script>
         /* Theme bootstrap — runs before first paint so there's no flash of the
-           wrong theme. Uses the saved choice, else the OS colour preference.
-           Light = the default :root tokens (no [data-theme="light"] block needed). */
+           wrong theme. Theme is per profile: the active profile is the first URL
+           segment (the server has already redirected "/" to "/{alias}"). Reads
+           `${alias}:theme`, falling back to the OS colour preference for 'auto'
+           or an unset value. Light = the default :root tokens.
+           Source of truth for this resolve logic: public/js/utils.js */
         (function () {
             try {
-                var t = localStorage.getItem('theme');
+                var alias = location.pathname.split('/').filter(Boolean)[0] || '';
+                var t = localStorage.getItem(alias + ':theme');
                 if (t !== 'dark' && t !== 'light') {
                     t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 }
