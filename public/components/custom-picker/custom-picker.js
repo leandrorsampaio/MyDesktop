@@ -134,7 +134,7 @@ class CustomPicker extends HTMLElement {
                 .customPicker__trigger:focus {
                     outline: none;
                     border-color: var(--color-accent-primary, #1a73e8);
-                    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+                    box-shadow: var(--shadow-focus);
                 }
                 :host([size="compact"]) .customPicker__trigger:focus {
                     box-shadow: none;
@@ -186,7 +186,7 @@ class CustomPicker extends HTMLElement {
                     background: var(--color-bg-primary, #ffffff);
                     border: 1px solid var(--color-border, #e5e7eb);
                     border-radius: var(--radius-lg, 8px);
-                    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+                    box-shadow: var(--shadow-md, 0 4px 12px rgba(var(--color-shadow-rgb),0.1));
                     padding: 12px;
                     opacity: 0;
                     visibility: hidden;
@@ -219,10 +219,10 @@ class CustomPicker extends HTMLElement {
                 }
                 .customPicker__cell:hover:not(.--disabled) {
                     transform: scale(1.15);
-                    background-color: rgba(0, 0, 0, 0.04);
+                    background-color: rgba(var(--color-shadow-rgb),0.04);
                 }
                 .customPicker__cell.--selected {
-                    background-color: rgba(26, 115, 232, 0.08);
+                    background-color: rgba(var(--color-accent-primary-rgb),0.08);
                 }
                 .customPicker__cell.--disabled {
                     opacity: 0.4;
@@ -236,7 +236,7 @@ class CustomPicker extends HTMLElement {
                     transition: box-shadow 0.15s;
                 }
                 .customPicker__cell.--selected .customPicker__swatch {
-                    box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--color-accent-primary, #1a73e8);
+                    box-shadow: 0 0 0 3px var(--color-bg-primary), 0 0 0 5px var(--color-accent-primary);
                 }
                 /* Icon mode cells */
                 .customPicker__cell.--icon {
@@ -245,10 +245,10 @@ class CustomPicker extends HTMLElement {
                     border-radius: 8px;
                 }
                 .customPicker__cell.--icon.--selected {
-                    background-color: rgba(26, 115, 232, 0.1);
+                    background-color: rgba(var(--color-accent-primary-rgb),0.1);
                 }
                 .customPicker__cell.--icon:hover:not(.--disabled) {
-                    background-color: rgba(0, 0, 0, 0.06);
+                    background-color: rgba(var(--color-shadow-rgb),0.06);
                 }
                 /* Tooltip */
                 .customPicker__cell::after {
@@ -257,8 +257,8 @@ class CustomPicker extends HTMLElement {
                     bottom: calc(100% + 4px);
                     left: 50%;
                     transform: translateX(-50%);
-                    background: rgba(45, 45, 45, 0.9);
-                    color: #fff;
+                    background: var(--color-bg-inverse);
+                    color: var(--color-text-inverse);
                     font-size: 11px;
                     padding: 4px 8px;
                     border-radius: 6px;
@@ -296,10 +296,10 @@ class CustomPicker extends HTMLElement {
                     width: 100%;
                 }
                 .customPicker__listItem:hover:not(.--disabled) {
-                    background-color: rgba(26, 115, 232, 0.06);
+                    background-color: rgba(var(--color-accent-primary-rgb),0.06);
                 }
                 .customPicker__listItem.--selected {
-                    background-color: rgba(26, 115, 232, 0.08);
+                    background-color: rgba(var(--color-accent-primary-rgb),0.08);
                     font-weight: 600;
                 }
                 .customPicker__listItem.--disabled {
@@ -323,11 +323,11 @@ class CustomPicker extends HTMLElement {
                     width: 6px;
                 }
                 .customPicker__list::-webkit-scrollbar-track {
-                    background: rgba(0, 0, 0, 0.03);
+                    background: rgba(var(--color-shadow-rgb),0.03);
                     border-radius: 3px;
                 }
                 .customPicker__list::-webkit-scrollbar-thumb {
-                    background: rgba(0, 0, 0, 0.12);
+                    background: rgba(var(--color-shadow-rgb),0.12);
                     border-radius: 3px;
                 }
             </style>

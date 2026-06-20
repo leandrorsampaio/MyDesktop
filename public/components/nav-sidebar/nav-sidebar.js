@@ -55,8 +55,39 @@ class NavSidebar extends HTMLElement {
         this.shadowRoot.querySelector('.js-panelBackdrop')
             .addEventListener('click', () => this._closePanel());
 
+        // Theme toggle (light <-> dark). The chosen theme is applied to <html>
+        // and persisted globally; CSS custom properties do the rest.
+        this.shadowRoot.querySelector('.js-themeToggle')
+            .addEventListener('click', () => this._toggleTheme());
+
         this._updateLinks();
         this._updateActive();
+        this._syncThemeToggle();
+    }
+
+    // ---- Theme ----
+
+    _currentTheme() {
+        return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    }
+
+    _toggleTheme() {
+        const next = this._currentTheme() === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) { /* private mode */ }
+        this._syncThemeToggle();
+    }
+
+    _syncThemeToggle() {
+        const btn = this.shadowRoot.querySelector('.js-themeToggle');
+        if (!btn) return;
+        const dark = this._currentTheme() === 'dark';
+        const label = dark ? 'Switch to light mode' : 'Switch to dark mode';
+        btn.querySelector('svg-icon')?.setAttribute('icon', dark ? 'sun' : 'moon');
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-label', label);
+        const tip = btn.querySelector('.navSidebar__tooltip');
+        if (tip) tip.textContent = label;
     }
 
     _updateLinks() {

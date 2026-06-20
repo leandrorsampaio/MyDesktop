@@ -39,6 +39,10 @@
     /* Overlay (modal backdrop) */
     --color-overlay: rgba(45, 45, 45, 0.4);
 
+    /* Inverse surface — a contrasting bubble (tooltips) that flips per theme */
+    --color-bg-inverse: #111827;
+    --color-text-inverse: #ffffff;
+
     /* === Radius System === */
     --radius-sm: 4px;
     --radius-md: 6px;
@@ -103,6 +107,62 @@
     --archive-col-actions: 104px;
 }
 
+/* ==========================================================================
+   THEME: Dark (warm neutral — Artemis-derived)
+   --------------------------------------------------------------------------
+   A theme is one block: it overrides ONLY colour/shadow tokens. Spacing,
+   radius, type, z-index stay shared in :root. No component CSS is touched —
+   every value reaches the Shadow DOM through these custom properties.
+   Default (no attribute) = the light theme in :root above.
+   Accents follow "shift, don't invert": same hue family, lifted in lightness
+   for contrast on dark; their -rgb channels move with them so tints adapt.
+   ========================================================================== */
+[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* Surfaces — warm dark neutrals, not pure black */
+    --color-bg-primary: #1e1c19;     /* cards, modals, inputs */
+    --color-bg-secondary: #141210;   /* page background */
+    --color-bg-tertiary: #2a2722;    /* hover, secondary surfaces */
+    --color-border: #3a3630;
+    --color-text-primary: #e8e4df;
+    --color-text-secondary: #a9a49c;
+    --color-text-tertiary: #7d7870;
+
+    /* Accents — lifted for legibility on dark, same hue family */
+    --color-accent-primary: #3b82f6;
+    --color-accent-primary-hover: #5b9bff;
+    --color-accent-primary-rgb: 59, 130, 246;
+    --color-accent-success: #34d399;
+    --color-accent-success-rgb: 52, 211, 153;
+    --color-accent-error: #ef4444;
+    --color-accent-error-rgb: 239, 68, 68;
+    --color-accent-warning: #fbbf24;
+    --color-accent-warning-rgb: 251, 191, 36;
+    --color-accent-info: #9ca3af;
+    --color-accent-info-rgb: 156, 163, 175;
+
+    /* On-accent text stays light — the accents above keep white legible */
+    --color-text-on-accent: #ffffff;
+
+    /* Text-on-tint variants (deadline chips, labels) — light so they read on
+       the dark tinted backgrounds */
+    --color-accent-error-strong: #f87171;
+    --color-accent-warning-text: #fbbf24;
+    --color-accent-gold: #f0c948;
+
+    /* Button modifiers — lifted slightly, white text still legible */
+    --color-accent-clone: #6d6ec9;
+    --color-accent-clone-hover: #8284d6;
+    --color-accent-backlog: #6b757a;
+    --color-accent-backlog-hover: #7c868b;
+
+    /* Overlay + inverse bubble */
+    --color-overlay: rgba(0, 0, 0, 0.6);
+    --color-bg-inverse: #322e29;
+    --color-text-inverse: #e8e4df;
+}
+
 /* Reset and Base */
 * {
     margin: 0;
@@ -117,6 +177,13 @@ body {
     min-height: 100vh;
     line-height: 1.6;
     font-weight: var(--font-weight-regular);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body {
+        transition: none;
+    }
 }
 
 /* ==========================================

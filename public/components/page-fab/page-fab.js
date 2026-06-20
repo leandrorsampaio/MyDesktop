@@ -34,7 +34,7 @@ class PageFab extends HTMLElement {
                     border-radius: 50%;
                     border: none;
                     background: var(--color-accent-primary);
-                    color: #fff;
+                    color: var(--color-text-on-accent);
                     font-size: 24px;
                     line-height: 1;
                     cursor: pointer;
