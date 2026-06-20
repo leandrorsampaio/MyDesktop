@@ -64,9 +64,9 @@ AI Staging  →  Backlog  →  Board
 
 Restraint over decoration. Every visual element earns its place. The interface should feel like a clean physical workspace — not a packed dashboard, not a toy, not a corporate product.
 
-**Currently shipping:** light mode only. Token system uses `--color-*`, `--radius-*`, `--shadow-*` on `:root` with legacy aliases for migration. System font stack, no Google Fonts, 1px borders, 6px radius, `#f8f9fa` page bg, white cards.
+**Currently shipping:** light mode by default, with a baseline **dark theme** and an **auto/follow-system** option, chosen per profile (v2.41.0). Token system uses `--color-*`, `--radius-*`, `--shadow-*` on `:root`; the dark theme is a `[data-theme="dark"]` token override. System font stack, no Google Fonts, 1px borders, 6px radius.
 
-**Next major design milestone — dark mode as primary.** The "Functional Calm" target is a dark-first product, not a light product with a dark toggle. The target audience defaults to dark. Light mode will be a first-class alternative, not an afterthought. The design hire engagement in [docs/design/](docs/design/) is scoped to deliver this.
+**Next major design milestone — dark mode as primary.** A baseline dark theme now exists, but the larger goal stands: the "Functional Calm" target is a dark-*first* product, not a light product with a dark toggle. The target audience defaults to dark. Light mode is a first-class alternative, not an afterthought. The design hire engagement in [docs/design/](docs/design/) is scoped to deliver the full dark-first redesign on top of the theming infrastructure now in place.
 
 **Colour is semantic, not decorative.**
 - Colour = epic (the 20-colour palette already in the system).

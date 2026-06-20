@@ -43,6 +43,12 @@
     --color-bg-inverse: #111827;
     --color-text-inverse: #ffffff;
 
+    /* Epic palette rendering — tuned per theme so the fixed 20 epic colours stay
+       legible on either background. Light = the original 12% tint + raw colour. */
+    --epic-tint: 12%;          /* epic colour → background-tint strength */
+    --epic-lighten: 0%;        /* white mixed into the epic colour (text + fill) */
+    --epic-ring: transparent;  /* delineates colour circles (avatars, swatches) */
+
     /* === Radius System === */
     --radius-sm: 4px;
     --radius-md: 6px;
@@ -161,6 +167,13 @@
     --color-overlay: rgba(0, 0, 0, 0.6);
     --color-bg-inverse: #322e29;
     --color-text-inverse: #e8e4df;
+
+    /* Epic colours: lift dark hues (Charcoal/Slate) so pill text reads on dark,
+       strengthen the background tint, and ring colour circles so they don't
+       vanish against the dark surface. */
+    --epic-tint: 22%;
+    --epic-lighten: 40%;
+    --epic-ring: rgba(255, 255, 255, 0.16);
 }
 
 /* Reset and Base */
@@ -2987,6 +3000,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 
 .dashDeadlineItem__epic {
     font-size: var(--text-sm);
+    color: color-mix(in srgb, var(--epic-color, currentColor), #fff var(--epic-lighten, 0%));
 }
 
 .dashDeadlineItem__date {
@@ -3069,6 +3083,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .dashStaleItem__epic {
     font-size: var(--text-sm);
     white-space: nowrap;
+    color: color-mix(in srgb, var(--epic-color, currentColor), #fff var(--epic-lighten, 0%));
 }
 
 .dashStaleItem__age {

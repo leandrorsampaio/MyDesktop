@@ -72,6 +72,9 @@
     border-radius: 10px;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
+    --epic-fill: color-mix(in srgb, var(--epic-color, currentColor), #fff var(--epic-lighten, 0%));
+    color: var(--epic-fill);
+    background: color-mix(in srgb, var(--epic-fill) var(--epic-tint, 12%), transparent);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

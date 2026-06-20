@@ -145,6 +145,7 @@ class CustomPicker extends HTMLElement {
                     height: 16px;
                     border-radius: 50%;
                     flex-shrink: 0;
+                    box-shadow: inset 0 0 0 1px var(--epic-ring);
                 }
                 :host([size="compact"]) .customPicker__triggerSwatch {
                     width: 10px;
@@ -155,6 +156,7 @@ class CustomPicker extends HTMLElement {
                     height: 10px;
                     border-radius: 50%;
                     flex-shrink: 0;
+                    box-shadow: inset 0 0 0 1px var(--epic-ring);
                 }
                 :host([size="compact"]) .customPicker__triggerDot {
                     width: 8px;
@@ -234,6 +236,7 @@ class CustomPicker extends HTMLElement {
                     height: 32px;
                     border-radius: 50%;
                     transition: box-shadow 0.15s;
+                    box-shadow: inset 0 0 0 1px var(--epic-ring);
                 }
                 .customPicker__cell.--selected .customPicker__swatch {
                     box-shadow: 0 0 0 3px var(--color-bg-primary), 0 0 0 5px var(--color-accent-primary);
@@ -311,6 +314,7 @@ class CustomPicker extends HTMLElement {
                     height: 10px;
                     border-radius: 50%;
                     flex-shrink: 0;
+                    box-shadow: inset 0 0 0 1px var(--epic-ring);
                 }
                 .customPicker__listLabel {
                     flex: 1;

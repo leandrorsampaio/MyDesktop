@@ -70,13 +70,6 @@ class TaskCard extends HTMLElement {
         }
     }
 
-    _hexToRgba(hex, alpha) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     render() {
         const {
             title,
@@ -122,12 +115,12 @@ class TaskCard extends HTMLElement {
             badgeEl.style.display = 'none';
         }
 
-        // Epic bar — inline pill badge with rgba tint bg + solid colored text
+        // Epic bar — inline pill badge. The epic colour flows in as --epic-color;
+        // tint + dark-mode lightening are handled in CSS (theme-reactive).
         if (epicBarEl) {
             if (epicName && epicColor) {
                 epicBarEl.style.display = 'inline-block';
-                epicBarEl.style.backgroundColor = this._hexToRgba(epicColor, 0.12);
-                epicBarEl.style.color = epicColor;
+                epicBarEl.style.setProperty('--epic-color', epicColor);
                 epicBarEl.textContent = epicName;
             } else {
                 epicBarEl.style.display = 'none';

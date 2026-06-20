@@ -78,6 +78,7 @@ Shadow DOM component. **Permanent icon-only rail** on the left edge, present on 
     .navSidebar__spacer
     .js-panelBtn               ← toggle for the slide-out panel (checklist + notes)
   .navSidebar__footer
+    theme toggle (js-themeToggle) ← moon/sun, quick light↔dark switch (per profile)
     design-system link         ← internal style-guide page
     config gear                ← plain nav link to /:alias/config
 .navSidebar__panelBackdrop     ← backdrop behind the open panel
@@ -606,6 +607,9 @@ Size: large.
 Size: default. Three settings sections. All profile-scoped, stored in localStorage.
 
 ```
+Section 0: Appearance (v2.41.0)
+  Radio: Light / Dark / Auto (follow system) — per profile, applies instantly
+
 Section 1: Interface Visibility
   Checkbox: Show Daily Checklist (default: true)
   Checkbox: Show Notes Widget (default: true)

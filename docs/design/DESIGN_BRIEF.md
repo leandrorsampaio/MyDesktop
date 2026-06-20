@@ -140,10 +140,12 @@ Default columns: To Do, Waiting, In Progress, Done + Backlog (hidden).
 
 ## Current Design Tokens
 
-These are the CURRENT values — the designer should replace them entirely.
+These are the CURRENT light-theme values — the designer should replace them entirely.
+
+**Update (v2.41.0):** a baseline **dark theme now exists** as a `[data-theme="dark"]` token override on `<html>` (warm Artemis-derived neutrals; see SPEC § Theming), selected per profile (light/dark/**auto**). The token set was also extended beyond what's listed below: `-rgb` channel tokens for alpha-composited tints (`--color-accent-primary-rgb`, `--color-shadow-rgb`, …), `--color-text-on-accent`, `--color-bg-inverse`/`--color-text-inverse`, `--color-overlay`, `--shadow-lg`/`--shadow-focus`, button-modifier accents, and the epic-rendering tokens `--epic-tint`/`--epic-lighten`/`--epic-ring` (epic pills tint via `color-mix()`). The designer should treat the dark palette as a baseline to refine, not a finished spec.
 
 ```css
-/* Colours (light mode only — no dark mode exists yet) */
+/* Colours — CURRENT light theme (a dark [data-theme="dark"] override also ships) */
 --color-bg-primary: #ffffff      /* cards, modals */
 --color-bg-secondary: #f8f9fa    /* page background */
 --color-bg-tertiary: #f3f4f6     /* hover, secondary surfaces */

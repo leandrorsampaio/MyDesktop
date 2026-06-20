@@ -82,13 +82,6 @@ class ArchiveRow extends HTMLElement {
         if (chevron) chevron.classList.toggle('--open', this._expanded);
     }
 
-    _hexToRgba(hex, alpha) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     _getCompletedDate(task) {
         if (task.log && task.log.length > 0) {
             return task.log[task.log.length - 1].date;
@@ -124,8 +117,7 @@ class ArchiveRow extends HTMLElement {
         if (epicPillEl) {
             if (meta.epicName && meta.epicColor) {
                 epicPillEl.style.display = 'inline-block';
-                epicPillEl.style.backgroundColor = this._hexToRgba(meta.epicColor, 0.12);
-                epicPillEl.style.color = meta.epicColor;
+                epicPillEl.style.setProperty('--epic-color', meta.epicColor);
                 epicPillEl.textContent = meta.epicName;
             } else {
                 epicPillEl.style.display = 'none';

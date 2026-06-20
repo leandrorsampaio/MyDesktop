@@ -237,7 +237,7 @@ function renderDeadlines(pageViewEl, boardTasks, epicMap) {
         const items = tasks.map(t => {
             const epic = t.epicId ? epicMap.get(t.epicId) : null;
             const epicHtml = epic
-                ? `<span class="dashDeadlineItem__epic" style="color: ${escapeHtml(epic.color || '#9ca3af')}">${escapeHtml(epic.name)}</span>`
+                ? `<span class="dashDeadlineItem__epic" style="--epic-color: ${escapeHtml(epic.color || '#9ca3af')}">${escapeHtml(epic.name)}</span>`
                 : '';
             const dateStr = new Date(t.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             return `
@@ -331,7 +331,7 @@ function renderStaleTasks(pageViewEl, boardTasks, epicMap) {
             ? Math.floor((now - new Date(dateStr)) / 86400000)
             : '?';
         const epicHtml = epic
-            ? `<span class="dashStaleItem__epic" style="color: ${escapeHtml(epic.color || '#9ca3af')}">${escapeHtml(epic.name)}</span>`
+            ? `<span class="dashStaleItem__epic" style="--epic-color: ${escapeHtml(epic.color || '#9ca3af')}">${escapeHtml(epic.name)}</span>`
             : '';
         return `
             <div class="dashStaleItem">

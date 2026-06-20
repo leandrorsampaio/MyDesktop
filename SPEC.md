@@ -1,7 +1,7 @@
 # SPEC — Project Specification
 
-**Version:** 2.40.0
-**Last Updated:** 2026-06-12
+**Version:** 2.41.0
+**Last Updated:** 2026-06-20
 
 ---
 
@@ -380,7 +380,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - Exactly one profile must have `isDefault: true`. Setting `isDefault: true` on one automatically clears all others.
 - Deleting the default profile transfers `isDefault` to the first remaining profile.
 - Profile `alias` is used as both the **data folder name** (`data/{alias}/`) and the **URL segment** (`/{alias}`).
-- localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`, `{alias}:showDailyChecklist`, `{alias}:showNotes`, `{alias}:snoozeVisibility`, `{alias}:deadlineThresholds`.
+- localStorage keys are profile-scoped: `{alias}:checklistConfig`, `{alias}:recurrentTasksChecked`, `{alias}:showDailyChecklist`, `{alias}:showNotes`, `{alias}:snoozeVisibility`, `{alias}:deadlineThresholds`, `{alias}:theme`.
 
 ### Columns & Board Configuration
 - Columns are **per-profile**, stored inside each profile object in `profiles.json` (not a separate file).
@@ -411,6 +411,15 @@ These are behaviors not evident from reading the code. Know these before making 
 
 **Snoze visibility is CSS-driven (not JS):** snoozed `task-card` elements receive the class `--snoozed` from `createTaskCard()`. The `task-card.css` `:host(.--snoozed)` rule reads CSS custom properties `--snoozed-card-display` and `--snoozed-card-opacity` that are defined on `:root` and overridden by `.kanban.--showSnoozed` (toggle active) and `body.--snoozeTransparent` (transparent mode). These custom properties inherit through Shadow DOM boundaries, so no JS traversal is needed. `task-card.css` also has `:host([hidden]) { display: none !important }` to keep filter-hidden cards hidden regardless of snooze state.
 
+### Theming (Dark Mode)
+- **Mechanism:** a theme is applied as `data-theme="light"|"dark"` on `<html>`. The default `:root` token values ARE the light theme (no `[data-theme="light"]` block needed); `[data-theme="dark"]` overrides only colour/shadow tokens (+ `color-scheme: dark`). No component CSS is theme-specific — every themed value reaches Shadow DOM through inherited custom properties (attribute selectors can't cross the shadow boundary, so a per-theme value MUST be a token).
+- **Token architecture:** colours that are alpha-composited use `-rgb` channel tokens (e.g. `--color-accent-primary-rgb`, `--color-shadow-rgb`) written as `rgba(var(--…-rgb), 0.08)`, so a tint follows its base colour when a theme swaps it. Inverse surfaces (tooltips) use `--color-bg-inverse`/`--color-text-inverse`. Spacing/radius/type/z-index stay theme-independent in `:root`.
+- **Per-profile:** theme is stored at `localStorage["{alias}:theme"]` = `'light'|'dark'|'auto'`. Default (unset) = `'auto'`, which follows the OS `prefers-color-scheme`. Different profiles can run different themes; switching profile is a full page load, so the bootstrap re-resolves from the new alias.
+- **FOUC-safe bootstrap:** an inline `<script>` in `index.html` `<head>` parses the alias from `location.pathname` (the server has already redirected `/` → `/{alias}`), reads the key, falls back to the OS preference, and sets `data-theme` before first paint. It duplicates only the *resolve* step; the source of truth is `utils.js`.
+- **Source of truth (`utils.js`):** `getStoredTheme(alias)`, `systemPrefersDark()`, `resolveTheme(value)`, `applyTheme(alias)` (sets `data-theme` + fires a `themechanged` CustomEvent on `document`), `setStoredTheme(alias, value)`.
+- **Controls:** (1) the **nav-rail footer toggle** (moon/sun) is the quick switch — it always sets an *explicit* `light`/`dark` (overriding `auto`), persists per profile, and follows the OS live while a profile is on `auto` (via `matchMedia` listener, cleaned up in `disconnectedCallback`). (2) **Config → General → Appearance** offers Light/Dark/**Auto**, applies instantly. `applyTheme`'s `themechanged` event keeps the rail icon in sync when theme is changed from Config.
+- **Epic colours per theme:** epic pills and dashboard epic-name text receive the hue as a `--epic-color` custom property; CSS computes background/text via `color-mix()` driven by `--epic-tint` (12% light / 22% dark) and `--epic-lighten` (0% light / 40% dark) so dark hues (Charcoal/Slate) stay legible on dark. Light mode is identical to the prior `rgba(epic, 0.12)`. Colour circles (avatars, picker swatches/dots) carry an `--epic-ring` inset outline (transparent in light, subtle light ring in dark). Requires CSS `color-mix()`.
+
 ### Navigation & Routing
 - **`<nav-sidebar>`** is a permanent icon-only navigation rail (left side), present on every page. It contains the page links, a toggle button for a slide-out panel holding the checklist/notes (slotted light DOM; panel closes on backdrop click or ESC), the gear link to the config page, and a footer link to the internal design-system page.
 - **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`, `config`, `design-system`. Anything else defaults to `board`.
@@ -425,6 +434,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Sections (tab order):** Columns, Epics, Categories, General, Daily Checklist, AI Assistant, Profiles (below a divider).
 - **CRUD sections** (columns, epics, categories, profiles): auto-save on blur/change (same behavior as the old modals). Delete uses confirmation modals from `index.html`.
 - **General Settings and Checklist:** manual Save button. Changes take effect on the board when user navigates back (board re-initializes and calls `loadGeneralConfig()`).
+- **Appearance (General section):** Light / Dark / Auto theme radios at the top of the General panel — per profile, applies instantly on change (no Save button), persisted to `{alias}:theme`. See Non-obvious Behaviors § Theming.
 - **Your Data (General section):** "Export data (JSON)" button calls `GET /api/:profile/export` and downloads the bundle as `mydesktop-{alias}-{date}.json` via a Blob + anchor click. Restore is manual (copy `data/{alias}/` back); import is a possible future feature.
 - **AI Configuration:** two-panel list/form inline (same UX as the old modal).
 - **Profiles:** inline CRUD section (add, rename, recolor, change letters, set default, delete with confirmation). Deleting the active profile navigates to the first remaining profile's config page.
@@ -496,6 +506,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Attributes:** `alias` (profile alias, builds href values on nav links), `page` (active page name, sets `--active` on the matching link)
 - **Slide-out panel:** the panel button toggles a `--panelOpen` class on the host; slotted children (checklist, notes) render inside it. Closes on backdrop click or ESC (document listener added on open, removed on close/disconnect).
 - **Gear icon** at the bottom is a plain nav link to `/:alias/config`; the footer also links to `/:alias/design-system`.
+- **Theme toggle** (`.js-themeToggle`, moon/sun) in the footer — quick light/dark switch, per profile (see Non-obvious Behaviors § Theming). Imports the theme helpers from `utils.js`; listens for `themechanged` + OS `matchMedia` changes (both cleaned up in `disconnectedCallback`).
 - **Accessibility:** the rail `<nav>` has `aria-label="Main navigation"`; the active link carries `aria-current="page"` (kept in sync by `_updateActive`); the slide-out panel is an `<aside aria-label="Checklist and notes">`.
 
 ### `<profile-selector>`

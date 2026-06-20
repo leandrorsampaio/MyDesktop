@@ -55,6 +55,11 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.3px;
+    /* Epic colour comes in as --epic-color (inline). Light: raw colour + 12%
+       tint (identical to the old rgba). Dark: lifted via --epic-lighten. */
+    --epic-fill: color-mix(in srgb, var(--epic-color, currentColor), #fff var(--epic-lighten, 0%));
+    color: var(--epic-fill);
+    background: color-mix(in srgb, var(--epic-fill) var(--epic-tint, 12%), transparent);
     margin: var(--space-10) 14px 0 14px;
     white-space: nowrap;
     overflow: hidden;

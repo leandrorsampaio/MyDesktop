@@ -8,7 +8,7 @@
 
 A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.40.0 (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.41.0 (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
@@ -95,7 +95,7 @@ These are the ones that get violated most often. Full list in [SPEC.md § Code R
 | Add a new API endpoint | [SPEC.md § API Endpoints](SPEC.md#api-endpoints) (mirror existing shape: rate-limit middleware, input validation, log entries). |
 | Change task / column / epic data model | [SPEC.md § Data Models](SPEC.md#data-models). Mind backward-compat with existing `data/` files. |
 | CSS / visual change | [docs/design/DESIGN_BRIEF.md § Current Design Tokens](docs/design/DESIGN_BRIEF.md) for the live tokens. Use `var(--...)`; don't hardcode hex. |
-| Dark mode work | [docs/design/DESIGN_BRIEF.md](docs/design/DESIGN_BRIEF.md) is the spec. Not yet implemented. |
+| Dark mode work | Baseline theming shipped (v2.41.0) — see [SPEC.md](SPEC.md) § Theming for the mechanism/tokens. [docs/design/DESIGN_BRIEF.md](docs/design/DESIGN_BRIEF.md) is the spec for the larger dark-first redesign. |
 | Adding a deferred / nice-to-have idea | [FUTURE.md](FUTURE.md). |
 | Why something exists / is named oddly | [CHANGELOG.md](CHANGELOG.md) — search for the feature name. |
 | Product direction / taste call | [VISION.md](VISION.md). |
@@ -120,7 +120,9 @@ Plus an internal style-guide page at `/:alias/design-system` (linked from the na
 
 Backend includes: optimistic UI, rate limiting, input validation, race-condition lock, AI provider abstraction (Anthropic + OpenAI-compatible), 300+ tests via `node:test` (don't hardcode the exact count here — run `npm test` for the current number).
 
-**Not yet built:** dark mode (designed, not implemented), streaming AI responses, drag-resize handle between AI chat/staged sections.
+**Dark mode shipped in v2.41.0** — per-profile theme (`light`/`dark`/`auto`) via `data-theme` on `<html>`, toggle in the nav rail + selector in Config → General. The full *dark-first* redesign in [VISION.md](VISION.md) is still the larger milestone; what ships now is a baseline warm dark theme with light as the default.
+
+**Not yet built:** the dark-first visual redesign, streaming AI responses, drag-resize handle between AI chat/staged sections.
 
 ---
 

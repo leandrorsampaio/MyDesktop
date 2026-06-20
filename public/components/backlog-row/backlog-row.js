@@ -78,13 +78,6 @@ class BacklogRow extends HTMLElement {
         });
     }
 
-    _hexToRgba(hex, alpha) {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     _formatDate(dateStr) {
         if (!dateStr) return '';
         try {
@@ -113,8 +106,7 @@ class BacklogRow extends HTMLElement {
         if (epicPillEl) {
             if (meta.epicName && meta.epicColor) {
                 epicPillEl.style.display = 'inline-block';
-                epicPillEl.style.backgroundColor = this._hexToRgba(meta.epicColor, 0.12);
-                epicPillEl.style.color = meta.epicColor;
+                epicPillEl.style.setProperty('--epic-color', meta.epicColor);
                 epicPillEl.textContent = meta.epicName;
             } else {
                 epicPillEl.style.display = 'none';
