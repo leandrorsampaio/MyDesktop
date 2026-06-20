@@ -140,6 +140,9 @@ export const THEMES = [
     { id: 'light', name: 'Light', appearance: 'light' },
     { id: 'paper', name: 'Paper', appearance: 'light' },
     { id: 'dark',  name: 'Dark',  appearance: 'dark'  },
+    { id: 'slate', name: 'Slate', appearance: 'dark'  },
+    { id: 'dim',   name: 'Dim',   appearance: 'dark'  },
+    { id: 'hc',    name: 'High Contrast', appearance: 'dark' },
 ];
 
 /** Theme used for the OS-light case when a profile is on 'auto'. */

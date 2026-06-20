@@ -136,28 +136,22 @@
 }
 
 /* ==========================================================================
-   THEME: Dark (warm neutral — Artemis-derived)
+   DARK THEMES — shared appearance ancillaries
    --------------------------------------------------------------------------
-   A theme is one block: it overrides ONLY colour/shadow tokens. Spacing,
-   radius, type, z-index stay shared in :root. No component CSS is touched —
-   every value reaches the Shadow DOM through these custom properties.
-   Default (no attribute) = the light theme in :root above.
-   Accents follow "shift, don't invert": same hue family, lifted in lightness
-   for contrast on dark; their -rgb channels move with them so tints adapt.
+   A theme overrides ONLY colour/shadow tokens (spacing/radius/type stay in
+   :root); no component CSS is touched — every value reaches Shadow DOM through
+   these inherited custom properties. The dark themes share one set of lifted
+   accents + epic tokens (so they stay consistent and legible), and each theme
+   then defines only its own neutral surfaces/text. Accents follow "shift,
+   don't invert": same hue family, lifted for contrast on dark.
    ========================================================================== */
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-theme="slate"],
+[data-theme="dim"],
+[data-theme="hc"] {
     color-scheme: dark;
 
-    /* Surfaces — warm dark neutrals, not pure black */
-    --color-bg-primary: #1e1c19;     /* cards, modals, inputs */
-    --color-bg-secondary: #141210;   /* page background */
-    --color-bg-tertiary: #2a2722;    /* hover, secondary surfaces */
-    --color-border: #3a3630;
-    --color-text-primary: #e8e4df;
-    --color-text-secondary: #a9a49c;
-    --color-text-tertiary: #7d7870;
-
-    /* Accents — lifted for legibility on dark, same hue family */
+    /* Accents — lifted for legibility on dark; white text stays legible on them */
     --color-accent-primary: #3b82f6;
     --color-accent-primary-hover: #5b9bff;
     --color-accent-primary-rgb: 59, 130, 246;
@@ -169,33 +163,74 @@
     --color-accent-warning-rgb: 251, 191, 36;
     --color-accent-info: #9ca3af;
     --color-accent-info-rgb: 156, 163, 175;
-
-    /* On-accent text stays light — the accents above keep white legible */
     --color-text-on-accent: #ffffff;
 
-    /* Text-on-tint variants (deadline chips, labels) — light so they read on
-       the dark tinted backgrounds */
+    /* Text-on-tint variants (deadline chips, labels) */
     --color-accent-error-strong: #f87171;
     --color-accent-warning-text: #fbbf24;
     --color-accent-gold: #f0c948;
 
-    /* Button modifiers — lifted slightly, white text still legible */
+    /* Button modifiers */
     --color-accent-clone: #6d6ec9;
     --color-accent-clone-hover: #8284d6;
     --color-accent-backlog: #6b757a;
     --color-accent-backlog-hover: #7c868b;
 
-    /* Overlay + inverse bubble */
+    /* Overlay + inverse + epic rendering for dark surfaces */
     --color-overlay: rgba(0, 0, 0, 0.6);
-    --color-bg-inverse: #322e29;
     --color-text-inverse: #e8e4df;
-
-    /* Epic colours: lift dark hues (Charcoal/Slate) so pill text reads on dark,
-       strengthen the background tint, and ring colour circles so they don't
-       vanish against the dark surface. */
     --epic-tint: 22%;
     --epic-lighten: 40%;
     --epic-ring: rgba(255, 255, 255, 0.16);
+}
+
+/* THEME: Dark — warm neutral (Artemis-derived) */
+[data-theme="dark"] {
+    --color-bg-primary: #1e1c19;     /* cards, modals, inputs */
+    --color-bg-secondary: #141210;   /* page background */
+    --color-bg-tertiary: #2a2722;    /* hover, secondary surfaces */
+    --color-border: #3a3630;
+    --color-text-primary: #e8e4df;
+    --color-text-secondary: #a9a49c;
+    --color-text-tertiary: #7d7870;
+    --color-bg-inverse: #322e29;     /* warm tooltip bubble */
+}
+
+/* THEME: Slate — cool/neutral dark (Linear / GitHub style) */
+[data-theme="slate"] {
+    --color-bg-primary: #1b1e25;
+    --color-bg-secondary: #14161b;
+    --color-bg-tertiary: #252a33;
+    --color-border: #2d333d;
+    --color-text-primary: #e6e8ec;
+    --color-text-secondary: #9aa1ad;
+    --color-text-tertiary: #6b727e;
+    --color-bg-inverse: #2b313b;
+}
+
+/* THEME: Dim — soft, low-strain dark (muted blue-grey) */
+[data-theme="dim"] {
+    --color-bg-primary: #22272e;
+    --color-bg-secondary: #1c2128;
+    --color-bg-tertiary: #2d333b;
+    --color-border: #373e47;
+    --color-text-primary: #cdd5de;   /* softer than pure white */
+    --color-text-secondary: #9aa3ad;
+    --color-text-tertiary: #6e7681;
+    --color-bg-inverse: #2d333b;
+}
+
+/* THEME: High Contrast — near-black + crisp white, strong borders */
+[data-theme="hc"] {
+    --color-bg-primary: #0d0d0d;
+    --color-bg-secondary: #000000;
+    --color-bg-tertiary: #1a1a1a;
+    --color-border: #6a6a6a;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #e0e0e0;
+    --color-text-tertiary: #b5b5b5;
+    --color-bg-inverse: #1a1a1a;
+    --epic-ring: rgba(255, 255, 255, 0.30);
 }
 
 /* Reset and Base */
