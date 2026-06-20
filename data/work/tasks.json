@@ -1890,7 +1890,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 17,
+    "position": 23,
     "log": [
       {
         "date": "2026-03-22",
@@ -3194,7 +3194,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 15,
+    "position": 21,
     "log": [
       {
         "date": "2026-03-30",
@@ -4039,7 +4039,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 16,
+    "position": 22,
     "log": [
       {
         "date": "2026-05-04",
@@ -4062,7 +4062,7 @@
     "category": 2,
     "epicId": "moq8k175szmfa7njw",
     "status": "done",
-    "position": 2,
+    "position": 8,
     "log": [
       {
         "date": "2026-05-04",
@@ -4229,7 +4229,7 @@
     "category": 5,
     "epicId": "moq8k175szmfa7njw",
     "status": "done",
-    "position": 5,
+    "position": 11,
     "log": [
       {
         "date": "2026-05-07",
@@ -4491,7 +4491,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 5,
+    "position": 3,
     "log": [
       {
         "date": "2026-05-19",
@@ -4836,7 +4836,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 14,
+    "position": 20,
     "log": [
       {
         "date": "2026-05-29",
@@ -4871,7 +4871,7 @@
     "category": 1,
     "epicId": "moq8dy5b65p58w331",
     "status": "done",
-    "position": 11,
+    "position": 17,
     "log": [
       {
         "date": "2026-06-02",
@@ -4898,7 +4898,7 @@
     "category": 5,
     "epicId": "moq8dy5b65p58w331",
     "status": "done",
-    "position": 12,
+    "position": 18,
     "log": [
       {
         "date": "2026-05-29",
@@ -4937,7 +4937,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 7,
+    "position": 13,
     "log": [
       {
         "date": "2026-06-02",
@@ -4964,7 +4964,7 @@
     "category": 1,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 10,
+    "position": 16,
     "log": [
       {
         "date": "2026-06-02",
@@ -4991,7 +4991,7 @@
     "category": 1,
     "epicId": "mmji2xjk6s7spj1wu",
     "status": "done",
-    "position": 13,
+    "position": 19,
     "log": [
       {
         "date": "2026-06-02",
@@ -5014,7 +5014,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 18,
+    "position": 24,
     "log": [
       {
         "date": "2026-06-02",
@@ -5041,7 +5041,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 9,
+    "position": 15,
     "log": [
       {
         "date": "2026-06-03",
@@ -5090,12 +5090,16 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mncchgncxlcix2v96",
-    "position": 2,
+    "status": "done",
+    "position": 5,
     "log": [
       {
         "date": "2026-06-03",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-18",
+        "action": "Moved from Today to Done"
       }
     ],
     "createdDate": "2026-06-03T13:49:07.145Z",
@@ -5109,12 +5113,16 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "mncchgncxlcix2v96",
-    "position": 4,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-06-03",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-19",
+        "action": "Moved from Today to Done"
       }
     ],
     "createdDate": "2026-06-03T13:53:58.303Z",
@@ -5129,7 +5137,7 @@
     "category": 5,
     "epicId": "mmji2xjk6s7spj1wu",
     "status": "done",
-    "position": 8,
+    "position": 14,
     "log": [
       {
         "date": "2026-06-04",
@@ -5156,7 +5164,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 6,
+    "position": 12,
     "log": [
       {
         "date": "2026-06-04",
@@ -5178,9 +5186,14 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "todo",
-    "position": 4,
-    "log": [],
+    "status": "done",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-06-18",
+        "action": "Moved from To Do to Done"
+      }
+    ],
     "createdDate": "2026-06-05T00:15:21.614Z",
     "deadline": null,
     "snoozeUntil": null
@@ -5192,8 +5205,8 @@
     "priority": false,
     "category": 1,
     "epicId": null,
-    "status": "wait",
-    "position": 0,
+    "status": "done",
+    "position": 4,
     "log": [
       {
         "date": "2026-06-10",
@@ -5214,6 +5227,10 @@
       {
         "date": "2026-06-12",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-06-18",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-06-05T00:15:35.404Z",
@@ -5227,8 +5244,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 0,
+    "status": "done",
+    "position": 6,
     "log": [
       {
         "date": "2026-06-10",
@@ -5253,6 +5270,10 @@
       {
         "date": "2026-06-11",
         "action": "Moved from Done to In Progress"
+      },
+      {
+        "date": "2026-06-15",
+        "action": "Moved from In Progress to Done"
       }
     ],
     "createdDate": "2026-06-08T09:34:48.975Z",
@@ -5267,7 +5288,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 4,
+    "position": 10,
     "log": [
       {
         "date": "2026-06-10",
@@ -5290,7 +5311,7 @@
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "done",
-    "position": 3,
+    "position": 9,
     "log": [
       {
         "date": "2026-06-10",
@@ -5317,7 +5338,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 1,
+    "position": 7,
     "log": [
       {
         "date": "2026-06-10",
@@ -5329,6 +5350,117 @@
       }
     ],
     "createdDate": "2026-06-10T14:24:55.467Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqjymrlgabjarqaxs",
+    "title": "Write Anna",
+    "description": "- Piotr and Booking",
+    "priority": false,
+    "category": 3,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "done",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-06-18",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-19",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-06-18T20:36:17.332Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqjynwvrbn0zwtgi2",
+    "title": "Repos Security Message",
+    "description": "",
+    "priority": false,
+    "category": 6,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "done",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-06-18",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-19",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-06-19",
+        "action": "Moved from In Progress to Done"
+      }
+    ],
+    "createdDate": "2026-06-18T20:37:10.839Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqjyss4fr0k8zs2fw",
+    "title": "Icons Email",
+    "description": "",
+    "priority": false,
+    "category": 3,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "inprogress",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-06-18",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-19",
+        "action": "Moved from Today to In Progress"
+      }
+    ],
+    "createdDate": "2026-06-18T20:40:57.951Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqk6431e9cv8rsn53",
+    "title": "ESB-727 - Wishlist Fix",
+    "description": "https://solenis.atlassian.net/browse/ESB-727",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 0,
+    "log": [
+      {
+        "date": "2026-06-19",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-06-19T00:05:42.626Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqk8ozsuemjrusgbk",
+    "title": "ESB-690 Order Details tables",
+    "description": "https://solenis.atlassian.net/browse/ESB-690",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "wait",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-06-19",
+        "action": "Moved from To Do to Wait"
+      }
+    ],
+    "createdDate": "2026-06-19T01:17:57.438Z",
     "deadline": null,
     "snoozeUntil": null
   }

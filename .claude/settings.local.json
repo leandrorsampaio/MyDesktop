@@ -38,7 +38,11 @@
       "Bash(sed -i '' -e 446,531d -e 648,712d -e 727,758d -e 826,1023d -e 1057,1258d -e 1315,1586d -e 1614,1826d public/js/modals.js)",
       "Bash(sed -n '190,205p' public/js/dashboard-page.js)",
       "Bash(sed -n '210,225p' public/js/modals.js)",
-      "Bash(sed -n '280,295p' public/js/dashboard-page.js)"
+      "Bash(sed -n '280,295p' public/js/dashboard-page.js)",
+      "Read(//Users/leandrorossisampaio/Desktop/**)",
+      "Bash(ls -la jules-design/)",
+      "Bash(find ~/Desktop -maxdepth 2 -iname \"*jules*\" -type d)",
+      "Bash(echo \"exit: $?  \\(no lines above = clean\\)\")"
     ]
   }
 }

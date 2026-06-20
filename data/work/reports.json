@@ -2866,5 +2866,356 @@
       ]
     },
     "notes": "ToS: LWC lifecycle hooks\n\nTo deploy: \neshopProductExportController\neshopProductExportControllerTest\nuiProductExportPdf\nuiExportSizeWarning\n\nFilip\ndeliveryListNewData\ninvoiceListNewData\norderListNewData\nuiPdpProductPanel\nuiTable\nstaticresources/baseStyles/base__lesseau.css\n\n\n\n\n\nHTML table: add button to select and deselact all\n\nPDF: call out for number of products\n\nexcel has HTML in some of the columns\n\ncheck the prefer solution for front images and other images. "
+  },
+  {
+    "id": "mqjyljks2qnc9ar09",
+    "title": "Week 25 (Jun 15-21)",
+    "generatedDate": "2026-06-18T20:35:20.284Z",
+    "weekNumber": 25,
+    "dateRange": "Jun 15-21",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mo1b54al5y6gsk42w",
+              "title": "New ticket for Deelip",
+              "description": "be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\nHero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "movjzeyxzoc7ax2gd",
+              "title": "Check request from Daniel",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mpmdph8ne15bl9g6l",
+              "title": "Map of resources (Piotr and Filip)",
+              "description": "+ suggestions for my area\nTracy has a strong about show things should be\nshe need to be in the creation process\n\nThings that didn't work before",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "mpo0znhhqwtdzja11",
+              "title": "Codebase Wiki Specs",
+              "description": "New Wiki\nNew linters\nPresentation \nAdd gagam and Mikael to the loop",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mq06akgeo8fdislce",
+              "title": "Meeting with Jitim (how they do with Flosum)",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": [
+            {
+              "id": "mq06av3gxwdc4e80d",
+              "title": "Talk with Magda (how to book the guys)",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": null
+            }
+          ]
+        },
+        {
+          "columnId": "mncchgncxlcix2v96",
+          "columnName": "Today",
+          "tasks": [
+            {
+              "id": "mmjhed2ps7btakkok",
+              "title": "Plan Work with SDS (create tickets in our Jira board)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mpcmx0ccsfnmmsktr",
+              "title": "Deelip Ticket (news)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpy4gfza5iyswu1bw",
+              "title": "Clean Up emails and desktop",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpy4hd55gk6tf8tbj",
+              "title": "Plan New PLP",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpy4nlsvvs5dknah5",
+              "title": "SDS error on UAT",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            }
+          ]
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": []
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "mm5kz7899tywcxdmt",
+              "title": "Check with Deelip: global classes for text complience",
+              "description": "DS texts and SF texts are diferent. We need to try to overwirte the SF ones or crete dsome global classes\n\nhttps://solenis.atlassian.net/browse/ESB-704",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mncz3i18yhd8e5ne9",
+              "title": "Deelip: Images on Feature innovation (imgs beign replaced)",
+              "description": "never happened again. ticket close",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moqtkj8u3jgcmbzbe",
+              "title": "ESB-625 - Certificate should only show images",
+              "description": "https://solenis.atlassian.net/browse/ESB-625",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "moqwjghvyw0n70bpy",
+              "title": "PR from Piotr (Wishlist)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "moq8k175szmfa7njw"
+            },
+            {
+              "id": "movjyqdfwrja969ka",
+              "title": "More tickets to Piotr/Filip",
+              "description": "New PLP tasks",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8k175szmfa7njw"
+            },
+            {
+              "id": "mpr743mpo0adxbk8v",
+              "title": "New tickets (Alex sheet)",
+              "description": "https://solenis-my.sharepoint.com/:x:/r/personal/aiancu_contractor_solenis_com/_layouts/15/doc2.aspx?sourcedoc=%7B915CE68A-EF70-4ADF-8B3E-E4CBD4E82374%7D&file=Order%20Portal%20Feedback%20tracking.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1&wdExp=TEAMS-TREATMENT&web=1&TeamsCID=406c8a1a-ce5a-424d-a148-9a4b4c12f787",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpr7c2nqrjfzm6olv",
+              "title": "New meeting with everyone",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "mpr7gdi74z9dvz92p",
+              "title": "New deployment procedure",
+              "description": "Concentrate Flosum with Tanu. (Check with Alex and Tanu first)\n\"pipeline of deplyoments\"\n\nArchiteture\nNaming convemtions\ninform in the chat\nDevbox > QA > UAT\n\nTickets flow\nDev check on UAT and prod\n\nclose branch\n\ninvolve RAVI\n\nWhat",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "mpwbgx7j4387yismn",
+              "title": "check PRs",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpwbhk19af4liau4l",
+              "title": "Fix Scratch Org",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mpwbi1uzv96e7lxby",
+              "title": "Feedback meetign Wishlist (email to us Team)",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mpwbj0kzvgbn7igya",
+              "title": "PPT Mikael 1:1",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpy4fzlqlrvlqk8uw",
+              "title": "Vacation contact Mikael",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpz8hzkp4xhhks4dk",
+              "title": "changes to Wishlist",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mmji2xjk6s7spj1wu"
+            },
+            {
+              "id": "mpzds18f06jtmhik9",
+              "title": "Check my Flosum deployment",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mq50ll73tqt586kms",
+              "title": "ESB-720 Error with uiTable",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mq81fk6tf2werwpes",
+              "title": "CR",
+              "description": "Script\nemail\nmessage group",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mq81xwa2f4fpy0zhc",
+              "title": "SDS check automation",
+              "description": "+ communication",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mq85udgrj0ajctfbm",
+              "title": "Test Cursor",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjke4wf7mey7rz9u",
+              "title": "ESB-599 Quick Wins for Header",
+              "description": "https://solenis.atlassian.net/browse/ESB-599\n\n(probably deprecated)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": "ToS: LWC lifecycle hooks\n\neshopWishlistController,eshopWishlistControllerTest,eshopProductExportController,eshopProductExportControllerTest,eshopUtils,eshopUtilsTest,eshopLegacyWishlistImage,eshopLegacyWishlistImageTest\n\nuiWishlistPage,uiWishlistToolbar,uiWishlistItemList,uiWishlistItemCard,uiWishlistFormModal,uiWishlistDeleteModal,uiWishlistConvertToCartModal,uiProductExportTable,uiProductExportPdf,uiProductExportImages,uiProductExportDocs,uiExportPageLayout,uiExportFeedback,uiExportSizeWarning,uiSkeletonTable,uiSkeletonCards,eshopExportFileBuilders,uiCategoryExportButton"
   }
 ]
