@@ -6,7 +6,7 @@
 import {
     MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, EPIC_COLORS,
     DEFAULT_CATEGORY_ID, DEFAULT_CHECKLIST_ITEMS,
-    DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS
+    DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, THEMES
 } from './constants.js';
 import { escapeHtml, toCamelCase, getStoredTheme, setStoredTheme } from './utils.js';
 import {
@@ -114,20 +114,13 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     <div class="generalConfig">
                         <div class="generalConfig__section">
                             <h4 class="generalConfig__sectionTitle">Appearance</h4>
-                            <p class="generalConfig__panelHint" style="margin-bottom:12px">Theme for this profile — applies instantly. "Auto" follows your system setting.</p>
+                            <p class="generalConfig__panelHint" style="margin-bottom:12px">Theme for this profile — applies instantly. "Auto" follows your system setting (light/dark).</p>
                             <div class="generalConfig__options">
-                                <label class="generalConfig__option">
-                                    <input type="radio" name="cfgTheme" value="light">
-                                    <span>Light</span>
-                                </label>
-                                <label class="generalConfig__option">
-                                    <input type="radio" name="cfgTheme" value="dark">
-                                    <span>Dark</span>
-                                </label>
-                                <label class="generalConfig__option">
-                                    <input type="radio" name="cfgTheme" value="auto">
-                                    <span>Auto (follow system)</span>
-                                </label>
+                                ${[{ value: 'auto', label: 'Auto (follow system)' }, ...THEMES.map(t => ({ value: t.id, label: t.name }))]
+                                    .map(o => `<label class="generalConfig__option">
+                                    <input type="radio" name="cfgTheme" value="${escapeHtml(o.value)}">
+                                    <span>${escapeHtml(o.label)}</span>
+                                </label>`).join('')}
                             </div>
                         </div>
                         <div class="generalConfig__section">

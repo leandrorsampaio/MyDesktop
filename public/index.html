@@ -9,14 +9,15 @@
         /* Theme bootstrap — runs before first paint so there's no flash of the
            wrong theme. Theme is per profile: the active profile is the first URL
            segment (the server has already redirected "/" to "/{alias}"). Reads
-           `${alias}:theme`, falling back to the OS colour preference for 'auto'
-           or an unset value. Light = the default :root tokens.
+           `${alias}:theme`. A stored value is a theme id ('light'|'paper'|'dark'
+           |…) used as-is; 'auto' or unset follows the OS scheme. id 'light' =
+           the base :root tokens.
            Source of truth for this resolve logic: public/js/utils.js */
         (function () {
             try {
                 var alias = location.pathname.split('/').filter(Boolean)[0] || '';
                 var t = localStorage.getItem(alias + ':theme');
-                if (t !== 'dark' && t !== 'light') {
+                if (!t || t === 'auto') {
                     t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 }
                 document.documentElement.setAttribute('data-theme', t);

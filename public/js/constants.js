@@ -120,3 +120,29 @@ export const DEFAULT_DEADLINE_WARNING_HOURS = 72;
 
 /** Interval in ms between snooze expiry checks */
 export const SNOOZE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+// ===========================================
+// Themes
+// ===========================================
+
+/**
+ * Built-in themes. A theme is a single, self-contained appearance — "dark mode"
+ * is NOT a property a theme has; a theme simply IS light or dark (like VS Code
+ * colour themes). `appearance` drives `color-scheme` + the dark-tuned ancillary
+ * tokens. Each id maps to a `[data-theme="<id>"]` block in styles.css (the
+ * 'light' id maps to the base `:root` values, so it needs no block).
+ *
+ * A profile's `{alias}:theme` stores a theme id OR 'auto'. 'auto' is a
+ * preference (not a theme): it maps the OS colour scheme to AUTO_THEME_LIGHT /
+ * AUTO_THEME_DARK. Phase 2 (user-created themes) will extend this list as data.
+ */
+export const THEMES = [
+    { id: 'light', name: 'Light', appearance: 'light' },
+    { id: 'paper', name: 'Paper', appearance: 'light' },
+    { id: 'dark',  name: 'Dark',  appearance: 'dark'  },
+];
+
+/** Theme used for the OS-light case when a profile is on 'auto'. */
+export const AUTO_THEME_LIGHT = 'light';
+/** Theme used for the OS-dark case when a profile is on 'auto'. */
+export const AUTO_THEME_DARK = 'dark';

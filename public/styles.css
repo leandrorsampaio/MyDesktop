@@ -1,5 +1,8 @@
 /* CSS Custom Properties - Design System */
 :root {
+    /* Base = the 'light' theme. Other themes are [data-theme="<id>"] overrides. */
+    color-scheme: light;
+
     /* === Color System === */
     --color-bg-primary: #ffffff;
     --color-bg-secondary: #f8f9fa;
@@ -111,6 +114,25 @@
     --archive-col-category: 1.5;
     --archive-col-date: 1;
     --archive-col-actions: 104px;
+}
+
+/* ==========================================================================
+   THEME: Paper (warm light — jules/Artemis paper palette)
+   --------------------------------------------------------------------------
+   A warm light appearance. Overrides ONLY surface/text/border tokens, so it
+   keeps the app's blue accents, epic tints, and shadows from :root (the user
+   liked the existing buttons). It is a 'light' theme — light epic tints apply.
+   ========================================================================== */
+[data-theme="paper"] {
+    color-scheme: light;
+    --color-bg-primary: #f5f2ed;     /* cards, modals, inputs */
+    --color-bg-secondary: #e8e4df;   /* page background */
+    --color-bg-tertiary: #ddd8d2;    /* hover, secondary surfaces */
+    --color-border: #c4bfb7;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5a564f;
+    --color-text-tertiary: #7d7870;
+    --color-bg-inverse: #2c2924;     /* warm dark tooltip bubble */
 }
 
 /* ==========================================================================

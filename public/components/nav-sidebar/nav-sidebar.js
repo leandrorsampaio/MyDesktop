@@ -8,7 +8,7 @@
  *   alias  — profile alias, used to build href values on nav links
  *   page   — active page name ('board'|'dashboard'|'backlog'|'archive'|'reports'|'ai'|'config')
  */
-import { getStoredTheme, setStoredTheme, applyTheme } from '../../js/utils.js';
+import { getStoredTheme, setStoredTheme, applyTheme, getThemeAppearance, defaultThemeFor } from '../../js/utils.js';
 
 class NavSidebar extends HTMLElement {
     static templateCache = null;
@@ -88,15 +88,16 @@ class NavSidebar extends HTMLElement {
             || '';
     }
 
-    _currentTheme() {
-        return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    _currentAppearance() {
+        return getThemeAppearance(document.documentElement.getAttribute('data-theme'));
     }
 
     _toggleTheme() {
-        // The rail toggle is the quick switch: it always sets an explicit
-        // light/dark (overriding 'auto'). 'Auto' lives in Config → General.
-        const next = this._currentTheme() === 'dark' ? 'light' : 'dark';
-        setStoredTheme(this._alias(), next);  // fires 'themechanged' → _syncThemeToggle
+        // Quick light/dark switch: jump to the DEFAULT theme of the opposite
+        // appearance (overriding 'auto'). Specific themes (e.g. Paper) are
+        // chosen in Config → General → Appearance.
+        const target = defaultThemeFor(this._currentAppearance() === 'dark' ? 'light' : 'dark');
+        setStoredTheme(this._alias(), target);  // fires 'themechanged' → _syncThemeToggle
     }
 
     _onMediaChange() {
@@ -107,7 +108,7 @@ class NavSidebar extends HTMLElement {
     _syncThemeToggle() {
         const btn = this.shadowRoot.querySelector('.js-themeToggle');
         if (!btn) return;
-        const dark = this._currentTheme() === 'dark';
+        const dark = this._currentAppearance() === 'dark';
         const label = dark ? 'Switch to light mode' : 'Switch to dark mode';
         btn.querySelector('svg-icon')?.setAttribute('icon', dark ? 'sun' : 'moon');
         btn.setAttribute('title', label);

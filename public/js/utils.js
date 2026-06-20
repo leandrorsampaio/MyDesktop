@@ -6,6 +6,8 @@
  * If you modify getWeekNumber or toCamelCase here, also update server.js.
  */
 
+import { THEMES, AUTO_THEME_LIGHT, AUTO_THEME_DARK } from './constants.js';
+
 /**
  * Escapes HTML special characters to prevent XSS attacks.
  * @param {string} text - The text to escape
@@ -122,19 +124,36 @@ export function getDeadlineLevel(isoString, thresholds) {
 }
 
 /* ============================================================================
- * Theme — profile-scoped.
+ * Theme — profile-scoped, flat named themes.
  *
- * Stored per profile at localStorage `${alias}:theme` with values
- * 'light' | 'dark' | 'auto'. 'auto' (the default when unset) follows the OS
- * `prefers-color-scheme`. The resolved theme is applied as `data-theme` on
- * <html>; the CSS custom properties under `[data-theme="dark"]` do the rest.
+ * A theme is a single appearance (see constants.js THEMES); it simply IS light
+ * or dark. Stored per profile at localStorage `${alias}:theme` as a theme id
+ * (e.g. 'light' | 'paper' | 'dark') OR 'auto'. 'auto' (the default when unset)
+ * follows the OS `prefers-color-scheme`, mapping to AUTO_THEME_LIGHT/DARK. The
+ * resolved theme id is applied as `data-theme` on <html>; the matching
+ * `[data-theme="<id>"]` token block does the rest (id 'light' = base :root).
  *
  * Source of truth for this logic. The inline bootstrap in index.html duplicates
- * only the *resolve* step (read key → fall back to OS) because it must run
- * before ES modules load to avoid a flash of the wrong theme.
+ * only the *resolve* step (read key → explicit id, else fall back to OS) because
+ * it must run before ES modules load to avoid a flash of the wrong theme.
  * ========================================================================== */
 
-/** Reads a profile's stored theme choice. Returns 'light' | 'dark' | 'auto'. */
+/** The theme object for an id, or null. */
+export function getThemeById(id) {
+    return THEMES.find(t => t.id === id) || null;
+}
+
+/** A theme id's appearance ('light' | 'dark'); defaults to 'light' for unknowns. */
+export function getThemeAppearance(id) {
+    return getThemeById(id)?.appearance || 'light';
+}
+
+/** The default theme id for an appearance — used by the rail light/dark toggle. */
+export function defaultThemeFor(appearance) {
+    return appearance === 'dark' ? AUTO_THEME_DARK : AUTO_THEME_LIGHT;
+}
+
+/** Reads a profile's stored theme choice. Returns a theme id or 'auto'. */
 export function getStoredTheme(alias) {
     try {
         return localStorage.getItem(`${alias}:theme`) || 'auto';
@@ -148,26 +167,27 @@ export function systemPrefersDark() {
     return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
 
-/** Resolves a stored value ('light'|'dark'|'auto') to an applied theme ('light'|'dark'). */
+/** Resolves a stored value (theme id or 'auto') to a concrete theme id. */
 export function resolveTheme(value) {
-    return value === 'light' || value === 'dark'
-        ? value
-        : (systemPrefersDark() ? 'dark' : 'light');
+    if (value && value !== 'auto' && getThemeById(value)) return value;
+    return systemPrefersDark() ? AUTO_THEME_DARK : AUTO_THEME_LIGHT;
 }
 
 /**
  * Applies the given profile's resolved theme to <html> and fires a
  * `themechanged` event on document so live UI (e.g. the rail toggle) can sync.
- * Returns the resolved theme ('light'|'dark').
+ * Returns the resolved theme id.
  */
 export function applyTheme(alias) {
-    const resolved = resolveTheme(getStoredTheme(alias));
-    document.documentElement.setAttribute('data-theme', resolved);
-    document.dispatchEvent(new CustomEvent('themechanged', { detail: { theme: resolved } }));
-    return resolved;
+    const id = resolveTheme(getStoredTheme(alias));
+    document.documentElement.setAttribute('data-theme', id);
+    document.dispatchEvent(new CustomEvent('themechanged', {
+        detail: { theme: id, appearance: getThemeAppearance(id) }
+    }));
+    return id;
 }
 
-/** Persists a theme choice ('light'|'dark'|'auto') for a profile and applies it. */
+/** Persists a theme choice (theme id or 'auto') for a profile and applies it. */
 export function setStoredTheme(alias, value) {
     try {
         localStorage.setItem(`${alias}:theme`, value);
