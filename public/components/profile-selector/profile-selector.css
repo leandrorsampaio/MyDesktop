@@ -16,7 +16,7 @@
     height: 40px;
     border-radius: 50%;
     border: none;
-    color: #fff;
+    color: var(--color-text-on-accent);
     font-weight: var(--font-weight-bold);
     font-size: var(--text-lg);
     font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
@@ -29,7 +29,7 @@
 
 .profileSelector__btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(var(--color-shadow-rgb), 0.15);
 }
 
 .profileSelector__name {
@@ -85,11 +85,11 @@
 }
 
 .profileSelector__dropdownItem:hover {
-    background: rgba(26, 115, 232, 0.06);
+    background: rgba(var(--color-accent-primary-rgb), 0.06);
 }
 
 .profileSelector__dropdownItem.--active {
-    background: rgba(26, 115, 232, 0.08);
+    background: rgba(var(--color-accent-primary-rgb), 0.08);
     font-weight: var(--font-weight-semibold);
 }
 
@@ -97,7 +97,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    color: #fff;
+    color: var(--color-text-on-accent);
     font-weight: var(--font-weight-bold);
     font-size: var(--text-sm);
     display: flex;
@@ -126,5 +126,5 @@
 
 .profileSelector__dropdownNewTab:hover {
     color: var(--color-accent-primary, #1a73e8);
-    background: rgba(26, 115, 232, 0.08);
+    background: rgba(var(--color-accent-primary-rgb), 0.08);
 }

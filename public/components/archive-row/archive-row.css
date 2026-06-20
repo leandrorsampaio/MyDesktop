@@ -120,7 +120,7 @@
 .archiveRow__restoreBtn:hover {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
-    color: #fff;
+    color: var(--color-text-on-accent);
 }
 
 .archiveRow__expandBtn {

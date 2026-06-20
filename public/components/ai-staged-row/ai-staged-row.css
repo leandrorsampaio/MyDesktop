@@ -123,11 +123,11 @@
 .aiStagedRow__btn--board:hover {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
-    color: #fff;
+    color: var(--color-text-on-accent);
 }
 
 .aiStagedRow__btn--delete:hover {
     background: var(--color-accent-error);
     border-color: var(--color-accent-error);
-    color: #fff;
+    color: var(--color-text-on-accent);
 }

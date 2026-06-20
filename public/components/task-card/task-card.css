@@ -31,7 +31,7 @@
 
 :host(:hover) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 :host([hidden]) {
@@ -109,7 +109,7 @@
 }
 
 .taskCard__star {
-    color: #f59e0b;
+    color: var(--color-accent-warning);
     font-size: var(--text-md);
     flex-shrink: 0;
 }
@@ -189,13 +189,13 @@
 
 .taskCard__deadline.--overdue,
 .taskCard__deadline.--urgent {
-    background: rgba(239, 68, 68, 0.12);
-    color: #dc2626;
+    background: rgba(var(--color-accent-error-rgb), 0.12);
+    color: var(--color-accent-error-strong);
 }
 
 .taskCard__deadline.--warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #b45309;
+    background: rgba(var(--color-accent-warning-rgb), 0.15);
+    color: var(--color-accent-warning-text);
 }
 
 .taskCard__deadline.--upcoming {

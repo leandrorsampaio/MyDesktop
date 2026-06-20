@@ -74,5 +74,5 @@ input[type="checkbox"] {
 
 .dailyChecklist__link:hover {
     opacity: 1;
-    background: rgba(26, 115, 232, 0.08);
+    background: rgba(var(--color-accent-primary-rgb), 0.08);
 }

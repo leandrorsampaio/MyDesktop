@@ -124,5 +124,5 @@
 .backlogRow__btn--promote:hover {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
-    color: #fff;
+    color: var(--color-text-on-accent);
 }

@@ -40,7 +40,7 @@
     border: none;
     border-radius: var(--radius-md);
     background-color: var(--color-accent-primary);
-    color: #ffffff;
+    color: var(--color-text-on-accent);
     font-size: var(--text-base);
     font-weight: var(--font-weight-semibold);
 }
@@ -94,7 +94,7 @@
 }
 
 .column__list.--dragOver {
-    background-color: rgba(26, 115, 232, 0.04);
+    background-color: rgba(var(--color-accent-primary-rgb), 0.04);
     border-radius: var(--radius-md);
 }
 
