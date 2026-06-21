@@ -120,7 +120,7 @@ Plus an internal style-guide page at `/:alias/design-system` (linked from the na
 
 Backend includes: optimistic UI, rate limiting, input validation, race-condition lock, AI provider abstraction (Anthropic + OpenAI-compatible), 300+ tests via `node:test` (don't hardcode the exact count here — run `npm test` for the current number).
 
-**Dark mode shipped in v2.41.0** — per-profile theme (`light`/`dark`/`auto`) via `data-theme` on `<html>`, toggle in the nav rail + selector in Config → General. The full *dark-first* redesign in [VISION.md](VISION.md) is still the larger milestone; what ships now is a baseline warm dark theme with light as the default.
+**Theming shipped in v2.41.0** — flat named themes (registry in `constants.js` `THEMES`, each tagged light/dark) applied via `data-theme` on `<html>`, chosen **per profile** (or Auto/follow-system). Six built-ins: Light, Paper, Dark, Slate, Dim, High Contrast. Rail toggle + Config → General → Appearance selector. See [SPEC.md](SPEC.md) § Theming. User-created themes were deliberately *not* built (single-user tool; curated set + a documented `[data-theme]` escape hatch). The full *dark-first* redesign in [VISION.md](VISION.md) is still the larger design milestone.
 
 **Not yet built:** the dark-first visual redesign, streaming AI responses, drag-resize handle between AI chat/staged sections.
 

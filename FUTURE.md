@@ -4,6 +4,20 @@ Backlog of nice-to-have features deferred from active development. Review before
 
 ---
 
+## User-created themes
+**Added:** 2026-06-20 (after the theming system shipped in v2.41.0)
+
+The theming system uses a flat registry of named themes (`constants.js` `THEMES`, each tagged light/dark) applied via `data-theme` token blocks. Letting *users* create themes was considered and **deliberately not built**: this is a single-user local tool with no theme-sharing ecosystem, a GUI colour editor fights the "Functional Calm / curated" philosophy, and it's a contrast (WCAG) footgun. Power users already have a zero-maintenance escape hatch — add a `[data-theme="mine"]` block to `styles.css` + an entry to `THEMES`.
+
+Only revisit if the product ever becomes multi-user / shareable / gains a theme gallery. A real build would need: themes as **data** (JSON token sets) rather than CSS blocks, a theme editor (name + light/dark flag + the ~12 key colour pickers), a registry/storage layer, runtime token application to `:root`, the FOUC bootstrap reading the active theme's tokens, and contrast validation.
+
+Smaller, safe follow-ups that don't need the editor:
+- More curated themes (just another `[data-theme]` block + `THEMES` entry).
+- Configurable **Auto** pairing (per profile, pick which theme fills the OS-light vs OS-dark slot — currently fixed to the `light`/`dark` built-ins; VS Code's preferred-light/preferred-dark model).
+- `<meta name="theme-color">` synced to the active theme for mobile browser chrome.
+
+---
+
 ## Keyboard shortcuts — remaining tiers
 **Updated:** 2026-06-12 — Tiers 1–2 SHIPPED in v2.40.0 (`shortcuts.js`): `n` quick-add, `g`-chords for page navigation, `?` cheat-sheet, `j/k/h/l` + arrow card focus, `Enter` to open, `Cmd/Ctrl+←/→` card move (the keyboard drag alternative).
 

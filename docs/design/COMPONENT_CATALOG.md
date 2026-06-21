@@ -608,7 +608,8 @@ Size: default. Three settings sections. All profile-scoped, stored in localStora
 
 ```
 Section 0: Appearance (v2.41.0)
-  Radio: Light / Dark / Auto (follow system) — per profile, applies instantly
+  Radio: Auto (follow system) / Light / Paper / Dark / Slate / Dim / High Contrast
+         — per profile, applies instantly; generated from the THEMES registry
 
 Section 1: Interface Visibility
   Checkbox: Show Daily Checklist (default: true)
