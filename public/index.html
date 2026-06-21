@@ -70,17 +70,21 @@
     </div><!-- /.appShell -->
 
     <!-- Add/Edit Task Modal -->
-    <modal-dialog class="js-taskModal">
+    <modal-dialog class="js-taskModal" size="large">
         <h2 slot="title" class="js-modalTitle">Add Task</h2>
         <form class="taskForm js-taskForm">
+            <div class="taskForm__grid">
+            <div class="taskForm__col taskForm__col--main">
             <div class="taskForm__group">
                 <label>Title *</label>
                 <input type="text" class="js-taskTitle" required placeholder="Enter task title" />
             </div>
-            <div class="taskForm__group">
+            <div class="taskForm__group taskForm__group--grow">
                 <label>Description</label>
-                <textarea class="js-taskDescription" placeholder="Enter task description" rows="4"></textarea>
+                <textarea class="js-taskDescription" placeholder="Enter task description"></textarea>
             </div>
+            </div>
+            <div class="taskForm__col taskForm__col--side">
             <div class="taskForm__group taskForm__checkboxGroup">
                 <label>
                     <input type="checkbox" class="js-taskPriority" />
@@ -146,6 +150,8 @@
                     <!-- Log entries will be rendered here -->
                 </ul>
             </div>
+            </div><!-- /taskForm__col--side -->
+            </div><!-- /taskForm__grid -->
 
             <div class="modal__actions js-taskModalActions">
                 <!-- Buttons are now dynamically inserted by app.js -->

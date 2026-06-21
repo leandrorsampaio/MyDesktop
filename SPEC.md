@@ -642,7 +642,7 @@ All CRUD editors (categories, epics, profiles, columns, checklist, AI config, ge
 
 | JS hook                          | Purpose                          | Size    | Trigger                                    |
 |----------------------------------|----------------------------------|---------|--------------------------------------------|
-| `.js-taskModal`                  | Add / Edit / Clone task          | default | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add; also reused by backlog + AI pages |
+| `.js-taskModal`                  | Add / Edit / Clone task          | large   | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add; also reused by backlog + AI pages. Two-column form (`.taskForm__grid`): left = title + description (textarea fills height), right = priority/category/epic/schedule/log; stacks below 720px |
 | `.js-reportsModal`               | View a report                    | large   | Clicking a row on the Reports page                     |
 | `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                            |
 | `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in config page → Epics                          |

@@ -72,35 +72,6 @@
     padding: var(--space-12) 14px 14px 14px;
 }
 
-.taskCard__handle {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--space-2);
-    cursor: grab;
-    opacity: 0.3;
-    transition: opacity 0.15s;
-    flex-shrink: 0;
-    color: var(--color-text-tertiary);
-}
-
-:host(:hover) .taskCard__handle {
-    opacity: 0.6;
-}
-
-.taskCard__handleDots {
-    display: grid;
-    grid-template-columns: repeat(2, 4px);
-    gap: 3px;
-}
-
-.taskCard__handleDots span {
-    width: 4px;
-    height: 4px;
-    background-color: currentColor;
-    border-radius: 50%;
-}
-
 .taskCard__content {
     flex: 1;
     min-width: 0;

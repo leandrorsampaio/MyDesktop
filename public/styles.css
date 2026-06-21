@@ -942,6 +942,54 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
+/* Two-column layout: left = title + description (textarea fills height),
+   right = priority, category, epic, schedule, log. Action buttons span below. */
+.taskForm__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-32);
+    /* default align-items: stretch — the left column matches the taller right
+       column's height so the description textarea can grow to fill it */
+}
+
+.taskForm__col {
+    min-width: 0;
+}
+
+.taskForm__col--main {
+    display: flex;
+    flex-direction: column;
+}
+
+.taskForm__group--grow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.taskForm__group--grow textarea {
+    flex: 1;
+    min-height: 180px;
+    resize: vertical;
+}
+
+@media (max-width: 720px) {
+    .taskForm__grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .taskForm__group--grow {
+        flex: none;
+    }
+
+    .taskForm__group--grow textarea {
+        flex: none;
+        min-height: 120px;
+    }
+}
+
 .taskForm__group {
     margin-bottom: var(--space-24);
 }
