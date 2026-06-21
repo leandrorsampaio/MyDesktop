@@ -116,11 +116,17 @@ export async function initConfigPage(pageViewEl, { elements }) {
                             <h4 class="generalConfig__sectionTitle">Appearance</h4>
                             <p class="generalConfig__panelHint" style="margin-bottom:12px">Theme for this profile — applies instantly. "Auto" follows your system setting (light/dark).</p>
                             <div class="generalConfig__options">
-                                ${[{ value: 'auto', label: 'Auto (follow system)' }, ...THEMES.map(t => ({ value: t.id, label: t.name }))]
-                                    .map(o => `<label class="generalConfig__option">
+                                ${[{ value: 'auto', label: 'Auto (follow system)', auto: true }, ...THEMES.map(t => ({ value: t.id, label: t.name }))]
+                                    .map(o => {
+                                        const swatch = o.auto
+                                            ? `<span class="themeSwatch --auto" aria-hidden="true"><span class="themeSwatch__half" data-theme="light"></span><span class="themeSwatch__half" data-theme="dark"></span></span>`
+                                            : `<span class="themeSwatch" data-theme="${escapeHtml(o.value)}" aria-hidden="true"><span class="themeSwatch__band--primary"></span><span class="themeSwatch__band--secondary"></span><span class="themeSwatch__band--tertiary"></span></span>`;
+                                        return `<label class="generalConfig__option">
                                     <input type="radio" name="cfgTheme" value="${escapeHtml(o.value)}">
+                                    ${swatch}
                                     <span>${escapeHtml(o.label)}</span>
-                                </label>`).join('')}
+                                </label>`;
+                                    }).join('')}
                             </div>
                         </div>
                         <div class="generalConfig__section">

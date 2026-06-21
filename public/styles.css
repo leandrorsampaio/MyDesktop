@@ -1,6 +1,9 @@
 /* CSS Custom Properties - Design System */
-:root {
-    /* Base = the 'light' theme. Other themes are [data-theme="<id>"] overrides. */
+/* Base = the 'light' theme. The [data-theme="light"] alias lets any element
+   (e.g. a theme-preview swatch) opt into light tokens regardless of the active
+   theme. Other themes are [data-theme="<id>"] overrides below. */
+:root,
+[data-theme="light"] {
     color-scheme: light;
 
     /* === Color System === */
@@ -2176,6 +2179,32 @@ body {
     font-size: 15px;
     color: var(--color-text-primary);
 }
+
+/* Theme preview swatch in the Appearance selector — equal-width colour bands.
+   Each swatch carries data-theme="<id>" so its var(--color-*) resolve to THAT
+   theme's tokens (the [data-theme] blocks are attribute selectors, so they
+   apply to any element, not just <html>). Bands show the three background
+   tokens; Auto shows a light/dark split instead. Decorative (aria-hidden). */
+.themeSwatch {
+    display: flex;
+    width: 34px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+}
+
+.themeSwatch > * {
+    flex: 1;
+}
+
+.themeSwatch__band--primary   { background: var(--color-bg-primary); }
+.themeSwatch__band--secondary { background: var(--color-bg-secondary); }
+.themeSwatch__band--tertiary  { background: var(--color-bg-tertiary); }
+
+/* Auto: each half carries its own data-theme (light + dark defaults) */
+.themeSwatch__half { background: var(--color-bg-secondary); }
 
 .generalConfig__option input[type="checkbox"] {
     width: 20px;
