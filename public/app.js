@@ -726,6 +726,20 @@ import {
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
 
+        // Epic pills are toggleable: clicking the selected epic again clears the
+        // selection (= no epic). Radios don't natively un-check, so we capture
+        // the pre-click state on mousedown and un-check on click if it was set.
+        if (elements.epicPills) {
+            elements.epicPills.addEventListener('mousedown', (e) => {
+                const radio = e.target.closest('.taskForm__epicPill')?.querySelector('input');
+                if (radio) radio._wasChecked = radio.checked;
+            });
+            elements.epicPills.addEventListener('click', (e) => {
+                const radio = e.target.closest('.taskForm__epicPill')?.querySelector('input');
+                if (radio && radio._wasChecked) radio.checked = false;
+            });
+        }
+
         // Inline-editable task title (contenteditable heading): keep it
         // single-line, plain-text, and capped at the title length.
         const TASK_TITLE_MAX = 200; // mirrors the server-side title length limit

@@ -560,9 +560,10 @@ export function renderReportSection(title, taskList) {
 
 
 /**
- * Renders the clickable epic pills in the task modal (a "No epic" pill plus one
- * per epic, each a colour dot + name). Single-select; the checked pill shows an
- * accent border. Mirrors the category pill pattern.
+ * Renders the clickable epic pills in the task modal — one per epic, each filled
+ * with the task-card epic-bar colour standard (tint + colour label). Toggleable
+ * single-select: clicking the selected epic again clears it (no epic); the
+ * toggle-off is wired in app.js. No selection = no epic.
  * @param {HTMLElement} container - The container element (.js-epicPills)
  * @param {string} selectedEpicId - The currently selected epic ID ('' = none)
  */
@@ -570,29 +571,27 @@ export function renderEpicPills(container, selectedEpicId) {
     const sel = selectedEpicId || null;
     container.innerHTML = '';
 
-    const addPill = (value, label, color) => {
+    const addPill = (epic) => {
         const lbl = document.createElement('label');
         lbl.className = 'taskForm__epicPill';
         const radio = document.createElement('input');
         radio.type = 'radio';
         radio.name = 'task-epic';
-        radio.value = value;
-        if ((value || null) === sel) radio.checked = true;
+        radio.value = epic.id;
+        if (epic.id === sel) radio.checked = true;
         const span = document.createElement('span');
-        if (color) {
-            const dot = document.createElement('span');
-            dot.className = 'taskForm__epicDot';
-            dot.style.backgroundColor = color;
-            span.appendChild(dot);
-        }
-        span.appendChild(document.createTextNode(label));
+        // Same colour standard as the task-card epic bar: the hue flows in as
+        // --epic-color and CSS does the tint + label colour (color-mix).
+        span.style.setProperty('--epic-color', epic.color);
+        span.textContent = epic.name;
         lbl.appendChild(radio);
         lbl.appendChild(span);
         container.appendChild(lbl);
     };
 
-    addPill('', 'No epic', null);
-    epics.forEach(epic => addPill(epic.id, epic.name, epic.color));
+    // No "No epic" option — the pills toggle: clicking the selected epic again
+    // clears it (handled in app.js). No selection = no epic.
+    epics.forEach(addPill);
 }
 
 /**

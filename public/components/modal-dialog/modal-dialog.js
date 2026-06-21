@@ -58,6 +58,7 @@ class ModalDialog extends HTMLElement {
             document.removeEventListener('keydown', this._boundOnTab);
             const idx = ModalDialog._openStack.indexOf(this);
             if (idx !== -1) ModalDialog._openStack.splice(idx, 1);
+            ModalDialog._syncBodyScroll();
 
             // Restore focus to where the user was before the modal opened
             if (this._restoreFocusTo && typeof this._restoreFocusTo.focus === 'function') {
@@ -68,6 +69,7 @@ class ModalDialog extends HTMLElement {
             document.addEventListener('keydown', this._boundOnEsc);
             document.addEventListener('keydown', this._boundOnTab);
             ModalDialog._openStack.push(this);
+            ModalDialog._syncBodyScroll();
             this._applyDialogAria();
             this._restoreFocusTo = document.activeElement;
             this._focusInitial();
@@ -80,6 +82,13 @@ class ModalDialog extends HTMLElement {
         document.removeEventListener('keydown', this._boundOnTab);
         const idx = ModalDialog._openStack.indexOf(this);
         if (idx !== -1) ModalDialog._openStack.splice(idx, 1);
+        ModalDialog._syncBodyScroll();
+    }
+
+    /** Locks page scroll while any modal is open, restores it when none are.
+     * Stack-based so stacked modals don't unlock early. */
+    static _syncBodyScroll() {
+        document.body.style.overflow = ModalDialog._openStack.length > 0 ? 'hidden' : '';
     }
 
     open() {

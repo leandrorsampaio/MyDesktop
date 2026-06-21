@@ -81,24 +81,25 @@
             </div>
             </div>
             <div class="taskForm__col taskForm__col--side">
-            <div class="taskForm__group taskForm__checkboxGroup">
-                <label>
-                    <input type="checkbox" class="js-taskPriority" />
-                    <span class="taskForm__priorityLabel">Priority Task</span>
-                </label>
-            </div>
-
             <div class="taskForm__group">
-                <label>Category</label>
-                <div class="taskForm__categorySelector js-categoryPills">
-                    <!-- Category pills rendered dynamically by JS -->
-                </div>
+                <label class="taskForm__priorityToggle">
+                    <input type="checkbox" class="js-taskPriority" />
+                    <svg-icon icon="star" size="20"></svg-icon>
+                    <span>Priority task</span>
+                </label>
             </div>
 
             <div class="taskForm__group">
                 <label>Epic</label>
                 <div class="taskForm__epicSelector js-epicPills">
                     <!-- Epic pills rendered dynamically by JS -->
+                </div>
+            </div>
+
+            <div class="taskForm__group">
+                <label>Category</label>
+                <div class="taskForm__categorySelector js-categoryPills">
+                    <!-- Category pills rendered dynamically by JS -->
                 </div>
             </div>
 

@@ -51,7 +51,7 @@
 
     /* Epic palette rendering — tuned per theme so the fixed 20 epic colours stay
        legible on either background. Light = the original 12% tint + raw colour. */
-    --epic-tint: 12%;          /* epic colour → background-tint strength */
+    --epic-tint: 16%;          /* epic colour → background-tint strength */
     --epic-lighten: 0%;        /* white mixed into the epic colour (text + fill) */
     --epic-ring: transparent;  /* delineates colour circles (avatars, swatches) */
 
@@ -182,7 +182,7 @@
     /* Overlay + inverse + epic rendering for dark surfaces */
     --color-overlay: rgba(0, 0, 0, 0.6);
     --color-text-inverse: #e8e4df;
-    --epic-tint: 22%;
+    --epic-tint: 28%;
     --epic-lighten: 40%;
     --epic-ring: rgba(255, 255, 255, 0.16);
 }
@@ -251,6 +251,9 @@ body {
     line-height: 1.6;
     font-weight: var(--font-weight-regular);
     transition: background-color 0.3s ease, color 0.3s ease;
+    /* Reserve the scrollbar gutter so locking scroll (when a modal opens)
+       doesn't shift the page sideways. */
+    scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1059,24 +1062,34 @@ body {
     color: var(--color-text-tertiary);
 }
 
-.taskForm__checkboxGroup label {
-    display: flex;
+/* Priority toggle — a star (hidden checkbox); muted when off, yellow when on */
+.taskForm__priorityToggle {
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-12);
+    gap: var(--space-8);
     cursor: pointer;
-}
-
-.taskForm__checkboxGroup input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--color-accent-primary);
-    cursor: pointer;
-}
-
-.taskForm__priorityLabel {
+    user-select: none;
     font-size: 15px;
-    color: var(--color-text-primary);
     font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.taskForm__priorityToggle input[type="checkbox"] {
+    display: none;
+}
+
+.taskForm__priorityToggle svg-icon {
+    color: var(--color-text-tertiary);
+    transition: color 0.15s, transform 0.1s;
+}
+
+.taskForm__priorityToggle:hover svg-icon {
+    color: var(--color-text-secondary);
+}
+
+.taskForm__priorityToggle input[type="checkbox"]:checked ~ svg-icon {
+    color: var(--color-accent-warning);
+    transform: scale(1.1);
 }
 
 .taskForm__categorySelector {
@@ -1125,8 +1138,8 @@ body {
     background: var(--color-accent-primary-hover);
 }
 
-/* Epic pills — clickable list (like category pills); selected shows a border.
-   Each pill is a colour dot + name; "No epic" has no dot. */
+/* Epic pills — clickable, toggleable single-select list (click again to clear).
+   Each pill uses the task-card epic-bar colour standard; selection via opacity. */
 .taskForm__epicSelector {
     display: flex;
     flex-wrap: wrap;
@@ -1143,40 +1156,32 @@ body {
     display: none;
 }
 
+/* Same colour standard as the task-card epic bar: a tinted background + the
+   epic colour as the label (with dark-mode lightening via --epic-lighten).
+   No border — selection is conveyed purely by opacity. */
 .taskForm__epicPill span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: inline-block;
     padding: var(--space-6) var(--space-12);
     font-size: var(--text-md);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-semibold);
     font-family: inherit;
-    color: var(--color-text-secondary);
-    background: var(--color-bg-tertiary);
-    border: 2px solid transparent;
     border-radius: var(--radius-sm);
-    transition: all 0.15s ease;
+    --epic-fill: color-mix(in srgb, var(--epic-color, currentColor), #fff var(--epic-lighten, 0%));
+    color: var(--epic-fill);
+    background: color-mix(in srgb, var(--epic-fill) var(--epic-tint, 12%), transparent);
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
     text-transform: none;
     letter-spacing: 0;
     cursor: pointer;
 }
 
 .taskForm__epicPill span:hover {
-    background: var(--color-border);
+    opacity: 0.75;
 }
 
 .taskForm__epicPill input[type="radio"]:checked+span {
-    border-color: var(--color-accent-primary);
-    background: rgba(var(--color-accent-primary-rgb), 0.08);
-    color: var(--color-text-primary);
-}
-
-.taskForm__epicDot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    box-shadow: inset 0 0 0 1px var(--epic-ring);
+    opacity: 1;
 }
 
 .taskForm__log {

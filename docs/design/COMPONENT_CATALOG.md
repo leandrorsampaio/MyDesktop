@@ -519,9 +519,9 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
     .taskForm__col--main           ← left column
       .taskForm__group--grow       ← Description textarea (fills column height, max 2000 chars)
     .taskForm__col--side           ← right column
-      .taskForm__checkboxGroup     ← Priority checkbox
+      .taskForm__priorityToggle    ← Priority STAR toggle (hidden checkbox; star is muted when off, yellow when on)
+      .taskForm__epicSelector      ← clickable epic pills using the task-card epic-bar colour standard (tinted bg + epic-colour label via color-mix); dimmed when unselected, full opacity when selected (no border); toggleable — click the selected epic again to clear it (no "No epic" pill)
       .taskForm__categorySelector  ← Pill-style radio buttons (one per category, grid layout)
-      .taskForm__epicSelector      ← clickable epic pills (colour dot + name; selected = accent border), incl. a "No epic" pill
       .taskForm__scheduleSection   ← Deadline section
         .taskForm__scheduleRow     ← datetime input + quick buttons (+1h, +3h, +1d, Morning, Next Monday)
         .taskForm__timeHint        ← calculated "in X hours/days" text
@@ -541,7 +541,7 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 
 **Category selector:** Grid of pill-shaped radio buttons. Each shows icon + category name. Selected pill has accent bg. Category 1 included but badge hidden on cards.
 
-**Epic pills (`.taskForm__epicSelector`):** clickable single-select list (same pattern as the category pills, not a dropdown). A "No epic" pill plus one per epic (colour dot + name). The selected pill shows an accent border + subtle tint.
+**Epic pills (`.taskForm__epicSelector`):** clickable, **toggleable** single-select list (not a dropdown) — one pill per epic; clicking the selected epic again clears it (no epic), so there's no separate "No epic" pill. Default = nothing selected = no epic. Each pill uses the **same colour standard as the task-card epic bar** — a tinted background + the epic colour as the label (`--epic-color` set inline; CSS does the tint via `color-mix` with `--epic-tint`/`--epic-lighten`, so it adapts in dark mode). State (opacity only, no border): **unselected = 0.5** (dimmed), hover = 0.75, **selected = full opacity**. The toggle-off (radios don't natively un-check) is wired in `app.js` via a mousedown/click pair.
 
 **Quick datetime buttons:** `+1h`, `+3h`, `+1d`, `Morning` (next 9am), `Next Monday` (next Monday 9am). Click sets the datetime input value.
 
