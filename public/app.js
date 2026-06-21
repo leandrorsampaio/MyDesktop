@@ -81,7 +81,6 @@ import {
         // Task Modal
         taskModal: document.querySelector('.js-taskModal'),
         taskForm: document.querySelector('.js-taskForm'),
-        modalTitle: document.querySelector('.js-modalTitle'),
         taskTitle: document.querySelector('.js-taskTitle'),
         taskDescription: document.querySelector('.js-taskDescription'),
         taskPriority: document.querySelector('.js-taskPriority'),
@@ -726,6 +725,34 @@ import {
         // Task form: manual datetime input → update hints
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
+
+        // Inline-editable task title (contenteditable heading): keep it
+        // single-line, plain-text, and capped at the title length.
+        const TASK_TITLE_MAX = 200; // mirrors the server-side title length limit
+        if (elements.taskTitle) {
+            elements.taskTitle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    elements.taskTitle.blur();
+                }
+            });
+            elements.taskTitle.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text.replace(/\s+/g, ' ').trim());
+            });
+            elements.taskTitle.addEventListener('input', () => {
+                if (elements.taskTitle.textContent.length > TASK_TITLE_MAX) {
+                    elements.taskTitle.textContent = elements.taskTitle.textContent.slice(0, TASK_TITLE_MAX);
+                    const range = document.createRange();
+                    range.selectNodeContents(elements.taskTitle);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            });
+        }
 
         // Column delete confirmation is wired inside config-page.js.
         // Checklist editing also lives in config-page.js now (the old modal

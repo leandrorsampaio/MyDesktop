@@ -3,7 +3,7 @@
  * Handles all modal dialogs: task add/edit, reports, archived tasks, checklist, and confirmations.
  */
 
-import { DEFAULT_CATEGORY_ID } from './constants.js';
+import { DEFAULT_CATEGORY_ID, DEFAULT_TASK_TITLE } from './constants.js';
 import { escapeHtml, formatRelativeTime, toDatetimeLocalValue } from './utils.js';
 import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile, columns } from './state.js';
 import {
@@ -162,6 +162,23 @@ export function getSelectedCategory() {
 }
 
 /**
+ * Focuses the inline-editable task title heading. When `selectAll` is true the
+ * existing text is selected so typing replaces it (used for new + clone tasks).
+ * @param {HTMLElement} titleEl - the contenteditable title element
+ * @param {boolean} [selectAll=false]
+ */
+export function focusTaskTitle(titleEl, selectAll = false) {
+    titleEl.focus();
+    if (selectAll && window.getSelection) {
+        const range = document.createRange();
+        range.selectNodeContents(titleEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
+/**
  * Opens the add task modal.
  * @param {Object} elements - DOM element references
  * @param {Function} onDelete - Callback for delete button
@@ -169,8 +186,8 @@ export function getSelectedCategory() {
  */
 export function openAddTaskModal(elements, onDelete, onSubmit) {
     setEditingTaskId(null);
-    elements.modalTitle.textContent = 'Add Task';
     elements.taskForm.reset();
+    elements.taskTitle.textContent = DEFAULT_TASK_TITLE;
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, '');
@@ -184,7 +201,7 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     renderTaskModalActions(false, elements, onDelete, onSubmit);
 
     elements.taskModal.open();
-    elements.taskTitle.focus();
+    focusTaskTitle(elements.taskTitle, true);
 }
 
 /**
@@ -201,8 +218,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
     if (!task) return;
 
     setEditingTaskId(taskId);
-    elements.modalTitle.textContent = 'Edit Task';
-    elements.taskTitle.value = task.title;
+    elements.taskTitle.textContent = task.title;
     elements.taskDescription.value = task.description || '';
     elements.taskPriority.checked = task.priority || false;
     renderCategoryPills(elements.categoryPills);
@@ -241,7 +257,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
     renderTaskModalActions(true, elements, onDelete, onSubmit, onClone, onSendToBacklog);
 
     elements.taskModal.open();
-    elements.taskTitle.focus();
+    focusTaskTitle(elements.taskTitle);
 }
 
 /**
@@ -261,9 +277,8 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
     elements.taskModal.close();
 
     setEditingTaskId(null);
-    elements.modalTitle.textContent = 'Clone Task';
     elements.taskForm.reset();
-    elements.taskTitle.value = `(Clone) ${task.title}`;
+    elements.taskTitle.textContent = `(Clone) ${task.title}`;
     elements.taskDescription.value = task.description || '';
     elements.taskPriority.checked = task.priority || false;
     renderCategoryPills(elements.categoryPills);
@@ -292,7 +307,7 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
 
     requestAnimationFrame(() => {
         elements.taskModal.open();
-        elements.taskTitle.focus();
+        focusTaskTitle(elements.taskTitle, true);
     });
 }
 
@@ -310,7 +325,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
     return async function handleTaskFormSubmit(e) {
         e.preventDefault();
 
-        const title = elements.taskTitle.value.trim();
+        const title = elements.taskTitle.textContent.trim();
         const description = elements.taskDescription.value.trim();
         const priority = elements.taskPriority.checked;
         const category = getSelectedCategory();
@@ -604,10 +619,9 @@ export function getSelectedEpic() {
  */
 function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
     setEditingTaskId(null);
-    elements.modalTitle.textContent = title;
     elements.taskForm.reset();
 
-    elements.taskTitle.value       = titlePrefix + (stagedTask.title || '');
+    elements.taskTitle.textContent = titlePrefix + (stagedTask.title || '');
     elements.taskDescription.value = stagedTask.description || '';
     elements.taskPriority.checked  = stagedTask.priority || false;
 
@@ -658,7 +672,7 @@ function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
         e.preventDefault();
         cleanup();
         onSave({
-            title:       elements.taskTitle.value.trim(),
+            title:       elements.taskTitle.textContent.trim(),
             description: elements.taskDescription.value,
             priority:    elements.taskPriority.checked,
             epicId:      getSelectedEpic(),
@@ -673,7 +687,7 @@ function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
     cancelBtn.addEventListener('click', onCancel);
 
     elements.taskModal.open();
-    elements.taskTitle.focus();
+    focusTaskTitle(elements.taskTitle, true);
 }
 
 /**

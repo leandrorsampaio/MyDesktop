@@ -128,7 +128,7 @@ class ModalDialog extends HTMLElement {
         const selector = [
             'a[href]', 'button:not([disabled])', 'input:not([disabled])',
             'select:not([disabled])', 'textarea:not([disabled])',
-            'custom-button', 'custom-picker', '[tabindex]:not([tabindex="-1"])'
+            'custom-button', 'custom-picker', '[contenteditable="true"]', '[tabindex]:not([tabindex="-1"])'
         ].join(', ');
         const slotted = Array.from(this.querySelectorAll(selector))
             .filter(el => el.getClientRects().length > 0); // visible only

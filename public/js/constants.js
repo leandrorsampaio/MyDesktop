@@ -105,6 +105,13 @@ export const EPIC_COLORS = [
 ];
 
 // ===========================================
+// Task Defaults
+// ===========================================
+
+/** Default title for a brand-new task. Pre-selected on open so typing replaces it. */
+export const DEFAULT_TASK_TITLE = 'New task';
+
+// ===========================================
 // Deadline Configuration
 // ===========================================
 

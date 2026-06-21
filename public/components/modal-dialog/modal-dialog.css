@@ -78,6 +78,8 @@
     color: var(--color-text-primary, #111827);
     letter-spacing: -0.2px;
     margin: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .modal__closeBtn {

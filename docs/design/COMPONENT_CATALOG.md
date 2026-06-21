@@ -510,13 +510,13 @@ All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px)
 
 ### 6.2 Task Modal (Add / Edit / Clone)
 
-Size: large. The most complex modal. **Two-column layout** (`.taskForm__grid`, 1fr/1fr; stacks to one column below 720px): left column = title + description (the textarea grows to fill the column height); right column = the rest. Action buttons span full width below the grid.
+Size: large. The most complex modal. The **header is the inline-editable task title** (`.taskForm__title` — a `contenteditable` heading that replaces the old static "Add Task" label AND the body Title field; looks like a heading, click-to-edit, no input chrome; new tasks default to "New task" pre-selected). **Two-column body** (`.taskForm__grid`, 1fr/1fr; stacks to one column below 720px): left column = description (textarea grows to fill the column height); right column = the rest. Action buttons span full width below the grid.
 
 ```
+.taskForm__title (in modal header) ← inline-editable task title (contenteditable)
 .taskForm
   .taskForm__grid
     .taskForm__col--main           ← left column
-      .taskForm__group             ← Title input (required, max 200 chars)
       .taskForm__group--grow       ← Description textarea (fills column height, max 2000 chars)
     .taskForm__col--side           ← right column
       .taskForm__checkboxGroup     ← Priority checkbox

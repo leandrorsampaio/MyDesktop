@@ -942,6 +942,36 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
+/* Inline-editable task title — lives in the modal header (replaces the old
+   static "Add Task" label and the body Title field). Looks like a heading;
+   the whole area is click-to-edit; no input chrome — just a subtle hover. */
+.taskForm__title {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: var(--space-6) var(--space-8);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    border-radius: var(--radius-sm);
+    cursor: text;
+    outline: none;
+    transition: background-color 0.15s;
+    overflow-wrap: anywhere;
+}
+
+.taskForm__title:hover,
+.taskForm__title:focus {
+    background: var(--color-bg-tertiary);
+}
+
+.taskForm__title:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-tertiary);
+}
+
 /* Two-column layout: left = title + description (textarea fills height),
    right = priority, category, epic, schedule, log. Action buttons span below. */
 .taskForm__grid {
