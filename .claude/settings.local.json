@@ -42,7 +42,8 @@
       "Read(//Users/leandrorossisampaio/Desktop/**)",
       "Bash(ls -la jules-design/)",
       "Bash(find ~/Desktop -maxdepth 2 -iname \"*jules*\" -type d)",
-      "Bash(echo \"exit: $?  \\(no lines above = clean\\)\")"
+      "Bash(echo \"exit: $?  \\(no lines above = clean\\)\")",
+      "Bash(echo \"server pid $!\")"
     ]
   }
 }

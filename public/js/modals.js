@@ -612,11 +612,10 @@ export function getSelectedEpic() {
  * Internal helper: populates the task modal form with staged task data and opens it.
  * @param {Object} stagedTask
  * @param {Object} elements
- * @param {string} title - Modal title text
  * @param {string} titlePrefix - Prefix to prepend to task title (e.g. "(Clone) ")
  * @param {Function} onSave - Called with { title, description, priority, epicId, category, deadline }
  */
-function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
+function _openStagedTaskForm(stagedTask, elements, titlePrefix, onSave) {
     setEditingTaskId(null);
     elements.taskForm.reset();
 
@@ -697,7 +696,7 @@ function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
  * @param {{ onSave: Function }} opts
  */
 export function openEditStagedTaskModal(stagedTask, elements, { onSave }) {
-    _openStagedTaskForm(stagedTask, elements, 'Edit Staged Task', '', onSave);
+    _openStagedTaskForm(stagedTask, elements, '', onSave);
 }
 
 /**
@@ -709,5 +708,5 @@ export function openEditStagedTaskModal(stagedTask, elements, { onSave }) {
  * @param {{ onSave: Function }} opts
  */
 export function openCloneStagedTaskModal(stagedTask, elements, { onSave }) {
-    _openStagedTaskForm(stagedTask, elements, 'Clone Staged Task', '(Clone) ', onSave);
+    _openStagedTaskForm(stagedTask, elements, '(Clone) ', onSave);
 }
