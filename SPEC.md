@@ -546,7 +546,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Attributes:** `type` (`color`|`icon`|`list`), `placeholder`, `columns` (grid modes, default 5), `size="compact"` (toolbar use)
 - **JS API:** `setItems([{value, label, color?, disabled?}])`, `picker.value` (get/set), `picker.clear()`
 - **Event:** `change` → `CustomEvent({ detail: { value, label } })`, bubbles + composed
-- **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + category filter + task modal epic field (`type="list"`)
+- **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + category filter (`type="list"`). (The task-modal epic field is no longer a picker — it's a clickable pill list, `.taskForm__epicSelector`, like the category pills.)
 - **List item `icon` property:** optional; when set, renders an `<svg-icon>` before the label text (used by category filter dropdown)
 
 ### `<modal-dialog>`

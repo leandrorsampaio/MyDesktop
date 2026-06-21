@@ -1095,6 +1095,60 @@ body {
     background: var(--color-accent-primary-hover);
 }
 
+/* Epic pills — clickable list (like category pills); selected shows a border.
+   Each pill is a colour dot + name; "No epic" has no dot. */
+.taskForm__epicSelector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+}
+
+.taskForm__epicPill {
+    display: inline-flex !important;
+    margin-bottom: 0 !important;
+    cursor: pointer;
+}
+
+.taskForm__epicPill input[type="radio"] {
+    display: none;
+}
+
+.taskForm__epicPill span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--space-6) var(--space-12);
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-medium);
+    font-family: inherit;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-tertiary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+}
+
+.taskForm__epicPill span:hover {
+    background: var(--color-border);
+}
+
+.taskForm__epicPill input[type="radio"]:checked+span {
+    border-color: var(--color-accent-primary);
+    background: rgba(var(--color-accent-primary-rgb), 0.08);
+    color: var(--color-text-primary);
+}
+
+.taskForm__epicDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px var(--epic-ring);
+}
+
 .taskForm__log {
     background-color: var(--color-bg-secondary);
     border-radius: 12px;
@@ -1470,10 +1524,6 @@ body {
 /* ==========================================
    Block: taskForm - Epic Picker
    ========================================== */
-.taskForm__epicPicker {
-    width: 100%;
-}
-
 /* ==========================================
    Block: taskForm - Schedule Section
    ========================================== */

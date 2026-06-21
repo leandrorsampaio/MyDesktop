@@ -521,7 +521,7 @@ Size: large. The most complex modal. **Two-column layout** (`.taskForm__grid`, 1
     .taskForm__col--side           ← right column
       .taskForm__checkboxGroup     ← Priority checkbox
       .taskForm__categorySelector  ← Pill-style radio buttons (one per category, grid layout)
-      .taskForm__epicPicker        ← <custom-picker type="list"> for epic selection
+      .taskForm__epicSelector      ← clickable epic pills (colour dot + name; selected = accent border), incl. a "No epic" pill
       .taskForm__scheduleSection   ← Deadline section
         .taskForm__scheduleRow     ← datetime input + quick buttons (+1h, +3h, +1d, Morning, Next Monday)
         .taskForm__timeHint        ← calculated "in X hours/days" text
@@ -541,7 +541,7 @@ Size: large. The most complex modal. **Two-column layout** (`.taskForm__grid`, 1
 
 **Category selector:** Grid of pill-shaped radio buttons. Each shows icon + category name. Selected pill has accent bg. Category 1 included but badge hidden on cards.
 
-**Custom picker (epic):** Dropdown list. First option "No epic" (clears selection). Each item shows colour dot + epic name.
+**Epic pills (`.taskForm__epicSelector`):** clickable single-select list (same pattern as the category pills, not a dropdown). A "No epic" pill plus one per epic (colour dot + name). The selected pill shows an accent border + subtle tint.
 
 **Quick datetime buttons:** `+1h`, `+3h`, `+1d`, `Morning` (next 9am), `Next Monday` (next Monday 9am). Click sets the datetime input value.
 

@@ -105,8 +105,8 @@ import {
         // Privacy (appContainer always in DOM)
         appContainer: document.querySelector('.js-appContainer'),
 
-        // Task Epic dropdown
-        taskEpic: document.querySelector('.js-taskEpic'),
+        // Epic pills in task modal
+        epicPills: document.querySelector('.js-epicPills'),
 
         // Category pills in task modal
         categoryPills: document.querySelector('.js-categoryPills'),

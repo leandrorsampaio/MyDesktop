@@ -173,7 +173,7 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     elements.taskForm.reset();
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(DEFAULT_CATEGORY_ID);
-    populateTaskEpicSelect(elements.taskEpic, '');
+    renderEpicPills(elements.epicPills, '');
     elements.taskLogSection.style.display = 'none';
 
     elements.taskDeadline.value       = '';
@@ -207,7 +207,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
     elements.taskPriority.checked = task.priority || false;
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
-    populateTaskEpicSelect(elements.taskEpic, task.epicId || '');
+    renderEpicPills(elements.epicPills, task.epicId || '');
 
     // Render task log
     if (task.log && task.log.length > 0) {
@@ -268,7 +268,7 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
     elements.taskPriority.checked = task.priority || false;
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
-    populateTaskEpicSelect(elements.taskEpic, task.epicId || '');
+    renderEpicPills(elements.epicPills, task.epicId || '');
     elements.taskLogSection.style.display = 'none';
 
     if (task.deadline) {
@@ -314,7 +314,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
         const description = elements.taskDescription.value.trim();
         const priority = elements.taskPriority.checked;
         const category = getSelectedCategory();
-        const epicId = elements.taskEpic.value || null;
+        const epicId = getSelectedEpic();
         const deadline    = elements.taskDeadline.value ? new Date(elements.taskDeadline.value).toISOString() : null;
         const snoozeUntil = elements.taskSnooze.value   ? new Date(elements.taskSnooze.value).toISOString()   : null;
 
@@ -545,22 +545,48 @@ export function renderReportSection(title, taskList) {
 
 
 /**
- * Populates the epic picker in the task modal.
- * @param {HTMLElement} pickerEl - The custom-picker element
- * @param {string} selectedEpicId - The currently selected epic ID
+ * Renders the clickable epic pills in the task modal (a "No epic" pill plus one
+ * per epic, each a colour dot + name). Single-select; the checked pill shows an
+ * accent border. Mirrors the category pill pattern.
+ * @param {HTMLElement} container - The container element (.js-epicPills)
+ * @param {string} selectedEpicId - The currently selected epic ID ('' = none)
  */
-export function populateTaskEpicSelect(pickerEl, selectedEpicId) {
-    const items = epics.map(epic => ({
-        value: epic.id,
-        label: epic.name,
-        color: epic.color
-    }));
-    pickerEl.setItems(items);
-    if (selectedEpicId) {
-        pickerEl.value = selectedEpicId;
-    } else {
-        pickerEl.clear();
-    }
+export function renderEpicPills(container, selectedEpicId) {
+    const sel = selectedEpicId || null;
+    container.innerHTML = '';
+
+    const addPill = (value, label, color) => {
+        const lbl = document.createElement('label');
+        lbl.className = 'taskForm__epicPill';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'task-epic';
+        radio.value = value;
+        if ((value || null) === sel) radio.checked = true;
+        const span = document.createElement('span');
+        if (color) {
+            const dot = document.createElement('span');
+            dot.className = 'taskForm__epicDot';
+            dot.style.backgroundColor = color;
+            span.appendChild(dot);
+        }
+        span.appendChild(document.createTextNode(label));
+        lbl.appendChild(radio);
+        lbl.appendChild(span);
+        container.appendChild(lbl);
+    };
+
+    addPill('', 'No epic', null);
+    epics.forEach(epic => addPill(epic.id, epic.name, epic.color));
+}
+
+/**
+ * Gets the currently selected epic ID from the epic pills, or null.
+ * @returns {string|null}
+ */
+export function getSelectedEpic() {
+    const selected = document.querySelector('input[name="task-epic"]:checked');
+    return (selected && selected.value) ? selected.value : null;
 }
 
 
@@ -587,7 +613,7 @@ function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
 
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(stagedTask.category || DEFAULT_CATEGORY_ID);
-    populateTaskEpicSelect(elements.taskEpic, stagedTask.epicId || '');
+    renderEpicPills(elements.epicPills, stagedTask.epicId || '');
 
     elements.taskLogSection.style.display = 'none';
 
@@ -635,7 +661,7 @@ function _openStagedTaskForm(stagedTask, elements, title, titlePrefix, onSave) {
             title:       elements.taskTitle.value.trim(),
             description: elements.taskDescription.value,
             priority:    elements.taskPriority.checked,
-            epicId:      elements.taskEpic.value || null,
+            epicId:      getSelectedEpic(),
             category:    getSelectedCategory(),
             deadline:    elements.taskDeadline.value
                 ? new Date(elements.taskDeadline.value).toISOString()
