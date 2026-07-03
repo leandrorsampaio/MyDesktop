@@ -1957,7 +1957,7 @@
     "category": 5,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "mncchgncxlcix2v96",
-    "position": 0,
+    "position": 4,
     "log": [
       {
         "date": "2026-03-09",
@@ -2006,6 +2006,14 @@
       {
         "date": "2026-06-02",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to Done"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Done to Today"
       }
     ],
     "createdDate": "2026-03-09T17:55:02.449Z",
@@ -4263,8 +4271,8 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mncchgncxlcix2v96",
-    "position": 1,
+    "status": "todo",
+    "position": 6,
     "log": [
       {
         "date": "2026-05-19",
@@ -4293,6 +4301,10 @@
       {
         "date": "2026-06-04",
         "action": "Moved from Wait to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to To Do"
       }
     ],
     "createdDate": "2026-05-19T12:54:14.268Z",
@@ -4609,7 +4621,7 @@
     "category": 3,
     "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 0,
+    "position": 5,
     "log": [
       {
         "date": "2026-06-18",
@@ -4626,6 +4638,14 @@
       {
         "date": "2026-06-22",
         "action": "Moved from Today to Done"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from Done to Wait"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-06-18T20:40:57.951Z",
@@ -4639,12 +4659,32 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
+    "status": "mncchgncxlcix2v96",
     "position": 0,
     "log": [
       {
         "date": "2026-06-19",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-07-01",
+        "action": "Moved from Wait to Done"
+      },
+      {
+        "date": "2026-07-01",
+        "action": "Moved from Done to Wait"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Wait to Today"
       }
     ],
     "createdDate": "2026-06-19T00:05:42.626Z",
@@ -4658,12 +4698,32 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
+    "status": "done",
     "position": 1,
     "log": [
       {
         "date": "2026-06-19",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-06-23",
+        "action": "Moved from Wait to In Progress"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from In Progress to Today"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-06-30",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-06-19T01:17:57.438Z",
@@ -4677,12 +4737,16 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinl22lxnkra6pjt",
-    "status": "mncchgncxlcix2v96",
-    "position": 2,
+    "status": "done",
+    "position": 6,
     "log": [
       {
         "date": "2026-06-22",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to Done"
       }
     ],
     "createdDate": "2026-06-22T08:38:44.283Z",
@@ -4697,7 +4761,7 @@
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
     "status": "wait",
-    "position": 2,
+    "position": 0,
     "log": [
       {
         "date": "2026-06-22",
@@ -4715,12 +4779,16 @@
     "priority": false,
     "category": 5,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "wait",
-    "position": 3,
+    "status": "done",
+    "position": 0,
     "log": [
       {
         "date": "2026-06-22",
         "action": "Moved from To Do to Wait"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-06-22T10:28:00.296Z",
@@ -4735,14 +4803,244 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "mncchgncxlcix2v96",
-    "position": 3,
+    "position": 2,
     "log": [
       {
         "date": "2026-06-22",
         "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-06-22",
+        "action": "Moved from Today to In Progress"
+      },
+      {
+        "date": "2026-06-29",
+        "action": "Moved from In Progress to Today"
       }
     ],
     "createdDate": "2026-06-22T10:28:20.145Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqpfi7v1z14g59gcw",
+    "title": "Handover to Sebastian (email)",
+    "description": "",
+    "priority": false,
+    "category": 5,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "done",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-06-22",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from To Do to Done"
+      }
+    ],
+    "createdDate": "2026-06-22T16:27:29.485Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqsr5w3rskz0sw8mn",
+    "title": "1:1 foloow up",
+    "description": "AI\nvacation\nsebastian\nLogs",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "done",
+    "position": 2,
+    "log": [
+      {
+        "date": "2026-06-29",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-06-25T00:17:08.295Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mqu2j9h0dymid50wt",
+    "title": "Sebastian Follow Up",
+    "description": "email mikael (price)\nemail team (PRs\nemail sebastian (wiki and standards)",
+    "priority": false,
+    "category": 1,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "todo",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-06-29",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to To Do"
+      }
+    ],
+    "createdDate": "2026-06-25T22:23:14.100Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr1ag807nct68wo52",
+    "title": "Cancel Claude",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "moq8dy5b65p58w331",
+    "status": "mncchgncxlcix2v96",
+    "position": 6,
+    "log": [
+      {
+        "date": "2026-06-30",
+        "action": "Moved from To Do to Today"
+      }
+    ],
+    "createdDate": "2026-06-30T23:39:12.391Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr1b1fa2npiyb5ayd",
+    "title": "CSS fix for the tables",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mncchgncxlcix2v96",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-07-02",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Category changed from Non categorized to Development"
+      }
+    ],
+    "createdDate": "2026-06-30T23:55:41.594Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr1begbwjfyqgn3gl",
+    "title": "Rob: table problem",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": null,
+    "status": "done",
+    "position": 3,
+    "log": [
+      {
+        "date": "2026-07-01",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to Done"
+      }
+    ],
+    "createdDate": "2026-07-01T00:05:49.484Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr1zis2hvqr2y24hp",
+    "title": "Brandfolder integration",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "todo",
+    "position": 4,
+    "log": [
+      {
+        "date": "2026-07-02",
+        "action": "Moved from To Do to Today"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Moved from Today to To Do"
+      },
+      {
+        "date": "2026-07-02",
+        "action": "Category changed from Non categorized to Development"
+      }
+    ],
+    "createdDate": "2026-07-01T11:21:02.105Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr38i0b68a6vqk9gf",
+    "title": "DS CSS error",
+    "description": "",
+    "priority": false,
+    "category": 1,
+    "epicId": "mlinl22lxnkra6pjt",
+    "status": "mncchgncxlcix2v96",
+    "position": 5,
+    "log": [
+      {
+        "date": "2026-07-02",
+        "action": "Moved from To Do to Today"
+      }
+    ],
+    "createdDate": "2026-07-02T08:20:08.850Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr38j62d0gg2t55n2",
+    "title": "Offline PLP demo",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mncchgncxlcix2v96",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-07-02",
+        "action": "Moved from To Do to Today"
+      }
+    ],
+    "createdDate": "2026-07-02T08:21:02.965Z",
+    "deadline": null,
+    "snoozeUntil": null
+  },
+  {
+    "id": "mr38k4dkr4qmblxqg",
+    "title": "Flosum branch",
+    "description": "",
+    "priority": false,
+    "category": 2,
+    "epicId": "mlinlecx6b1djaonv",
+    "status": "mncchgncxlcix2v96",
+    "position": 7,
+    "log": [
+      {
+        "date": "2026-07-02",
+        "action": "Moved from To Do to Today"
+      }
+    ],
+    "createdDate": "2026-07-02T08:21:47.432Z",
     "deadline": null,
     "snoozeUntil": null
   }
