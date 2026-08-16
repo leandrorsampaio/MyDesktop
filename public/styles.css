@@ -28,7 +28,7 @@
     --color-accent-backlog-hover: #535c60;
     --color-accent-error-strong: #dc2626;   /* delete:hover, urgent deadline/label text */
     --color-accent-warning-text: #b45309;   /* warning text on a light warning tint */
-    --color-accent-gold: var(--color-accent-gold);           /* favourite / default star */
+    --color-accent-gold: #E8B923;           /* favourite / default star */
 
     /* Text + icons that sit on a filled accent surface */
     --color-text-on-accent: #ffffff;
