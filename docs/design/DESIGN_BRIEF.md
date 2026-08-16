@@ -159,6 +159,12 @@ These are the CURRENT light-theme values — the designer should replace them en
 --color-accent-error: #ef4444
 --color-accent-warning: #f59e0b
 
+/* Surface sizing — text inputs and scrollable panels */
+--size-surface-sm: 120px  /* AI composer max */
+--size-surface-md: 160px  /* notes textarea min */
+--size-surface-lg: 180px  /* task description min */
+--size-surface-xl: 320px  /* notes textarea max */
+
 /* Radius */
 --radius-sm: 4px
 --radius-md: 6px

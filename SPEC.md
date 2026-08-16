@@ -1,7 +1,7 @@
 # SPEC — Project Specification
 
-**Version:** 2.41.0
-**Last Updated:** 2026-06-20
+**Version:** 2.41.1
+**Last Updated:** 2026-08-16
 
 ---
 
@@ -425,6 +425,7 @@ These are behaviors not evident from reading the code. Know these before making 
 
 ### Navigation & Routing
 - **`<nav-sidebar>`** is a permanent icon-only navigation rail (left side), present on every page. It contains the page links, a toggle button for a slide-out panel holding the checklist/notes (slotted light DOM; panel closes on backdrop click or ESC), the gear link to the config page, and a footer link to the internal design-system page.
+- **The slide-out panel's card chrome lives in `styles.css`, not in `nav-sidebar.css`.** The checklist/notes elements are slotted, so they belong to the *document* tree — and normal declarations from the outer tree beat the shadow tree **regardless of specificity**. `::slotted(*) { padding: … }` therefore loses to the global `* { padding: 0 }` reset, which is how the cards shipped with zero padding until v2.41.1. Style them via `.sidebar__section` in `styles.css`. For the same reason, never set `display` on that rule: it would override each component's own `:host` display (`notes-widget` is a flex column).
 - **Client-side routing** via `router.js`: `parsePath()` reads `window.location.pathname` → `{ alias, page }`. Valid sub-pages: `dashboard`, `backlog`, `archive`, `reports`, `ai`, `config`, `design-system`. Anything else defaults to `board`.
 - **Server route `/:alias/:page`** serves `index.html` for all sub-page URLs. JS reads the pathname and renders the correct view.
 - **Non-board pages** hide `appContainer`, show `pageView`, then either call a page module or fall back to the "coming soon" placeholder. Archive calls `initArchivePage`; Backlog calls `initBacklogPage`; Dashboard calls `initDashboardPage`; Reports calls `initReportsPage`; AI calls `initAiPage` — all via dynamic import. Unbuilt pages use `renderPlaceholderPage()`.

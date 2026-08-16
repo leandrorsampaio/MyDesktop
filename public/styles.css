@@ -69,6 +69,12 @@
     /* === Board Layout === */
     --column-min-width: 280px;
 
+    /* === Surface Sizing — text inputs and scrollable panels === */
+    --size-surface-sm: 120px;
+    --size-surface-md: 160px;
+    --size-surface-lg: 180px;
+    --size-surface-xl: 320px;
+
     /* === Typography — family === */
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
@@ -465,7 +471,7 @@ body {
    ========================================== */
 .appContainer {
     flex: 1;
-    padding: 0 var(--space-40) var(--space-40) var(--space-40);
+    padding: var(--space-24) var(--space-40) var(--space-40) var(--space-40);
     overflow-x: auto;
     transition: filter 0.4s ease;
 }
@@ -520,7 +526,16 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* sidebar__section styles — used by slotted checklist/notes in nav-sidebar */
+/* sidebar__section styles — used by slotted checklist/notes in nav-sidebar.
+   Must live here, not as ::slotted() in nav-sidebar.css: document-tree rules
+   out-cascade the shadow tree, so the `*` reset above wins there. */
+.sidebar__section {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-20);
+}
+
 .sidebar__section.--hidden {
     display: none;
 }
@@ -1003,7 +1018,7 @@ body {
 
 .taskForm__group--grow textarea {
     flex: 1;
-    min-height: 180px;
+    min-height: var(--size-surface-lg);
     resize: vertical;
 }
 
@@ -2483,7 +2498,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 /* MacBook Pro 14" (1512px) and similar screens */
 @media (min-width: 1400px) and (max-width: 1999px) {
     .appContainer {
-        padding: 0 var(--space-32) var(--space-32) var(--space-32);
+        padding: var(--space-24) var(--space-32) var(--space-32) var(--space-32);
     }
 
     .kanban {
@@ -3504,7 +3519,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     font-size: var(--text-lg);
     color: var(--color-text-primary);
     background: var(--color-bg-primary);
-    max-height: 120px;
+    max-height: var(--size-surface-sm);
     overflow-y: auto;
     outline: none;
     transition: border-color 0.15s;

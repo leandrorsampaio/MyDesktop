@@ -141,14 +141,4 @@
     transform: translateX(0);
 }
 
-/* Slotted content styling */
-::slotted(*) {
-    background: var(--color-bg-primary, #ffffff);
-    border: 1px solid var(--color-border, #e5e7eb);
-    border-radius: var(--radius-lg, 8px);
-    padding: var(--space-24);
-}
-
-::slotted(.--hidden) {
-    display: none;
-}
+/* Slotted content is styled via `.sidebar__section` in styles.css */
