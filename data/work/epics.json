@@ -12,33 +12,15 @@
     "alias": "ecom"
   },
   {
-    "id": "mmji2xjk6s7spj1wu",
-    "name": "Export Products",
-    "color": "#2ECC71",
-    "alias": "exportProducts"
-  },
-  {
-    "id": "mmji7ki7lo4hksbjk",
-    "name": "Repo Clean Up",
-    "color": "#E84393",
-    "alias": "repoCleanUp"
-  },
-  {
-    "id": "mmkdwjunpjcvd0pz6",
-    "name": "Marketing Cloud",
-    "color": "#2E86DE",
-    "alias": "marketingCloud"
-  },
-  {
     "id": "moq8dy5b65p58w331",
     "name": "Management",
     "color": "#2D3436",
     "alias": "management"
   },
   {
-    "id": "moq8k175szmfa7njw",
-    "name": "Dev Team",
-    "color": "#00CEC9",
-    "alias": "devTeam"
+    "id": "mshovdazls9s49l6r",
+    "name": "Solenis",
+    "color": "#1ABC9C",
+    "alias": "solenis"
   }
 ]
