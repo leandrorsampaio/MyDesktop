@@ -390,11 +390,11 @@ const MAX_COLUMNS = 15;
  * Source of truth: /public/js/constants.js
  */
 const DEFAULT_COLUMNS = [
-    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false, isBacklog: false },
-    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false, isBacklog: false },
-    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false, isBacklog: false },
-    { id: 'done',       name: 'Done',        order: 3, hasArchive: true,  isBacklog: false },
-    { id: 'backlog',    name: 'Backlog',     order: 4, hasArchive: false, isBacklog: true  }
+    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false, isBacklog: false, celebrate: false },
+    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false, isBacklog: false, celebrate: false },
+    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false, isBacklog: false, celebrate: false },
+    { id: 'done',       name: 'Done',        order: 3, hasArchive: true,  isBacklog: false, celebrate: true  },
+    { id: 'backlog',    name: 'Backlog',     order: 4, hasArchive: false, isBacklog: true,  celebrate: false }
 ];
 
 /**
@@ -636,6 +636,23 @@ async function resolveProfile(req, res, next) {
                     col.isBacklog = false;
                     profileModified = true;
                 }
+            }
+            // Backfill `celebrate` once: the last board column (highest order,
+            // excluding the backlog) opts in, everything else opts out. This is
+            // a one-time default, NOT a rule — once the field exists it is the
+            // user's choice, so adding or reordering columns later must never
+            // move the flag.
+            if (profile.columns.some(col => col.celebrate === undefined)) {
+                const lastBoardCol = profile.columns
+                    .filter(col => !col.isBacklog)
+                    .sort((a, b) => a.order - b.order)
+                    .pop();
+                for (const col of profile.columns) {
+                    if (col.celebrate === undefined) {
+                        col.celebrate = lastBoardCol ? col.id === lastBoardCol.id : false;
+                    }
+                }
+                profileModified = true;
             }
             // Ensure a backlog column exists for existing profiles
             if (!profile.columns.some(c => c.isBacklog)) {
@@ -1603,7 +1620,10 @@ app.post('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res)
             name: name.trim(),
             order: columns.length,
             hasArchive: false,
-            isBacklog: isBacklog ? true : false
+            isBacklog: isBacklog ? true : false,
+            // Off by default: `celebrate` is a deliberate per-column choice, and
+            // a column added after setup shouldn't silently steal the flag.
+            celebrate: false
         };
 
         columns.push(newColumn);
@@ -1620,7 +1640,7 @@ app.post('/api/:profile/columns', resolveProfile, writeLimiter, async (req, res)
     }
 });
 
-// PUT update a single column (rename / toggle hasArchive)
+// PUT update a single column (rename / toggle hasArchive / toggle celebrate)
 app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, res) => {
     try {
         const columns = req.profile.columns;
@@ -1630,7 +1650,7 @@ app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, r
             return res.status(404).json({ error: 'Column not found' });
         }
 
-        const { name, hasArchive, isBacklog } = req.body;
+        const { name, hasArchive, isBacklog, celebrate } = req.body;
 
         if (name !== undefined) {
             if (typeof name !== 'string' || name.trim() === '') {
@@ -1644,6 +1664,10 @@ app.put('/api/:profile/columns/:id', resolveProfile, writeLimiter, async (req, r
 
         if (hasArchive !== undefined) {
             columns[colIndex].hasArchive = Boolean(hasArchive);
+        }
+
+        if (celebrate !== undefined) {
+            columns[colIndex].celebrate = Boolean(celebrate);
         }
 
         // isBacklog is immutable after creation: unsetting it on the real

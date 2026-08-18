@@ -283,4 +283,88 @@ describe('Columns API', () => {
         const res = await del(`/api/${TEST_PROFILE}/columns/todo`);
         assert.strictEqual(res.status, 400, 'deleting last non-backlog column should 400');
     });
+
+    // -------------------------------------------
+    // celebrate flag (v2.43.0)
+    // -------------------------------------------
+    describe('celebrate flag', () => {
+        it('backfills celebrate on profiles that predate the field', async () => {
+            // resetTestProfileColumns() writes the pre-2.42 column shape (no
+            // `celebrate` key at all), so this GET goes through the migration.
+            const res = await get(`/api/${TEST_PROFILE}/columns`);
+            assert.strictEqual(res.status, 200);
+            for (const col of res.body) {
+                assert.strictEqual(typeof col.celebrate, 'boolean',
+                    `${col.id} should have a boolean celebrate`);
+            }
+        });
+
+        it('backfill defaults the last board column on, everything else off', async () => {
+            const res = await get(`/api/${TEST_PROFILE}/columns`);
+            const byId = new Map(res.body.map(c => [c.id, c]));
+            assert.strictEqual(byId.get('done').celebrate, true, 'last board column celebrates');
+            assert.strictEqual(byId.get('todo').celebrate, false);
+            assert.strictEqual(byId.get('wait').celebrate, false);
+            assert.strictEqual(byId.get('inprogress').celebrate, false);
+            assert.strictEqual(byId.get('backlog').celebrate, false, 'backlog never celebrates');
+        });
+
+        it('backfill runs once and does not chase the last column afterwards', async () => {
+            await get(`/api/${TEST_PROFILE}/columns`);          // trigger backfill
+            await put(`/api/${TEST_PROFILE}/columns/done`, { celebrate: false });
+            await put(`/api/${TEST_PROFILE}/columns/todo`, { celebrate: true });
+
+            // A new column becomes the last one — the flag must NOT follow it,
+            // and the user's choices must survive.
+            const created = await post(`/api/${TEST_PROFILE}/columns`, { name: 'Shipped' });
+            assert.strictEqual(created.status, 201);
+
+            const res = await get(`/api/${TEST_PROFILE}/columns`);
+            const byId = new Map(res.body.map(c => [c.id, c]));
+            assert.strictEqual(byId.get(created.body.id).celebrate, false,
+                'a column added later does not steal the flag');
+            assert.strictEqual(byId.get('todo').celebrate, true, 'user choice preserved');
+            assert.strictEqual(byId.get('done').celebrate, false, 'user choice preserved');
+        });
+
+        it('POST creates columns with celebrate off', async () => {
+            const res = await post(`/api/${TEST_PROFILE}/columns`, { name: 'Review' });
+            assert.strictEqual(res.status, 201);
+            assert.strictEqual(res.body.celebrate, false);
+        });
+
+        it('PUT toggles celebrate', async () => {
+            const on = await put(`/api/${TEST_PROFILE}/columns/todo`, { celebrate: true });
+            assert.strictEqual(on.status, 200);
+            assert.strictEqual(on.body.celebrate, true);
+
+            const off = await put(`/api/${TEST_PROFILE}/columns/todo`, { celebrate: false });
+            assert.strictEqual(off.status, 200);
+            assert.strictEqual(off.body.celebrate, false);
+        });
+
+        it('PUT coerces celebrate to a boolean', async () => {
+            const res = await put(`/api/${TEST_PROFILE}/columns/todo`, { celebrate: 'yes' });
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(res.body.celebrate, true, 'truthy string stored as true, not "yes"');
+        });
+
+        it('PUT leaves celebrate untouched when the field is absent', async () => {
+            await put(`/api/${TEST_PROFILE}/columns/todo`, { celebrate: true });
+            const res = await put(`/api/${TEST_PROFILE}/columns/todo`, { name: 'Renamed' });
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(res.body.celebrate, true, 'a rename must not clear the flag');
+        });
+
+        it('reorder preserves celebrate', async () => {
+            await put(`/api/${TEST_PROFILE}/columns/todo`, { celebrate: true });
+            const before = await get(`/api/${TEST_PROFILE}/columns`);
+            const reversed = [...before.body].reverse().map(c => ({ id: c.id }));
+
+            const res = await put(`/api/${TEST_PROFILE}/columns`, { columns: reversed });
+            assert.strictEqual(res.status, 200);
+            const todo = res.body.find(c => c.id === 'todo');
+            assert.strictEqual(todo.celebrate, true);
+        });
+    });
 });

@@ -336,6 +336,10 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     <input type="checkbox" class="js-colArchiveToggle" data-col-id="${col.id}" ${col.hasArchive ? 'checked' : ''} />
                     <span>Archive btn</span>
                 </label>
+                <label class="boardConfigEditor__archiveToggle" title="Play a confetti burst when a task lands in this column">
+                    <input type="checkbox" class="js-colCelebrateToggle" data-col-id="${col.id}" ${col.celebrate ? 'checked' : ''} />
+                    <span>Celebrate</span>
+                </label>
                 <button class="boardConfigEditor__deleteBtn js-colDeleteBtn" data-col-id="${col.id}" title="Delete column">&times;</button>
             </div>
         `).join('');
@@ -418,6 +422,22 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     setColumns(fetched);
                     renderColumns();
                     toaster.success(cb.checked ? 'Archive button enabled' : 'Archive button disabled');
+                } else {
+                    toaster.error(result.error || 'Failed to update column');
+                    cb.checked = !cb.checked;
+                }
+            });
+        });
+
+        // Celebrate toggle — confetti burst when a task lands in this column
+        colList.querySelectorAll('.js-colCelebrateToggle').forEach(cb => {
+            cb.addEventListener('change', async () => {
+                const result = await updateColumnApi(cb.dataset.colId, { celebrate: cb.checked });
+                if (result.ok) {
+                    const fetched = await fetchColumnsApi();
+                    setColumns(fetched);
+                    renderColumns();
+                    toaster.success(cb.checked ? 'Celebration enabled' : 'Celebration disabled');
                 } else {
                     toaster.error(result.error || 'Failed to update column');
                     cb.checked = !cb.checked;

@@ -274,6 +274,24 @@ import {
     }
 
     /**
+     * Fires the task card's confetti burst when it lands in a column the user
+     * flagged as celebrating. Reordering within a column never celebrates —
+     * only an actual arrival does.
+     * @param {string} taskId - The task that just moved
+     * @param {string} columnId - The column it landed in
+     */
+    function celebrateArrival(taskId, columnId) {
+        const column = columns.find(c => c.id === columnId);
+        if (!column || !column.celebrate) return;
+
+        // The burst is rendered by the column, not the card: it has to live
+        // outside the scrolling task list to avoid being clipped, and above
+        // the cards so it isn't hidden behind a neighbouring one.
+        const columnEl = document.querySelector(`kanban-column[data-status="${columnId}"]`);
+        columnEl?.celebrate?.(taskId);
+    }
+
+    /**
      * Moves a task to a different column or reorders within the same column.
      * Uses optimistic UI - updates immediately, rolls back on failure.
      * Uses a lock to prevent race conditions from rapid drag operations.
@@ -325,6 +343,10 @@ import {
             await moveTaskApi(id, newStatus, newPosition);
             // Fetch fresh data to get accurate positions from server
             await fetchTasks();
+            // Celebrate only after the final render: fetchTasks() re-renders,
+            // which recreates the card elements and would discard a burst
+            // started against the optimistic render.
+            if (oldStatus !== newStatus) celebrateArrival(id, newStatus);
             return true;
         } catch (error) {
             // Rollback on failure

@@ -69,10 +69,10 @@ export const MAX_COLUMNS = 15;
  * Source of truth: /public/js/constants.js
  */
 export const DEFAULT_COLUMNS = [
-    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false },
-    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false },
-    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false },
-    { id: 'done',       name: 'Done',        order: 3, hasArchive: true  }
+    { id: 'todo',       name: 'To Do',       order: 0, hasArchive: false, celebrate: false },
+    { id: 'wait',       name: 'Wait',        order: 1, hasArchive: false, celebrate: false },
+    { id: 'inprogress', name: 'In Progress', order: 2, hasArchive: false, celebrate: false },
+    { id: 'done',       name: 'Done',        order: 3, hasArchive: true,  celebrate: true  }
 ];
 
 /**

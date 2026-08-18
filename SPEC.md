@@ -1,6 +1,6 @@
 # SPEC — Project Specification
 
-**Version:** 2.42.0
+**Version:** 2.43.0
 **Last Updated:** 2026-08-18
 
 ---
@@ -299,7 +299,8 @@ Existing tasks without `deadline` or `snoozeUntil` behave as `null` (no chip, no
   name: string,       // required, max 200 chars
   order: number,      // 0-based sort index
   hasArchive: boolean, // if true, column gets an Archive button
-  isBacklog: boolean   // if true, this is the backlog column (exactly one per profile)
+  isBacklog: boolean,  // if true, this is the backlog column (exactly one per profile)
+  celebrate: boolean   // if true, a task arriving here plays the confetti burst
 }
 ```
 
@@ -374,6 +375,23 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Confirmed actions:** deleting a task (message names the task), archiving a column (message names the column and the task count; skipped entirely with an info toast when the column is empty, so the dialog never asks about zero tasks), generating a report. The four config-page confirmations (epic / category / profile / column delete) still use their own dedicated modals — they predate this helper.
 - **Stacking works:** the task-delete confirmation opens over the still-open task modal; `<modal-dialog>`'s open-stack means ESC dismisses only the confirmation.
 
+### Celebration (confetti on arrival)
+- **What fires it:** a task *arriving* in a column whose `celebrate` flag is true. `moveTask()` in `app.js` calls `celebrateArrival(id, newStatus)` — guarded by `oldStatus !== newStatus`, so reordering inside the celebrating column does nothing. Every board move funnels through `moveTask` (drag-drop, `Cmd/Ctrl+←/→`, send-to-backlog), so there is one trigger point.
+- **Timing matters:** the call sits *after* `await fetchTasks()`, not after the optimistic render. `fetchTasks()` re-renders and recreates every card element, which would silently discard a burst started against the earlier render.
+- **The burst belongs to `<kanban-column>`, not `<task-card>`** — `column.celebrate(taskId)`. This is the whole design constraint, and the first implementation got it wrong by putting the layer inside the card:
+  - **`.column__list` clips.** It has `overflow-y: auto`, which makes `overflow-x` compute to `auto` as well, so anything rendered inside it is clipped on *both* axes. A card's own edges are only ~17px from the list's padding box, so a burst inside the card could never travel sideways.
+  - **Sibling cards paint over it.** Cards are siblings in the list; a particle flying down from one card renders *under* the next one. Nothing inside the card can fix that.
+
+  The layer therefore sits outside `.column__list` as a positioned sibling with `z-index: 2` — unclipped, and painted above every card.
+- **The animation is 100% CSS.** JS only positions the layer, hands it the epic hue, and toggles `--active`; `kanban-column.css` owns every keyframe. The sixteen particles are static markup in `kanban-column.html` — nothing is created at runtime — and `:nth-child()` gives each its own `--ox`/`--oy` (origin on the card's perimeter), `--dx`/`--dy` (travel), `--delay` and `--spin`, all feeding one shared `@keyframes confettiBurst`.
+- **Particles emit from the card's perimeter, not its centre:** five along the top edge, five along the bottom, three on each side. A centre-origin burst is invisible on a card that is ~550px wide and ~80px tall — most particles never clear the card at all.
+- **Sideways travel is shorter than vertical** (~45–65px vs ~75–110px) on purpose: the card sits ~17px inside the column and the board gap is 24px, so a longer sideways throw lands particles inside the *neighbouring* column rather than in the gap.
+- **Positioning uses `getBoundingClientRect()` deltas**, not `offsetTop`, so the list's current scroll position is accounted for. The burst does not follow the card if the list is scrolled mid-animation — acceptable for 750ms.
+- **Colour is the task's epic colour**, read from the card's `data-epic-color` attribute and set as `--epic-color` on the layer, with two theme accents mixed in via `:nth-child()`. Cards with no epic fall back to `--color-accent-primary` through the CSS var chain. This keeps the burst inside VISION's "colour is semantic" rule.
+- **Cleanup uses `Animation.finished`, not `animationend`.** The layer carries a single no-op `confettiLayer` animation spanning the whole burst, so one promise covers all sixteen particles; it needs no event plumbing across the shadow boundary and rejects cleanly when a re-render cancels it. (Note for anyone testing this in an automated browser: a **hidden tab freezes CSS animations entirely** — `currentTime` never advances and `animationend` never fires, though `finished` still resolves if you call `finish()`.)
+- **Reduced motion:** the whole thing sits inside `@media (prefers-reduced-motion: no-preference)`, so it never runs for users who opted out. The `--active` class then simply stays on and paints nothing.
+- **`:host` on `kanban-column` is `position: relative`** solely to be the layer's containing block. The host has no overflow of its own, which is what lets particles spill past the column edge into the board gap.
+
 ### Categories
 - **Category 1 cannot be deleted.** Deleting any other category reassigns its active tasks to category 1. Archived tasks are untouched.
 - **`categoryName` is snapshotted** onto each task at archive time, so reports show the correct name even if the category is later deleted.
@@ -393,6 +411,7 @@ These are behaviors not evident from reading the code. Know these before making 
 
 ### Columns & Board Configuration
 - Columns are **per-profile**, stored inside each profile object in `profiles.json` (not a separate file).
+- **`celebrate` is a one-time default, not a rule.** `resolveProfile` backfills the field on profiles that predate it: the last board column (highest `order`, excluding the backlog) gets `true`, everything else `false`. Once the field exists the backfill never runs again — adding or reordering columns later must not move the flag, because by then it reflects a user choice. Columns created via `POST` always start `false`.
 - The **first column** (order 0) is the default: new tasks are created there; tasks are moved there when a column is deleted.
 - Column deletion appends a log entry to each moved task: `"Column 'Wait' deleted – moved to 'To Do'"`.
 - Renaming a column does **not** change `task.status` (the column ID is immutable after creation). Existing task logs remain accurate.
@@ -446,6 +465,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - `config-page.js` → `initConfigPage(pageViewEl, { elements })`: parallel fetches columns/epics/categories, renders all sections.
 - **Sections (tab order):** Columns, Epics, Categories, General, Daily Checklist, AI Assistant, Profiles (below a divider).
 - **CRUD sections** (columns, epics, categories, profiles): auto-save on blur/change (same behavior as the old modals). Delete uses confirmation modals from `index.html`.
+- **Columns section** carries two per-column checkboxes: *Archive btn* (`hasArchive`) and *Celebrate* (`celebrate`, the confetti burst). The row is `flex-wrap: wrap` and the name input has a `min-width` so two toggles can't crush it on a narrow window.
 - **General Settings and Checklist:** manual Save button. Changes take effect on the board when user navigates back (board re-initializes and calls `loadGeneralConfig()`).
 - **Appearance (General section):** theme radios at the top of the General panel, generated from the `THEMES` registry plus an Auto option (Auto / Light / Paper / Dark / Slate / Dim / High Contrast) — per profile, applies instantly on change (no Save button), persisted to `{alias}:theme`. Each radio shows a **preview swatch** between the radio and label: a `.themeSwatch` carrying `data-theme="<id>"` so plain `var(--color-*)` inside it resolve to *that* theme's tokens (the `[data-theme]` blocks are attribute selectors, hence the `:root, [data-theme="light"]` alias so Light previews too). The swatch is three equal bands — `--color-bg-primary` / `-secondary` / `-tertiary`; Auto instead shows a light/dark split (two halves carrying `data-theme="light"`/`"dark"`). See Non-obvious Behaviors § Theming.
 - **Your Data (General section):** "Export data (JSON)" button calls `GET /api/:profile/export` and downloads the bundle as `mydesktop-{alias}-{date}.json` via a Blob + anchor click. Restore is manual (copy `data/{alias}/` back); import is a possible future feature.
@@ -521,6 +541,13 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Gear icon** at the bottom is a plain nav link to `/:alias/config`; the footer also links to `/:alias/design-system`.
 - **Theme toggle** (`.js-themeToggle`, moon/sun) in the footer — quick light/dark switch, per profile (see Non-obvious Behaviors § Theming). Imports the theme helpers from `utils.js`; listens for `themechanged` + OS `matchMedia` changes (both cleaned up in `disconnectedCallback`).
 - **Accessibility:** the rail `<nav>` has `aria-label="Main navigation"`; the active link carries `aria-current="page"` (kept in sync by `_updateActive`); the slide-out panel is an `<aside aria-label="Checklist and notes">`.
+
+### `<kanban-column>`
+```html
+<kanban-column data-status="done"></kanban-column>
+```
+- **JS API:** `celebrate(taskId)` — plays the confetti burst around the named card (see Non-obvious Behaviors § Celebration). Awaits the component's internal `_ready` promise, so it is safe to call immediately after a render. No-ops if the card isn't found.
+- Cards are rendered into `.column__list` (a scroller); the celebration layer is a positioned sibling of that list so it is neither clipped nor painted under other cards.
 
 ### `<profile-selector>`
 ```html

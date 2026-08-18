@@ -5,6 +5,10 @@
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 200px);
+    /* Containing block for the celebration layer. The host has no overflow of
+       its own, so particles may spill past the column edge into the board gap
+       — which is what makes an all-sides burst possible at all. */
+    position: relative;
 }
 
 .column__header {
@@ -114,5 +118,113 @@
     to {
         opacity: 1;
         transform: scaleX(1);
+    }
+}
+
+/* ==========================================
+   Celebration confetti — CSS-only micro-animation
+   Fires when a task lands in a column the user flagged `celebrate`.
+   JS only positions the layer and toggles a class; all motion is keyframes.
+   ========================================== */
+.column__celebration {
+    position: absolute;
+    left: var(--burst-left, 0);
+    top: var(--burst-top, 0);
+    width: var(--burst-width, 0);
+    height: var(--burst-height, 0);
+    pointer-events: none;
+    /* Above .column__list so a burst is never occluded by another card */
+    z-index: 2;
+    display: none;
+}
+
+.column__celebration.--active {
+    display: block;
+}
+
+.column__celebration i {
+    position: absolute;
+    /* Each particle starts on the card's perimeter (--ox/--oy) and travels
+       outward (--dx/--dy), so the burst leaves from every side of the card
+       rather than out of its middle. */
+    left: var(--ox);
+    top: var(--oy);
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 1px;
+    opacity: 0;
+    background: var(--confetti-color, var(--epic-color, var(--color-accent-primary)));
+}
+
+/* --- top edge --- */
+.column__celebration i:nth-child(1)  { --ox: 14%; --oy:   0%; --dx: -26px; --dy: -84px;  --delay:  0ms; --spin:  180deg; }
+.column__celebration i:nth-child(2)  { --ox: 32%; --oy:   0%; --dx:  -8px; --dy: -104px; --delay: 30ms; --spin: -150deg; }
+.column__celebration i:nth-child(3)  { --ox: 50%; --oy:   0%; --dx:   6px; --dy: -92px;  --delay: 10ms; --spin:  210deg; }
+.column__celebration i:nth-child(4)  { --ox: 68%; --oy:   0%; --dx:  22px; --dy: -108px; --delay: 45ms; --spin: -190deg; }
+.column__celebration i:nth-child(5)  { --ox: 86%; --oy:   0%; --dx:  38px; --dy: -78px;  --delay: 20ms; --spin:  160deg; }
+
+/* --- bottom edge --- */
+.column__celebration i:nth-child(6)  { --ox: 14%; --oy: 100%; --dx: -32px; --dy:  80px;  --delay: 35ms; --spin: -170deg; }
+.column__celebration i:nth-child(7)  { --ox: 32%; --oy: 100%; --dx: -10px; --dy:  100px; --delay: 15ms; --spin:  200deg; }
+.column__celebration i:nth-child(8)  { --ox: 50%; --oy: 100%; --dx:   8px; --dy:  88px;  --delay: 50ms; --spin: -140deg; }
+.column__celebration i:nth-child(9)  { --ox: 68%; --oy: 100%; --dx:  24px; --dy:  104px; --delay: 25ms; --spin:  190deg; }
+.column__celebration i:nth-child(10) { --ox: 86%; --oy: 100%; --dx:  40px; --dy:  76px;  --delay:  5ms; --spin: -210deg; }
+
+/* --- left edge ---
+   Sideways travel is kept shorter than the vertical: the card sits ~17px from
+   the column edge and the board gap is 24px, so a longer throw would land
+   particles inside the neighbouring column instead of the gap. */
+.column__celebration i:nth-child(11) { --ox:  0%; --oy:  28%; --dx: -52px; --dy: -46px;  --delay: 40ms; --spin:  170deg; }
+.column__celebration i:nth-child(12) { --ox:  0%; --oy:  60%; --dx: -62px; --dy:  18px;  --delay: 10ms; --spin: -200deg; }
+.column__celebration i:nth-child(13) { --ox:  0%; --oy:  88%; --dx: -44px; --dy:  56px;  --delay: 55ms; --spin:  150deg; }
+
+/* --- right edge --- */
+.column__celebration i:nth-child(14) { --ox: 100%; --oy: 28%; --dx:  54px; --dy: -52px;  --delay: 20ms; --spin: -180deg; }
+.column__celebration i:nth-child(15) { --ox: 100%; --oy: 60%; --dx:  64px; --dy:  14px;  --delay: 48ms; --spin:  220deg; }
+.column__celebration i:nth-child(16) { --ox: 100%; --oy: 88%; --dx:  46px; --dy:  58px;  --delay: 12ms; --spin: -160deg; }
+
+/* Two theme accents mixed into the epic hue so it reads as confetti rather
+   than a single-colour puff. */
+.column__celebration i:nth-child(3),
+.column__celebration i:nth-child(9),
+.column__celebration i:nth-child(12) { --confetti-color: var(--color-accent-warning); }
+.column__celebration i:nth-child(5),
+.column__celebration i:nth-child(7),
+.column__celebration i:nth-child(15) { --confetti-color: var(--color-accent-success); }
+
+/* Mixed shapes read as confetti at this size */
+.column__celebration i:nth-child(even) {
+    border-radius: 50%;
+    width: 7px;
+    height: 7px;
+    margin: -3.5px 0 0 -3.5px;
+}
+
+/* Opacity holds at full through most of the flight and only fades at the end —
+   fading from the start made the burst nearly invisible on light themes. */
+@keyframes confettiBurst {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(0.35); opacity: 0; }
+    12%  { opacity: 1; }
+    62%  { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--spin)) scale(1); opacity: 0; }
+}
+
+/* A no-op animation on the layer itself spans the whole burst, giving
+   celebrate() a single Animation.finished to await for cleanup. */
+@keyframes confettiLayer {
+    from { opacity: 1; }
+    to   { opacity: 1; }
+}
+
+/* Motion is opt-out: the burst is pure decoration, so it simply never runs for
+   anyone who has asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+    .column__celebration.--active {
+        animation: confettiLayer 880ms linear both;
+    }
+
+    .column__celebration.--active i {
+        animation: confettiBurst 750ms var(--delay) cubic-bezier(0.12, 0.72, 0.32, 1) both;
     }
 }

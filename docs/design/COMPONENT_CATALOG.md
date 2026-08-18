@@ -117,8 +117,14 @@ Shadow DOM component.
   .column__header
     h2.column__title           ← column name, uppercase, 11px, 1.5px letter-spacing
     .column__actions           ← slotted buttons from light DOM
-  .column__list                ← task cards container, flex column, gap
+  .column__list                ← task cards container, flex column, gap (SCROLLS)
+  .column__celebration         ← confetti layer, 16 particles, absolute, above the list
 ```
+
+`.column__celebration` sits **outside** `.column__list` deliberately: the list
+scrolls, so it clips its overflow on both axes and would swallow the burst;
+out here it is also painted above the cards, so particles are never hidden
+behind a neighbouring card.
 
 **Slotted buttons (light DOM, styled via `::slotted`):**
 - `.column__addBtn` — "Add Task" button. Blue bg (accent). Only on first column.
@@ -129,6 +135,7 @@ Shadow DOM component.
 | Default | White bg, 1px border, 8px radius. Min-height: calc(100vh - 200px) |
 | Empty | Same, just no cards inside |
 | Drag-over (drop target) | Light blue bg tint (rgba(26,115,232,0.04)) |
+| Celebrating (`.column__celebration.--active`) | 750ms confetti burst around the card that just landed. 16 particles (8px squares / 7px circles) leave from every edge of the card — 5 top, 5 bottom, 3 each side — travelling 75–110px vertically and 45–65px sideways, tinted with the task's epic colour plus two theme accents. Painted above all cards and unclipped, so it may spill into the board gap. CSS-only; skipped entirely under `prefers-reduced-motion`. Only on columns flagged `celebrate` |
 
 ### 3.2 Task Card (`<task-card>`)
 

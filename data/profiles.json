@@ -12,42 +12,48 @@
         "name": "To Do",
         "order": 0,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "wait",
         "name": "Wait",
         "order": 1,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "mncchgncxlcix2v96",
         "name": "Today",
         "order": 2,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "inprogress",
         "name": "In Progress",
         "order": 3,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "done",
         "name": "Done",
         "order": 4,
         "hasArchive": true,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": true
       },
       {
         "id": "mmf9c0aaza1snpz8c",
         "name": "Backlog",
         "order": 5,
         "hasArchive": false,
-        "isBacklog": true
+        "isBacklog": true,
+        "celebrate": false
       }
     ]
   },
@@ -109,35 +115,40 @@
         "name": "To Do",
         "order": 0,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "wait",
         "name": "Wait",
         "order": 1,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "inprogress",
         "name": "In Progress",
         "order": 2,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "done",
         "name": "Done",
         "order": 3,
         "hasArchive": true,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": true
       },
       {
         "id": "backlog",
         "name": "Backlog",
         "order": 4,
         "hasArchive": false,
-        "isBacklog": true
+        "isBacklog": true,
+        "celebrate": false
       }
     ]
   }

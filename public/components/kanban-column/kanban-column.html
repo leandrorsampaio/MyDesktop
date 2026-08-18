@@ -7,3 +7,12 @@
 <div class="column__list" part="list">
     <!-- Task cards will be rendered here -->
 </div>
+<!-- Celebration burst. Lives OUTSIDE .column__list on purpose: the list
+     scrolls, so it clips its overflow on both axes and would swallow the
+     confetti. Sitting here it is also painted above the cards, so particles
+     are never hidden behind a neighbouring card. Positioned over the landed
+     card via the --burst-* custom properties. -->
+<div class="column__celebration js-celebration" aria-hidden="true">
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+</div>

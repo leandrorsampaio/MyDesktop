@@ -41,6 +41,60 @@ class KanbanColumn extends HTMLElement {
         this._resolveReady(); // Signal that the component is ready
     }
 
+    /**
+     * Plays the confetti burst around a task card that just landed here.
+     *
+     * JS does three things only — size the layer to the card, hand it the epic
+     * hue, toggle a class. Every bit of motion is CSS keyframes in
+     * kanban-column.css, and under prefers-reduced-motion none of it runs.
+     *
+     * The layer lives outside `.column__list` because that element scrolls:
+     * its `overflow-y: auto` makes `overflow-x` compute to `auto` as well, so
+     * a burst rendered inside it would be clipped to the list box. Out here it
+     * also paints above the cards, so particles are never hidden behind a
+     * neighbouring card.
+     *
+     * @param {string} taskId - The task that just arrived
+     */
+    async celebrate(taskId) {
+        await this._ready;
+        const layer = this.shadowRoot.querySelector('.js-celebration');
+        const card = this.shadowRoot.querySelector(`task-card[data-task-id="${taskId}"]`);
+        if (!layer || !card) return;
+
+        // Position the layer over the card. Rects (not offsets) so the list's
+        // current scroll position is accounted for.
+        const cardRect = card.getBoundingClientRect();
+        const hostRect = this.getBoundingClientRect();
+        layer.style.setProperty('--burst-left', `${cardRect.left - hostRect.left}px`);
+        layer.style.setProperty('--burst-top', `${cardRect.top - hostRect.top}px`);
+        layer.style.setProperty('--burst-width', `${cardRect.width}px`);
+        layer.style.setProperty('--burst-height', `${cardRect.height}px`);
+
+        // Epic colour keeps the burst semantic (VISION: colour = epic).
+        // Cards with no epic fall back to the accent via the CSS var chain.
+        const epicColor = card.dataset.epicColor;
+        if (epicColor) {
+            layer.style.setProperty('--epic-color', epicColor);
+        } else {
+            layer.style.removeProperty('--epic-color');
+        }
+
+        // Restart cleanly if a burst is already running in this column
+        layer.classList.remove('--active');
+        void layer.offsetWidth;
+        layer.classList.add('--active');
+
+        // The layer carries a single no-op animation spanning the whole burst,
+        // so one promise covers all sixteen particles. `finished` rather than
+        // an animationend listener: no event plumbing, and it rejects cleanly
+        // if a re-render cancels the animation mid-flight.
+        const [burst] = layer.getAnimations();
+        burst?.finished
+            .then(() => layer.classList.remove('--active'))
+            .catch(() => {});   // cancelled — nothing to clean up
+    }
+
     addDragAndDropListeners() {
         this.columnList.addEventListener('dragover', this.handleDragOver.bind(this));
         this.columnList.addEventListener('dragenter', this.handleDragEnter.bind(this));

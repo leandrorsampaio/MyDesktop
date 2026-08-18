@@ -2197,6 +2197,10 @@ body {
 .boardConfigEditor__item {
     display: flex;
     align-items: center;
+    /* Wraps rather than crushing the name field: the row carries two toggles
+       (Archive btn + Celebrate) and a narrow window would otherwise squeeze
+       the input to nothing. */
+    flex-wrap: wrap;
     gap: var(--space-10);
     padding: var(--space-12) 14px;
     background: var(--color-bg-secondary);
@@ -2244,6 +2248,7 @@ body {
 
 .boardConfigEditor__itemName {
     flex: 1;
+    min-width: var(--size-surface-sm, 120px);
     padding: var(--space-8) var(--space-12);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -2252,7 +2257,6 @@ body {
     font-size: var(--text-lg);
     font-family: inherit;
     font-weight: var(--font-weight-medium);
-    min-width: 0;
 }
 
 .boardConfigEditor__itemName:focus {
