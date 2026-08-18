@@ -4589,8 +4589,8 @@
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "todo",
-    "position": 0,
+    "status": "mncchgncxlcix2v96",
+    "position": 2,
     "log": [
       {
         "date": "2026-07-06",
@@ -4611,52 +4611,13 @@
       {
         "date": "2026-08-06",
         "action": "Moved from Backlog to To Do"
+      },
+      {
+        "date": "2026-08-18",
+        "action": "Moved from To Do to Today"
       }
     ],
     "createdDate": "2026-07-06T03:33:16.306Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msh8ef7gd4y1xnzr8",
-    "title": "Request Salesforce Accoutns (Prod, UAT, QA)",
-    "description": "",
-    "priority": false,
-    "category": 5,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 18,
-    "log": [
-      {
-        "date": "2026-08-06",
-        "action": "Moved from To Do to In Progress"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from In Progress to Wait"
-      },
-      {
-        "date": "2026-08-10",
-        "action": "Moved from Wait to In Progress"
-      },
-      {
-        "date": "2026-08-10",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T08:05:50.332Z",
     "deadline": null,
     "snoozeUntil": null
   },
@@ -4667,7 +4628,7 @@
     "priority": false,
     "category": 5,
     "epicId": "moq8dy5b65p58w331",
-    "status": "wait",
+    "status": "done",
     "position": 1,
     "log": [
       {
@@ -4681,125 +4642,13 @@
       {
         "date": "2026-08-06",
         "action": "Moved from In Progress to Wait"
-      }
-    ],
-    "createdDate": "2026-08-06T08:06:23.896Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msh8flw3segp395ii",
-    "title": "Request Jira Account",
-    "description": "",
-    "priority": false,
-    "category": 5,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 16,
-    "log": [
-      {
-        "date": "2026-08-06",
-        "action": "Moved from To Do to Today"
       },
       {
-        "date": "2026-08-06",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from In Progress to Wait"
-      },
-      {
-        "date": "2026-08-07",
+        "date": "2026-08-18",
         "action": "Moved from Wait to Done"
       }
     ],
-    "createdDate": "2026-08-06T08:06:45.651Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msh8h7b0se5tyqzjd",
-    "title": "AI Discussion with Mikael (check the docs)",
-    "description": "",
-    "priority": false,
-    "category": 3,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 3,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-10",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T08:08:00.060Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msh8hzx6fphgvfid1",
-    "title": "Org Bookmarks",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 9,
-    "log": [
-      {
-        "date": "2026-08-06",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T08:08:37.147Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msh8ibeju3iyic7gs",
-    "title": "Re-Create Dev Meetign",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 17,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T08:08:52.027Z",
+    "createdDate": "2026-08-06T08:06:23.896Z",
     "deadline": null,
     "snoozeUntil": null
   },
@@ -4810,7 +4659,7 @@
     "priority": false,
     "category": 5,
     "epicId": "moq8dy5b65p58w331",
-    "status": "wait",
+    "status": "done",
     "position": 0,
     "log": [
       {
@@ -4824,6 +4673,10 @@
       {
         "date": "2026-08-06",
         "action": "Moved from In Progress to Wait"
+      },
+      {
+        "date": "2026-08-18",
+        "action": "Moved from Wait to Done"
       }
     ],
     "createdDate": "2026-08-06T08:09:19.397Z",
@@ -4862,450 +4715,27 @@
     "snoozeUntil": null
   },
   {
-    "id": "mshcybcyw7tnmi05x",
-    "title": "Investigate Visibility rules",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 8,
-    "log": [
-      {
-        "date": "2026-08-06",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T10:13:16.930Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mshoujc3v9ndpioh7",
-    "title": "Workday: Welcome Aboard: Your JumpStart Journey Begins",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 10,
-    "log": [
-      {
-        "date": "2026-08-07",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-07",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T15:46:16.035Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mshovpg9wgpxofmha",
-    "title": "Workday: Digital Security Modules FY2026 Q3",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 11,
-    "log": [
-      {
-        "date": "2026-08-07",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-07",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T15:47:10.617Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mshovx8ddfnpt078a",
-    "title": "Workday: Digital Security Modules FY2026 Q2",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 12,
-    "log": [
-      {
-        "date": "2026-08-07",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-07",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T15:47:20.701Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mshow4xbksy1dz5jp",
-    "title": "Workday: Unconscious Bias",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 13,
-    "log": [
-      {
-        "date": "2026-08-07",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-07",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T15:47:30.671Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mshowh1twmbjrsnfy",
-    "title": "Workday: Global Standards of Business Conduct 2026",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 14,
-    "log": [
-      {
-        "date": "2026-08-07",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-07",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T15:47:46.385Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mshowndgneq704a9p",
-    "title": "Workday: Code of Conduct 2026",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 15,
-    "log": [
-      {
-        "date": "2026-08-07",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-07",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T15:47:54.580Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnff6o68asd3v6fm",
-    "title": "Add social Security Number in the Workday",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 7,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Done"
-      }
-    ],
-    "createdDate": "2026-08-10T16:09:00.294Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnfg073xdo3esu25",
-    "title": "Email About PRovate insurance + Payment slip not working",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 5,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-10T16:09:38.559Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnfhf69cvla5l2mz",
-    "title": "Message to Balzac",
-    "description": "",
-    "priority": false,
-    "category": 3,
-    "epicId": "mlinl22lxnkra6pjt",
-    "status": "done",
-    "position": 19,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Done"
-      }
-    ],
-    "createdDate": "2026-08-10T16:10:44.625Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnfi9ic31eog9tmc",
-    "title": "US Visa Check",
-    "description": "Check with Ariel/Paulo or money time to complete",
-    "priority": false,
-    "category": 5,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 1,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-10",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Wait"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Wait to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-10T16:11:23.940Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnfjdxi0uaw5ix0h",
-    "title": "Mulesoft: Check with Quinton",
-    "description": "",
-    "priority": false,
-    "category": 3,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 6,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to In Progress"
-      },
-      {
-        "date": "2026-08-10",
-        "action": "Moved from In Progress to Wait"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Wait to Done"
-      }
-    ],
-    "createdDate": "2026-08-10T16:12:16.326Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnfkimsjv5y3lnwf",
-    "title": "Button error (Lucas message)",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 1,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-10",
-        "action": "Category changed from Non categorized to Development"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      }
-    ],
-    "createdDate": "2026-08-10T16:13:09.076Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msnfl0isrjwxyw8xn",
-    "title": "OMA details pages: CSS review",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "inprogress",
-    "position": 0,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      }
-    ],
-    "createdDate": "2026-08-10T16:13:32.260Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msngqjz3uqtpzsbyt",
-    "title": "Filip Offboard",
-    "description": "",
-    "priority": false,
-    "category": 5,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 2,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-10T16:45:50.367Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
     "id": "msofftdrmlkkkd7ig",
     "title": "Email signature (official)",
     "description": "",
     "priority": false,
     "category": 6,
     "epicId": "mshovdazls9s49l6r",
-    "status": "todo",
-    "position": 4,
-    "log": [],
+    "status": "mncchgncxlcix2v96",
+    "position": 1,
+    "log": [
+      {
+        "date": "2026-08-18",
+        "action": "Moved from To Do to Today"
+      }
+    ],
     "createdDate": "2026-08-11T08:57:15.903Z",
     "deadline": null,
     "snoozeUntil": null
   },
   {
-    "id": "msogcq6imoh2u2dty",
-    "title": "Create Wishlist New Ticket",
-    "description": "",
-    "priority": false,
-    "category": 5,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 4,
-    "log": [
-      {
-        "date": "2026-08-11",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Category changed from Non categorized to Planning"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Done"
-      }
-    ],
-    "createdDate": "2026-08-11T09:22:51.402Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
     "id": "msolfq9uixmnnuws7",
-    "title": "CRs (Design system + my account)",
+    "title": "CRs / Deploy: (Design system + my account)",
     "description": "ESB-750\nESB-751",
     "priority": false,
     "category": 6,
@@ -5335,67 +4765,48 @@
     "snoozeUntil": null
   },
   {
-    "id": "msotej6ne1vwirqet",
-    "title": "\"Debug Logs Enabled\" Missing",
+    "id": "msyf2u5kzmvr72fm3",
+    "title": "ESB-753 - Wishlist save button",
     "description": "",
     "priority": false,
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
-    "status": "mncchgncxlcix2v96",
-    "position": 0,
-    "log": [
-      {
-        "date": "2026-08-11",
-        "action": "Moved from To Do to Today"
-      }
-    ],
-    "createdDate": "2026-08-11T15:28:10.655Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msotf066y6c58iial",
-    "title": "Check with Deelip missing ticket",
-    "description": "",
-    "priority": false,
-    "category": 3,
-    "epicId": "mlinlecx6b1djaonv",
     "status": "done",
-    "position": 0,
+    "position": 2,
     "log": [
       {
-        "date": "2026-08-11",
+        "date": "2026-08-18",
         "action": "Moved from To Do to In Progress"
       },
       {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Wait"
+        "date": "2026-08-18",
+        "action": "Category changed from Non categorized to Development"
       },
       {
-        "date": "2026-08-13",
-        "action": "Moved from Wait to Done"
+        "date": "2026-08-18",
+        "action": "Moved from In Progress to Done"
       }
     ],
-    "createdDate": "2026-08-11T15:28:32.670Z",
+    "createdDate": "2026-08-18T08:44:52.136Z",
     "deadline": null,
     "snoozeUntil": null
   },
   {
-    "id": "mspvqrlzgb25arqls",
-    "title": "Add Logs PDP + PLP",
-    "description": "Check history on git",
+    "id": "msyq7cx5cp8xe99b1",
+    "title": "Add my own reviow on workdays (Mikael asked me)",
+    "description": "",
     "priority": false,
-    "category": 1,
-    "epicId": null,
+    "category": 6,
+    "epicId": "mshovdazls9s49l6r",
     "status": "mncchgncxlcix2v96",
-    "position": 1,
+    "position": 0,
     "log": [
       {
-        "date": "2026-08-12",
+        "date": "2026-08-18",
         "action": "Moved from To Do to Today"
       }
     ],
-    "createdDate": "2026-08-12T09:21:26.855Z",
+    "createdDate": "2026-08-18T13:56:18.857Z",
     "deadline": null,
     "snoozeUntil": null
   }

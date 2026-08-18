@@ -1,7 +1,7 @@
 # SPEC — Project Specification
 
-**Version:** 2.41.1
-**Last Updated:** 2026-08-16
+**Version:** 2.42.0
+**Last Updated:** 2026-08-18
 
 ---
 
@@ -365,6 +365,15 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Clone Task:** the edit modal has a "Clone" button (indigo, `modifier="clone"`) between Cancel and Save. Clicking it calls `openCloneTaskModal()` which closes the edit modal and reopens in Add mode with all task fields copied except `log`; title is prefixed with `"(Clone) "`; snooze is copied only if still in the future. The resulting form submits as a new task creation.
 - **Send to Backlog:** the edit modal has a "Backlog" button (slate grey, `modifier="backlog"`) between Clone and Update. Only shown for board tasks (not tasks already in the backlog column). Clicking it closes the modal, moves the task to the backlog column at position 0 via `moveTask()`, and shows a success toast. The server generates a log entry: `"Moved from 'X' to 'Backlog'"`.
 
+### Confirmations
+- **One dialog, not one per action.** `openConfirmDialog({ title, message, confirmLabel, cancelLabel, variant })` in `modals.js` drives the single `<modal-dialog class="js-confirmModal">` in `index.html` and returns a `Promise<boolean>`. Adding a confirmable action needs **no new markup and no wiring** — just `if (!await openConfirmDialog({…})) return;`. Do not add another confirm modal for a new action.
+- **Every dismissal resolves `false`:** Cancel, Escape, backdrop click and the ✕ button. The ✕/ESC/backdrop paths are picked up through the component's `modal-closed` event.
+- **Listeners are per-call.** `openConfirmDialog` attaches its three listeners on open and detaches them *before* calling `close()`, so the `modal-closed` handler cannot re-enter and resolve `false` over an accepted answer. A `settled` guard makes the promise single-resolve. Nothing is left attached between calls.
+- **`variant` encodes reversibility, not severity:** `'delete'` (red) for irreversible actions (delete task), `'primary'` (blue) for reversible ones (archive, generate report). The message text should say which it is.
+- **The element lookup is lazy and cached** inside `modals.js`, so page modules can call it without threading `elements` through.
+- **Confirmed actions:** deleting a task (message names the task), archiving a column (message names the column and the task count; skipped entirely with an info toast when the column is empty, so the dialog never asks about zero tasks), generating a report. The four config-page confirmations (epic / category / profile / column delete) still use their own dedicated modals — they predate this helper.
+- **Stacking works:** the task-delete confirmation opens over the still-open task modal; `<modal-dialog>`'s open-stack means ESC dismisses only the confirmation.
+
 ### Categories
 - **Category 1 cannot be deleted.** Deleting any other category reassigns its active tasks to category 1. Archived tasks are untouched.
 - **`categoryName` is snapshotted** onto each task at archive time, so reports show the correct name even if the category is later deleted.
@@ -645,7 +654,7 @@ All CRUD editors (categories, epics, profiles, columns, checklist, AI config, ge
 |----------------------------------|----------------------------------|---------|--------------------------------------------|
 | `.js-taskModal`                  | Add / Edit / Clone task          | large   | [+ Add Task] / [Edit] on card; Clone button in edit mode reopens as add; also reused by backlog + AI pages. The modal **header is the inline-editable task title** (`.taskForm__title`, a `contenteditable` heading — replaces the old "Add Task"/"Edit Task" label *and* the body Title field; new tasks default to `DEFAULT_TASK_TITLE` "New task", pre-selected; reads via `textContent`). Two-column body (`.taskForm__grid`): left = description (textarea fills height), right = priority/category/epic/schedule/log; stacks below 720px |
 | `.js-reportsModal`               | View a report                    | large   | Clicking a row on the Reports page                     |
-| `.js-confirmModal`               | Delete task confirmation         | small   | Delete button in edit modal                            |
+| `.js-confirmModal`               | **Shared confirmation dialog** — generic; every confirmable action reuses it via `openConfirmDialog()` (see Non-obvious Behaviors § Confirmations). Currently: delete task, archive column, generate report. | small   | `openConfirmDialog()` in `modals.js`                   |
 | `.js-epicConfirmModal`           | Epic delete confirmation         | small   | Delete in config page → Epics                          |
 | `.js-categoryConfirmModal`       | Category delete confirmation     | small   | Delete in config page → Categories                     |
 | `.js-profileConfirmModal`        | Profile delete confirmation      | small   | Delete in config page → Profiles                       |

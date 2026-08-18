@@ -400,22 +400,105 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
     };
 }
 
+/** @type {Object|null} Cached refs to the shared confirmation modal. Looked up
+ *  lazily so page modules can call openConfirmDialog() without threading
+ *  `elements` through. */
+let confirmDialogEls = null;
+
 /**
- * Opens the delete confirmation modal.
- * @param {Object} elements - DOM element references
+ * Resolves (and caches) the shared confirmation modal's elements.
+ * @returns {{modal: HTMLElement, title: HTMLElement, message: HTMLElement,
+ *            cancel: HTMLElement, accept: HTMLElement}}
  */
-export function openDeleteConfirmation(elements) {
-    elements.confirmModal.open();
+function getConfirmDialogEls() {
+    if (!confirmDialogEls) {
+        confirmDialogEls = {
+            modal:   document.querySelector('.js-confirmModal'),
+            title:   document.querySelector('.js-confirmTitle'),
+            message: document.querySelector('.js-confirmMessage'),
+            cancel:  document.querySelector('.js-confirmCancel'),
+            accept:  document.querySelector('.js-confirmAccept')
+        };
+    }
+    return confirmDialogEls;
 }
 
 /**
- * Confirms and executes task deletion using optimistic UI.
+ * Opens the shared confirmation modal and resolves with the user's answer.
+ *
+ * One `<modal-dialog class="js-confirmModal">` in index.html backs every
+ * confirmable action — a new one needs no markup and no wiring, just copy:
+ *
+ *   if (!await openConfirmDialog({ title: 'Archive Tasks', message: '…' })) return;
+ *
+ * Cancel, Escape, the backdrop and the ✕ button all resolve `false`.
+ *
+ * @param {Object} opts
+ * @param {string} opts.title - Dialog heading (also its accessible name)
+ * @param {string} opts.message - Body copy; say what happens and whether it's reversible
+ * @param {string} [opts.confirmLabel='Confirm'] - Accept button label
+ * @param {string} [opts.cancelLabel='Cancel'] - Cancel button label
+ * @param {'delete'|'primary'} [opts.variant='delete'] - Accept button style;
+ *        'delete' (red) for irreversible actions, 'primary' for reversible ones
+ * @returns {Promise<boolean>} true when confirmed, false otherwise
+ */
+export function openConfirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', variant = 'delete' }) {
+    const els = getConfirmDialogEls();
+    els.title.textContent = title;
+    els.message.textContent = message;
+    els.accept.textContent = confirmLabel;
+    els.cancel.textContent = cancelLabel;
+    els.accept.className = `btn --${variant} js-confirmAccept`;
+
+    return new Promise(resolve => {
+        let settled = false;
+
+        // Listeners are detached before close() so the modal-closed handler
+        // can't re-enter and resolve false over an accepted answer.
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            els.accept.removeEventListener('click', onAccept);
+            els.cancel.removeEventListener('click', onCancel);
+            els.modal.removeEventListener('modal-closed', onDismiss);
+            els.modal.close();
+            resolve(result);
+        };
+        const onAccept = () => finish(true);
+        const onCancel = () => finish(false);
+        const onDismiss = () => finish(false);  // Escape, backdrop, ✕
+
+        els.accept.addEventListener('click', onAccept);
+        els.cancel.addEventListener('click', onCancel);
+        els.modal.addEventListener('modal-closed', onDismiss);
+        els.modal.open();
+    });
+}
+
+/**
+ * Asks for confirmation, then deletes the task currently open in the task modal.
+ * @param {Object} elements - DOM element references
+ * @param {Function} render - Re-render callback for the calling page
+ */
+export async function openDeleteConfirmation(elements, render) {
+    const task = tasks.find(t => t.id === editingTaskId);
+    const confirmed = await openConfirmDialog({
+        title: 'Delete Task',
+        message: task
+            ? `Delete "${task.title}"? This cannot be undone — unlike archiving, the task is not recoverable.`
+            : 'Delete this task? This cannot be undone.',
+        confirmLabel: 'Delete'
+    });
+    if (confirmed) await deleteEditingTask(elements, render);
+}
+
+/**
+ * Deletes the task being edited using optimistic UI.
  * Updates UI immediately, then makes API call. Rolls back on failure.
  * @param {Object} elements - DOM element references
- * @param {Function} renderAllColumns - Function to render all columns
- * @param {Function} removeTaskFromState - Function to remove task from state
+ * @param {Function} render - Re-render callback for the calling page
  */
-export async function confirmDeleteTask(elements, renderAllColumns, removeTaskFromState) {
+async function deleteEditingTask(elements, render) {
     if (!editingTaskId) return;
 
     // Save snapshot for potential rollback
@@ -423,9 +506,8 @@ export async function confirmDeleteTask(elements, renderAllColumns, removeTaskFr
     const taskId = editingTaskId;
 
     // Optimistic UI: Update immediately
-    removeTaskFromState(taskId);
-    renderAllColumns();
-    elements.confirmModal.close();
+    removeTask(taskId);
+    render();
     elements.taskModal.close();
     setEditingTaskId(null);
 
@@ -435,7 +517,7 @@ export async function confirmDeleteTask(elements, renderAllColumns, removeTaskFr
     } catch (error) {
         // Rollback: Restore previous state
         restoreTasksFromSnapshot(previousTasks);
-        renderAllColumns();
+        render();
         console.error('Error deleting task:', error);
         elements.toaster.error('Failed to delete task. Changes have been reverted.');
     }

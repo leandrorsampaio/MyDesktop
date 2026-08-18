@@ -168,14 +168,16 @@
 
     <!-- Archived Tasks Modal -->
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Shared Confirmation Modal — generic, driven entirely by
+         openConfirmDialog() in modals.js. Every confirmable action reuses
+         this one dialog: pass copy, await a boolean. Do not add another. -->
     <modal-dialog class="js-confirmModal" size="small">
-        <span slot="title">Confirm Delete</span>
+        <span slot="title" class="js-confirmTitle">Are you sure?</span>
         <div class="confirmDialog">
-            <p class="confirmDialog__message">Are you sure you want to delete this task? This action cannot be undone.</p>
+            <p class="confirmDialog__message js-confirmMessage"></p>
             <div class="confirmDialog__actions">
                 <button type="button" class="btn --cancel js-confirmCancel">Cancel</button>
-                <button type="button" class="btn --delete js-confirmDelete">Delete</button>
+                <button type="button" class="btn --delete js-confirmAccept">Confirm</button>
             </div>
         </div>
     </modal-dialog>

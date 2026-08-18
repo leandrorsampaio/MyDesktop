@@ -3608,5 +3608,395 @@
       ]
     },
     "notes": "ToS: LWC lifecycle hooks\n\neshopWishlistController,eshopWishlistControllerTest,eshopProductExportController,eshopProductExportControllerTest,eshopUtils,eshopUtilsTest,eshopLegacyWishlistImage,eshopLegacyWishlistImageTest\n\nuiWishlistPage,uiWishlistToolbar,uiWishlistItemList,uiWishlistItemCard,uiWishlistFormModal,uiWishlistDeleteModal,uiWishlistConvertToCartModal,uiProductExportTable,uiProductExportPdf,uiProductExportImages,uiProductExportDocs,uiExportPageLayout,uiExportFeedback,uiExportSizeWarning,uiSkeletonTable,uiSkeletonCards,eshopExportFileBuilders,uiCategoryExportButton"
+  },
+  {
+    "id": "msydmxy8q2upbozwp",
+    "title": "Week 34 (Aug 17-23)",
+    "generatedDate": "2026-08-18T08:04:30.942Z",
+    "weekNumber": 34,
+    "dateRange": "Aug 17-23",
+    "content": {
+      "columns": [
+        {
+          "columnId": "todo",
+          "columnName": "To Do",
+          "tasks": [
+            {
+              "id": "mlqm987yv7nxezlcj",
+              "title": "ESB-593: News component",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmj15hwrzqybghg12",
+              "title": "[Deelip] Banner as full screen with variants",
+              "description": "Create a new banner slider. With more option. we dont have the satdar but add with carousel. there is not cicket.",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bbaxdgllccpzaw",
+              "title": "Email to Devs about new components usage",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "mr8o0hoycle82772l",
+              "title": "Delete Jest File",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msh9hlk8nmpbcyg9a",
+              "title": "Deploy new Design System Package to production",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msofftdrmlkkkd7ig",
+              "title": "Email signature (official)",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            }
+          ]
+        },
+        {
+          "columnId": "wait",
+          "columnName": "Wait",
+          "tasks": [
+            {
+              "id": "msh8f53s7kh0gh0vv",
+              "title": "Request gitHub acess",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msh8iwit6j4fsz9b7",
+              "title": "Request Flosum access",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msolfq9uixmnnuws7",
+              "title": "CRs (Design system + my account)",
+              "description": "ESB-750\nESB-751",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mncchgncxlcix2v96",
+          "columnName": "Today",
+          "tasks": []
+        },
+        {
+          "columnId": "inprogress",
+          "columnName": "In Progress",
+          "tasks": []
+        },
+        {
+          "columnId": "done",
+          "columnName": "Done",
+          "tasks": [
+            {
+              "id": "msh8ef7gd4y1xnzr8",
+              "title": "Request Salesforce Accoutns (Prod, UAT, QA)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msh8flw3segp395ii",
+              "title": "Request Jira Account",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msh8h7b0se5tyqzjd",
+              "title": "AI Discussion with Mikael (check the docs)",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msh8hzx6fphgvfid1",
+              "title": "Org Bookmarks",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msh8ibeju3iyic7gs",
+              "title": "Re-Create Dev Meetign",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "mshcybcyw7tnmi05x",
+              "title": "Investigate Visibility rules",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mshoujc3v9ndpioh7",
+              "title": "Workday: Welcome Aboard: Your JumpStart Journey Begins",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "mshovpg9wgpxofmha",
+              "title": "Workday: Digital Security Modules FY2026 Q3",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "mshovx8ddfnpt078a",
+              "title": "Workday: Digital Security Modules FY2026 Q2",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "mshow4xbksy1dz5jp",
+              "title": "Workday: Unconscious Bias",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "mshowh1twmbjrsnfy",
+              "title": "Workday: Global Standards of Business Conduct 2026",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "mshowndgneq704a9p",
+              "title": "Workday: Code of Conduct 2026",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "msnff6o68asd3v6fm",
+              "title": "Add social Security Number in the Workday",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mshovdazls9s49l6r"
+            },
+            {
+              "id": "msnfg073xdo3esu25",
+              "title": "Email About PRovate insurance + Payment slip not working",
+              "description": "",
+              "category": 6,
+              "categoryName": "Generic Task",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msnfhf69cvla5l2mz",
+              "title": "Message to Balzac",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinl22lxnkra6pjt"
+            },
+            {
+              "id": "msnfi9ic31eog9tmc",
+              "title": "US Visa Check",
+              "description": "Check with Ariel/Paulo or money time to complete",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msnfjdxi0uaw5ix0h",
+              "title": "Mulesoft: Check with Quinton",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msnfkimsjv5y3lnwf",
+              "title": "Button error (Lucas message)",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msnfl0isrjwxyw8xn",
+              "title": "OMA details pages: CSS review",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msngqjz3uqtpzsbyt",
+              "title": "Filip Offboard",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "msogcq6imoh2u2dty",
+              "title": "Create Wishlist New Ticket",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msotej6ne1vwirqet",
+              "title": "\"Debug Logs Enabled\" Missing",
+              "description": "",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "msotf066y6c58iial",
+              "title": "Check with Deelip missing ticket",
+              "description": "",
+              "category": 3,
+              "categoryName": "Communication",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mspvqrlzgb25arqls",
+              "title": "ESB-750 Add Logs PDP + PLP",
+              "description": "Check history on git",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        },
+        {
+          "columnId": "mmf9c0aaza1snpz8c",
+          "columnName": "Backlog",
+          "tasks": [
+            {
+              "id": "mkvilrcyp01cdgxf4",
+              "title": "<head> clean up",
+              "description": "Static resource on production.\nAdd to <head>",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mmty9jqgvyfk3i0ar",
+              "title": "ESB-599 - Reduce sticky header footprint on smaller desktop viewports",
+              "description": "https://solenis.atlassian.net/browse/ESB-599",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn2bjlxbmnv44k110",
+              "title": "(Follow Up) ESB-595 OMS Tables (Time-Based Segmentation) AdVic",
+              "description": "https://solenis.atlassian.net/browse/ESB-595",
+              "category": 4,
+              "categoryName": "To Remember",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mn6r1z9dha9o6uqnk",
+              "title": "Google Fonts as static resource",
+              "description": "Following security email",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mnjke4wf7mey7rz9u",
+              "title": "ESB-599 Quick Wins for Header",
+              "description": "https://solenis.atlassian.net/browse/ESB-599\n\n(probably deprecated)",
+              "category": 2,
+              "categoryName": "Development",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mo1b54al5y6gsk42w",
+              "title": "New ticket for Deelip",
+              "description": "be able to modify the color (buttons and texts) for all the componentsv. Make sure we can use the Taski colors in Taski components. \n\n\nHero banner frokm design system version should be able to be a slider with multiple heros together. \n\n\nAdd Deelip in copy of the tickets",
+              "category": 1,
+              "categoryName": "Non categorized",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpcmx0ccsfnmmsktr",
+              "title": "Deelip Ticket (news)",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mpmdph8ne15bl9g6l",
+              "title": "Map of resources (Piotr and Filip)",
+              "description": "+ suggestions for my area\nTracy has a strong about show things should be\nshe need to be in the creation process\n\nThings that didn't work before",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "moq8dy5b65p58w331"
+            },
+            {
+              "id": "mpo0znhhqwtdzja11",
+              "title": "Codebase Wiki Specs",
+              "description": "New Wiki\nNew linters\nPresentation \nAdd gagam and Mikael to the loop",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            },
+            {
+              "id": "mqp2ngl32qh3bthd8",
+              "title": "Icons E-Email feedback",
+              "description": "",
+              "category": 5,
+              "categoryName": "Planning",
+              "epicId": "mlinlecx6b1djaonv"
+            }
+          ]
+        }
+      ]
+    },
+    "notes": ""
   }
 ]

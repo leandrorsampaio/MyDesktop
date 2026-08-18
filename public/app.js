@@ -17,7 +17,6 @@ import {
     setTasks,
     addTask,
     updateTaskInState,
-    removeTask,
     activeCategoryFilters,
     priorityFilterActive,
     createTasksSnapshot,
@@ -50,7 +49,7 @@ import {
     openEditModal,
     openCloneTaskModal,
     openDeleteConfirmation,
-    confirmDeleteTask,
+    openConfirmDialog,
     createTaskFormSubmitHandler,
     setQuickDateTime
 } from './js/modals.js';
@@ -95,11 +94,6 @@ import {
         // Archived Tasks Modal (opened via sidebar config-action in future pages)
         archivedModal: document.querySelector('.js-archivedModal'),
         archivedContainer: document.querySelector('.js-archivedContainer'),
-
-        // Confirm Modal
-        confirmModal: document.querySelector('.js-confirmModal'),
-        confirmCancel: document.querySelector('.js-confirmCancel'),
-        confirmDelete: document.querySelector('.js-confirmDelete'),
 
         // Privacy (appContainer always in DOM)
         appContainer: document.querySelector('.js-appContainer'),
@@ -632,9 +626,30 @@ import {
 
     /**
      * Handles the archive button click for a specific column.
+     * Confirms first — archiving clears a whole column at once, so the count
+     * and column name are stated up front. Reversible from the Archive page,
+     * hence the primary (not destructive) confirm button.
      * @param {string} columnId - The column ID to archive tasks from
      */
     async function handleArchive(columnId) {
+        const column = columns.find(c => c.id === columnId);
+        const columnName = column ? column.name : 'this column';
+        const count = tasks.filter(t => t.status === columnId).length;
+
+        if (count === 0) {
+            elements.toaster.info(`No tasks to archive in ${columnName}`);
+            return;
+        }
+
+        const confirmed = await openConfirmDialog({
+            title: 'Archive Tasks',
+            message: `Archive ${count} task${count !== 1 ? 's' : ''} from "${columnName}"? `
+                + 'They move to the Archive page, where they can be restored at any time.',
+            confirmLabel: 'Archive',
+            variant: 'primary'
+        });
+        if (!confirmed) return;
+
         try {
             const result = await archiveTasksApi(columnId);
             if (result.ok) {
@@ -772,13 +787,9 @@ import {
         // Checklist editing also lives in config-page.js now (the old modal
         // editor was removed in v2.38.3).
 
-        // Confirm Delete Modal (task)
-        elements.confirmCancel.addEventListener('click', () => {
-            elements.confirmModal.close();
-        });
-        elements.confirmDelete.addEventListener('click', () => {
-            confirmDeleteTask(elements, renderAllColumns, removeTask);
-        });
+        // The shared confirmation modal (.js-confirmModal) needs no wiring —
+        // openConfirmDialog() in modals.js attaches and detaches its own
+        // listeners per call and resolves a boolean.
     }
 
     /**
@@ -838,7 +849,7 @@ import {
             if (e.target.classList.contains('js-addTaskBtn')) {
                 openAddTaskModal(
                     elements,
-                    () => openDeleteConfirmation(elements),
+                    () => openDeleteConfirmation(elements, renderAllColumns),
                     handleTaskFormSubmit
                 );
             }
@@ -854,7 +865,7 @@ import {
             board: {
                 quickAdd: () => openAddTaskModal(
                     elements,
-                    () => openDeleteConfirmation(elements),
+                    () => openDeleteConfirmation(elements, renderAllColumns),
                     handleTaskFormSubmit
                 ),
                 moveCard: (taskId, newStatus, newPosition) => moveTask(taskId, newStatus, newPosition)
@@ -873,9 +884,9 @@ import {
             openEditModal(
                 taskId,
                 elements,
-                () => openDeleteConfirmation(elements),
+                () => openDeleteConfirmation(elements, renderAllColumns),
                 handleTaskFormSubmit,
-                () => openCloneTaskModal(taskId, elements, () => openDeleteConfirmation(elements), handleTaskFormSubmit),
+                () => openCloneTaskModal(taskId, elements, () => openDeleteConfirmation(elements, renderAllColumns), handleTaskFormSubmit),
                 onSendToBacklog
             );
         });

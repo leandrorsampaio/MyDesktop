@@ -147,7 +147,7 @@ export async function initBacklogPage(pageViewEl, { elements }) {
         openEditModal(
             taskId,
             elements,
-            () => openDeleteConfirmation(elements),
+            () => openDeleteConfirmation(elements, renderBacklogRows),
             handleTaskFormSubmit
         );
     });
@@ -183,7 +183,7 @@ export async function initBacklogPage(pageViewEl, { elements }) {
     pageViewEl.querySelector('page-fab').addEventListener('fab-click', () => {
         openAddTaskModal(
             elements,
-            () => openDeleteConfirmation(elements),
+            () => openDeleteConfirmation(elements, renderBacklogRows),
             handleTaskFormSubmit
         );
     });

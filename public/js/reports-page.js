@@ -5,7 +5,7 @@
 import {
     fetchReportsApi, generateReportApi, deleteReportApi
 } from './api.js';
-import { renderReportView } from './modals.js';
+import { renderReportView, openConfirmDialog } from './modals.js';
 
 /**
  * Initialises the reports page inside the given container element.
@@ -120,8 +120,17 @@ export async function initReportsPage(pageViewEl, { elements }) {
         }
     });
 
-    // FAB — generate new report
+    // FAB — generate new report (confirmed: it appends a permanent snapshot)
     pageViewEl.querySelector('page-fab').addEventListener('fab-click', async () => {
+        const confirmed = await openConfirmDialog({
+            title: 'Generate Report',
+            message: 'Generate a report snapshot of the current board and notes? '
+                + 'Tasks are not moved, archived or changed.',
+            confirmLabel: 'Generate',
+            variant: 'primary'
+        });
+        if (!confirmed) return;
+
         try {
             const result = await generateReportApi();
             if (result.ok) {
