@@ -1,6 +1,6 @@
 {
   "name": "task-tracker",
-  "version": "2.48.0",
+  "version": "2.49.0",
   "description": "A local web-based task management tool with kanban board",
   "main": "server.js",
   "scripts": {

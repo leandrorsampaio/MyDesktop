@@ -1,0 +1,115 @@
+:host {
+    display: block;
+}
+
+.proposalRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-12, 12px);
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+:host(:last-child) .proposalRow {
+    border-bottom: none;
+}
+
+.proposalRow:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+}
+
+/* The verb, as a fixed-width chip so the column of them scans vertically.
+   Outlined rather than filled — these are proposals, not states. */
+.proposalRow__kind {
+    flex-shrink: 0;
+    min-width: 58px;
+    padding: 2px var(--space-6, 6px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    font-weight: var(--font-weight-medium, 500);
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Delete is the only irreversible verb, and the only one that earns colour. */
+.proposalRow__kind.--delete {
+    border-color: var(--color-accent-error, #ef4444);
+    color: var(--color-accent-error, #ef4444);
+}
+
+.proposalRow__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.proposalRow__headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-8, 8px);
+}
+
+.proposalRow__taskTitle {
+    color: var(--color-text-primary, #111827);
+    font-size: var(--text-md, 13px);
+    font-weight: var(--font-weight-medium, 500);
+}
+
+.proposalRow__change {
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+}
+
+.proposalRow__reason {
+    margin-top: 2px;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-base, 12px);
+}
+
+.proposalRow__reason[hidden] {
+    display: none;
+}
+
+.proposalRow__actions {
+    display: flex;
+    gap: var(--space-6, 6px);
+    flex-shrink: 0;
+}
+
+/* Mirrors the design system's small buttons. Declared locally because
+   document `.btn` rules do not cross the shadow boundary — same approach as
+   backlog-row and ai-staged-row. */
+.proposalRow__btn {
+    padding: var(--space-4, 4px) var(--space-10, 10px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-secondary, #4b5563);
+    font-family: inherit;
+    font-size: var(--text-base, 12px);
+    font-weight: var(--font-weight-medium, 500);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.proposalRow__btn:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    border-color: var(--color-text-secondary, #4b5563);
+    color: var(--color-text-primary, #111827);
+}
+
+.proposalRow__btn.--apply:hover {
+    background: var(--color-accent-primary, #1a73e8);
+    border-color: var(--color-accent-primary, #1a73e8);
+    color: var(--color-text-on-accent, #fff);
+}
+
+.proposalRow__btn.--danger:hover {
+    background: var(--color-accent-error, #ef4444);
+    border-color: var(--color-accent-error, #ef4444);
+    color: var(--color-text-on-accent, #fff);
+}

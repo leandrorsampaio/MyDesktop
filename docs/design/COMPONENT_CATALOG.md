@@ -356,7 +356,30 @@ Button sizing: 4px vertical, 8px horizontal padding, 11px font (smaller than oth
 
 **Events dispatched:** `ai-edit`, `ai-clone`, `ai-promote-backlog`, `ai-promote-board`, `ai-delete`
 
-### 4.5 FAB (Floating Action Button)
+### 4.5 Proposal Row (`<proposal-row>`)
+
+One AI-proposed change awaiting review. Shown in the Proposed Changes section of the AI page.
+
+```
+.proposalRow
+  .proposalRow__kind             ← UPDATE / MOVE / DELETE chip, fixed width so the column scans vertically
+  .proposalRow__body
+    .proposalRow__taskTitle      ← which task
+    .proposalRow__change         ← the change as a sentence: "size → 8, mark priority"
+    .proposalRow__reason         ← the AI's one-line justification (hidden if absent)
+  .proposalRow__actions          ← Apply / Reject
+```
+
+| State | Visual |
+|-------|--------|
+| Default | Outlined verb chip, tertiary text. No colour |
+| Delete | Verb chip and Apply button turn red — the only irreversible verb, and the only one that earns colour. Apply is relabelled "Delete" |
+| Hover row | Tertiary background |
+| Buffer empty | The whole section is `hidden` — an empty review list is not information |
+
+Buttons are styled locally from the shared tokens (document `.btn` rules don't cross the shadow boundary), matching `backlog-row` and `ai-staged-row`.
+
+### 4.6 FAB (Floating Action Button)
 
 Used on backlog page. Plain HTML element (not a Web Component).
 

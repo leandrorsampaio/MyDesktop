@@ -78,6 +78,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── categories.json
 │       ├── ai-staged-tasks.json   # AI-proposed tasks awaiting promotion
 │       ├── ai-conversation.json   # persisted assistant transcript (max 200 turns)
+│       ├── ai-proposals.json      # AI-proposed changes awaiting review (max 50)
 │       └── attachments/           # gitignored — {taskId}/{attachmentId}{ext}, mode 0600
 ├── tests/
 │   ├── unit/                      # utils, validation, router, archive-page, mini-server, state, filters
@@ -219,6 +220,12 @@ GET    /api/ai/availability                        - Is the AI usable right now?
                                                      Always 200, never throws — the basis of graceful degradation. Key never returned.
 POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[], usage }; rate-limited 10 req/min (body: { messages: [{role,content}] }).
                                                      The system prompt carries a compact snapshot of the live board.
+GET    /api/:profile/ai/proposals                  - Pending proposed changes (the review buffer)
+POST   /api/:profile/ai/proposals/:id/apply        - Apply one. The ONLY path from the buffer to the board.
+                                                     409 + { discarded: true } when the proposal is stale.
+POST   /api/:profile/ai/proposals/apply-all        - Apply all; returns { applied, failed[] }
+DELETE /api/:profile/ai/proposals/:id              - Reject one (board untouched)
+DELETE /api/:profile/ai/proposals                  - Reject all (board untouched)
 GET    /api/:profile/ai/conversation               - Get the persisted transcript ({ messages: [{role, content, at}] })
 PUT    /api/:profile/ai/conversation               - Replace the transcript (body: { messages }); non-user/assistant roles dropped, capped at 200
 DELETE /api/:profile/ai/conversation               - Clear the transcript
@@ -575,6 +582,26 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
 
+### AI proposed changes (v2.49.0)
+
+The assistant's second verb. `propose_tasks` creates new work; `propose_changes` edits work that already exists — re-filing, rescheduling, resizing, moving, removing duplicates.
+
+**Nothing proposed reaches the board.** Proposals land in `data/{alias}/ai-proposals.json` and only the apply route moves anything. This is the feature's core promise and there is a test named after it.
+
+```js
+{ id, kind: 'update'|'move'|'delete', taskId, payload, reason, createdAt }
+```
+
+**There is deliberately no `create` kind.** New tasks already have a reviewable flow — AI staging — where they can be edited, cloned and promoted before touching the board. A second creation path would be a worse experience, not a richer one.
+
+**Validated twice, on purpose.** `normaliseProposal()` drops anything referencing a task, column, epic or category the profile doesn't have (a review buffer full of un-appliable rows is worse than a shorter honest one), and an update whose payload would change nothing. Then `applyProposal()` re-runs `validateTaskInput` / `validateMoveInput` **at apply time** — the board may have moved on since the proposal was written, so a stored proposal is never trusted. It shares the *validators* with the hand-driven routes rather than the handlers, and mirrors their logging (`"Moved from 'X' to 'Y'"`, `"Category changed from X to Y"`).
+
+A stale proposal returns `409 { discarded: true }` and is removed: re-offering something that cannot apply is noise. `apply-all` reports per-proposal failures instead of aborting the batch — each proposal is an independent decision the user already made — and consumes the whole buffer either way.
+
+Capped at `MAX_PROPOSALS` (50). An unbounded review list stops being reviewable, which defeats the point.
+
+**UI:** a `<proposal-row>` per change in a Proposed Changes section on the AI page, above Staged Tasks, hidden entirely when the buffer is empty. Each row states the verb, the task, the change in one line, and the AI's reason. `delete` is the only verb that gets colour — it is the only irreversible one.
+
 ### Story points (v2.48.0)
 
 `task.points` — one of `1, 2, 3, 5, 8, 13`, or `null` for unestimated. `STORY_POINTS` in `server.js` and `constants.js` (source of truth: the server).
@@ -748,6 +775,15 @@ Stored in `data/{alias}/ai-conversation.json`. The client owns the transcript an
 - **Event:** `change` → `CustomEvent({ detail: { value, label } })`, bubbles + composed
 - **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + category filter (`type="list"`). (The task-modal epic field is no longer a picker — it's a clickable pill list, `.taskForm__epicSelector`, like the category pills.)
 - **List item `icon` property:** optional; when set, renders an `<svg-icon>` before the label text (used by category filter dropdown)
+
+### `<proposal-row>`
+
+One AI-proposed change awaiting review (`public/components/proposal-row/`).
+
+- **API:** `setProposal(proposal, { taskTitle, columnName, epicName, categoryName })`
+- **Events:** `apply-proposal`, `reject-proposal` (both bubble + composed) — `{ detail: { proposalId } }`
+- Renders the change as a sentence (`size → 8, mark priority`, `→ In Progress`, `Remove from the board`) so a row can be judged without opening anything.
+- Buttons are styled locally from the shared tokens, matching `backlog-row` / `ai-staged-row` — document `.btn` rules don't cross the shadow boundary.
 
 ### `<quick-capture>`
 

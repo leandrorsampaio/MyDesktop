@@ -927,7 +927,8 @@ async function resolveProfile(req, res, next) {
             epics: path.join(profileDir, 'epics.json'),
             categories: path.join(profileDir, 'categories.json'),
             aiStaged: path.join(profileDir, 'ai-staged-tasks.json'),
-            aiConversation: path.join(profileDir, 'ai-conversation.json')
+            aiConversation: path.join(profileDir, 'ai-conversation.json'),
+            aiProposals: path.join(profileDir, 'ai-proposals.json')
         };
         req.profile = profile;
         // Columns sorted by order for consistent use across handlers
@@ -1570,10 +1571,10 @@ app.post('/api/:profile/tasks/:id/classify', resolveProfile, aiLimiter, async (r
         try {
             const call = resolved.providerMeta.format === 'anthropic'
                 ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt,
-                    [{ role: 'user', content: noteText }], CLASSIFY_TASK_TOOL)
+                    [{ role: 'user', content: noteText }], [CLASSIFY_TASK_TOOL])
                 : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt,
-                    [{ role: 'user', content: noteText }], CLASSIFY_TASK_TOOL);
-            toolInput = call.toolInput;
+                    [{ role: 'user', content: noteText }], [CLASSIFY_TASK_TOOL]);
+            toolInput = call.toolCalls.find(c => c.name === CLASSIFY_TASK_TOOL.name)?.input;
         } catch (aiErr) {
             return res.status(200).json({ classified: false, reason: aiErr.message, task });
         }
@@ -2640,6 +2641,59 @@ const CLASSIFY_TASK_TOOL = {
 };
 
 /**
+ * Proposal kinds the AI may put in the review buffer.
+ *
+ * Deliberately no 'create'. New tasks already have a reviewable flow — AI
+ * staging — where they can be edited, cloned and promoted before anything
+ * touches the board. A second creation path would be a worse experience, not
+ * a richer one. Proposals are for changes to tasks that already exist.
+ */
+const PROPOSAL_KINDS = ['update', 'move', 'delete'];
+
+/** Maximum proposals held in the review buffer at once. */
+const MAX_PROPOSALS = 50;
+
+/** Longest reason string stored with a proposal. */
+const PROPOSAL_REASON_MAX_LENGTH = 300;
+
+/**
+ * The assistant's second verb: propose changes to tasks that already exist.
+ *
+ * Nothing here reaches the board. Each entry lands in the review buffer and
+ * needs a human click to apply — see docs/design/AI_ASSISTANT.md § Principles.
+ */
+const PROPOSE_CHANGES_TOOL = {
+    name: 'propose_changes',
+    description: 'Propose changes to tasks that already exist on the board. Every proposal is reviewed by the user before it applies, so be specific and give a short reason. Use this when asked to reorganise, reschedule, re-file, tidy up or remove existing work. Do NOT use it to create new tasks.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            changes: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        kind:   { type: 'string', enum: PROPOSAL_KINDS, description: 'update = change fields; move = change column; delete = remove the task' },
+                        taskId: { type: 'string', description: 'ID of the existing task, exactly as shown in the board listing' },
+                        reason: { type: 'string', description: 'One short line on why. Shown to the user next to the change.' },
+                        title:       { type: 'string',  description: 'update only — new title' },
+                        description: { type: 'string',  description: 'update only — new description' },
+                        priority:    { type: 'boolean', description: 'update only — new priority flag' },
+                        category:    { type: 'integer', description: 'update only — new category ID' },
+                        epicId:      { type: 'string',  description: 'update only — new epic ID, or empty string to clear' },
+                        points:      { type: 'integer', description: 'update only — new size (1, 2, 3, 5, 8, 13)' },
+                        deadline:    { type: 'string',  description: 'update only — ISO 8601 datetime, or empty string to clear' },
+                        newStatus:   { type: 'string',  description: 'move only — destination column ID' }
+                    },
+                    required: ['kind', 'taskId', 'reason']
+                }
+            }
+        },
+        required: ['changes']
+    }
+};
+
+/**
  * Builds the quick-capture classification prompt. Board-free by design — this
  * runs on every captured note and must stay cheap.
  * @param {Object} ctx
@@ -2789,7 +2843,13 @@ function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks }) {
 
 You can see their whole board below. Use it. When they ask a question about their work, answer it from the board — do not invent tasks, and do not turn every conversation into ticket creation.
 
-Only call propose_tasks() when the user actually wants tasks created (e.g. they paste meeting notes, or ask you to add something). A question about existing work deserves a direct answer.
+You have two tools:
+- propose_tasks() — for NEW work the user wants captured (e.g. they paste meeting notes, or ask you to add something).
+- propose_changes() — for changes to tasks that ALREADY exist: re-filing, rescheduling, resizing, moving between columns, or removing duplicates. Reference tasks by the id shown in square brackets in the board listing below.
+
+Call neither when the user is simply asking a question — a question deserves a direct answer, not tickets.
+
+Nothing you propose is applied automatically. Every proposal is reviewed by the user first, so be specific and give a short reason for each change.
 
 Be concise. This is a personal tool, not a report generator.
 
@@ -2848,6 +2908,153 @@ Task creation rules:
 - Keep titles concise and actionable (verb + object, e.g. "Update API documentation")
 - Use description for details that do not fit in the title
 - Default category is 1 (Non categorized) when nothing matches`;
+}
+
+/**
+ * Validates and normalises one raw proposal from the model into a stored
+ * proposal, or null when it is unusable.
+ *
+ * Everything here is untrusted model output. A proposal that references a
+ * task, column, epic or category this profile doesn't have is dropped rather
+ * than stored — a review buffer full of un-appliable rows is worse than a
+ * shorter honest one.
+ *
+ * @param {Object} raw - One entry from the propose_changes tool call
+ * @param {Object} ctx
+ * @param {Set<string>} ctx.validTaskIds
+ * @param {Set<string>} ctx.validColumnIds
+ * @param {Set<string>} ctx.validEpicIds
+ * @param {Set<number>} ctx.validCategoryIds
+ * @returns {Object|null}
+ */
+function normaliseProposal(raw, { validTaskIds, validColumnIds, validEpicIds, validCategoryIds }) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (!PROPOSAL_KINDS.includes(raw.kind)) return null;
+    if (typeof raw.taskId !== 'string' || !validTaskIds.has(raw.taskId)) return null;
+
+    const reason = typeof raw.reason === 'string'
+        ? raw.reason.trim().slice(0, PROPOSAL_REASON_MAX_LENGTH)
+        : '';
+
+    const proposal = {
+        id: generateId(),
+        kind: raw.kind,
+        taskId: raw.taskId,
+        reason,
+        payload: {},
+        createdAt: new Date().toISOString()
+    };
+
+    if (raw.kind === 'move') {
+        if (typeof raw.newStatus !== 'string' || !validColumnIds.has(raw.newStatus)) return null;
+        proposal.payload.newStatus = raw.newStatus;
+        return proposal;
+    }
+
+    if (raw.kind === 'delete') {
+        return proposal;   // no payload
+    }
+
+    // update — keep only the fields that are present AND valid
+    const p = proposal.payload;
+    if (typeof raw.title === 'string' && raw.title.trim()) {
+        p.title = raw.title.trim().slice(0, VALIDATION.TITLE_MAX_LENGTH);
+    }
+    if (typeof raw.description === 'string') {
+        p.description = raw.description.slice(0, VALIDATION.DESCRIPTION_MAX_LENGTH);
+    }
+    if (typeof raw.priority === 'boolean') p.priority = raw.priority;
+    if (validCategoryIds.has(Number(raw.category))) p.category = Number(raw.category);
+    if (typeof raw.epicId === 'string') {
+        // Empty string is a deliberate "clear the epic", not a bad value.
+        if (raw.epicId === '') p.epicId = null;
+        else if (validEpicIds.has(raw.epicId)) p.epicId = raw.epicId;
+    }
+    if (STORY_POINTS.includes(Number(raw.points))) p.points = Number(raw.points);
+    if (typeof raw.deadline === 'string') {
+        if (raw.deadline === '') p.deadline = null;
+        else if (!isNaN(Date.parse(raw.deadline))) p.deadline = new Date(raw.deadline).toISOString();
+    }
+
+    // An update that changes nothing is noise in the review list.
+    if (Object.keys(p).length === 0) return null;
+    return proposal;
+}
+
+/**
+ * Applies one proposal to the task list, in place.
+ *
+ * Runs the same validators the equivalent hand-driven routes run
+ * (`validateTaskInput`, `validateMoveInput`) rather than trusting what was
+ * stored: the board's state may have moved on since the proposal was made, so
+ * a stored proposal is re-checked at apply time, not just at write time.
+ *
+ * @param {Array<Object>} tasks - Mutated in place
+ * @param {Object} proposal
+ * @param {Object} ctx
+ * @param {Array<Object>} ctx.columns
+ * @param {Set<number>} ctx.validCategoryIds
+ * @param {Map<number, string>} ctx.categoryNames
+ * @returns {{ok: true, task: Object|null} | {ok: false, error: string}}
+ */
+function applyProposal(tasks, proposal, { columns, validCategoryIds, categoryNames }) {
+    const index = tasks.findIndex(t => t.id === proposal.taskId);
+    if (index === -1) {
+        return { ok: false, error: 'That task no longer exists' };
+    }
+    const task = tasks[index];
+    const today = new Date().toISOString().split('T')[0];
+
+    if (proposal.kind === 'delete') {
+        tasks.splice(index, 1);
+        return { ok: true, task: null };
+    }
+
+    if (proposal.kind === 'move') {
+        const validColumnIds = new Set(columns.map(c => c.id));
+        const validation = validateMoveInput({ newStatus: proposal.payload.newStatus }, validColumnIds);
+        if (!validation.valid) return { ok: false, error: validation.errors.join('; ') };
+
+        const from = columns.find(c => c.id === task.status);
+        const to   = columns.find(c => c.id === proposal.payload.newStatus);
+        if (task.status === to.id) return { ok: false, error: 'Task is already in that column' };
+
+        for (const t of tasks) {
+            if (t.id !== task.id && t.status === to.id) t.position += 1;
+        }
+        task.status = to.id;
+        task.position = 0;
+        if (!task.log) task.log = [];
+        task.log.push({ date: today, action: `Moved from '${from ? from.name : '?'}' to '${to.name}'` });
+        return { ok: true, task };
+    }
+
+    // update
+    const validation = validateTaskInput(proposal.payload, { requireTitle: false, validCategoryIds });
+    if (!validation.valid) return { ok: false, error: validation.errors.join('; ') };
+
+    const p = proposal.payload;
+    if (p.title       !== undefined) task.title = p.title.trim();
+    if (p.description !== undefined) task.description = p.description.trim();
+    if (p.priority    !== undefined) task.priority = Boolean(p.priority);
+    if (p.epicId      !== undefined) task.epicId = p.epicId || null;
+    if (p.points      !== undefined) task.points = p.points;
+    if (p.deadline    !== undefined) task.deadline = p.deadline || null;
+    if (p.category    !== undefined) {
+        const newCategory = Number(p.category);
+        const oldCategory = task.category || DEFAULT_CATEGORY_ID;
+        // Same logging rule the hand-driven PUT route follows
+        if (newCategory !== oldCategory) {
+            if (!task.log) task.log = [];
+            task.log.push({
+                date: today,
+                action: `Category changed from ${categoryNames.get(oldCategory) || 'Non categorized'} to ${categoryNames.get(newCategory) || 'Non categorized'}`
+            });
+        }
+        task.category = newCategory;
+    }
+
+    return { ok: true, task };
 }
 
 /**
@@ -2910,7 +3117,7 @@ function extractTasksFromText(text) {
  * Calls the Anthropic Messages API.
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
-async function callAnthropicAi(apiKey, model, systemPrompt, messages, tool = PROPOSE_TASKS_TOOL) {
+async function callAnthropicAi(apiKey, model, systemPrompt, messages, tools = [PROPOSE_TASKS_TOOL]) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -2923,7 +3130,7 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages, tool = PRO
             max_tokens: 4096,
             system: systemPrompt,
             messages,
-            tools: [tool]
+            tools
         })
     });
 
@@ -2935,8 +3142,9 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages, tool = PRO
     const data = await response.json();
     let narrative = '';
     let rawTasks = [];
-    // Raw tool arguments, for callers using a tool other than propose_tasks.
-    let toolInput = null;
+    // Every tool call the model made, in order: { name, input }. A single
+    // turn may legitimately both propose tasks and propose changes.
+    const toolCalls = [];
     // Surfaced to the client so the cost of the board snapshot stays visible.
     const usage = {
         inputTokens:  data.usage?.input_tokens  ?? null,
@@ -2946,9 +3154,9 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages, tool = PRO
     for (const block of (data.content || [])) {
         if (block.type === 'text') {
             narrative += (narrative ? '\n' : '') + block.text;
-        } else if (block.type === 'tool_use' && block.name === tool.name) {
-            toolInput = block.input || null;
-            rawTasks = block.input?.tasks || [];
+        } else if (block.type === 'tool_use') {
+            toolCalls.push({ name: block.name, input: block.input || {} });
+            if (block.name === PROPOSE_TASKS_TOOL.name) rawTasks = block.input?.tasks || [];
         }
     }
 
@@ -2956,23 +3164,23 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages, tool = PRO
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative: narrative.trim(), rawTasks, toolInput, usage };
+    return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
 }
 
 /**
  * Calls any OpenAI-compatible API (OpenAI, Groq, LM Studio, Ollama /v1, etc.).
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
-async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, tool = PROPOSE_TASKS_TOOL) {
-    // Transform tool to OpenAI function-calling format
-    const openAiTool = {
+async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, tools = [PROPOSE_TASKS_TOOL]) {
+    // Transform tools to OpenAI function-calling format
+    const openAiTools = tools.map(t => ({
         type: 'function',
         function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.input_schema
+            name: t.name,
+            description: t.description,
+            parameters: t.input_schema
         }
-    };
+    }));
 
     const finalUrl = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
     const response = await fetch(finalUrl, {
@@ -2984,7 +3192,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         body: JSON.stringify({
             model,
             messages: [{ role: 'system', content: systemPrompt }, ...messages],
-            tools: [openAiTool],
+            tools: openAiTools,
             tool_choice: 'auto'
         })
     });
@@ -2998,19 +3206,20 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
     const message = data.choices?.[0]?.message;
     let narrative = (message?.content || '').trim();
     let rawTasks = [];
-    let toolInput = null;
+    const toolCalls = [];
     const usage = {
         inputTokens:  data.usage?.prompt_tokens     ?? null,
         outputTokens: data.usage?.completion_tokens ?? null
     };
 
-    if (message?.tool_calls?.length) {
+    for (const call of (message?.tool_calls || [])) {
         try {
-            const args = JSON.parse(message.tool_calls[0].function.arguments);
-            toolInput = args;
-            rawTasks = args.tasks || [];
+            const args = JSON.parse(call.function.arguments);
+            toolCalls.push({ name: call.function.name, input: args });
+            if (call.function.name === PROPOSE_TASKS_TOOL.name) rawTasks = args.tasks || [];
         } catch {
-            rawTasks = [];
+            // A malformed tool call is skipped, not fatal — the narrative and
+            // any well-formed calls in the same turn are still usable.
         }
     }
 
@@ -3018,7 +3227,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative, rawTasks, toolInput, usage };
+    return { narrative, rawTasks, toolCalls, usage };
 }
 
 /**
@@ -3298,6 +3507,121 @@ if (RATE_LIMIT_DISABLED) {
         }
     });
 }
+
+// ===========================================
+// AI Proposed Changes (review buffer)
+// ===========================================
+
+/**
+ * Loads everything applyProposal needs to re-validate against the profile's
+ * current state. Shared by the single-apply and apply-all routes.
+ * @param {Object} req
+ * @returns {Promise<Object>} ctx for applyProposal
+ */
+async function loadProposalContext(req) {
+    const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+    return {
+        columns: req.columns,
+        validCategoryIds: new Set(categories.map(c => c.id)),
+        categoryNames: new Map(categories.map(c => [c.id, c.name]))
+    };
+}
+
+// GET all pending proposals
+app.get('/api/:profile/ai/proposals', resolveProfile, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        res.json(proposals);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read proposals' });
+    }
+});
+
+// POST apply one proposal — the only path from the buffer to the board
+app.post('/api/:profile/ai/proposals/:id/apply', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        const index = proposals.findIndex(p => p.id === req.params.id);
+        if (index === -1) return res.status(404).json({ error: 'Proposal not found' });
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const ctx = await loadProposalContext(req);
+        const result = applyProposal(tasks, proposals[index], ctx);
+
+        if (!result.ok) {
+            // The board moved on since the proposal was made. Drop the stale
+            // row rather than leaving something un-appliable in the list.
+            proposals.splice(index, 1);
+            await writeJsonFile(req.profileFiles.aiProposals, proposals);
+            return res.status(409).json({ error: result.error, discarded: true });
+        }
+
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        proposals.splice(index, 1);
+        await writeJsonFile(req.profileFiles.aiProposals, proposals);
+
+        res.json({ ok: true, task: result.task });
+    } catch (error) {
+        console.error('Failed to apply proposal:', error);
+        res.status(500).json({ error: 'Failed to apply proposal' });
+    }
+});
+
+// POST apply every pending proposal, in order
+app.post('/api/:profile/ai/proposals/apply-all', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        if (proposals.length === 0) return res.json({ ok: true, applied: 0, failed: [] });
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const ctx = await loadProposalContext(req);
+
+        // One proposal failing must not abort the rest — they are independent
+        // decisions the user already made. Failures are reported, not thrown.
+        let applied = 0;
+        const failed = [];
+        for (const proposal of proposals) {
+            const result = applyProposal(tasks, proposal, ctx);
+            if (result.ok) applied += 1;
+            else failed.push({ id: proposal.id, reason: result.error });
+        }
+
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        // The whole batch is consumed either way: a proposal that couldn't
+        // apply is stale, and re-offering it would just fail again.
+        await writeJsonFile(req.profileFiles.aiProposals, []);
+
+        res.json({ ok: true, applied, failed });
+    } catch (error) {
+        console.error('Failed to apply proposals:', error);
+        res.status(500).json({ error: 'Failed to apply proposals' });
+    }
+});
+
+// DELETE reject one proposal
+app.delete('/api/:profile/ai/proposals/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        const index = proposals.findIndex(p => p.id === req.params.id);
+        if (index === -1) return res.status(404).json({ error: 'Proposal not found' });
+
+        proposals.splice(index, 1);
+        await writeJsonFile(req.profileFiles.aiProposals, proposals);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reject proposal' });
+    }
+});
+
+// DELETE reject all pending proposals
+app.delete('/api/:profile/ai/proposals', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        await writeJsonFile(req.profileFiles.aiProposals, []);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to clear proposals' });
+    }
+});
 
 // GET the persisted conversation
 app.get('/api/:profile/ai/conversation', resolveProfile, async (req, res) => {
@@ -3579,13 +3903,17 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
             epics, categories, columns: req.columns, tasks
         });
 
+        // Two tools: propose_tasks creates new work, propose_changes edits
+        // what already exists. A single turn may legitimately use both.
+        const chatTools = [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL];
+
         // Call the AI
-        let narrative, rawTasks, usage;
+        let narrative, rawTasks, toolCalls, usage;
         try {
             if (providerMeta.format === 'anthropic') {
-                ({ narrative, rawTasks, usage } = await callAnthropicAi(apiKey, model, systemPrompt, messages));
+                ({ narrative, rawTasks, toolCalls, usage } = await callAnthropicAi(apiKey, model, systemPrompt, messages, chatTools));
             } else {
-                ({ narrative, rawTasks, usage } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages));
+                ({ narrative, rawTasks, toolCalls, usage } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, chatTools));
             }
         } catch (aiErr) {
             return res.status(502).json({ error: 'AI provider error: ' + aiErr.message });
@@ -3607,7 +3935,40 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
             await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
         }
 
-        res.json({ narrative, tasks: newStagedTasks, usage: usage || null });
+        // Proposed changes land in the review buffer. Nothing here touches the
+        // board — applying is a separate, explicitly-clicked request.
+        const rawChanges = (toolCalls || [])
+            .filter(c => c.name === PROPOSE_CHANGES_TOOL.name)
+            .flatMap(c => Array.isArray(c.input?.changes) ? c.input.changes : []);
+
+        let newProposals = [];
+        if (rawChanges.length > 0) {
+            const boardTasks = await readJsonFile(req.profileFiles.tasks, []);
+            const proposalCtx = {
+                validTaskIds: new Set(boardTasks.map(t => t.id)),
+                validColumnIds: new Set(req.columns.map(c => c.id)),
+                validEpicIds: new Set(epics.map(e => e.id)),
+                validCategoryIds: new Set(categories.map(c => c.id))
+            };
+            newProposals = rawChanges
+                .map(raw => normaliseProposal(raw, proposalCtx))
+                .filter(Boolean);
+
+            if (newProposals.length > 0) {
+                const existing = await readJsonFile(req.profileFiles.aiProposals, []);
+                // Newest first, capped — an unbounded review list stops being
+                // reviewable, which defeats the point of the buffer.
+                const merged = [...newProposals, ...existing].slice(0, MAX_PROPOSALS);
+                await writeJsonFile(req.profileFiles.aiProposals, merged);
+            }
+        }
+
+        res.json({
+            narrative,
+            tasks: newStagedTasks,
+            proposals: newProposals,
+            usage: usage || null
+        });
     } catch (error) {
         res.status(500).json({ error: 'AI chat failed' });
     }

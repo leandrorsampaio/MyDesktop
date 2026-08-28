@@ -4266,3 +4266,33 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .taskForm__pointPill.--ceiling span {
     border-style: dashed;
 }
+
+/* ==========================================
+   AI page — proposed changes
+   ========================================== */
+.aiPage__proposals {
+    display: flex;
+    flex-direction: column;
+    max-height: 34%;
+    overflow: hidden;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+}
+
+/* Hidden entirely when the buffer is empty — an empty review list is not
+   information worth taking up space in a split layout. */
+.aiPage__proposals[hidden] {
+    display: none;
+}
+
+.aiPage__proposalActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.aiPage__proposalRows {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--color-bg-primary);
+}

@@ -876,3 +876,59 @@ export async function classifyTaskApi(taskId) {
     });
     return parseOrThrow(response);
 }
+
+/**
+ * Fetches the pending AI proposals for the active profile.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchProposalsApi() {
+    const response = await fetch(`${apiBase}/ai/proposals`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Applies one proposal. This is the only path from the review buffer to the
+ * board — nothing the AI proposes reaches a task without this call.
+ *
+ * A 409 means the board moved on and the proposal is now stale; the server
+ * has already discarded it, so callers should drop the row rather than retry.
+ * @param {string} proposalId
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string, stale?: boolean}>}
+ */
+export async function applyProposalApi(proposalId) {
+    const response = await fetch(`${apiBase}/ai/proposals/${proposalId}/apply`, { method: 'POST' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        return { ok: false, error: body.error || 'Failed to apply', stale: response.status === 409 };
+    }
+    return { ok: true, data: body };
+}
+
+/**
+ * Applies every pending proposal. Individual failures are reported rather than
+ * aborting the batch.
+ * @returns {Promise<{applied: number, failed: Array<{id: string, reason: string}>}>}
+ */
+export async function applyAllProposalsApi() {
+    const response = await fetch(`${apiBase}/ai/proposals/apply-all`, { method: 'POST' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Rejects one proposal without touching the board.
+ * @param {string} proposalId
+ * @returns {Promise<Object>}
+ */
+export async function rejectProposalApi(proposalId) {
+    const response = await fetch(`${apiBase}/ai/proposals/${proposalId}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Rejects every pending proposal.
+ * @returns {Promise<Object>}
+ */
+export async function rejectAllProposalsApi() {
+    const response = await fetch(`${apiBase}/ai/proposals`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}

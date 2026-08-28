@@ -150,11 +150,27 @@ describe('AI board context & conversation', () => {
     // -------------------------------------------
     describe('Prompt instructions', () => {
 
-        it('does not force a propose_tasks call on every turn', async () => {
+        it('does not force a tool call on every turn', async () => {
+            // Asserts the property, not the phrasing: the prompt must never
+            // order a tool call unconditionally (that made conversation
+            // structurally impossible), and must say a question gets an answer.
             const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt`);
             assert.ok(!/Always call propose_tasks/i.test(res.body.prompt),
                 'the forced-tool instruction is back — it makes conversation impossible');
-            assert.match(res.body.prompt, /Only call propose_tasks/i);
+            assert.match(res.body.prompt, /a question deserves a direct answer/i);
+        });
+
+        it('offers both verbs — create new work, and change existing work', async () => {
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt`);
+            assert.match(res.body.prompt, /propose_tasks\(\)/);
+            assert.match(res.body.prompt, /propose_changes\(\)/);
+        });
+
+        it('tells the model nothing it proposes is applied automatically', async () => {
+            // The propose-first guarantee has to be stated in the prompt, not
+            // just enforced in code — the model's tone depends on knowing it.
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt`);
+            assert.match(res.body.prompt, /reviewed by the user/i);
         });
 
         it('tells the model it can see the board', async () => {

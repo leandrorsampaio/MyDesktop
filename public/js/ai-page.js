@@ -17,7 +17,7 @@
 
 import {
     setTasks, setColumns, setEpics, setCategories,
-    epics, categories, columns
+    tasks, epics, categories, columns
 } from './state.js';
 import {
     fetchTasksApi, fetchColumnsApi, fetchEpicsApi, fetchCategoriesApi,
@@ -31,6 +31,11 @@ import {
     setActiveAiConfigApi,
     sendAiChatApi,
     fetchAiAvailabilityApi,
+    fetchProposalsApi,
+    applyProposalApi,
+    applyAllProposalsApi,
+    rejectProposalApi,
+    rejectAllProposalsApi,
     fetchAiConversationApi,
     saveAiConversationApi,
     clearAiConversationApi
@@ -48,6 +53,13 @@ let conversationHistory = [];
 
 /** @type {Array<Object>} In-memory mirror of ai-staged-tasks.json */
 let stagedTasks = [];
+
+/**
+ * In-memory mirror of ai-proposals.json — changes the AI wants to make to
+ * tasks that already exist. Nothing here has touched the board.
+ * @type {Array<Object>}
+ */
+let proposals = [];
 
 /**
  * Cumulative token usage for this page session, shown in the composer so the
@@ -95,6 +107,17 @@ export async function initAiPage(pageViewEl, { elements }) {
                     <div class="aiPage__notice js-aiNotice" hidden></div>
                 </div>
             </div>
+            <div class="aiPage__proposals js-proposalsSection" hidden>
+                <div class="aiPage__tasksHeader">
+                    <h3 class="aiPage__tasksTitle">Proposed Changes</h3>
+                    <div class="aiPage__proposalActions">
+                        <span class="aiPage__count js-proposalCount">0</span>
+                        <button type="button" class="btn --secondary --sm js-rejectAllBtn">Reject all</button>
+                        <button type="button" class="btn --primary --sm js-applyAllBtn">Apply all</button>
+                    </div>
+                </div>
+                <div class="aiPage__proposalRows js-proposalRows"></div>
+            </div>
             <div class="aiPage__tasks">
                 <div class="aiPage__tasksHeader">
                     <h3 class="aiPage__tasksTitle">Staged Tasks</h3>
@@ -122,12 +145,15 @@ export async function initAiPage(pageViewEl, { elements }) {
     const headerEl     = pageViewEl.querySelector('.js-listHeader');
     const modelSelectEl = pageViewEl.querySelector('.js-aiModelSelect');
     const usageEl      = pageViewEl.querySelector('.js-aiUsage');
+    const proposalsSectionEl = pageViewEl.querySelector('.js-proposalsSection');
+    const proposalRowsEl     = pageViewEl.querySelector('.js-proposalRows');
+    const proposalCountEl    = pageViewEl.querySelector('.js-proposalCount');
 
     // ---- Fetch initial data (page components load alongside — lazy: they're
     // not in index.html so the board cold-start doesn't pay for them) ----
-    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation;
+    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation, fetchedProposals;
     try {
-        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation] = await Promise.all([
+        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation, fetchedProposals] = await Promise.all([
             fetchTasksApi(),
             fetchColumnsApi(),
             fetchEpicsApi(),
@@ -137,8 +163,10 @@ export async function initAiPage(pageViewEl, { elements }) {
             // A missing or unreadable transcript is not an error worth failing
             // the page over — an empty conversation is a valid state.
             fetchAiConversationApi().catch(() => ({ messages: [] })),
+            fetchProposalsApi().catch(() => []),
             import('/components/list-header/list-header.js'),
-            import('/components/ai-staged-row/ai-staged-row.js')
+            import('/components/ai-staged-row/ai-staged-row.js'),
+            import('/components/proposal-row/proposal-row.js')
         ]);
     } catch (err) {
         if (toaster) toaster.error('Failed to load AI page data');
@@ -153,6 +181,7 @@ export async function initAiPage(pageViewEl, { elements }) {
     setCategories(fetchedCategories);
 
     stagedTasks = fetchedStaged;
+    proposals = fetchedProposals || [];
     conversationHistory = (fetchedConversation.messages || [])
         .map(m => ({ role: m.role, content: m.content }));
     tokenUsage = { input: 0, output: 0, lastInput: 0 };
@@ -197,7 +226,62 @@ export async function initAiPage(pageViewEl, { elements }) {
     // ---- Initial renders ----
     _renderMessages(messagesEl);
     _renderStagedList(rowsEl, emptyEl, countEl);
+    _renderProposals(proposalsSectionEl, proposalRowsEl, proposalCountEl);
     _renderUsage(usageEl);
+
+    // ---- Proposal review: the only path from the buffer to the board ----
+    proposalRowsEl.addEventListener('apply-proposal', async (e) => {
+        const result = await applyProposalApi(e.detail.proposalId);
+        // A stale proposal has already been discarded server-side, so it comes
+        // off the list either way — only the message differs.
+        proposals = proposals.filter(p => p.id !== e.detail.proposalId);
+        _renderProposals(proposalsSectionEl, proposalRowsEl, proposalCountEl);
+
+        if (result.ok) {
+            setTasks(await fetchTasksApi());
+            if (toaster) toaster.success('Change applied');
+        } else if (toaster) {
+            toaster[result.stale ? 'warning' : 'error'](result.error);
+        }
+    });
+
+    proposalRowsEl.addEventListener('reject-proposal', async (e) => {
+        proposals = proposals.filter(p => p.id !== e.detail.proposalId);
+        _renderProposals(proposalsSectionEl, proposalRowsEl, proposalCountEl);
+        try {
+            await rejectProposalApi(e.detail.proposalId);
+        } catch {
+            if (toaster) toaster.warning('Rejected locally, but not on the server');
+        }
+    });
+
+    pageViewEl.querySelector('.js-applyAllBtn').addEventListener('click', async () => {
+        if (proposals.length === 0) return;
+        try {
+            const result = await applyAllProposalsApi();
+            proposals = [];
+            _renderProposals(proposalsSectionEl, proposalRowsEl, proposalCountEl);
+            setTasks(await fetchTasksApi());
+            if (result.failed?.length && toaster) {
+                toaster.warning(`${result.applied} applied, ${result.failed.length} were out of date`);
+            } else if (toaster) {
+                toaster.success(`${result.applied} change${result.applied === 1 ? '' : 's'} applied`);
+            }
+        } catch (error) {
+            if (toaster) toaster.error('Failed to apply changes');
+        }
+    });
+
+    pageViewEl.querySelector('.js-rejectAllBtn').addEventListener('click', async () => {
+        if (proposals.length === 0) return;
+        proposals = [];
+        _renderProposals(proposalsSectionEl, proposalRowsEl, proposalCountEl);
+        try {
+            await rejectAllProposalsApi();
+        } catch {
+            if (toaster) toaster.warning('Rejected locally, but not on the server');
+        }
+    });
 
     // ---- Availability: checked AFTER the page has painted, never awaited
     // before it. An unconfigured or unreachable provider disables the composer
@@ -376,7 +460,7 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
         return;
     }
 
-    const { narrative, tasks: newTasks, usage } = result.data;
+    const { narrative, tasks: newTasks, proposals: newProposals, usage } = result.data;
 
     conversationHistory.push({
         role: 'assistant',
@@ -394,6 +478,18 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
         stagedTasks = [...stagedTasks, ...newTasks];
         _renderStagedList(rowsEl, emptyEl, countEl);
         if (toaster) toaster.success(`${newTasks.length} task${newTasks.length !== 1 ? 's' : ''} staged`);
+    }
+
+    if (newProposals?.length > 0) {
+        proposals = [...newProposals, ...proposals];
+        _renderProposals(
+            document.querySelector('.js-proposalsSection'),
+            document.querySelector('.js-proposalRows'),
+            document.querySelector('.js-proposalCount')
+        );
+        if (toaster) {
+            toaster.info(`${newProposals.length} change${newProposals.length === 1 ? '' : 's'} proposed — review below`);
+        }
     }
 
     sendBtn.disabled = false;
@@ -441,6 +537,41 @@ function _applyAvailability(status, noticeEl, inputEl, sendBtn) {
     noticeEl.textContent = status.reason === 'offline'
         ? `${status.message} Your conversation and staged tasks are still available.`
         : `${status.message} Set one up in Config → AI Configuration.`;
+}
+
+/**
+ * Renders the proposed-changes list. The whole section hides when empty —
+ * an empty review buffer is not information worth taking up space.
+ *
+ * @param {HTMLElement} sectionEl
+ * @param {HTMLElement} rowsEl
+ * @param {HTMLElement} countEl
+ */
+function _renderProposals(sectionEl, rowsEl, countEl) {
+    if (!sectionEl) return;
+
+    sectionEl.hidden = proposals.length === 0;
+    countEl.textContent = `${proposals.length} change${proposals.length === 1 ? '' : 's'}`;
+    rowsEl.innerHTML = '';
+    if (proposals.length === 0) return;
+
+    // Map lookups rather than .find() per row — see SPEC Code Rule 4.
+    const taskById = new Map(tasks.map(t => [t.id, t]));
+    const columnById = new Map(columns.map(c => [c.id, c]));
+    const epicById = new Map(epics.map(e => [e.id, e]));
+    const categoryById = new Map(categories.map(c => [c.id, c]));
+
+    for (const proposal of proposals) {
+        const row = document.createElement('proposal-row');
+        const task = taskById.get(proposal.taskId);
+        row.setProposal(proposal, {
+            taskTitle:    task?.title,
+            columnName:   columnById.get(proposal.payload?.newStatus)?.name,
+            epicName:     epicById.get(proposal.payload?.epicId)?.name,
+            categoryName: categoryById.get(proposal.payload?.category)?.name
+        });
+        rowsEl.appendChild(row);
+    }
 }
 
 /**

@@ -70,35 +70,40 @@
         "name": "To Do",
         "order": 0,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "backlog",
         "name": "Backlog",
         "order": 1,
         "hasArchive": false,
-        "isBacklog": true
+        "isBacklog": true,
+        "celebrate": false
       },
       {
         "id": "mswg1ip16wyjyac02",
         "name": "Staging",
         "order": 2,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "mswg1no7uwbg88xj0",
         "name": "Today",
         "order": 3,
         "hasArchive": false,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": false
       },
       {
         "id": "mswg16y5gq5ul8wxt",
         "name": "Done",
         "order": 4,
         "hasArchive": true,
-        "isBacklog": false
+        "isBacklog": false,
+        "celebrate": true
       }
     ]
   },
