@@ -12,6 +12,7 @@ import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WA
 import { parsePath } from './js/router.js';
 import { initShortcuts } from './js/shortcuts.js';
 import { initAttachments } from './js/attachments.js';
+import { buildPreviewPlan, countPreviewedChanges } from './js/board-preview.js';
 import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue, formatBytes } from './js/utils.js';
 import {
     tasks,
@@ -35,7 +36,7 @@ import {
     columns,
     setColumns
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi, captureTaskApi, classifyTaskApi, deleteTaskApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi, captureTaskApi, classifyTaskApi, deleteTaskApi, fetchProposalsApi, applyProposalApi, applyAllProposalsApi, rejectProposalApi, rejectAllProposalsApi } from './js/api.js';
 // Column-delete confirmation is fully handled inside config-page.js — no
 // separate import needed since the v2.38.3 dead-modal cleanup.
 import {
@@ -71,6 +72,13 @@ import {
 
         // Quick capture bar (global — every page)
         quickCapture: document.querySelector('.js-quickCapture'),
+
+        // Pending AI proposals / board preview toolbar
+        proposalBar: document.querySelector('.js-proposalBar'),
+        proposalBarText: document.querySelector('.js-proposalBarText'),
+        previewToggleBtn: document.querySelector('.js-previewToggleBtn'),
+        previewApplyAllBtn: document.querySelector('.js-previewApplyAllBtn'),
+        previewDiscardBtn: document.querySelector('.js-previewDiscardBtn'),
 
         // Profile Selector component
         profileSelector: document.querySelector('.js-profileSelector'),
@@ -476,13 +484,23 @@ import {
      */
     function renderColumn(columnId) {
         const columnEl = document.querySelector(`kanban-column[data-status="${columnId}"]`);
+        if (!columnEl) return;
+
+        if (previewPlan) {
+            // In preview mode the plan decides what each column shows,
+            // including ghost copies of cards moving in from elsewhere.
+            const entries = previewPlan.get(columnId) || [];
+            columnEl.renderTasks(
+                entries.map(e => ({ ...e.task, _preview: e.preview })),
+                createTaskCard
+            );
+            return;
+        }
+
         const columnTasks = tasks
             .filter(t => t.status === columnId)
             .sort((a, b) => a.position - b.position);
-
-        if (columnEl) {
-            columnEl.renderTasks(columnTasks, createTaskCard);
-        }
+        columnEl.renderTasks(columnTasks, createTaskCard);
     }
 
     /**
@@ -543,10 +561,35 @@ import {
             card.classList.add('--snoozed');
         }
 
+        // Preview annotation. A previewed board is for reviewing, not editing:
+        // cards don't drag, and untouched ones recede so the changes are what
+        // the eye lands on.
+        if (previewPlan) {
+            // Not `card.draggable = false`: renderTasks reuses existing card
+            // elements and its reconciler deliberately leaves `draggable`
+            // alone, so that would only take effect on freshly created cards.
+            // The dragstart guard below covers reused ones too.
+            if (task._preview) {
+                card.dataset.preview = task._preview.kind;
+                card.dataset.previewNote = task._preview.note;
+                card.dataset.proposalId = task._preview.proposalId;
+            } else {
+                card.dataset.preview = 'idle';
+            }
+            return card;
+        }
+
         card.draggable = true;
 
         // Drag events
         card.addEventListener('dragstart', (e) => {
+            // Preview is for reviewing, not editing. Reused cards keep this
+            // listener across a mode change, so the guard lives here rather
+            // than on the element's draggable attribute.
+            if (previewPlan) {
+                e.preventDefault();
+                return;
+            }
             e.target.classList.add('--dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', task.id);
@@ -630,6 +673,159 @@ import {
             applyAllFilters();
             elements.toaster.success(`${attached} file${attached === 1 ? '' : 's'} attached`);
         }
+    }
+
+    // ==========================================
+    // Board Preview (pending AI proposals)
+    // ==========================================
+
+    /** @type {Array<Object>} Pending proposals, mirrored from the server. */
+    let pendingProposals = [];
+
+    /**
+     * The current preview plan, or null when preview is off. Non-null is the
+     * single source of truth for "the board is in preview mode" — renderColumn
+     * and createTaskCard both branch on it.
+     * @type {Map<string, Array<Object>>|null}
+     */
+    let previewPlan = null;
+
+    /**
+     * Loads pending proposals and shows the bar if there are any.
+     *
+     * Called after the board renders, never before: a proposal is not
+     * something the user asked to wait for, and the board must not depend on
+     * this request succeeding.
+     */
+    async function loadProposals() {
+        try {
+            pendingProposals = await fetchProposalsApi();
+        } catch {
+            pendingProposals = [];   // the board is unaffected either way
+        }
+        renderProposalBar();
+    }
+
+    /** Shows/hides the proposal bar and sets its wording for the current mode. */
+    function renderProposalBar() {
+        if (!elements.proposalBar) return;
+
+        const count = pendingProposals.length;
+        elements.proposalBar.hidden = count === 0;
+        if (count === 0) {
+            if (previewPlan) exitPreview();
+            return;
+        }
+
+        const noun = `${count} proposed change${count === 1 ? '' : 's'}`;
+        elements.proposalBar.classList.toggle('--previewing', Boolean(previewPlan));
+        elements.proposalBarText.textContent = previewPlan
+            ? `Previewing ${noun} — Esc to exit`
+            : noun;
+        elements.previewToggleBtn.textContent = previewPlan ? 'Exit preview' : 'Preview on board';
+    }
+
+    /** Builds the plan from current state and repaints the board. */
+    function enterPreview() {
+        previewPlan = buildPreviewPlan(tasks, pendingProposals, columns, {
+            columnById:   new Map(columns.map(c => [c.id, c])),
+            epicById:     new Map(epics.map(e => [e.id, e])),
+            categoryById: new Map(categories.map(c => [c.id, c]))
+        });
+        document.body.classList.add('--previewing');
+        renderAllColumns();
+        renderProposalBar();
+    }
+
+    /** Drops the plan and repaints the real board. */
+    function exitPreview() {
+        previewPlan = null;
+        document.body.classList.remove('--previewing');
+        renderAllColumns();
+        renderProposalBar();
+    }
+
+    /**
+     * Resolves one proposal from a preview card.
+     * @param {string} proposalId
+     * @param {boolean} accept - true applies, false rejects
+     */
+    async function resolveProposal(proposalId, accept) {
+        // Drop it locally first so the card disappears immediately; the
+        // outcome only changes the message, not whether it leaves the list.
+        pendingProposals = pendingProposals.filter(p => p.id !== proposalId);
+
+        if (accept) {
+            const result = await applyProposalApi(proposalId);
+            if (result.ok) {
+                await fetchTasks();
+                elements.toaster.success('Change applied');
+            } else {
+                elements.toaster[result.stale ? 'warning' : 'error'](result.error);
+            }
+        } else {
+            try {
+                await rejectProposalApi(proposalId);
+            } catch {
+                elements.toaster.warning('Rejected locally, but not on the server');
+            }
+        }
+
+        // Rebuild against the new state — an applied move changes where the
+        // remaining ghosts belong.
+        if (previewPlan && pendingProposals.length > 0) enterPreview();
+        else if (previewPlan) exitPreview();
+        else renderProposalBar();
+    }
+
+    /** Wires the proposal bar and the preview cards' accept/reject events. */
+    function initProposalControls() {
+        if (!elements.proposalBar) return;
+
+        elements.previewToggleBtn.addEventListener('click', () => {
+            previewPlan ? exitPreview() : enterPreview();
+        });
+
+        elements.previewApplyAllBtn.addEventListener('click', async () => {
+            if (pendingProposals.length === 0) return;
+            try {
+                const result = await applyAllProposalsApi();
+                pendingProposals = [];
+                exitPreview();
+                await fetchTasks();
+                if (result.failed?.length) {
+                    elements.toaster.warning(`${result.applied} applied, ${result.failed.length} were out of date`);
+                } else {
+                    elements.toaster.success(`${result.applied} change${result.applied === 1 ? '' : 's'} applied`);
+                }
+            } catch {
+                elements.toaster.error('Failed to apply changes');
+            }
+        });
+
+        elements.previewDiscardBtn.addEventListener('click', async () => {
+            if (pendingProposals.length === 0) return;
+            pendingProposals = [];
+            exitPreview();
+            try {
+                await rejectAllProposalsApi();
+            } catch {
+                elements.toaster.warning('Discarded locally, but not on the server');
+            }
+        });
+
+        // Per-card decisions. Delegated from the board container: the buttons
+        // live inside each card's shadow root, and the events are composed.
+        elements.kanban?.addEventListener('preview-accept', (e) => resolveProposal(e.detail.proposalId, true));
+        elements.kanban?.addEventListener('preview-reject', (e) => resolveProposal(e.detail.proposalId, false));
+
+        // Esc leaves preview, matching how every other transient surface here
+        // behaves. Guarded so it doesn't fight a modal that is also open.
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && previewPlan && !document.querySelector('modal-dialog[open]')) {
+                exitPreview();
+            }
+        });
     }
 
     // ==========================================
@@ -1082,6 +1278,11 @@ import {
                 handleArchive(e.target.dataset.columnId);
             }
         });
+
+        // Pending AI proposals: wired here (board only — preview is a board
+        // mode), and loaded after the board has painted.
+        initProposalControls();
+        loadProposals();
 
         // Keyboard shortcuts — board page gets the full set (quick-add,
         // card focus navigation, Cmd/Ctrl+arrow card moves)

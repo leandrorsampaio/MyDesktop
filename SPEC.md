@@ -97,6 +97,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
     │   ├── modals.js              # All modal logic
     │   ├── attachments.js         # Task attachments — Files tab, drop/paste, viewer
+    │   ├── board-preview.js       # Pure plan builder for AI proposal preview mode
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     │   ├── backlog-page.js        # Backlog page — initBacklogPage()
     │   ├── reports-page.js        # Reports page — initReportsPage()
@@ -581,6 +582,30 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
+
+### Board preview mode (v2.50.0)
+
+Pending proposals rendered **on the board, where they would land**, instead of as a list you have to simulate in your head. Entered from the proposal bar under the header; `Esc` or *Exit preview* leaves.
+
+**It annotates rather than simulates.** The obvious design — apply every proposal to a copy of the board and render the result — would mean a second implementation of the server's `applyProposal()` living in the client: exactly the duplication Code Rule 3 exists to prevent, and a place where the preview could quietly start lying about what apply would do. So cards stay put and are annotated, with **one exception**: a `move` also renders a ghost copy at the top of the destination column, because that is the case where position carries the meaning. The other payoff is that rejecting one proposal just drops its annotation — nothing is re-simulated.
+
+| Card state | Treatment |
+|---|---|
+| `update` | Dashed border, caption of the change (`size → 8, mark priority`) |
+| `move` | Origin card dims (`outgoing`); a dashed accent-bordered ghost appears at the top of the destination (`incoming`, captioned `from To Do`) |
+| `delete` | Dashed red border, title struck through |
+| untouched | Dimmed to 0.4 — the board stays readable, it just isn't the subject |
+
+Each annotated card carries ✓ / ✕ for a per-card decision; the bar carries *Apply all* / *Discard all*.
+
+**`public/js/board-preview.js` is the pure half** — tasks + proposals → a per-column render plan, no DOM, no fetch, unit tested. `app.js` owns the DOM half; a non-null `previewPlan` is the single source of truth for "the board is in preview mode".
+
+Two implementation notes that are easy to get wrong:
+
+- **Preview state is a `data-preview` attribute, never a host class.** `kanban-column`'s reconciler reuses card elements and syncs `data-*` while stripping classes the renderer didn't set, so a class toggled from inside `task-card.render()` is wiped on the next render. All preview styling keys off `:host([data-preview="…"])`.
+- **Dragging is blocked in the dragstart handler, not via `card.draggable`.** The same reconciler deliberately leaves `draggable` alone, so setting it would only affect freshly created cards; reused ones would still drag.
+
+A card with several proposals shows only the most consequential (`delete` > `move` > `update`) plus a `+N more` count — a card carries one accept/reject decision, so it must point at exactly one proposal. The rest surface on the next render.
 
 ### AI proposed changes (v2.49.0)
 

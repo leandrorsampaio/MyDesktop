@@ -238,3 +238,95 @@
     font-variant-numeric: tabular-nums;
     line-height: 1;
 }
+
+/* ==========================================
+   Preview mode
+   ==========================================
+   A dashed border already means "not committed yet" everywhere else in this
+   app (pending attachments, the capture chip), so it means the same here.
+   Only `delete` earns colour — it is the only irreversible verb. */
+
+.taskCard__preview {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8, 8px);
+    padding: var(--space-6, 6px) var(--space-12, 12px);
+    border-top: 1px dashed var(--color-border, #e5e7eb);
+}
+
+.taskCard__previewNote {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.taskCard__previewActions {
+    display: flex;
+    gap: var(--space-4, 4px);
+    flex-shrink: 0;
+}
+
+.taskCard__previewBtn {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-sm, 11px);
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.taskCard__previewBtn.--accept:hover {
+    background: var(--color-accent-primary, #1a73e8);
+    border-color: var(--color-accent-primary, #1a73e8);
+    color: var(--color-text-on-accent, #fff);
+}
+
+.taskCard__previewBtn.--reject:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    border-color: var(--color-text-secondary, #4b5563);
+    color: var(--color-text-primary, #111827);
+}
+
+/* Any previewed card is provisional */
+:host([data-preview="update"]),
+:host([data-preview="delete"]),
+:host([data-preview="outgoing"]),
+:host([data-preview="incoming"]) {
+    border-style: dashed;
+}
+
+/* The card is leaving this column — dim it, because the real one is the
+   ghost that appeared in the destination */
+:host([data-preview="outgoing"]) {
+    opacity: 0.45;
+}
+
+/* The ghost in the destination column: where it would land */
+:host([data-preview="incoming"]) {
+    border-color: var(--color-accent-primary, #1a73e8);
+}
+
+:host([data-preview="delete"]) .taskCard__title {
+    color: var(--color-accent-error, #ef4444);
+    text-decoration: line-through;
+}
+
+:host([data-preview="delete"]) {
+    border-color: var(--color-accent-error, #ef4444);
+    opacity: 0.7;
+}
+
+/* Cards with no proposal against them recede, so the changes are what the eye
+   lands on. The board stays readable; it just isn't the subject. */
+:host([data-preview="idle"]) {
+    opacity: 0.4;
+}

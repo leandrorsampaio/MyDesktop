@@ -154,6 +154,7 @@ Shadow DOM component. The most important visual element in the app.
       .taskCard__desc          ← description text, 2-line clamp with ellipsis
       .taskCard__badge         ← category name + icon (hidden if category=1)
       .taskCard__points        ← story point chip, right-aligned (hidden if unestimated)
+  .taskCard__preview           ← preview footer: change caption + ✓/✕ (preview mode only)
       .taskCard__needsFiling   ← "unfiled" chip (hidden unless captured & unclassified)
       .taskCard__attachments   ← paperclip + count (hidden if no attachments)
       .taskCard__deadline      ← deadline chip (hidden if no deadline)
@@ -177,6 +178,11 @@ Shadow DOM component. The most important visual element in the app.
 | Snoozed (transparent mode) | 50% opacity |
 | Category badge | Small pill: icon + category name. Hidden when category = 1 |
 | Has attachments | Paperclip icon + count, tertiary text colour, beside the category badge |
+| Preview: update | Dashed border + caption of the change, with ✓/✕ |
+| Preview: outgoing | Dashed, dimmed to 0.45 — the real one is the ghost in the destination |
+| Preview: incoming | Dashed accent border — a ghost showing where a move would land |
+| Preview: delete | Dashed red border, title struck through in red |
+| Preview: idle | Dimmed to 0.4 — untouched cards recede so the changes are the subject |
 | Has points | Small outlined chip with the number, right-aligned on the title row. Tabular figures so 1 and 13 align down a column. No colour |
 | Needs filing | `unfiled` chip — dashed 1px border, tertiary text. A quick-captured card the AI hasn't classified. Deliberately not a colour: colour is reserved for epic and priority |
 | File dragged over (`.--fileDragOver`) | 2px accent outline, inset. Dropping attaches the files to this task |

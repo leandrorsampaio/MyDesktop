@@ -170,7 +170,9 @@ Keystroke → one line → Enter → gone. Under three seconds, from any page, n
 
 Proposals appear **inline in the conversation** (reasoning and proposal belong together), with a persistent pending count in the dock header so nothing is lost to scroll.
 
-*Preview* puts the board into a mode — precedent: the privacy-blur board mode — rendering cards **where they would end up**, dashed, with a one-line "moved from Wait" caption and per-card accept/reject on hover. Deletions dashed + struck through. New cards dashed in their target column.
+*Preview* puts the board into a mode — precedent: the privacy-blur board mode — with per-card accept/reject and one-line captions. Deletions dashed + struck through.
+
+**Shipped as annotation rather than simulation** (decided during v2.50.0). Rendering the fully-applied board would require a client-side copy of the server's `applyProposal()`, which is duplication Code Rule 3 forbids and a place the preview could drift from reality. Cards stay put and are annotated; a **move** additionally renders a ghost at the top of its destination, because that is the case where position carries the meaning. Rejecting one proposal then costs nothing to re-render.
 
 You look at your board as it *would be*, rather than simulating a list of sentences in your head. Dashed borders already mean "not committed yet" in this codebase (pending attachments) — reuse that vocabulary, don't invent a new one.
 
@@ -207,7 +209,7 @@ What it should be *good at*, in rough value order:
 | **2 — Capture** ✅ shipped v2.47.0 | Global quick capture with background classification. Highest single pain. |
 | **3 — Model** ✅ shipped v2.48.0 | Story points + epic contexts (data, config UI, card display). Fully useful with AI off. |
 | **4 — Proposals** ✅ shipped v2.49.0 | `ai-proposals.json`, the review list, apply/reject through validated API paths. |
-| **5 — Preview** | Board preview mode with per-card accept/reject. |
+| **5 — Preview** ✅ shipped v2.50.0 | Board preview mode with per-card accept/reject. |
 | **6 — Dock** | Move the chat into the right-hand dock; board-computed empty state; per-card entry points. |
 | **7 — Memory** | `ai-memory.json`, config-page editor, AI-proposed entries. |
 | **8 — Polish** | Streaming responses. Moves up if the chosen provider is slow — ten seconds of silence in a persistent dock reads as broken. |

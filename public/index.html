@@ -59,6 +59,19 @@
                 </div>
             </header>
 
+            <!-- Proposal bar — appears when the AI has pending changes.
+                 Doubles as the preview-mode toolbar once preview is entered.
+                 Sits under the header so it reads as a state of the board
+                 rather than a floating notification. -->
+            <div class="proposalBar js-proposalBar" hidden>
+                <span class="proposalBar__text js-proposalBarText"></span>
+                <div class="proposalBar__actions">
+                    <button type="button" class="btn --secondary --sm js-previewToggleBtn">Preview on board</button>
+                    <button type="button" class="btn --primary --sm js-previewApplyAllBtn">Apply all</button>
+                    <button type="button" class="btn --secondary --sm js-previewDiscardBtn">Discard all</button>
+                </div>
+            </div>
+
             <div class="appContainer js-appContainer">
                 <!-- Main Kanban Board — columns are created dynamically by app.js -->
                 <main class="kanban js-kanban"></main>
