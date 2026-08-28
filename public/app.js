@@ -121,6 +121,9 @@ import {
         // Epic pills in task modal
         epicPills: document.querySelector('.js-epicPills'),
 
+        // Story point pills in task modal
+        pointsPills: document.querySelector('.js-pointsPills'),
+
         // Category pills in task modal
         categoryPills: document.querySelector('.js-categoryPills'),
 
@@ -523,6 +526,9 @@ import {
             card.dataset.deadlineLevel = getDeadlineLevel(task.deadline, thresholds);
             card.dataset.deadlineText  = formatRelativeTime(task.deadline);
         }
+
+        // Story points — drives the size chip on the card
+        if (task.points) card.dataset.points = String(task.points);
 
         // Captured but not yet classified — the card shows a marker so a later
         // review pass can find what the AI never got to (or got wrong).
@@ -956,19 +962,23 @@ import {
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
 
-        // Epic pills are toggleable: clicking the selected epic again clears the
-        // selection (= no epic). Radios don't natively un-check, so we capture
-        // the pre-click state on mousedown and un-check on click if it was set.
-        if (elements.epicPills) {
-            elements.epicPills.addEventListener('mousedown', (e) => {
-                const radio = e.target.closest('.taskForm__epicPill')?.querySelector('input');
+        // Epic and point pills are toggleable: clicking the selected one again
+        // clears it (= no epic / unestimated). Radios don't natively un-check,
+        // so capture the pre-click state on mousedown and un-check on click if
+        // it was already set.
+        const wireTogglePills = (container, pillClass) => {
+            if (!container) return;
+            container.addEventListener('mousedown', (e) => {
+                const radio = e.target.closest(pillClass)?.querySelector('input');
                 if (radio) radio._wasChecked = radio.checked;
             });
-            elements.epicPills.addEventListener('click', (e) => {
-                const radio = e.target.closest('.taskForm__epicPill')?.querySelector('input');
+            container.addEventListener('click', (e) => {
+                const radio = e.target.closest(pillClass)?.querySelector('input');
                 if (radio && radio._wasChecked) radio.checked = false;
             });
-        }
+        };
+        wireTogglePills(elements.epicPills, '.taskForm__epicPill');
+        wireTogglePills(elements.pointsPills, '.taskForm__pointPill');
 
         // Inline-editable task title (contenteditable heading): keep it
         // single-line, plain-text, and capped at the title length.

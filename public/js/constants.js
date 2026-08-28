@@ -197,3 +197,34 @@ export const TEXT_ATTACHMENT_EXTENSIONS = [
     '.yml', '.yaml', '.toml', '.sql', '.sh', '.bash', '.zsh',
     '.py', '.rb', '.go', '.rs', '.java', '.kt', '.swift', '.c', '.h', '.cpp', '.cs', '.php'
 ];
+
+// ===========================================
+// Story Points
+// ===========================================
+
+/**
+ * Valid story-point values, in order.
+ *
+ * A deliberately short modified-Fibonacci scale. Points exist to answer two
+ * questions — "is this too big?" and "what fits today?" — not to produce
+ * velocity charts, which are team ceremony this tool has no use for.
+ *
+ * Source of truth: server.js STORY_POINTS
+ */
+export const STORY_POINTS = [1, 2, 3, 5, 8, 13];
+
+/** Human-readable meaning of each point value, shown as a tooltip. */
+export const STORY_POINT_LABELS = {
+    1:  'Do it now — minutes',
+    2:  'Under an hour',
+    3:  'Half a day',
+    5:  'A day',
+    8:  'Approaching too big',
+    13: 'One to two days — the ceiling'
+};
+
+/**
+ * Largest value on the scale. Anything bigger is a split, not a number —
+ * the UI says so rather than offering a 21.
+ */
+export const STORY_POINTS_CEILING = 13;

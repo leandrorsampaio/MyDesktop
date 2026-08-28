@@ -3,7 +3,7 @@
  * Handles all modal dialogs: task add/edit, reports, archived tasks, checklist, and confirmations.
  */
 
-import { DEFAULT_CATEGORY_ID, DEFAULT_TASK_TITLE } from './constants.js';
+import { DEFAULT_CATEGORY_ID, DEFAULT_TASK_TITLE, STORY_POINTS, STORY_POINT_LABELS, STORY_POINTS_CEILING } from './constants.js';
 import { escapeHtml, formatRelativeTime, toDatetimeLocalValue } from './utils.js';
 import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile, columns } from './state.js';
 import {
@@ -199,6 +199,7 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, '');
+    renderPointsPills(elements.pointsPills, null);
     elements.taskLogSection.style.display = 'none';
 
     elements.taskDeadline.value       = '';
@@ -236,6 +237,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, task.epicId || '');
+    renderPointsPills(elements.pointsPills, task.points ?? null);
 
     // Render task log
     if (task.log && task.log.length > 0) {
@@ -302,6 +304,7 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, task.epicId || '');
+    renderPointsPills(elements.pointsPills, task.points ?? null);
     elements.taskLogSection.style.display = 'none';
 
     // A clone is a brand-new task: it starts empty rather than sharing the
@@ -352,6 +355,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
         const priority = elements.taskPriority.checked;
         const category = getSelectedCategory();
         const epicId = getSelectedEpic();
+        const points = getSelectedPoints();
         const deadline    = elements.taskDeadline.value ? new Date(elements.taskDeadline.value).toISOString() : null;
         const snoozeUntil = elements.taskSnooze.value   ? new Date(elements.taskSnooze.value).toISOString()   : null;
 
@@ -370,12 +374,12 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             const taskId = editingTaskId;
 
             // Optimistic update
-            updateTaskInState(taskId, { title, description, priority, category, epicId, deadline, snoozeUntil });
+            updateTaskInState(taskId, { title, description, priority, category, epicId, points, deadline, snoozeUntil });
             renderAllColumns();
             elements.taskModal.close();
 
             try {
-                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category, epicId, deadline, snoozeUntil });
+                const updatedTask = await updateTaskApi(taskId, { title, description, priority, category, epicId, points, deadline, snoozeUntil });
                 // Replace with server response (includes updated log, etc.)
                 updateTaskInState(taskId, updatedTask);
                 renderAllColumns();
@@ -397,6 +401,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
                 priority,
                 category,
                 epicId,
+                points,
                 deadline,
                 snoozeUntil,
                 status: defaultColumnId,
@@ -411,7 +416,7 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             elements.taskModal.close();
 
             try {
-                const newTask = await createTaskApi({ title, description, priority, category, epicId, deadline, snoozeUntil, status: defaultColumnId });
+                const newTask = await createTaskApi({ title, description, priority, category, epicId, points, deadline, snoozeUntil, status: defaultColumnId });
                 // Replace temp task with real one from server
                 replaceTask(tempId, newTask);
                 renderColumn(defaultColumnId);
@@ -722,6 +727,52 @@ export function renderEpicPills(container, selectedEpicId) {
  * Gets the currently selected epic ID from the epic pills, or null.
  * @returns {string|null}
  */
+/**
+ * Renders the story-point pills into the task modal.
+ *
+ * Toggleable single-select, matching the epic pills: clicking the selected
+ * value again clears the estimate (handled in app.js). No "unestimated" pill —
+ * no selection means unestimated.
+ *
+ * @param {HTMLElement} container
+ * @param {number|null} selectedPoints
+ */
+export function renderPointsPills(container, selectedPoints) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const value of STORY_POINTS) {
+        const lbl = document.createElement('label');
+        lbl.className = 'taskForm__pointPill';
+        // The ceiling carries its meaning in the tooltip: bigger than this is
+        // a split, which is the whole reason the scale stops here.
+        lbl.title = STORY_POINT_LABELS[value] || '';
+        if (value === STORY_POINTS_CEILING) lbl.classList.add('--ceiling');
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'task-points';
+        radio.value = String(value);
+        if (Number(selectedPoints) === value) radio.checked = true;
+
+        const span = document.createElement('span');
+        span.textContent = String(value);
+
+        lbl.appendChild(radio);
+        lbl.appendChild(span);
+        container.appendChild(lbl);
+    }
+}
+
+/**
+ * Reads the selected story points from the task modal.
+ * @returns {number|null} null when unestimated
+ */
+export function getSelectedPoints() {
+    const selected = document.querySelector('input[name="task-points"]:checked');
+    return selected ? Number(selected.value) : null;
+}
+
 export function getSelectedEpic() {
     const selected = document.querySelector('input[name="task-epic"]:checked');
     return (selected && selected.value) ? selected.value : null;
@@ -750,6 +801,7 @@ function _openStagedTaskForm(stagedTask, elements, titlePrefix, onSave) {
     renderCategoryPills(elements.categoryPills);
     setCategorySelection(stagedTask.category || DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, stagedTask.epicId || '');
+    renderPointsPills(elements.pointsPills, stagedTask.points ?? null);
 
     elements.taskLogSection.style.display = 'none';
 
@@ -808,6 +860,7 @@ function _openStagedTaskForm(stagedTask, elements, titlePrefix, onSave) {
             description: elements.taskDescription.value,
             priority:    elements.taskPriority.checked,
             epicId:      getSelectedEpic(),
+            points:      getSelectedPoints(),
             category:    getSelectedCategory(),
             deadline:    elements.taskDeadline.value
                 ? new Date(elements.taskDeadline.value).toISOString()

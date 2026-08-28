@@ -241,6 +241,14 @@ function validateTaskInput(data, { requireTitle = false, validCategoryIds = null
         errors.push('Priority must be a boolean');
     }
 
+    // Story points validation — null clears the estimate
+    if (data.points !== undefined && data.points !== null) {
+        const points = Number(data.points);
+        if (!STORY_POINTS.includes(points)) {
+            errors.push(`Points must be null or one of ${STORY_POINTS.join(', ')}`);
+        }
+    }
+
     // Deadline validation
     if (data.deadline !== undefined) {
         if (data.deadline !== null) {
@@ -371,6 +379,22 @@ const MAX_CATEGORIES = 20;
 
 /** Category ID that cannot be deleted (Non categorized) */
 const DEFAULT_CATEGORY_ID = 1;
+
+/**
+ * Valid story-point values.
+ *
+ * A deliberately short modified-Fibonacci scale: 1 means "do it now", 13 means
+ * "one to two days" and is the ceiling. Anything bigger is not a number, it's
+ * a split — which is the primary job points do in a single-user tool. There is
+ * no velocity, burndown or sprint reporting built on these, and there
+ * shouldn't be: that is team ceremony.
+ *
+ * Source of truth: /public/js/constants.js
+ */
+const STORY_POINTS = [1, 2, 3, 5, 8, 13];
+
+/** Longest free-text value on an epic's context fields. */
+const EPIC_CONTEXT_MAX_LENGTH = 500;
 
 /**
  * Maximum number of epics allowed.
@@ -1192,7 +1216,8 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
             log: [],
             createdDate: new Date().toISOString(),
             deadline:    req.body.deadline    || null,
-            snoozeUntil: req.body.snoozeUntil || null
+            snoozeUntil: req.body.snoozeUntil || null,
+            points:      req.body.points != null ? Number(req.body.points) : null
         };
 
         tasks.push(newTask);
@@ -1235,9 +1260,10 @@ app.put('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res
             tasks[taskIndex].epicId = epicId || null;
         }
 
-        const { deadline, snoozeUntil } = req.body;
+        const { deadline, snoozeUntil, points } = req.body;
         if (deadline    !== undefined) tasks[taskIndex].deadline    = deadline    || null;
         if (snoozeUntil !== undefined) tasks[taskIndex].snoozeUntil = snoozeUntil || null;
+        if (points      !== undefined) tasks[taskIndex].points      = points != null ? Number(points) : null;
 
         // Handle category change with logging
         if (category !== undefined) {
@@ -1495,6 +1521,7 @@ app.post('/api/:profile/capture', resolveProfile, writeLimiter, async (req, res)
             createdDate: new Date().toISOString(),
             deadline: null,
             snoozeUntil: null,
+            points: null,
             needsFiling: true
         };
 
@@ -1578,6 +1605,9 @@ app.post('/api/:profile/tasks/:id/classify', resolveProfile, aiLimiter, async (r
         }
         if (typeof toolInput.priority === 'boolean') {
             task.priority = toolInput.priority;
+        }
+        if (STORY_POINTS.includes(Number(toolInput.points))) {
+            task.points = Number(toolInput.points);
         }
         if (typeof toolInput.columnId === 'string' && validColumnIds.has(toolInput.columnId)
             && toolInput.columnId !== task.status) {
@@ -1990,6 +2020,38 @@ app.get('/api/:profile/epics', resolveProfile, async (req, res) => {
     }
 });
 
+/**
+ * Validates an epic's context fields — the stakeholder, cadence and
+ * expectations that turn an epic from a topic into a silo you manage.
+ * All optional; empty string clears.
+ * @param {Object} data - Request body
+ * @returns {{valid: boolean, errors: string[]}}
+ */
+function validateEpicContext(data) {
+    const errors = [];
+    for (const field of ['stakeholder', 'cadence', 'expectations']) {
+        if (data[field] === undefined) continue;
+        if (typeof data[field] !== 'string') {
+            errors.push(`${field} must be a string`);
+        } else if (data[field].length > EPIC_CONTEXT_MAX_LENGTH) {
+            errors.push(`${field} must be ${EPIC_CONTEXT_MAX_LENGTH} characters or less`);
+        }
+    }
+    return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Applies epic context fields from a request body onto an epic in place.
+ * Shared by create and update so the two can't drift.
+ * @param {Object} epic
+ * @param {Object} data - Request body
+ */
+function applyEpicContext(epic, data) {
+    for (const field of ['stakeholder', 'cadence', 'expectations']) {
+        if (data[field] !== undefined) epic[field] = data[field].trim();
+    }
+}
+
 // POST create new epic
 app.post('/api/:profile/epics', resolveProfile, writeLimiter, async (req, res) => {
     try {
@@ -2025,14 +2087,25 @@ app.post('/api/:profile/epics', resolveProfile, writeLimiter, async (req, res) =
             return res.status(400).json({ error: `Color "${validColor.name}" is already used by epic "${colorTaken.name}"` });
         }
 
+        const contextValidation = validateEpicContext(req.body);
+        if (!contextValidation.valid) {
+            return res.status(400).json({ error: contextValidation.errors.join('; ') });
+        }
+
         const alias = toCamelCase(name.trim());
 
         const newEpic = {
             id: generateId(),
             name: name.trim(),
             color,
-            alias
+            alias,
+            // An epic is a silo you manage, not just a label: who asks about
+            // it, how often, and what they expect. All optional.
+            stakeholder: '',
+            cadence: '',
+            expectations: ''
         };
+        applyEpicContext(newEpic, req.body);
 
         epics.push(newEpic);
         await writeJsonFile(req.profileFiles.epics, epics);
@@ -2080,6 +2153,12 @@ app.put('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, res
             }
             epics[epicIndex].color = color;
         }
+
+        const contextValidation = validateEpicContext(req.body);
+        if (!contextValidation.valid) {
+            return res.status(400).json({ error: contextValidation.errors.join('; ') });
+        }
+        applyEpicContext(epics[epicIndex], req.body);
 
         await writeJsonFile(req.profileFiles.epics, epics);
         res.json(epics[epicIndex]);
@@ -2552,6 +2631,7 @@ const CLASSIFY_TASK_TOOL = {
             epicId:   { type: 'string',  description: 'Epic ID from the provided list, only when the note clearly belongs to it. Omit otherwise.' },
             category: { type: 'integer', description: 'Category ID from the provided list.' },
             priority: { type: 'boolean', description: 'true only when the note says it is urgent or blocking.' },
+            points:   { type: 'integer', description: 'Rough size: 1 = minutes, 2 = under an hour, 3 = half a day, 5 = a day, 8 = nearly too big, 13 = one to two days (the ceiling). Omit when the note gives no idea of size.' },
             columnId: { type: 'string',  description: 'Destination column ID from the provided list.' },
             deadline: { type: 'string',  description: 'ISO 8601 datetime, only when a specific date or time is stated. Omit otherwise.' }
         },
@@ -2604,6 +2684,7 @@ Rules:
 - epicId: only when the note clearly belongs to that epic. Omit when unsure.
 - category: pick the closest; default ${DEFAULT_CATEGORY_ID} when nothing matches.
 - priority: true only when urgency is explicit.
+- points: one of ${STORY_POINTS.join(', ')}. 13 is the ceiling — anything that sounds bigger should be captured as-is and split later, not given a bigger number. Omit when the note gives no sense of size.
 - columnId: the default working column unless the note clearly says it is for later (then the backlog) or for today.
 - deadline: only when a specific date or time is stated.`;
 }
@@ -2688,11 +2769,15 @@ function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks }) {
 
     const epicsStr = epics.length
         ? epics.map(e => {
-            // Stakeholder/cadence are optional (added for epic-as-context work);
-            // absent on older profiles, so only rendered when present.
-            const ctxBits = [e.stakeholder && `stakeholder: ${e.stakeholder}`,
-                             e.cadence && `cadence: ${e.cadence}`].filter(Boolean);
-            const suffix = ctxBits.length ? ` — ${ctxBits.join(', ')}` : '';
+            // Context fields are optional and absent on older profiles, so
+            // they are only rendered when actually set. They are what let the
+            // model reason about stakeholders rather than just topics.
+            const ctxBits = [
+                e.stakeholder && `stakeholder: ${e.stakeholder}`,
+                e.cadence && `cadence: ${e.cadence}`,
+                e.expectations && `expects: ${e.expectations}`
+            ].filter(Boolean);
+            const suffix = ctxBits.length ? `\n      ${ctxBits.join(' | ')}` : '';
             return `  - "${e.name}" (id: "${e.id}")${suffix}`;
         }).join('\n')
         : '  (none defined yet)';

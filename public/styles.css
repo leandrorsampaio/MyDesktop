@@ -1743,13 +1743,66 @@ body {
     overflow-y: auto;
 }
 
+/* The item is now two stacked rows: the name/colour row, and the context row
+   below it. The flex layout the name row relied on moved to __itemMain. */
 .epicsEditor__item {
     display: flex;
-    align-items: center;
-    gap: var(--space-12);
+    flex-direction: column;
+    gap: var(--space-10);
     padding: 14px;
     background: var(--color-bg-secondary);
     border-radius: 12px;
+}
+
+.epicsEditor__itemMain {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+}
+
+/* Stakeholder / cadence / expectations — what makes an epic a silo rather
+   than a label. Wraps to one column on narrow viewports. */
+.epicsEditor__itemContext {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8) var(--space-12);
+    padding-top: var(--space-10);
+    border-top: 1px solid var(--color-border);
+}
+
+.epicsEditor__contextField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.epicsEditor__contextField--wide {
+    grid-column: 1 / -1;
+}
+
+.epicsEditor__contextField span {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.epicsEditor__contextField input {
+    width: 100%;
+    padding: var(--space-6) var(--space-8);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-md);
+}
+
+@media (max-width: 720px) {
+    .epicsEditor__itemContext {
+        grid-template-columns: 1fr;
+    }
 }
 
 .epicsEditor__itemColor {
@@ -4158,4 +4211,58 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     display: inline-flex;
     align-items: center;
     text-decoration: none;
+}
+
+/* ==========================================
+   Task modal — story point pills
+   ========================================== */
+.taskForm__pointsSelector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+}
+
+.taskForm__pointPill {
+    display: inline-flex !important;
+    margin-bottom: 0 !important;
+    cursor: pointer;
+}
+
+.taskForm__pointPill input[type="radio"] {
+    display: none;
+}
+
+/* No colour: colour means epic and priority. Selection reads as a filled
+   neutral, matching how the category pills behave. */
+.taskForm__pointPill span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    padding: var(--space-6) var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.taskForm__pointPill:hover span {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+.taskForm__pointPill input:checked + span {
+    border-color: var(--color-accent-primary);
+    background: rgba(var(--color-accent-primary-rgb), 0.12);
+    color: var(--color-accent-primary);
+}
+
+/* The ceiling. Dashed to say "this is the end of the scale" — anything bigger
+   is a split, not a larger number, so there is deliberately no 21. */
+.taskForm__pointPill.--ceiling span {
+    border-style: dashed;
 }

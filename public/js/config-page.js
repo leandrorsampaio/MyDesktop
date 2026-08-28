@@ -532,17 +532,61 @@ export async function initConfigPage(pageViewEl, { elements }) {
             return;
         }
 
+        // An epic is a silo you manage, not just a label — who asks about it,
+        // how often, and what they expect. The context row is what turns
+        // "topics" into something the assistant can reason about, and it is
+        // useful on its own with the AI switched off.
         epicsList.innerHTML = epics.map(epic => `
             <div class="epicsEditor__item" data-epic-id="${epic.id}">
-                <div class="epicsEditor__itemColor" style="background-color: ${epic.color};"></div>
-                <div class="epicsEditor__itemInfo">
-                    <input type="text" class="epicsEditor__itemName js-epicItemName" value="${escapeHtml(epic.name)}" data-epic-id="${epic.id}" />
-                    <span class="epicsEditor__itemAlias">Alias: ${escapeHtml(epic.alias)}</span>
+                <div class="epicsEditor__itemMain">
+                    <div class="epicsEditor__itemColor" style="background-color: ${epic.color};"></div>
+                    <div class="epicsEditor__itemInfo">
+                        <input type="text" class="epicsEditor__itemName js-epicItemName" value="${escapeHtml(epic.name)}" data-epic-id="${epic.id}" />
+                        <span class="epicsEditor__itemAlias">Alias: ${escapeHtml(epic.alias)}</span>
+                    </div>
+                    <span class="js-epicItemColorSlot" data-epic-id="${epic.id}"></span>
+                    <button class="epicsEditor__deleteBtn js-epicDeleteBtn" data-epic-id="${epic.id}" title="Delete epic">&times;</button>
                 </div>
-                <span class="js-epicItemColorSlot" data-epic-id="${epic.id}"></span>
-                <button class="epicsEditor__deleteBtn js-epicDeleteBtn" data-epic-id="${epic.id}" title="Delete epic">&times;</button>
+                <div class="epicsEditor__itemContext">
+                    <label class="epicsEditor__contextField">
+                        <span>Stakeholder</span>
+                        <input type="text" class="js-epicContext" data-field="stakeholder" data-epic-id="${epic.id}"
+                               value="${escapeHtml(epic.stakeholder || '')}" placeholder="Who asks about this?" />
+                    </label>
+                    <label class="epicsEditor__contextField">
+                        <span>Cadence</span>
+                        <input type="text" class="js-epicContext" data-field="cadence" data-epic-id="${epic.id}"
+                               value="${escapeHtml(epic.cadence || '')}" placeholder="How often?" />
+                    </label>
+                    <label class="epicsEditor__contextField epicsEditor__contextField--wide">
+                        <span>Expectations</span>
+                        <input type="text" class="js-epicContext" data-field="expectations" data-epic-id="${epic.id}"
+                               value="${escapeHtml(epic.expectations || '')}" placeholder="What do they need, and when?" />
+                    </label>
+                </div>
             </div>
         `).join('');
+
+        // Context fields auto-save on blur, matching the other CRUD sections.
+        // A failure reverts the input rather than leaving the field showing a
+        // value the server never accepted.
+        epicsList.querySelectorAll('.js-epicContext').forEach(input => {
+            input.addEventListener('blur', async () => {
+                const epic = epics.find(e => e.id === input.dataset.epicId);
+                if (!epic) return;
+                const field = input.dataset.field;
+                const value = input.value.trim();
+                if (value === (epic[field] || '')) return;   // nothing changed
+
+                const result = await updateEpicApi(epic.id, { [field]: value });
+                if (result.ok) {
+                    epic[field] = value;
+                } else {
+                    toaster.error(result.error || 'Failed to save');
+                    input.value = epic[field] || '';
+                }
+            });
+        });
 
         // Color pickers
         epicsList.querySelectorAll('.js-epicItemColorSlot').forEach(slot => {

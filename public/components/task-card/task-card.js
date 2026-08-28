@@ -55,7 +55,7 @@ class TaskCard extends HTMLElement {
             'data-category-icon', 'data-priority', 'data-title', 'data-description',
             'data-epic-name', 'data-epic-color', 'data-epic-alias',
             'data-deadline', 'data-deadline-level', 'data-deadline-text',
-            'data-attachment-count', 'data-needs-filing',
+            'data-attachment-count', 'data-needs-filing', 'data-points',
             'hidden'
         ];
     }
@@ -125,6 +125,18 @@ class TaskCard extends HTMLElement {
                 epicBarEl.textContent = epicName;
             } else {
                 epicBarEl.style.display = 'none';
+            }
+        }
+
+        // Story point chip — sits with the title, since size is a property of
+        // the work itself rather than metadata about it
+        const pointsEl = this.shadowRoot.querySelector('.js-points');
+        if (pointsEl) {
+            const points = this.dataset.points;
+            pointsEl.style.display = points ? 'inline-flex' : 'none';
+            if (points) {
+                pointsEl.textContent = points;
+                pointsEl.title = `${points} points`;
             }
         }
 

@@ -258,8 +258,10 @@ GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, arch
   snoozeUntil: string|null, // ISO 8601 datetime — optional, default null
   attachments: array,       // [{ id, name, mime, ext, size, uploadedAt }] — optional, absent until
                             // the first file is attached. See § Attachments.
-  needsFiling: boolean      // optional. true on a quick-captured task until the AI classifies it.
+  needsFiling: boolean,     // optional. true on a quick-captured task until the AI classifies it.
                             // Drives the "unfiled" chip. See § Quick capture.
+  points: number|null       // optional. One of 1, 2, 3, 5, 8, 13. null = unestimated.
+                            // See § Story points.
 }
 ```
 
@@ -271,6 +273,9 @@ Existing tasks without `deadline`, `snoozeUntil` or `attachments` behave as `nul
 ### Epic Object
 ```javascript
 {
+  // Context fields (stakeholder / cadence / expectations) are optional, max
+  // 500 chars each, and absent on profiles created before v2.48.0.
+  // See § Epic contexts.
   id: string,     // timestamp-based
   name: string,   // required, max 200 chars
   color: string,  // hex from the 20-color palette (must be unique per profile)
@@ -569,6 +574,36 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
+
+### Story points (v2.48.0)
+
+`task.points` — one of `1, 2, 3, 5, 8, 13`, or `null` for unestimated. `STORY_POINTS` in `server.js` and `constants.js` (source of truth: the server).
+
+| 1 | 2 | 3 | 5 | 8 | 13 |
+|---|---|---|---|---|---|
+| do it now — minutes | under an hour | half a day | a day | nearly too big | one to two days — the ceiling |
+
+**There is deliberately no 21.** Anything bigger than 13 is a split, not a larger number, and splitting is the primary job points do here. The ceiling pill is dashed in the UI to say so. The server rejects any other value, including 4, 7 and 21.
+
+**No velocity, burndown or sprint reporting is built on these, and none should be** — that is team ceremony, and this is a single-user tool. Points exist to answer "is this too big?" and "what fits today?".
+
+Rendered as a chip on the task card (tabular figures, no colour — colour means epic and priority) and as toggleable pills in the task modal, matching the epic pills: clicking the selected value again clears the estimate. The AI may suggest a value during quick-capture classification; it is never required to.
+
+### Epic contexts (v2.48.0)
+
+An epic used to be a name and a colour. The pain epics were meant to solve is *silo switching* — different stakeholders, different expectations, different conversations — which needs three optional fields:
+
+```js
+stakeholder: string,    // "PM", "my boss", "the team", "compliance"
+cadence: string,        // "weekly sync", "he asks Mondays", "deadline-driven"
+expectations: string    // what this person needs, and when
+```
+
+Max 500 chars each, edited on the config page (auto-save on blur, matching the other CRUD sections), and **fully useful with the AI switched off** — they are notes to yourself first.
+
+When set, they render into the AI system prompt beneath the epic, which is what lets the model reason about stakeholders rather than topics. When unset they are omitted entirely, so older profiles don't pay for empty labels.
+
+`validateEpicContext()` / `applyEpicContext()` are shared by the create and update routes so the two can't drift.
 
 ### Quick capture (v2.47.0)
 

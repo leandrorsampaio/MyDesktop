@@ -219,3 +219,22 @@
     letter-spacing: 0.02em;
     vertical-align: middle;
 }
+
+/* Story point chip. Monospace-ish tabular figures so 1 and 13 line up down a
+   column; no colour, because colour means epic and priority. */
+.taskCard__points {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 18px;
+    height: 18px;
+    margin-left: auto;
+    padding: 0 var(--space-4, 4px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}

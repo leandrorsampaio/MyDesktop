@@ -153,6 +153,7 @@ Shadow DOM component. The most important visual element in the app.
       .taskCard__header        ← title text + priority star (if priority=true)
       .taskCard__desc          ← description text, 2-line clamp with ellipsis
       .taskCard__badge         ← category name + icon (hidden if category=1)
+      .taskCard__points        ← story point chip, right-aligned (hidden if unestimated)
       .taskCard__needsFiling   ← "unfiled" chip (hidden unless captured & unclassified)
       .taskCard__attachments   ← paperclip + count (hidden if no attachments)
       .taskCard__deadline      ← deadline chip (hidden if no deadline)
@@ -176,6 +177,7 @@ Shadow DOM component. The most important visual element in the app.
 | Snoozed (transparent mode) | 50% opacity |
 | Category badge | Small pill: icon + category name. Hidden when category = 1 |
 | Has attachments | Paperclip icon + count, tertiary text colour, beside the category badge |
+| Has points | Small outlined chip with the number, right-aligned on the title row. Tabular figures so 1 and 13 align down a column. No colour |
 | Needs filing | `unfiled` chip — dashed 1px border, tertiary text. A quick-captured card the AI hasn't classified. Deliberately not a colour: colour is reserved for epic and priority |
 | File dragged over (`.--fileDragOver`) | 2px accent outline, inset. Dropping attaches the files to this task |
 | Filter-hidden | `[hidden]` attribute → display: none |
@@ -566,6 +568,7 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
       .taskForm__group--grow       ← [panel: attachments] .attachments — drop zone + file grid
     .taskForm__col--side           ← right column
       .taskForm__priorityToggle    ← Priority STAR toggle (hidden checkbox; star is muted when off, yellow when on)
+      .taskForm__pointsSelector    ← story point pills (1/2/3/5/8/13); toggleable — click the selected value again to clear. The 13 pill is dashed: it is the ceiling, and there is deliberately no 21
       .taskForm__epicSelector      ← clickable epic pills using the task-card epic-bar colour standard (tinted bg + epic-colour label via color-mix); dimmed when unselected, full opacity when selected (no border); toggleable — click the selected epic again to clear it (no "No epic" pill)
       .taskForm__categorySelector  ← Pill-style radio buttons (one per category, grid layout)
       .taskForm__scheduleSection   ← Deadline section
@@ -613,7 +616,10 @@ Size: large. All follow the same CRUD list pattern.
 
 **Epic management:**
 - Add: name input + colour picker (5-column grid, used colours disabled) + alias preview
-- List item: colour dot + name input (blur-to-save) + colour picker (change-to-save) + delete button
+- List item is **two stacked rows**:
+  - `.epicsEditor__itemMain` — colour dot + name input (blur-to-save) + colour picker (change-to-save) + delete button
+  - `.epicsEditor__itemContext` — Stakeholder / Cadence / Expectations, blur-to-save, separated by a 1px rule. Two-column grid (Expectations spans both), collapsing to one column under 720px
+- The context fields are what make an epic a silo you manage rather than a label. They are notes to yourself first — fully useful with the AI off — and feed the assistant's prompt when set
 
 **Category management:**
 - Add: name input + icon picker (7-column grid) + "Add" button
