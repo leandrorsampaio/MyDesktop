@@ -98,6 +98,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── modals.js              # All modal logic
     │   ├── attachments.js         # Task attachments — Files tab, drop/paste, viewer
     │   ├── board-preview.js       # Pure plan builder for AI proposal preview mode
+    │   ├── assistant-chat.js      # Shared conversation controller (dock + AI page)
+    │   ├── assistant-suggestions.js # Pure board-derived openers for the dock
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     │   ├── backlog-page.js        # Backlog page — initBacklogPage()
     │   ├── reports-page.js        # Reports page — initReportsPage()
@@ -121,6 +123,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         ├── report-row/            # Flat report row (.html + .css)
         ├── page-fab/              # Reusable floating action button (inline, .js only)
         ├── quick-capture/         # Global one-line capture bar (shortcut: c)
+        ├── assistant-dock/        # Assistant panel beside the board (shortcut: a)
         └── toast-notification/
 ```
 
@@ -583,6 +586,20 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
 
+### Assistant dock (v2.51.0)
+
+The assistant as a panel beside the board rather than a page you navigate to. Opens with `a` from anywhere, from the "Ask AI" button in the task modal's tab strip (seeded with that task's title, *not* sent), or programmatically. The `/:alias/ai` page stays for long paste-a-transcript sessions.
+
+**It squeezes, it doesn't cover.** During review the board has to stay visible and interactive, so the dock is a third track in the `.appShell` grid — `body.--assistantOpen` switches the template to `48px 1fr auto`. A `flex-basis` on the child does nothing here; the shell is a grid, not a flex row. Resizable by its left edge (300–720px), remembered in `localStorage`.
+
+**One conversation, two surfaces.** `public/js/assistant-chat.js` owns the transcript, the pending placeholder, token accounting and persistence; the dock and the AI page both subscribe with `onChange()` and render from `getState()`. This is not just tidiness — both surfaces exist on the same page, and two copies of the history would each PUT the whole transcript to `ai-conversation.json` and clobber each other.
+
+`assistantChat.init()` must run **after** `setApiBase()`: every assistant endpoint is profile-scoped, and calling it earlier fetches `/api/ai/conversation` with no profile.
+
+**The empty state is the point.** Not "ask me anything" — `public/js/assistant-suggestions.js` turns the live board into at most three facts with a verb attached ("1 card past its deadline → Triage them"). Pure and local: no AI call, so it renders with the assistant switched off. Rules fire in priority order — overdue, deadlines this week, stale (14d+), unfiled captures, missing epics (3+), stale backlog (30d+), empty in-progress — and any that find nothing are dropped, so a tidy board says little and an empty board says nothing at all.
+
+Suggestions can only be computed once board data has landed; `initBoardEventListeners()` runs before `setColumns`/`setTasks`, so `refreshAssistantSuggestions()` is called after `renderAllColumns()`.
+
 ### Board preview mode (v2.50.0)
 
 Pending proposals rendered **on the board, where they would land**, instead of as a list you have to simulate in your head. Entered from the proposal bar under the header; `Esc` or *Exit preview* leaves.
@@ -800,6 +817,15 @@ Stored in `data/{alias}/ai-conversation.json`. The client owns the transcript an
 - **Event:** `change` → `CustomEvent({ detail: { value, label } })`, bubbles + composed
 - **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + category filter (`type="list"`). (The task-modal epic field is no longer a picker — it's a clickable pill list, `.taskForm__epicSelector`, like the category pills.)
 - **List item `icon` property:** optional; when set, renders an `<svg-icon>` before the label text (used by category filter dropdown)
+
+### `<assistant-dock>`
+
+The assistant panel (`public/components/assistant-dock/`). Present on every page.
+
+- **API:** `open(prompt?)` (pre-fills but never sends — an entry point starts the sentence, it doesn't speak for you), `close()`, `toggle()`, `isOpen`, `setSuggestions(list)`, `setPendingCount(n)`
+- **Events:** `assistant-replied` `{ tasks, proposals }`, `assistant-closed`, `review-proposals` (the header's pending badge — the way back to board preview)
+- Subscribes to `assistant-chat.js` in `connectedCallback` and unsubscribes in `disconnectedCallback`.
+- Escape closes it, except when a modal is open (that Escape is the modal's) or the composer holds unsent text (which it clears instead — a stray Escape must not discard a half-written message).
 
 ### `<proposal-row>`
 

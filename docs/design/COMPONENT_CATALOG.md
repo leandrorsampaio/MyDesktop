@@ -541,6 +541,31 @@ All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px)
 
 > **Note (v2.37+):** the CRUD editors in §6.3–6.7 are **no longer modals** — they render inline as sections of the Configuration page (`/:alias/config`, left tabs + right panel). Their element anatomy and visual specs below still apply to the inline versions. The only modals left in the app are the task modal (§6.2), the report viewer, and the small delete-confirmation modals (§6.8).
 
+### 5.7 Assistant Dock (`<assistant-dock>`)
+
+The assistant as a panel beside the board. Opens with `a`, from *Ask AI* in the task modal, or from code.
+
+```
+.dock
+  .dock__resizer               ← 5px drag edge, left side (300–720px, remembered)
+  .dock__panel
+    .dock__header              ← "Assistant" + pending badge + clear + close
+    .dock__messages            ← transcript, or the board-derived empty state
+    .dock__notice              ← stated reason when the composer is disabled
+    .dock__composer            ← textarea + token readout + Send
+```
+
+| State | Visual |
+|-------|--------|
+| Closed | `display: none` on the host — the board layout is untouched |
+| Open | Third grid track; the board squeezes rather than being covered |
+| Empty | Up to three board-derived suggestions, each a fact + a verb |
+| Thinking | A quiet "Reading your board…" line — **not** animated dots |
+| AI unavailable | Composer disabled with the reason stated inline |
+| Proposals pending | Clickable badge in the header — the way back to board preview |
+
+**Messages:** no bubbles with tails, no avatars. The user's turn is indented on a tertiary background; the assistant's is plain text at full width. No colour of its own.
+
 ### 6.0 Quick Capture (`<quick-capture>`)
 
 Global one-line capture bar. Present on every page, opened with `c`. **Not a modal** — a dialog asks to be read and dismissed; this takes a line and disappears.

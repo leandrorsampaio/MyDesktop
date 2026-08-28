@@ -13,6 +13,8 @@ import { parsePath } from './js/router.js';
 import { initShortcuts } from './js/shortcuts.js';
 import { initAttachments } from './js/attachments.js';
 import { buildPreviewPlan, countPreviewedChanges } from './js/board-preview.js';
+import { buildSuggestions } from './js/assistant-suggestions.js';
+import * as assistantChat from './js/assistant-chat.js';
 import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue, formatBytes } from './js/utils.js';
 import {
     tasks,
@@ -72,6 +74,9 @@ import {
 
         // Quick capture bar (global — every page)
         quickCapture: document.querySelector('.js-quickCapture'),
+
+        // Assistant dock (global — every page)
+        assistantDock: document.querySelector('.js-assistantDock'),
 
         // Pending AI proposals / board preview toolbar
         proposalBar: document.querySelector('.js-proposalBar'),
@@ -676,6 +681,53 @@ import {
     }
 
     // ==========================================
+    // Assistant Dock
+    // ==========================================
+
+    /**
+     * Wires the dock. Global — it opens on every page, carrying whatever
+     * context that page has.
+     *
+     * The conversation itself lives in `assistant-chat.js`, shared with the
+     * `/:alias/ai` page, so the two surfaces show one thread.
+     *
+     * Only wires events. Loading the transcript has to wait until the active
+     * profile is known, because every assistant endpoint is profile-scoped —
+     * see the `assistantChat.init()` call after `setApiBase()`.
+     */
+    function initAssistantDock() {
+        const dock = elements.assistantDock;
+        if (!dock) return;
+
+        dock.addEventListener('assistant-replied', async (e) => {
+            // A reply may have produced proposals; the board's bar and preview
+            // read from the same list, so refresh it.
+            if (e.detail.proposals?.length) await loadProposals();
+            if (e.detail.tasks?.length) {
+                elements.toaster.info(`${e.detail.tasks.length} task${e.detail.tasks.length === 1 ? '' : 's'} staged — review on the AI page`);
+            }
+        });
+
+        dock.addEventListener('review-proposals', () => {
+            if (pendingProposals.length > 0 && !previewPlan) enterPreview();
+        });
+
+        dock.addEventListener('assistant-closed', () => refreshAssistantSuggestions());
+    }
+
+    /**
+     * Recomputes the dock's opening suggestions from the current board.
+     *
+     * Local and synchronous: these are facts about the board, not AI output,
+     * so they render with the assistant unconfigured or unreachable.
+     */
+    function refreshAssistantSuggestions() {
+        if (!elements.assistantDock || columns.length === 0) return;
+        elements.assistantDock.setSuggestions(buildSuggestions(tasks, columns));
+        elements.assistantDock.setPendingCount(pendingProposals.length);
+    }
+
+    // ==========================================
     // Board Preview (pending AI proposals)
     // ==========================================
 
@@ -708,6 +760,7 @@ import {
 
     /** Shows/hides the proposal bar and sets its wording for the current mode. */
     function renderProposalBar() {
+        elements.assistantDock?.setPendingCount(pendingProposals.length);
         if (!elements.proposalBar) return;
 
         const count = pendingProposals.length;
@@ -1158,6 +1211,17 @@ import {
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
 
+        // Per-task entry point. Seeds the dock with the task's title and
+        // closes the modal, so the assistant answers about something the user
+        // can still see on the board behind it.
+        document.querySelector('.js-askAboutTask')?.addEventListener('click', () => {
+            const title = elements.taskTitle.textContent.trim();
+            elements.taskModal.close();
+            elements.assistantDock?.open(
+                title ? `About the task "${title}": ` : ''
+            );
+        });
+
         // Epic and point pills are toggleable: clicking the selected one again
         // clears it (= no epic / unestimated). Radios don't natively un-check,
         // so capture the pre-click state on mousedown and un-check on click if
@@ -1333,6 +1397,7 @@ import {
     async function init() {
         initEventListeners();
         initAttachments(elements);
+        initAssistantDock();
 
         // Quick capture is global: the bar lives in index.html on every page,
         // and the `c` shortcut opens it wherever the user happens to be.
@@ -1363,6 +1428,12 @@ import {
             setActiveProfile(matchedProfile);
             boardProfile = matchedProfile;
             setApiBase(matchedProfile.alias);
+
+            // The assistant's endpoints are profile-scoped, so its transcript
+            // can only be loaded once the API base points at a real profile.
+            // Deliberately not awaited: the page must never wait on anything
+            // AI-shaped. See the degradation contract in AI_ASSISTANT.md.
+            assistantChat.init();
             document.body.classList.add('profile-' + matchedProfile.alias);
             elements.profileSelector.setProfiles(fetchedProfiles);
             elements.profileSelector.setActiveProfile(matchedProfile);
@@ -1469,6 +1540,11 @@ import {
         // Render category filters now that dynamic categories are loaded
         renderCategoryFilters(elements.categoryFilter);
         renderAllColumns();
+
+        // Suggestions are facts about the board, so they can only be computed
+        // once the board data has landed — initBoardEventListeners() runs
+        // before this point, when tasks and columns are still empty.
+        refreshAssistantSuggestions();
 
         // Snooze expiry scheduler — re-render when snoozed tasks wake up
         let _snoozedIds = new Set(

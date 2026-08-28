@@ -1,0 +1,251 @@
+/* Closed: takes no space at all, so the board layout is untouched when the
+   assistant isn't in use. */
+:host {
+    display: none;
+    flex: 0 0 var(--dock-width, 380px);
+    width: var(--dock-width, 380px);
+    min-width: 0;
+}
+
+:host(.--open) {
+    display: block;
+}
+
+.dock {
+    display: flex;
+    height: 100vh;
+    border-left: 1px solid var(--color-border, #e5e7eb);
+    background: var(--color-bg-secondary, #f8f9fa);
+}
+
+/* Drag edge. 5px is wide enough to hit without being visible furniture. */
+.dock__resizer {
+    flex: 0 0 5px;
+    margin-right: -2px;
+    cursor: col-resize;
+    background: transparent;
+}
+
+.dock__resizer:hover {
+    background: var(--color-accent-primary, #1a73e8);
+    opacity: 0.4;
+}
+
+.dock__panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.dock__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 8px);
+    padding: var(--space-12, 12px) var(--space-16, 16px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.dock__title {
+    flex: 1;
+    color: var(--color-text-primary, #111827);
+    font-size: var(--text-md, 13px);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* Proposals waiting. Clickable — it is the way back to the board preview. */
+.dock__pending {
+    padding: 2px var(--space-8, 8px);
+    border: 1px solid var(--color-accent-primary, #1a73e8);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-accent-primary, #1a73e8);
+    font-size: var(--text-sm, 11px);
+    cursor: pointer;
+}
+
+.dock__pending[hidden] {
+    display: none;
+}
+
+.dock__iconBtn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-lg, 14px);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dock__iconBtn:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+.dock__messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-16, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12, 12px);
+}
+
+/* No bubbles, no avatars, no tails. The user's turn is indented; the
+   assistant's is plain text at full width — see the visual rules in
+   docs/design/AI_ASSISTANT.md. */
+.dock__message {
+    font-size: var(--text-md, 13px);
+    line-height: 1.5;
+}
+
+.dock__message.--user {
+    align-self: flex-end;
+    max-width: 88%;
+    padding: var(--space-8, 8px) var(--space-12, 12px);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+.dock__message.--assistant {
+    color: var(--color-text-primary, #111827);
+}
+
+.dock__message.--pending {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-style: italic;
+}
+
+.dock__messageText {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.dock__messageMeta {
+    margin-top: var(--space-4, 4px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
+/* ---- Empty state: facts about this board, each with a verb ---- */
+.dock__empty {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-md, 13px);
+    line-height: 1.5;
+}
+
+.dock__suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8, 8px);
+}
+
+.dock__suggestion {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.dock__suggestion:hover {
+    border-color: var(--color-accent-primary, #1a73e8);
+}
+
+.dock__suggestionFact {
+    color: var(--color-text-primary, #111827);
+    font-size: var(--text-md, 13px);
+}
+
+.dock__suggestionAction {
+    color: var(--color-accent-primary, #1a73e8);
+    font-size: var(--text-base, 12px);
+}
+
+/* ---- Composer ---- */
+.dock__notice {
+    margin: 0 var(--space-16, 16px) var(--space-8, 8px);
+    padding: var(--space-8, 8px) var(--space-12, 12px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+}
+
+.dock__notice[hidden] {
+    display: none;
+}
+
+.dock__composer {
+    padding: var(--space-12, 12px) var(--space-16, 16px) var(--space-16, 16px);
+    border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.dock__input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    max-height: 160px;
+    padding: var(--space-8, 8px) var(--space-10, 10px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-primary, #111827);
+    font-family: inherit;
+    font-size: var(--text-md, 13px);
+    resize: none;
+}
+
+.dock__input:focus {
+    outline: none;
+    border-color: var(--color-accent-primary, #1a73e8);
+}
+
+.dock__input:disabled {
+    opacity: 0.6;
+}
+
+.dock__composerRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 8px);
+    margin-top: var(--space-8, 8px);
+}
+
+/* The board snapshot is re-sent every message, so this is what the
+   assistant costs. */
+.dock__usage {
+    flex: 1;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    font-variant-numeric: tabular-nums;
+}
+
+.dock__sendBtn {
+    padding: var(--space-6, 6px) var(--space-12, 12px);
+    border: none;
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-accent-primary, #1a73e8);
+    color: var(--color-text-on-accent, #fff);
+    font-family: inherit;
+    font-size: var(--text-base, 12px);
+    font-weight: var(--font-weight-semibold, 600);
+    cursor: pointer;
+}
+
+.dock__sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

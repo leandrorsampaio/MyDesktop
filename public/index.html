@@ -80,6 +80,10 @@
             <!-- Placeholder page view — shown on non-board pages until those pages are built -->
             <div class="pageView js-pageView" style="display:none;"></div>
         </div><!-- /.appShell__main -->
+
+        <!-- Assistant dock — squeezes the layout rather than covering it, so
+             the board stays visible and interactive while you talk about it -->
+        <assistant-dock class="js-assistantDock"></assistant-dock>
     </div><!-- /.appShell -->
 
     <!-- Add/Edit Task Modal -->
@@ -98,6 +102,7 @@
                 <button type="button" class="taskForm__tab js-taskTab" data-tab="attachments" role="tab" aria-selected="false">
                     Files<span class="taskForm__tabCount js-attachmentCount" hidden>0</span>
                 </button>
+                <button type="button" class="taskForm__askBtn js-askAboutTask" title="Ask the assistant about this task">Ask AI</button>
             </div>
             <div class="taskForm__group taskForm__group--grow js-taskPanel" data-panel="description">
                 <textarea class="js-taskDescription" placeholder="Enter task description"></textarea>
@@ -375,6 +380,10 @@
                 <span>Quick capture — jot a note, it gets filed for you</span>
             </div>
             <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>a</kbd></span>
+                <span>Toggle the assistant dock</span>
+            </div>
+            <div class="shortcutsHelp__row">
                 <span class="shortcutsHelp__keys"><kbd>Esc</kbd></span>
                 <span>Close modals and panels</span>
             </div>
@@ -414,6 +423,7 @@
     <script type="module" src="components/task-card/task-card.js"></script>
     <script type="module" src="components/modal-dialog/modal-dialog.js"></script>
     <script type="module" src="components/quick-capture/quick-capture.js"></script>
+    <script type="module" src="components/assistant-dock/assistant-dock.js"></script>
     <script type="module" src="components/daily-checklist/daily-checklist.js"></script>
     <script type="module" src="components/notes-widget/notes-widget.js"></script>
     <script type="module" src="components/kanban-column/kanban-column.js"></script>

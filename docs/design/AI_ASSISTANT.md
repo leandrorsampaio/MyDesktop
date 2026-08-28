@@ -210,7 +210,7 @@ What it should be *good at*, in rough value order:
 | **3 — Model** ✅ shipped v2.48.0 | Story points + epic contexts (data, config UI, card display). Fully useful with AI off. |
 | **4 — Proposals** ✅ shipped v2.49.0 | `ai-proposals.json`, the review list, apply/reject through validated API paths. |
 | **5 — Preview** ✅ shipped v2.50.0 | Board preview mode with per-card accept/reject. |
-| **6 — Dock** | Move the chat into the right-hand dock; board-computed empty state; per-card entry points. |
+| **6 — Dock** ✅ shipped v2.51.0 | Move the chat into the right-hand dock; board-computed empty state; per-card entry points. |
 | **7 — Memory** | `ai-memory.json`, config-page editor, AI-proposed entries. |
 | **8 — Polish** | Streaming responses. Moves up if the chosen provider is slow — ten seconds of silence in a persistent dock reads as broken. |
 

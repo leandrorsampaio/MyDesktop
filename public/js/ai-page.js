@@ -29,27 +29,18 @@ import {
     promoteToBoardApi,
     fetchAiConfigApi,
     setActiveAiConfigApi,
-    sendAiChatApi,
-    fetchAiAvailabilityApi,
     fetchProposalsApi,
     applyProposalApi,
     applyAllProposalsApi,
     rejectProposalApi,
-    rejectAllProposalsApi,
-    fetchAiConversationApi,
-    saveAiConversationApi,
-    clearAiConversationApi
+    rejectAllProposalsApi
 } from './api.js';
 import { openEditStagedTaskModal, openCloneStagedTaskModal } from './modals.js';
+import * as assistantChat from './assistant-chat.js';
 
 // ==========================================
 // Module-level state (in-memory, per session)
 // ==========================================
-
-/**
- * @type {Array<{ role: 'user'|'assistant'|'__thinking__', content: string, tasksAdded?: number }>}
- */
-let conversationHistory = [];
 
 /** @type {Array<Object>} In-memory mirror of ai-staged-tasks.json */
 let stagedTasks = [];
@@ -60,16 +51,6 @@ let stagedTasks = [];
  * @type {Array<Object>}
  */
 let proposals = [];
-
-/**
- * Cumulative token usage for this page session, shown in the composer so the
- * cost of re-sending the board snapshot on every message stays visible.
- * @type {{ input: number, output: number, lastInput: number }}
- */
-let tokenUsage = { input: 0, output: 0, lastInput: 0 };
-
-/** @type {{available: boolean, message?: string}} Latest AI availability. */
-let availability = { available: false };
 
 // ==========================================
 // Public entry point
@@ -151,18 +132,15 @@ export async function initAiPage(pageViewEl, { elements }) {
 
     // ---- Fetch initial data (page components load alongside — lazy: they're
     // not in index.html so the board cold-start doesn't pay for them) ----
-    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation, fetchedProposals;
+    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedProposals;
     try {
-        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation, fetchedProposals] = await Promise.all([
+        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedProposals] = await Promise.all([
             fetchTasksApi(),
             fetchColumnsApi(),
             fetchEpicsApi(),
             fetchCategoriesApi(),
             fetchStagedTasksApi(),
             fetchAiConfigApi(),
-            // A missing or unreadable transcript is not an error worth failing
-            // the page over — an empty conversation is a valid state.
-            fetchAiConversationApi().catch(() => ({ messages: [] })),
             fetchProposalsApi().catch(() => []),
             import('/components/list-header/list-header.js'),
             import('/components/ai-staged-row/ai-staged-row.js'),
@@ -182,9 +160,6 @@ export async function initAiPage(pageViewEl, { elements }) {
 
     stagedTasks = fetchedStaged;
     proposals = fetchedProposals || [];
-    conversationHistory = (fetchedConversation.messages || [])
-        .map(m => ({ role: m.role, content: m.content }));
-    tokenUsage = { input: 0, output: 0, lastInput: 0 };
 
     // ---- Setup list-header ----
     headerEl.setColumns([
@@ -217,10 +192,9 @@ export async function initAiPage(pageViewEl, { elements }) {
     modelSelectEl.addEventListener('change', async () => {
         const result = await setActiveAiConfigApi(modelSelectEl.value);
         if (!result.ok && toaster) toaster.error('Failed to switch model');
-        // The new config may have a key where the old one didn't (or vice
-        // versa), so the composer's enabled state has to be re-derived.
-        availability = await fetchAiAvailabilityApi();
-        _applyAvailability(availability, pageViewEl.querySelector('.js-aiNotice'), inputEl, sendBtn);
+        // The new config may have a key where the old one didn't, so the
+        // composer's enabled state has to be re-derived.
+        await assistantChat.refreshAvailability();
     });
 
     // ---- Initial renders ----
@@ -283,14 +257,16 @@ export async function initAiPage(pageViewEl, { elements }) {
         }
     });
 
-    // ---- Availability: checked AFTER the page has painted, never awaited
-    // before it. An unconfigured or unreachable provider disables the composer
-    // with a stated reason; everything already on screen stays usable. ----
+    // ---- The controller drives both this page and the dock, so re-render
+    // from it on every change — including ones the dock caused. Availability
+    // is checked AFTER the page has painted, never awaited before it. ----
     const noticeEl = pageViewEl.querySelector('.js-aiNotice');
-    fetchAiAvailabilityApi().then((status) => {
-        availability = status;
-        _applyAvailability(status, noticeEl, inputEl, sendBtn);
+    assistantChat.onChange((state) => {
+        _renderMessages(messagesEl);
+        _renderUsage(usageEl);
+        _applyAvailability(state.availability, noticeEl, inputEl, sendBtn, state.busy);
     });
+    assistantChat.init();
 
     // ---- Wire input events ----
     sendBtn.addEventListener('click', () => _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements, usageEl));
@@ -305,18 +281,8 @@ export async function initAiPage(pageViewEl, { elements }) {
     inputEl.addEventListener('input', () => _autoGrow(inputEl));
 
     clearBtn.addEventListener('click', async () => {
-        conversationHistory = [];
-        tokenUsage = { input: 0, output: 0, lastInput: 0 };
-        _renderMessages(messagesEl);
-        _renderUsage(usageEl);
-        try {
-            await clearAiConversationApi();
-        } catch {
-            // The transcript is already gone from view; a failed server clear
-            // means it reappears on reload, which is recoverable and not worth
-            // an error dialog.
-            if (toaster) toaster.warning('Conversation cleared locally, but not on the server');
-        }
+        const result = await assistantChat.clear();
+        if (!result.ok && toaster) toaster.warning(result.error);
     });
 
     // ---- Wire staged row events (event delegation) ----
@@ -416,63 +382,20 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
     const text = inputEl.value.trim();
     if (!text) return;
 
-    // Availability is already known from page load; re-checking here would add
-    // a round-trip to every message. The composer is disabled when it's false,
-    // so this only catches a race.
-    if (!availability.available) {
-        if (toaster) toaster.warning(availability.message || 'AI is not configured');
-        return;
-    }
-
-    // Append user message and clear input
-    conversationHistory.push({ role: 'user', content: text });
     inputEl.value = '';
     inputEl.style.height = 'auto';
-    sendBtn.disabled = true;
-    _renderMessages(messagesEl);
 
-    // Show thinking indicator
-    conversationHistory.push({ role: '__thinking__', content: '' });
-    _renderMessages(messagesEl);
-
-    // Build messages array for the API (exclude the thinking placeholder)
-    const apiMessages = conversationHistory
-        .filter(m => m.role !== '__thinking__')
-        .map(m => ({ role: m.role, content: m.content }));
-
-    // Call AI — sendAiChatApi throws on network failure; without this catch
-    // an unhandled rejection would leave the Send button disabled and the
-    // thinking indicator stuck until page reload
-    let result;
-    try {
-        result = await sendAiChatApi(apiMessages);
-    } catch {
-        result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
-    }
-
-    // Remove thinking indicator
-    conversationHistory = conversationHistory.filter(m => m.role !== '__thinking__');
+    // The controller owns the transcript, the pending placeholder, token
+    // accounting and persistence — and notifies the dock too, so both surfaces
+    // stay on the same conversation.
+    const result = await assistantChat.send(text);
 
     if (!result.ok) {
-        if (toaster) toaster.error(result.error || 'AI request failed');
-        sendBtn.disabled = false;
-        _renderMessages(messagesEl);
+        if (toaster) toaster.error(result.error);
         return;
     }
 
-    const { narrative, tasks: newTasks, proposals: newProposals, usage } = result.data;
-
-    conversationHistory.push({
-        role: 'assistant',
-        content: narrative || '(No response)',
-        tasksAdded: newTasks.length
-    });
-
-    if (usage) {
-        tokenUsage.lastInput = usage.inputTokens || 0;
-        tokenUsage.input  += usage.inputTokens  || 0;
-        tokenUsage.output += usage.outputTokens || 0;
-    }
+    const { tasks: newTasks, proposals: newProposals } = result;
 
     if (newTasks.length > 0) {
         stagedTasks = [...stagedTasks, ...newTasks];
@@ -491,23 +414,6 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
             toaster.info(`${newProposals.length} change${newProposals.length === 1 ? '' : 's'} proposed — review below`);
         }
     }
-
-    sendBtn.disabled = false;
-    _renderMessages(messagesEl);
-    _renderUsage(usageEl);
-
-    // Persist the transcript. A failure here costs the user nothing now — the
-    // conversation is on screen — it only means this exchange is missing after
-    // a reload, so it is logged as a warning rather than surfaced as an error.
-    try {
-        await saveAiConversationApi(
-            conversationHistory
-                .filter(m => m.role === 'user' || m.role === 'assistant')
-                .map(m => ({ role: m.role, content: m.content }))
-        );
-    } catch {
-        if (toaster) toaster.warning('This exchange could not be saved for next session');
-    }
 }
 
 /**
@@ -518,11 +424,11 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
  * @param {HTMLTextAreaElement} inputEl
  * @param {HTMLButtonElement} sendBtn
  */
-function _applyAvailability(status, noticeEl, inputEl, sendBtn) {
+function _applyAvailability(status, noticeEl, inputEl, sendBtn, busy = false) {
     const ok = Boolean(status.available);
 
     inputEl.disabled = !ok;
-    sendBtn.disabled = !ok;
+    sendBtn.disabled = !ok || busy;
     noticeEl.hidden = ok;
 
     if (ok) {
@@ -580,14 +486,7 @@ function _renderProposals(sectionEl, rowsEl, countEl) {
  * @param {HTMLElement} usageEl
  */
 function _renderUsage(usageEl) {
-    if (!usageEl) return;
-    const total = tokenUsage.input + tokenUsage.output;
-    if (total === 0) {
-        usageEl.textContent = '';
-        return;
-    }
-    const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-    usageEl.textContent = `last ${fmt(tokenUsage.lastInput)} in · session ${fmt(total)}`;
+    if (usageEl) usageEl.textContent = assistantChat.formatUsage();
 }
 
 // ==========================================
@@ -595,16 +494,16 @@ function _renderUsage(usageEl) {
 // ==========================================
 
 /**
- * Re-renders the chat message list from conversationHistory.
+ * Re-renders the chat message list from the shared conversation controller.
  * @param {HTMLElement} messagesEl
  */
 function _renderMessages(messagesEl) {
     messagesEl.innerHTML = '';
 
-    for (const msg of conversationHistory) {
+    for (const msg of assistantChat.getState().history) {
         const div = document.createElement('div');
 
-        if (msg.role === '__thinking__') {
+        if (msg.role === 'pending') {
             div.className = 'aiPage__message aiPage__message--thinking';
             div.innerHTML = '<span></span><span></span><span></span>';
         } else if (msg.role === 'user') {
@@ -613,10 +512,13 @@ function _renderMessages(messagesEl) {
         } else {
             div.className = 'aiPage__message aiPage__message--ai';
             div.textContent = msg.content;
-            if (msg.tasksAdded > 0) {
+            const outcomes = [];
+            if (msg.tasksAdded > 0) outcomes.push(`↓ ${msg.tasksAdded} task${msg.tasksAdded !== 1 ? 's' : ''} staged`);
+            if (msg.proposalsAdded > 0) outcomes.push(`${msg.proposalsAdded} change${msg.proposalsAdded !== 1 ? 's' : ''} proposed`);
+            if (outcomes.length) {
                 const chip = document.createElement('span');
                 chip.className = 'aiPage__taskChip';
-                chip.textContent = `↓ ${msg.tasksAdded} task${msg.tasksAdded !== 1 ? 's' : ''} staged`;
+                chip.textContent = outcomes.join(' · ');
                 div.appendChild(chip);
             }
         }

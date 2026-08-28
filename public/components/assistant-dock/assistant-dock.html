@@ -1,0 +1,28 @@
+<div class="dock">
+    <div class="dock__resizer js-resizer" role="separator" aria-label="Resize assistant" tabindex="-1"></div>
+    <div class="dock__panel">
+        <header class="dock__header">
+            <span class="dock__title">Assistant</span>
+            <span class="dock__pending js-pending" hidden></span>
+            <button type="button" class="dock__iconBtn js-clearBtn" title="Clear conversation" aria-label="Clear conversation">⌫</button>
+            <button type="button" class="dock__iconBtn js-closeBtn" title="Close" aria-label="Close assistant">&times;</button>
+        </header>
+
+        <div class="dock__messages js-messages"></div>
+
+        <div class="dock__notice js-notice" hidden></div>
+
+        <div class="dock__composer">
+            <textarea
+                class="dock__input js-input"
+                rows="2"
+                placeholder="Ask about your board…"
+                aria-label="Message the assistant"
+            ></textarea>
+            <div class="dock__composerRow">
+                <span class="dock__usage js-usage"></span>
+                <button type="button" class="dock__sendBtn js-sendBtn">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
