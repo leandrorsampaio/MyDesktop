@@ -928,7 +928,8 @@ async function resolveProfile(req, res, next) {
             categories: path.join(profileDir, 'categories.json'),
             aiStaged: path.join(profileDir, 'ai-staged-tasks.json'),
             aiConversation: path.join(profileDir, 'ai-conversation.json'),
-            aiProposals: path.join(profileDir, 'ai-proposals.json')
+            aiProposals: path.join(profileDir, 'ai-proposals.json'),
+            aiMemory: path.join(profileDir, 'ai-memory.json')
         };
         req.profile = profile;
         // Columns sorted by order for consistent use across handlers
@@ -2641,6 +2642,97 @@ const CLASSIFY_TASK_TOOL = {
 };
 
 /**
+ * ===========================================
+ * Long-term memory
+ * ===========================================
+ *
+ * A short, curated list of durable facts about how this person works —
+ * their sizing conventions, what an epic really means, which prefixes map to
+ * which work. Injected on every call, which is what lets story points and epic
+ * conventions compound instead of resetting each session.
+ *
+ * Deliberately a plain, hand-editable JSON list rather than an embedding
+ * store: "your data, your machine" has to mean a file you can read, edit and
+ * version — and a vector database would break the zero-dependency rule for a
+ * board this size.
+ *
+ * The AI may *propose* entries but never adds one. Unapproved entries are
+ * stored and shown for review; only approved entries reach the prompt.
+ */
+const MAX_MEMORIES = 40;
+
+/** Longest single memory entry. Long enough for a sentence, not a paragraph. */
+const MEMORY_TEXT_MAX_LENGTH = 300;
+
+/**
+ * Total approved-memory characters allowed into the prompt. Memory is sent on
+ * every message alongside the board snapshot, so it needs its own ceiling.
+ */
+const MEMORY_PROMPT_BUDGET = 4000;
+
+/**
+ * Tool the AI uses to propose something worth remembering.
+ *
+ * Nothing it proposes is used until the user approves it on the config page —
+ * the same propose-first rule the board changes follow.
+ */
+const PROPOSE_MEMORY_TOOL = {
+    name: 'propose_memory',
+    description: 'Propose a durable fact about how this person works, worth remembering across conversations — a naming convention, what an epic means, how they size things. Only for things that will still be true next month; never for one-off details about a single task. Proposals are reviewed by the user before they are used.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            facts: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        text: { type: 'string', description: 'One sentence, stated as a fact. E.g. "ESB- prefixed tickets always belong to the ECOM epic."' }
+                    },
+                    required: ['text']
+                }
+            }
+        },
+        required: ['facts']
+    }
+};
+
+/**
+ * Normalises one raw memory entry from the model, or returns null.
+ * @param {Object} raw
+ * @returns {Object|null}
+ */
+function normaliseMemory(raw) {
+    const text = raw && typeof raw.text === 'string' ? raw.text.trim() : '';
+    if (!text) return null;
+    return {
+        id: generateId(),
+        text: text.slice(0, MEMORY_TEXT_MAX_LENGTH),
+        source: 'ai',
+        approved: false,
+        createdAt: new Date().toISOString()
+    };
+}
+
+/**
+ * Renders approved memories for the system prompt, within the budget.
+ * @param {Array<Object>} memories
+ * @returns {string} Empty string when there is nothing approved.
+ */
+function renderMemoryForPrompt(memories) {
+    const lines = [];
+    let budget = MEMORY_PROMPT_BUDGET;
+    for (const memory of memories) {
+        if (!memory.approved) continue;
+        const line = `- ${memory.text}`;
+        if (line.length > budget) break;
+        budget -= line.length;
+        lines.push(line);
+    }
+    return lines.join('\n');
+}
+
+/**
  * Proposal kinds the AI may put in the review buffer.
  *
  * Deliberately no 'create'. New tasks already have a reviewable flow — AI
@@ -2817,7 +2909,7 @@ function buildBoardSnapshot(columns, tasks, epicById, categoryById) {
  * @param {Array<Object>} ctx.tasks
  * @returns {string}
  */
-function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks }) {
+function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memories = [] }) {
     const epicById = new Map(epics.map(e => [e.id, e]));
     const categoryById = new Map(categories.map(c => [c.id, c]));
 
@@ -2839,6 +2931,8 @@ function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks }) {
     const catsStr = categories.map(c => `  - "${c.name}" (id: ${c.id})`).join('\n');
     const columnsStr = columns.map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' [backlog]' : ''}`).join('\n');
 
+    const memoryStr = renderMemoryForPrompt(memories);
+
     return `You are a task management assistant built into a personal kanban tool. You are talking to the single person who owns this board.
 
 You can see their whole board below. Use it. When they ask a question about their work, answer it from the board — do not invent tasks, and do not turn every conversation into ticket creation.
@@ -2851,8 +2945,13 @@ Call neither when the user is simply asking a question — a question deserves a
 
 Nothing you propose is applied automatically. Every proposal is reviewed by the user first, so be specific and give a short reason for each change.
 
+If you notice something durable about how this person works — a naming convention, what an epic really covers, how they size things — call propose_memory() so it is remembered next time. Only for things that will still be true next month, and never for details about one task.
+
 Be concise. This is a personal tool, not a report generator.
 
+${memoryStr ? `# What you already know about how they work
+${memoryStr}
+` : ''}
 # Columns
 ${columnsStr}
 
@@ -3493,13 +3592,16 @@ app.get('/api/ai/availability', async (req, res) => {
 if (RATE_LIMIT_DISABLED) {
     app.get('/api/:profile/ai/_test/prompt', resolveProfile, async (req, res) => {
         try {
-            const [epics, categories, tasks] = await Promise.all([
+            // Must load exactly what the chat handler loads, or this endpoint
+            // reports a prompt the model never actually sees.
+            const [epics, categories, tasks, memories] = await Promise.all([
                 readJsonFile(req.profileFiles.epics, []),
                 readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
-                readJsonFile(req.profileFiles.tasks, [])
+                readJsonFile(req.profileFiles.tasks, []),
+                readJsonFile(req.profileFiles.aiMemory, [])
             ]);
             const prompt = buildAiSystemPromptWithBoard({
-                epics, categories, columns: req.columns, tasks
+                epics, categories, columns: req.columns, tasks, memories
             });
             res.json({ prompt, chars: prompt.length });
         } catch (error) {
@@ -3507,6 +3609,102 @@ if (RATE_LIMIT_DISABLED) {
         }
     });
 }
+
+// ===========================================
+// AI Memory
+// ===========================================
+
+/**
+ * Validates memory text from a request body.
+ * @param {*} text
+ * @returns {{valid: boolean, error?: string, text?: string}}
+ */
+function validateMemoryText(text) {
+    if (typeof text !== 'string' || text.trim() === '') {
+        return { valid: false, error: 'Memory text is required' };
+    }
+    if (text.trim().length > MEMORY_TEXT_MAX_LENGTH) {
+        return { valid: false, error: `Memory must be ${MEMORY_TEXT_MAX_LENGTH} characters or less` };
+    }
+    return { valid: true, text: text.trim() };
+}
+
+// GET all memories (approved and awaiting review)
+app.get('/api/:profile/ai/memory', resolveProfile, async (req, res) => {
+    try {
+        res.json(await readJsonFile(req.profileFiles.aiMemory, []));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read memory' });
+    }
+});
+
+// POST add a memory by hand — approved immediately, since the user wrote it
+app.post('/api/:profile/ai/memory', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const validation = validateMemoryText(req.body.text);
+        if (!validation.valid) return res.status(400).json({ error: validation.error });
+
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        if (memories.length >= MAX_MEMORIES) {
+            return res.status(400).json({ error: `Maximum of ${MAX_MEMORIES} memories` });
+        }
+
+        const memory = {
+            id: generateId(),
+            text: validation.text,
+            source: 'user',
+            approved: true,
+            createdAt: new Date().toISOString()
+        };
+        memories.push(memory);
+        await writeJsonFile(req.profileFiles.aiMemory, memories);
+        res.status(201).json(memory);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save memory' });
+    }
+});
+
+// PUT edit text and/or approve. Approving an AI proposal is what lets it
+// reach a prompt — until then it is stored but unused.
+app.put('/api/:profile/ai/memory/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        const memory = memories.find(m => m.id === req.params.id);
+        if (!memory) return res.status(404).json({ error: 'Memory not found' });
+
+        if (req.body.text !== undefined) {
+            const validation = validateMemoryText(req.body.text);
+            if (!validation.valid) return res.status(400).json({ error: validation.error });
+            memory.text = validation.text;
+        }
+        if (req.body.approved !== undefined) {
+            if (typeof req.body.approved !== 'boolean') {
+                return res.status(400).json({ error: 'approved must be a boolean' });
+            }
+            memory.approved = req.body.approved;
+        }
+
+        await writeJsonFile(req.profileFiles.aiMemory, memories);
+        res.json(memory);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update memory' });
+    }
+});
+
+// DELETE one memory
+app.delete('/api/:profile/ai/memory/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        const index = memories.findIndex(m => m.id === req.params.id);
+        if (index === -1) return res.status(404).json({ error: 'Memory not found' });
+
+        memories.splice(index, 1);
+        await writeJsonFile(req.profileFiles.aiMemory, memories);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete memory' });
+    }
+});
 
 // ===========================================
 // AI Proposed Changes (review buffer)
@@ -3894,18 +4092,19 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
 
         // Build system prompt with the live board plus epics + categories.
         // The board is what turns this from a text parser into an assistant.
-        const [epics, categories, tasks] = await Promise.all([
+        const [epics, categories, tasks, memories] = await Promise.all([
             readJsonFile(req.profileFiles.epics, []),
             readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
-            readJsonFile(req.profileFiles.tasks, [])
+            readJsonFile(req.profileFiles.tasks, []),
+            readJsonFile(req.profileFiles.aiMemory, [])
         ]);
         const systemPrompt = buildAiSystemPromptWithBoard({
-            epics, categories, columns: req.columns, tasks
+            epics, categories, columns: req.columns, tasks, memories
         });
 
         // Two tools: propose_tasks creates new work, propose_changes edits
         // what already exists. A single turn may legitimately use both.
-        const chatTools = [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL];
+        const chatTools = [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL, PROPOSE_MEMORY_TOOL];
 
         // Call the AI
         let narrative, rawTasks, toolCalls, usage;
@@ -3963,10 +4162,34 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
             }
         }
 
+        // Memory proposals are stored unapproved: they are shown for review on
+        // the config page and never reach a prompt until the user says so.
+        const rawFacts = (toolCalls || [])
+            .filter(c => c.name === PROPOSE_MEMORY_TOOL.name)
+            .flatMap(c => Array.isArray(c.input?.facts) ? c.input.facts : []);
+
+        let newMemories = [];
+        if (rawFacts.length > 0) {
+            const existing = await readJsonFile(req.profileFiles.aiMemory, []);
+            const seen = new Set(existing.map(m => m.text.toLowerCase()));
+            newMemories = rawFacts
+                .map(normaliseMemory)
+                .filter(m => m && !seen.has(m.text.toLowerCase()));
+
+            if (newMemories.length > 0 && existing.length < MAX_MEMORIES) {
+                const room = MAX_MEMORIES - existing.length;
+                newMemories = newMemories.slice(0, room);
+                await writeJsonFile(req.profileFiles.aiMemory, [...existing, ...newMemories]);
+            } else {
+                newMemories = [];
+            }
+        }
+
         res.json({
             narrative,
             tasks: newStagedTasks,
             proposals: newProposals,
+            memories: newMemories,
             usage: usage || null
         });
     } catch (error) {

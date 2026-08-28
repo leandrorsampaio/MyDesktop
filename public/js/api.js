@@ -932,3 +932,53 @@ export async function rejectAllProposalsApi() {
     const response = await fetch(`${apiBase}/ai/proposals`, { method: 'DELETE' });
     return parseOrThrow(response);
 }
+
+/**
+ * Fetches the assistant's memory — both approved entries and anything the AI
+ * has proposed and is awaiting review.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchMemoriesApi() {
+    const response = await fetch(`${apiBase}/ai/memory`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Adds a memory by hand. Approved immediately — the user wrote it.
+ * @param {string} text
+ * @returns {Promise<Object>}
+ */
+export async function createMemoryApi(text) {
+    const response = await fetch(`${apiBase}/ai/memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Edits a memory's text and/or approves it. Approving an AI-proposed entry is
+ * what allows it into a prompt.
+ * @param {string} id
+ * @param {{text?: string, approved?: boolean}} data
+ * @returns {Promise<Object>}
+ */
+export async function updateMemoryApi(id, data) {
+    const response = await fetch(`${apiBase}/ai/memory/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Deletes a memory.
+ * @param {string} id
+ * @returns {Promise<Object>}
+ */
+export async function deleteMemoryApi(id) {
+    const response = await fetch(`${apiBase}/ai/memory/${id}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}

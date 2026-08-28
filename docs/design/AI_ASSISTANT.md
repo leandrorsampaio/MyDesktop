@@ -99,7 +99,7 @@ Reviewable individually. Applying one re-runs the same validators a human click 
 
 **Shipped without a `create` kind** (decided during v2.49.0). New tasks already have a reviewable flow in AI staging, where they can be edited, cloned and promoted before anything touches the board. A second creation path would be a worse experience, not a richer one — so proposals cover changes to tasks that already exist, and staging keeps creation.
 
-### New — long-term memory (`ai-memory.json`, per profile)
+### New — long-term memory (`ai-memory.json`, per profile) — shipped v2.52.0
 
 A short, curated list of durable facts, injected on every call:
 
@@ -211,7 +211,7 @@ What it should be *good at*, in rough value order:
 | **4 — Proposals** ✅ shipped v2.49.0 | `ai-proposals.json`, the review list, apply/reject through validated API paths. |
 | **5 — Preview** ✅ shipped v2.50.0 | Board preview mode with per-card accept/reject. |
 | **6 — Dock** ✅ shipped v2.51.0 | Move the chat into the right-hand dock; board-computed empty state; per-card entry points. |
-| **7 — Memory** | `ai-memory.json`, config-page editor, AI-proposed entries. |
+| **7 — Memory** ✅ shipped v2.52.0 | `ai-memory.json`, config-page editor, AI-proposed entries. |
 | **8 — Polish** | Streaming responses. Moves up if the chosen provider is slow — ten seconds of silence in a persistent dock reads as broken. |
 
 ---

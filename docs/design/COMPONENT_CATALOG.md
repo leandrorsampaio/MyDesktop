@@ -668,6 +668,13 @@ Size: large. All follow the same CRUD list pattern.
 [List of existing items]         ← each item has inline-editable fields + delete button
 ```
 
+**Assistant memory** (under AI Assistant): an add row plus a list of durable facts.
+
+| State | Visual |
+|-------|--------|
+| Approved | Solid secondary background, labelled `yours` or `suggested`, text editable on blur |
+| Suggested, not yet approved | Sorted to the top, dashed accent border, *Remember this* button. Not used in any prompt until approved |
+
 **Epic management:**
 - Add: name input + colour picker (5-column grid, used colours disabled) + alias preview
 - List item is **two stacked rows**:

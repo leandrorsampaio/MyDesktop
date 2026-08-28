@@ -4373,3 +4373,99 @@ body.--dockResizing {
     border-color: var(--color-accent-primary);
     color: var(--color-accent-primary);
 }
+
+/* ==========================================
+   Assistant memory editor (config page)
+   ========================================== */
+.configPage__panelTitle--spaced {
+    margin-top: var(--space-32);
+}
+
+.memoryEditor__addRow {
+    display: flex;
+    gap: var(--space-8);
+    margin-bottom: var(--space-12);
+}
+
+.memoryEditor__input {
+    flex: 1;
+    padding: var(--space-8) var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-md);
+}
+
+.memoryEditor__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.memoryEditor__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-8) var(--space-10);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+}
+
+/* Suggested but not yet approved: dashed, the same "not committed" vocabulary
+   used for pending attachments and previewed cards. Nothing here reaches a
+   prompt until it is approved. */
+.memoryEditor__item.--pending {
+    border: 1px dashed var(--color-accent-primary);
+    background: transparent;
+}
+
+.memoryEditor__itemText {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-4) var(--space-6);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-md);
+}
+
+.memoryEditor__itemText:focus {
+    outline: none;
+    border-color: var(--color-border);
+    background: var(--color-bg-primary);
+}
+
+.memoryEditor__itemActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    flex-shrink: 0;
+}
+
+.memoryEditor__source {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+}
+
+.memoryEditor__deleteBtn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-family: inherit;
+    font-size: var(--text-lg);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.memoryEditor__deleteBtn:hover {
+    background: rgba(var(--color-accent-error-rgb), 0.12);
+    color: var(--color-accent-error);
+}

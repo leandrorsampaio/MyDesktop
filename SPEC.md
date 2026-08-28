@@ -79,6 +79,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── ai-staged-tasks.json   # AI-proposed tasks awaiting promotion
 │       ├── ai-conversation.json   # persisted assistant transcript (max 200 turns)
 │       ├── ai-proposals.json      # AI-proposed changes awaiting review (max 50)
+│       ├── ai-memory.json         # Durable facts about how the user works (max 40)
 │       └── attachments/           # gitignored — {taskId}/{attachmentId}{ext}, mode 0600
 ├── tests/
 │   ├── unit/                      # utils, validation, router, archive-page, mini-server, state, filters
@@ -224,6 +225,10 @@ GET    /api/ai/availability                        - Is the AI usable right now?
                                                      Always 200, never throws — the basis of graceful degradation. Key never returned.
 POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[], usage }; rate-limited 10 req/min (body: { messages: [{role,content}] }).
                                                      The system prompt carries a compact snapshot of the live board.
+GET    /api/:profile/ai/memory                     - All memories (approved + awaiting review)
+POST   /api/:profile/ai/memory                     - Add one by hand (body: { text }); approved immediately
+PUT    /api/:profile/ai/memory/:id                 - Edit text and/or approve (body: { text?, approved? })
+DELETE /api/:profile/ai/memory/:id                 - Forget one
 GET    /api/:profile/ai/proposals                  - Pending proposed changes (the review buffer)
 POST   /api/:profile/ai/proposals/:id/apply        - Apply one. The ONLY path from the buffer to the board.
                                                      409 + { discarded: true } when the proposal is stale.
@@ -585,6 +590,24 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
+
+### Assistant memory (v2.52.0)
+
+A short, curated list of durable facts about how the user works — sizing conventions, what an epic really covers, which prefixes map to which work — injected into every system prompt. This is what lets story points and epic conventions compound across sessions instead of resetting.
+
+```js
+{ id, text, source: 'user'|'ai', approved: boolean, createdAt }
+```
+
+**Deliberately a plain, hand-editable JSON list, not an embedding store.** "Your data, your machine" has to mean a file you can read, edit and version; a vector database would also break the zero-dependency rule for a board this size.
+
+**The AI may propose, never add.** A third chat tool, `propose_memory`, stores entries with `approved: false`. They are returned by the API and shown for review, but `renderMemoryForPrompt()` skips them — nothing reaches a prompt until the user approves it on the config page. Approval can also be revoked. Duplicate text is dropped before storing.
+
+Limits: 40 entries, 300 chars each, and a separate **4000-char prompt budget** — memory rides along with the board snapshot on every message, so it needs a ceiling of its own. The section is omitted entirely when nothing is approved, rather than emitting an empty heading the model reads every turn.
+
+**UI:** a "What the assistant remembers" block under Config → AI Assistant. Unapproved suggestions sort to the top and render dashed — the same "not committed yet" vocabulary as pending attachments and previewed cards — with a *Remember this* button. Approved entries are labelled `yours` or `suggested` and are editable inline on blur.
+
+**Note for anyone extending the prompt:** the test-only `/ai/_test/prompt` endpoint must load exactly what the chat handler loads, or it reports a prompt the model never sees. It was briefly wrong about memory for this reason.
 
 ### Assistant dock (v2.51.0)
 

@@ -19,7 +19,8 @@ import {
     fetchCategoriesApi, createCategoryApi, updateCategoryApi, deleteCategoryApi,
     fetchAiConfigApi, createAiConfigEntryApi, updateAiConfigEntryApi, deleteAiConfigEntryApi,
     fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi,
-    fetchProfileExportApi
+    fetchProfileExportApi,
+    fetchMemoriesApi, createMemoryApi, updateMemoryApi, deleteMemoryApi
 } from './api.js';
 
 const AI_PROVIDER_DEFAULTS = {
@@ -240,6 +241,16 @@ export async function initConfigPage(pageViewEl, { elements }) {
                                 <button type="button" class="btn --save js-cfg-aiSave">Save</button>
                             </div>
                         </div>
+                    </div>
+
+                    <h3 class="configPage__panelTitle configPage__panelTitle--spaced">What the assistant remembers</h3>
+                    <p class="configPage__panelHint">Durable facts about how you work, sent with every message. The assistant can suggest entries, but only ones you approve are used. Stored in <code>ai-memory.json</code> — plain text you can edit or delete at any time.</p>
+                    <div class="memoryEditor">
+                        <div class="memoryEditor__addRow">
+                            <input type="text" class="memoryEditor__input js-cfg-memoryInput" placeholder="e.g. A 5 is one focused day for me" maxlength="300" />
+                            <button type="button" class="btn --primary --sm js-cfg-memoryAddBtn">Add</button>
+                        </div>
+                        <div class="memoryEditor__list js-cfg-memoryList"></div>
                     </div>
                 </div>
 
@@ -1098,6 +1109,117 @@ export async function initConfigPage(pageViewEl, { elements }) {
     });
 
     aiShowList();
+
+    // ==========================================
+    // Section: Assistant Memory
+    // ==========================================
+    const memoryInput  = $('.js-cfg-memoryInput');
+    const memoryAddBtn = $('.js-cfg-memoryAddBtn');
+    const memoryList   = $('.js-cfg-memoryList');
+
+    /** @type {Array<Object>} Mirror of ai-memory.json */
+    let memories = [];
+
+    /**
+     * Renders the memory list, unapproved AI suggestions first.
+     *
+     * Everything the assistant proposes lands here unapproved and unused —
+     * approving is what lets an entry into a prompt, which is the same
+     * propose-first rule the board changes follow.
+     */
+    function renderMemories() {
+        if (memories.length === 0) {
+            memoryList.innerHTML = '<div class="emptyState">Nothing remembered yet</div>';
+            return;
+        }
+
+        const ordered = [...memories].sort((a, b) => Number(a.approved) - Number(b.approved));
+        memoryList.innerHTML = ordered.map(memory => `
+            <div class="memoryEditor__item ${memory.approved ? '' : '--pending'}" data-memory-id="${memory.id}">
+                <input type="text" class="memoryEditor__itemText js-memoryText"
+                       value="${escapeHtml(memory.text)}" maxlength="300" data-memory-id="${memory.id}" />
+                <div class="memoryEditor__itemActions">
+                    ${memory.approved
+                        ? `<span class="memoryEditor__source">${memory.source === 'ai' ? 'suggested' : 'yours'}</span>`
+                        : `<button type="button" class="btn --primary --sm js-memoryApprove" data-memory-id="${memory.id}">Remember this</button>`}
+                    <button type="button" class="memoryEditor__deleteBtn js-memoryDelete" data-memory-id="${memory.id}" title="Forget">&times;</button>
+                </div>
+            </div>
+        `).join('');
+
+        // Edit on blur, matching the other CRUD sections here.
+        memoryList.querySelectorAll('.js-memoryText').forEach(input => {
+            input.addEventListener('blur', async () => {
+                const memory = memories.find(m => m.id === input.dataset.memoryId);
+                if (!memory) return;
+                const text = input.value.trim();
+                if (!text || text === memory.text) {
+                    input.value = memory.text;
+                    return;
+                }
+                try {
+                    const updated = await updateMemoryApi(memory.id, { text });
+                    Object.assign(memory, updated);
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to save');
+                    input.value = memory.text;
+                }
+            });
+        });
+
+        memoryList.querySelectorAll('.js-memoryApprove').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const memory = memories.find(m => m.id === btn.dataset.memoryId);
+                if (!memory) return;
+                try {
+                    Object.assign(memory, await updateMemoryApi(memory.id, { approved: true }));
+                    renderMemories();
+                    toaster.success('The assistant will remember that');
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to approve');
+                }
+            });
+        });
+
+        memoryList.querySelectorAll('.js-memoryDelete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.memoryId;
+                memories = memories.filter(m => m.id !== id);
+                renderMemories();
+                try {
+                    await deleteMemoryApi(id);
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to delete');
+                }
+            });
+        });
+    }
+
+    async function addMemory() {
+        const text = memoryInput.value.trim();
+        if (!text) return;
+        try {
+            memories.push(await createMemoryApi(text));
+            memoryInput.value = '';
+            renderMemories();
+        } catch (error) {
+            toaster.error(error.message || 'Failed to add');
+        }
+    }
+
+    memoryAddBtn.addEventListener('click', addMemory);
+    memoryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addMemory();
+        }
+    });
+
+    // Loaded after the page renders — memory is not something the config page
+    // should wait on to become usable.
+    fetchMemoriesApi()
+        .then(fetched => { memories = fetched; renderMemories(); })
+        .catch(() => { memoryList.innerHTML = '<div class="emptyState">Could not load memory</div>'; });
 
     // ==========================================
     // Section: Profiles
