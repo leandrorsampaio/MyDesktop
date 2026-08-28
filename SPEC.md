@@ -118,6 +118,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
         ├── ai-staged-row/         # Flat AI staged-task row (.html + .css)
         ├── report-row/            # Flat report row (.html + .css)
         ├── page-fab/              # Reusable floating action button (inline, .js only)
+        ├── quick-capture/         # Global one-line capture bar (shortcut: c)
         └── toast-notification/
 ```
 
@@ -167,6 +168,10 @@ POST   /api/:profile/tasks               - Create task (body: { title, descripti
 PUT    /api/:profile/tasks/:id           - Update task
 DELETE /api/:profile/tasks/:id           - Delete task permanently
 POST   /api/:profile/tasks/:id/move      - Move/reorder (body: { newStatus, newPosition })
+POST   /api/:profile/capture             - Quick capture (body: { text }). Creates a task instantly,
+                                           NO AI call. Returns the task with needsFiling: true.
+POST   /api/:profile/tasks/:id/classify  - Best-effort AI classification of a captured task.
+                                           Always 200: { classified, reason?, task }.
 POST   /api/:profile/tasks/:id/attachments                 - Upload one file. RAW binary body (not
                                            multipart): type in Content-Type, percent-encoded filename
                                            in X-Attachment-Name. Returns the attachment record.
@@ -251,8 +256,10 @@ GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, arch
   createdDate: string, // ISO 8601
   deadline: string|null,    // ISO 8601 datetime — optional, default null
   snoozeUntil: string|null, // ISO 8601 datetime — optional, default null
-  attachments: array        // [{ id, name, mime, ext, size, uploadedAt }] — optional, absent until
+  attachments: array,       // [{ id, name, mime, ext, size, uploadedAt }] — optional, absent until
                             // the first file is attached. See § Attachments.
+  needsFiling: boolean      // optional. true on a quick-captured task until the AI classifies it.
+                            // Drives the "unfiled" chip. See § Quick capture.
 }
 ```
 
@@ -563,6 +570,23 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
 
+### Quick capture (v2.47.0)
+
+The hallway-conversation problem: someone asks for something in passing, filing it properly costs more attention than is available, so it never gets written down. `c` from any page opens a one-line bar; Enter files it and closes.
+
+**Two requests, deliberately.**
+
+1. `POST /api/:profile/capture` — creates the task and returns. **Makes no AI call at all**, which is what lets capture be instant (measured: ~17ms) and unconditionally reliable. Lands at position 0 of the first non-backlog column with `needsFiling: true` and a `"Captured"` log entry. Text past the 200-char title cap spills into the description rather than being truncated away — a captured note is the user's own words.
+2. `POST /api/:profile/tasks/:id/classify` — the slow, optional half. Sets epic, category, priority, destination column and deadline, and may rewrite the title into an actionable phrase (the original wording moves to the description). **Always answers 200**, with `classified: false` and the untouched task when the AI can't help, so callers never treat a missing classification as an error.
+
+**The propose-first rule is relaxed here, and only here.** Capture applies without review because reviewing in the moment *is* the friction that stops notes being captured at all. Creating a card is reversible and non-destructive, and the real alternative is not a correctly-filed card but no card. The toast carries an Undo (a hard delete — the card is seconds old and was never meant to exist), and `needsFiling` marks it for a later review pass.
+
+Classification output is advisory: every field is validated against the profile's actual epics, categories and columns before anything is written. Columns with `hasArchive` are excluded as destinations — nothing captured seconds ago belongs in Done.
+
+`buildClassifyPrompt()` is board-free by design. It runs on every captured note and carries only epics, categories and destination columns, so it stays cheap.
+
+**Client note:** `POST /capture` shifts every other card in the target column down server-side. The optimistic insert must mirror that shift locally, or it collides with an existing `position: 0` and renders in the wrong slot. When classification *moves* the task, `app.js` re-syncs with `fetchTasks()` rather than repeating the arithmetic for the destination column — classification is already off the critical path.
+
 ### AI board context (v2.46.0)
 
 The system prompt carries a **compact snapshot of the live board** — this is what turns the feature from a text-to-tickets parser into an assistant. Before this it injected only epic and category *names*; the model had never seen a task.
@@ -689,6 +713,15 @@ Stored in `data/{alias}/ai-conversation.json`. The client owns the transcript an
 - **Event:** `change` → `CustomEvent({ detail: { value, label } })`, bubbles + composed
 - **Used in:** epic/profile color pickers (`type="color" columns="5"`), category icon picker (`type="icon" columns="7"`), epic filter + category filter (`type="list"`). (The task-modal epic field is no longer a picker — it's a clickable pill list, `.taskForm__epicSelector`, like the category pills.)
 - **List item `icon` property:** optional; when set, renders an `<svg-icon>` before the label text (used by category filter dropdown)
+
+### `<quick-capture>`
+
+Global one-line capture bar (`public/components/quick-capture/`). Present in `index.html` on every page; opened with `c`.
+
+- **API:** `open()`, `close()`, `toggle()`, `isOpen`, `setHint(text)`
+- **Events:** `capture-submit` (bubbles, composed) — `{ detail: { text } }`
+- Owns no network calls: `app.js` decides what a capture means.
+- Deliberately not a `<modal-dialog>` — a dialog asks to be read and dismissed; this takes a line and disappears. Closes on Enter (before the network call resolves), Escape, or backdrop click.
 
 ### `<modal-dialog>`
 ```html

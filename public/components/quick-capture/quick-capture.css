@@ -1,0 +1,84 @@
+/* Hidden until opened. `display: none` rather than opacity so the input can
+   never be tabbed into while the bar is closed. */
+:host {
+    display: none;
+}
+
+:host(.--open) {
+    display: block;
+}
+
+.quickCapture__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(var(--color-shadow-rgb), 0.15);
+}
+
+/* Sits high on the screen, not centred: capture is a passing action, and the
+   bar should not read as a dialog demanding a decision. */
+.quickCapture__bar {
+    position: fixed;
+    top: 18vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 201;
+    display: flex;
+    align-items: center;
+    gap: var(--space-10);
+    width: min(560px, calc(100vw - var(--space-32)));
+    padding: var(--space-12) var(--space-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-primary);
+    box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.12));
+}
+
+.quickCapture__icon {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+}
+
+.quickCapture__input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-family: var(--font-family);
+    font-size: var(--text-xl);
+}
+
+.quickCapture__input:focus {
+    outline: none;
+}
+
+.quickCapture__input::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.quickCapture__kbd {
+    flex-shrink: 0;
+    padding: 2px var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-family);
+    font-size: var(--text-sm);
+}
+
+.quickCapture__hint {
+    position: fixed;
+    top: calc(18vh + 58px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 201;
+    width: min(560px, calc(100vw - var(--space-32)));
+    padding: var(--space-6) var(--space-16);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+}
+
+.quickCapture__hint[hidden] {
+    display: none;
+}

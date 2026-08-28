@@ -23,6 +23,7 @@ import {
     createTasksSnapshot,
     restoreTasksFromSnapshot,
     findTask,
+    removeTask,
     epics,
     setEpics,
     categories,
@@ -34,7 +35,7 @@ import {
     columns,
     setColumns
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi, captureTaskApi, classifyTaskApi, deleteTaskApi } from './js/api.js';
 // Column-delete confirmation is fully handled inside config-page.js — no
 // separate import needed since the v2.38.3 dead-modal cleanup.
 import {
@@ -67,6 +68,9 @@ import {
 
         // Page view (placeholder for non-board pages)
         pageView: document.querySelector('.js-pageView'),
+
+        // Quick capture bar (global — every page)
+        quickCapture: document.querySelector('.js-quickCapture'),
 
         // Profile Selector component
         profileSelector: document.querySelector('.js-profileSelector'),
@@ -520,6 +524,10 @@ import {
             card.dataset.deadlineText  = formatRelativeTime(task.deadline);
         }
 
+        // Captured but not yet classified — the card shows a marker so a later
+        // review pass can find what the AI never got to (or got wrong).
+        if (task.needsFiling) card.dataset.needsFiling = 'true';
+
         // Attachment count — drives the paperclip badge on the card
         const attachmentCount = (task.attachments || []).length;
         if (attachmentCount > 0) card.dataset.attachmentCount = String(attachmentCount);
@@ -615,6 +623,97 @@ import {
             renderColumn(task.status);
             applyAllFilters();
             elements.toaster.success(`${attached} file${attached === 1 ? '' : 's'} attached`);
+        }
+    }
+
+    // ==========================================
+    // Quick Capture
+    // ==========================================
+
+    /**
+     * Handles a captured note: create the task, then classify it in the
+     * background.
+     *
+     * Two requests on purpose. The first is instant and must not fail — the
+     * note is the thing being protected, and it is safe on the board before
+     * anything slower is attempted. The second is best effort: if the AI is
+     * unavailable the task simply keeps its "needs filing" marker.
+     *
+     * There is no confirmation step. Reviewing in the moment is exactly the
+     * friction that stops notes being captured at all, so the toast carries an
+     * Undo instead — a misfiled card beats a card that was never written down.
+     *
+     * @param {string} text - The raw captured line
+     */
+    async function handleCapture(text) {
+        let task;
+        try {
+            task = await captureTaskApi(text);
+        } catch (error) {
+            // The one failure the user must hear about: nothing was saved.
+            elements.toaster.error('Could not capture that note — nothing was saved');
+            return;
+        }
+
+        // The server inserted at position 0 and shifted every other card in
+        // that column down. Mirror that shift locally, or the optimistic
+        // insert collides with an existing position 0 and renders in the
+        // wrong slot.
+        for (const t of tasks) {
+            if (t.status === task.status) t.position += 1;
+        }
+
+        // Show it immediately. renderColumn is a no-op off the board (no
+        // matching kanban-column in the DOM), so this is safe on every page.
+        addTask(task);
+        renderColumn(task.status);
+        applyAllFilters();
+
+        const columnName = columns.find(c => c.id === task.status)?.name || 'the board';
+        elements.toaster.success(`Captured to ${columnName}`, 4000, {
+            label: 'Undo',
+            onClick: () => undoCapture(task.id)
+        });
+
+        // Classification is fire-and-forget. classifyTaskApi resolves with
+        // { classified: false } rather than rejecting when the AI is down, so
+        // only a genuine transport failure lands in the catch.
+        let result;
+        try {
+            result = await classifyTaskApi(task.id);
+        } catch {
+            return;   // task stands as captured, marker intact
+        }
+        if (!result?.classified || !result.task) return;
+
+        if (result.task.status !== task.status) {
+            // A move re-shuffles positions in the destination column too.
+            // Rather than mirror that arithmetic a second time, re-sync from
+            // the server — classification is already off the critical path,
+            // so correctness is worth one extra GET here.
+            await fetchTasks();
+        } else {
+            updateTaskInState(task.id, result.task);
+            renderColumn(task.status);
+            applyAllFilters();
+        }
+    }
+
+    /**
+     * Removes a captured task. Undo is deliberately a hard delete rather than
+     * an archive: the card is seconds old and was never intended to exist.
+     * @param {string} taskId
+     */
+    async function undoCapture(taskId) {
+        const task = findTask(taskId);
+        const status = task?.status;
+        removeTask(taskId);
+        if (status) renderColumn(status);
+        applyAllFilters();
+        try {
+            await deleteTaskApi(taskId);
+        } catch {
+            elements.toaster.error('Could not undo — refresh to see the current board');
         }
     }
 
@@ -1023,6 +1122,12 @@ import {
     async function init() {
         initEventListeners();
         initAttachments(elements);
+
+        // Quick capture is global: the bar lives in index.html on every page,
+        // and the `c` shortcut opens it wherever the user happens to be.
+        elements.quickCapture?.addEventListener('capture-submit', (e) => {
+            handleCapture(e.detail.text);
+        });
 
         /** @type {Object|null} Active profile, hoisted out of the try block so
          * the board-data loading below can read its columns array */

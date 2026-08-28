@@ -55,7 +55,7 @@ class TaskCard extends HTMLElement {
             'data-category-icon', 'data-priority', 'data-title', 'data-description',
             'data-epic-name', 'data-epic-color', 'data-epic-alias',
             'data-deadline', 'data-deadline-level', 'data-deadline-text',
-            'data-attachment-count',
+            'data-attachment-count', 'data-needs-filing',
             'hidden'
         ];
     }
@@ -126,6 +126,12 @@ class TaskCard extends HTMLElement {
             } else {
                 epicBarEl.style.display = 'none';
             }
+        }
+
+        // "Needs filing" marker — a captured note the AI hasn't classified
+        const filingEl = this.shadowRoot.querySelector('.js-needsFiling');
+        if (filingEl) {
+            filingEl.style.display = this.dataset.needsFiling === 'true' ? 'inline-flex' : 'none';
         }
 
         // Attachment badge — paperclip + count

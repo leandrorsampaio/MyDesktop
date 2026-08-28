@@ -842,3 +842,37 @@ export async function clearAiConversationApi() {
     const response = await fetch(`${apiBase}/ai/conversation`, { method: 'DELETE' });
     return parseOrThrow(response);
 }
+
+/**
+ * Captures a note as a task. Deliberately does not involve the AI: this call
+ * must be instant and must not fail, so the note is safe on the board before
+ * anything slower is attempted.
+ * @param {string} text - The raw captured line
+ * @returns {Promise<Object>} The created task
+ */
+export async function captureTaskApi(text) {
+    const response = await fetch(`${apiBase}/capture`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Asks the AI to classify a captured task (epic, category, priority, column).
+ *
+ * Best effort by contract: the server answers 200 with `classified: false` and
+ * the untouched task when the AI is unavailable, so callers never need to treat
+ * a missing classification as an error.
+ * @param {string} taskId
+ * @returns {Promise<{classified: boolean, reason?: string, task: Object}>}
+ */
+export async function classifyTaskApi(taskId) {
+    const response = await fetch(`${apiBase}/tasks/${taskId}/classify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+    });
+    return parseOrThrow(response);
+}

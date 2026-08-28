@@ -105,6 +105,13 @@ function _handleKeydown(e, state) {
                 state.board.quickAdd();
             }
             return;
+        case 'c':
+            // Capture works on every page, not just the board — the whole
+            // point is that it is reachable the moment someone tells you
+            // something, wherever you happen to be.
+            e.preventDefault();
+            document.querySelector('.js-quickCapture')?.open();
+            return;
         case 'j': case 'ArrowDown':
             if (state.board) { e.preventDefault(); _navigateCards('down'); }
             return;

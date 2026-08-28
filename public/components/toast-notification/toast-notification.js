@@ -58,8 +58,12 @@ class ToastNotification extends HTMLElement {
      * @param {string} message - The message to display
      * @param {string} type - Type of toast: 'success', 'error', 'info', 'warning'
      * @param {number} duration - How long to show the toast in ms (default: 4000)
+     * @param {{label: string, onClick: Function}} [action] - Optional inline
+     *        action, e.g. Undo. Clicking it runs onClick and dismisses the
+     *        toast. Used where a flow completes without a confirmation step
+     *        and the toast is the only place to take it back.
      */
-    async show(message, type = 'info', duration = 4000) {
+    async show(message, type = 'info', duration = 4000, action = null) {
         await this._ready;
         const toast = document.createElement('div');
         toast.className = `toast --${type}`;
@@ -69,6 +73,7 @@ class ToastNotification extends HTMLElement {
         toast.innerHTML = `
             <span class="toast__icon">${icon}</span>
             <span class="toast__message">${this.escapeHtml(message)}</span>
+            ${action ? `<button class="toast__action">${this.escapeHtml(action.label)}</button>` : ''}
             <button class="toast__close" aria-label="Close">&times;</button>
         `;
 
@@ -76,6 +81,13 @@ class ToastNotification extends HTMLElement {
         toast.querySelector('.toast__close').addEventListener('click', () => {
             this.dismiss(toast);
         });
+
+        if (action) {
+            toast.querySelector('.toast__action').addEventListener('click', () => {
+                this.dismiss(toast);
+                action.onClick();
+            });
+        }
 
         this.container.appendChild(toast);
 
@@ -115,30 +127,33 @@ class ToastNotification extends HTMLElement {
 
     /**
      * Shows a success toast
+     * @param {string} message
+     * @param {number} [duration]
+     * @param {{label: string, onClick: Function}} [action] - Optional inline action
      */
-    success(message, duration) {
-        return this.show(message, 'success', duration);
+    success(message, duration, action) {
+        return this.show(message, 'success', duration, action);
     }
 
     /**
      * Shows an error toast
      */
-    error(message, duration) {
-        return this.show(message, 'error', duration);
+    error(message, duration, action) {
+        return this.show(message, 'error', duration, action);
     }
 
     /**
      * Shows an info toast
      */
-    info(message, duration) {
-        return this.show(message, 'info', duration);
+    info(message, duration, action) {
+        return this.show(message, 'info', duration, action);
     }
 
     /**
      * Shows a warning toast
      */
-    warning(message, duration) {
-        return this.show(message, 'warning', duration);
+    warning(message, duration, action) {
+        return this.show(message, 'warning', duration, action);
     }
 
     getIcon(type) {

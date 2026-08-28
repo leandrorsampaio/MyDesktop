@@ -172,6 +172,9 @@
     </modal-dialog>
 
     <!-- Reports Modal -->
+    <!-- Quick capture — global one-line capture bar (shortcut: c) -->
+    <quick-capture class="js-quickCapture"></quick-capture>
+
     <!-- Attachment viewer — full-size image / PDF / text preview -->
     <modal-dialog class="js-attachmentModal" size="large">
         <h2 slot="title" class="js-attachmentModalTitle"></h2>
@@ -348,6 +351,10 @@
                 <span>Show this help</span>
             </div>
             <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>c</kbd></span>
+                <span>Quick capture — jot a note, it gets filed for you</span>
+            </div>
+            <div class="shortcutsHelp__row">
                 <span class="shortcutsHelp__keys"><kbd>Esc</kbd></span>
                 <span>Close modals and panels</span>
             </div>
@@ -386,6 +393,7 @@
     <script type="module" src="components/button/button.js"></script>
     <script type="module" src="components/task-card/task-card.js"></script>
     <script type="module" src="components/modal-dialog/modal-dialog.js"></script>
+    <script type="module" src="components/quick-capture/quick-capture.js"></script>
     <script type="module" src="components/daily-checklist/daily-checklist.js"></script>
     <script type="module" src="components/notes-widget/notes-widget.js"></script>
     <script type="module" src="components/kanban-column/kanban-column.js"></script>

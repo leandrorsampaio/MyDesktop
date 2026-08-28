@@ -203,3 +203,19 @@
     outline: 2px solid var(--color-accent-primary, #1a73e8);
     outline-offset: -2px;
 }
+
+/* "Unfiled" marker — a captured note the AI hasn't classified yet (or
+   couldn't, because it was offline). Deliberately a muted outline chip, not a
+   colour: colour is reserved for epic and priority. */
+.taskCard__needsFiling {
+    display: none;
+    align-items: center;
+    margin-left: var(--space-6);
+    padding: 0 var(--space-6);
+    border: 1px dashed var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}

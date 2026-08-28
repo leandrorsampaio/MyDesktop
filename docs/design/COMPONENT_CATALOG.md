@@ -153,6 +153,7 @@ Shadow DOM component. The most important visual element in the app.
       .taskCard__header        ← title text + priority star (if priority=true)
       .taskCard__desc          ← description text, 2-line clamp with ellipsis
       .taskCard__badge         ← category name + icon (hidden if category=1)
+      .taskCard__needsFiling   ← "unfiled" chip (hidden unless captured & unclassified)
       .taskCard__attachments   ← paperclip + count (hidden if no attachments)
       .taskCard__deadline      ← deadline chip (hidden if no deadline)
     .taskCard__editBtn         ← edit pencil button, absolute top-right, visible on hover
@@ -175,6 +176,7 @@ Shadow DOM component. The most important visual element in the app.
 | Snoozed (transparent mode) | 50% opacity |
 | Category badge | Small pill: icon + category name. Hidden when category = 1 |
 | Has attachments | Paperclip icon + count, tertiary text colour, beside the category badge |
+| Needs filing | `unfiled` chip — dashed 1px border, tertiary text. A quick-captured card the AI hasn't classified. Deliberately not a colour: colour is reserved for epic and priority |
 | File dragged over (`.--fileDragOver`) | 2px accent outline, inset. Dropping attaches the files to this task |
 | Filter-hidden | `[hidden]` attribute → display: none |
 
@@ -507,6 +509,30 @@ Actions column: 300px (5 buttons).
 All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px), default (680px), large (960px). All clamped with min/max.
 
 > **Note (v2.37+):** the CRUD editors in §6.3–6.7 are **no longer modals** — they render inline as sections of the Configuration page (`/:alias/config`, left tabs + right panel). Their element anatomy and visual specs below still apply to the inline versions. The only modals left in the app are the task modal (§6.2), the report viewer, and the small delete-confirmation modals (§6.8).
+
+### 6.0 Quick Capture (`<quick-capture>`)
+
+Global one-line capture bar. Present on every page, opened with `c`. **Not a modal** — a dialog asks to be read and dismissed; this takes a line and disappears.
+
+```
+.quickCapture__backdrop        ← dims the page, click to dismiss
+.quickCapture__bar             ← 560px max, fixed at 18vh (high, not centred)
+  svg-icon (lightning, 16)
+  .quickCapture__input         ← "What needs doing?", --text-xl
+  kbd "Enter"
+.quickCapture__hint            ← optional transient line under the bar
+```
+
+| State | Visual / behaviour |
+|-------|--------------------|
+| Closed | `display: none` on the host — never tabbable while closed |
+| Open | Bar + backdrop; input focused on the next frame (it can't focus while still `display: none`) |
+| Enter | Closes **immediately**, before the network resolves — capture must feel finished when you press the key |
+| Escape / backdrop | Dismisses without capturing |
+| Captured | Card appears at the top of the first column with an `unfiled` chip; toast "Captured to X" with an **Undo** action |
+| Classified | Chip disappears; the card may gain an epic, category and move column |
+
+Positioned at 18vh rather than centred: capture is a passing action and should not read as a dialog demanding a decision.
 
 ### 6.1 Modal Dialog Component
 

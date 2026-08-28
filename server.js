@@ -1439,6 +1439,173 @@ app.delete('/api/:profile/tasks/:id/attachments/:attachmentId', resolveProfile, 
     }
 });
 
+// ===========================================
+// Quick Capture
+// ===========================================
+
+/**
+ * Longest captured note accepted. Anything past the title cap spills into the
+ * description rather than being truncated away.
+ */
+const CAPTURE_MAX_LENGTH = 2000;
+
+/**
+ * POST capture a note as a task — the hallway-conversation path.
+ *
+ * Deliberately does NOT call the AI. Capture must be instant and must never
+ * fail: this endpoint only writes a task and returns it. Classification is a
+ * separate, optional, slower request the client fires afterwards.
+ *
+ * `needsFiling: true` marks it as unreviewed so the card shows a marker and a
+ * later review pass can find it.
+ */
+app.post('/api/:profile/capture', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const raw = typeof req.body.text === 'string' ? req.body.text.trim() : '';
+        if (!raw) {
+            return res.status(400).json({ error: 'Capture text is required' });
+        }
+        if (raw.length > CAPTURE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Capture must be ${CAPTURE_MAX_LENGTH} characters or less` });
+        }
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+
+        // Land in the first non-backlog column. Classification may move it.
+        const targetColumn = req.columns.find(c => !c.isBacklog) || req.columns[0];
+
+        // Everything past the title cap is preserved in the description —
+        // a captured note is the user's own words and must never be lost.
+        const overflows = raw.length > VALIDATION.TITLE_MAX_LENGTH;
+
+        for (const t of tasks) {
+            if (t.status === targetColumn.id) t.position += 1;
+        }
+
+        const newTask = {
+            id: generateId(),
+            title: overflows ? raw.slice(0, VALIDATION.TITLE_MAX_LENGTH) : raw,
+            description: overflows ? raw : '',
+            priority: false,
+            category: DEFAULT_CATEGORY_ID,
+            epicId: null,
+            status: targetColumn.id,
+            position: 0,
+            log: [{ date: new Date().toISOString().split('T')[0], action: 'Captured' }],
+            createdDate: new Date().toISOString(),
+            deadline: null,
+            snoozeUntil: null,
+            needsFiling: true
+        };
+
+        tasks.push(newTask);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        res.status(201).json(newTask);
+    } catch (error) {
+        console.error('Capture failed:', error);
+        res.status(500).json({ error: 'Failed to capture note' });
+    }
+});
+
+/**
+ * POST classify a captured task — the slow, optional half of capture.
+ *
+ * Every failure path leaves the task exactly as captured with `needsFiling`
+ * still true. The caller treats this as best-effort: the note is already safe
+ * on the board before this runs.
+ */
+app.post('/api/:profile/tasks/:id/classify', resolveProfile, aiLimiter, async (req, res) => {
+    try {
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const taskIndex = tasks.findIndex(t => t.id === req.params.id);
+        if (taskIndex === -1) return res.status(404).json({ error: 'Task not found' });
+
+        const resolved = await resolveActiveAiConfig();
+        if (!resolved.ok) {
+            // Not an error the user needs to act on mid-capture — the task
+            // stands, it just keeps its "needs filing" marker.
+            return res.status(200).json({ classified: false, reason: resolved.error, task: tasks[taskIndex] });
+        }
+
+        const [epics, categories] = await Promise.all([
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES)
+        ]);
+
+        const task = tasks[taskIndex];
+        const noteText = task.description || task.title;
+        const systemPrompt = buildClassifyPrompt({
+            epics, categories, columns: req.columns,
+            today: new Date().toISOString().split('T')[0]
+        });
+
+        let toolInput;
+        try {
+            const call = resolved.providerMeta.format === 'anthropic'
+                ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt,
+                    [{ role: 'user', content: noteText }], CLASSIFY_TASK_TOOL)
+                : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt,
+                    [{ role: 'user', content: noteText }], CLASSIFY_TASK_TOOL);
+            toolInput = call.toolInput;
+        } catch (aiErr) {
+            return res.status(200).json({ classified: false, reason: aiErr.message, task });
+        }
+
+        if (!toolInput || typeof toolInput !== 'object') {
+            return res.status(200).json({ classified: false, reason: 'Model returned no classification', task });
+        }
+
+        // Everything below is advisory input from a model — validate each field
+        // against what this profile actually has before writing any of it.
+        const validEpicIds = new Set(epics.map(e => e.id));
+        const validCategoryIds = new Set(categories.map(c => c.id));
+        const validColumnIds = new Set(req.columns.filter(c => !c.hasArchive).map(c => c.id));
+
+        if (typeof toolInput.title === 'string') {
+            const cleaned = toolInput.title.trim().slice(0, VALIDATION.TITLE_MAX_LENGTH);
+            // Keep the original wording in the description when the title is
+            // rewritten — the user's own phrasing is the record of what was said.
+            if (cleaned && cleaned !== task.title) {
+                if (!task.description) task.description = task.title;
+                task.title = cleaned;
+            }
+        }
+        if (typeof toolInput.epicId === 'string' && validEpicIds.has(toolInput.epicId)) {
+            task.epicId = toolInput.epicId;
+        }
+        if (validCategoryIds.has(Number(toolInput.category))) {
+            task.category = Number(toolInput.category);
+        }
+        if (typeof toolInput.priority === 'boolean') {
+            task.priority = toolInput.priority;
+        }
+        if (typeof toolInput.columnId === 'string' && validColumnIds.has(toolInput.columnId)
+            && toolInput.columnId !== task.status) {
+            const from = req.columns.find(c => c.id === task.status);
+            const to   = req.columns.find(c => c.id === toolInput.columnId);
+            for (const t of tasks) {
+                if (t.id !== task.id && t.status === toolInput.columnId) t.position += 1;
+            }
+            task.status = toolInput.columnId;
+            task.position = 0;
+            task.log.push({
+                date: new Date().toISOString().split('T')[0],
+                action: `Filed into '${to.name}'${from ? ` from '${from.name}'` : ''}`
+            });
+        }
+        if (typeof toolInput.deadline === 'string' && !isNaN(Date.parse(toolInput.deadline))) {
+            task.deadline = new Date(toolInput.deadline).toISOString();
+        }
+
+        task.needsFiling = false;
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        res.json({ classified: true, task });
+    } catch (error) {
+        console.error('Classification failed:', error);
+        res.status(500).json({ error: 'Failed to classify task' });
+    }
+});
+
 // POST move task between columns or reorder
 app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (req, res) => {
     try {
@@ -2369,6 +2536,79 @@ const PROPOSE_TASKS_TOOL = {
 };
 
 /**
+ * Tool for classifying a single captured line into board fields.
+ *
+ * Deliberately separate from PROPOSE_TASKS_TOOL: quick capture runs on every
+ * hallway note, so its prompt stays small (epics + categories + columns, no
+ * board snapshot) and it answers about exactly one task.
+ */
+const CLASSIFY_TASK_TOOL = {
+    name: 'classify_task',
+    description: 'Classify one captured note into board fields. Always call this exactly once.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            title:    { type: 'string',  description: 'A clean, actionable rewrite of the note (verb + object), max 200 chars. Omit if the original is already a good title.' },
+            epicId:   { type: 'string',  description: 'Epic ID from the provided list, only when the note clearly belongs to it. Omit otherwise.' },
+            category: { type: 'integer', description: 'Category ID from the provided list.' },
+            priority: { type: 'boolean', description: 'true only when the note says it is urgent or blocking.' },
+            columnId: { type: 'string',  description: 'Destination column ID from the provided list.' },
+            deadline: { type: 'string',  description: 'ISO 8601 datetime, only when a specific date or time is stated. Omit otherwise.' }
+        },
+        required: []
+    }
+};
+
+/**
+ * Builds the quick-capture classification prompt. Board-free by design — this
+ * runs on every captured note and must stay cheap.
+ * @param {Object} ctx
+ * @param {Array<Object>} ctx.epics
+ * @param {Array<Object>} ctx.categories
+ * @param {Array<Object>} ctx.columns
+ * @param {string} ctx.today - ISO date, so relative dates resolve correctly
+ * @returns {string}
+ */
+function buildClassifyPrompt({ epics, categories, columns, today }) {
+    const epicsStr = epics.length
+        ? epics.map(e => {
+            const bits = [e.stakeholder && `stakeholder: ${e.stakeholder}`].filter(Boolean);
+            return `  - "${e.name}" (id: "${e.id}")${bits.length ? ` — ${bits.join(', ')}` : ''}`;
+        }).join('\n')
+        : '  (none defined yet)';
+
+    // Done/in-progress columns are never a sensible destination for something
+    // that was captured seconds ago and not started.
+    const destinations = columns.filter(c => !c.hasArchive);
+    const colsStr = destinations
+        .map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' — use for someday/maybe items' : ''}`)
+        .join('\n');
+
+    return `You classify a single note that someone jotted down in a hurry — typically something a colleague asked them to do in passing.
+
+Today is ${today}.
+
+Call classify_task exactly once. Be decisive: a slightly wrong guess is fine, because the user reviews these later. Leaving everything blank is worse than guessing.
+
+# Epics
+${epicsStr}
+
+# Categories
+${categories.map(c => `  - "${c.name}" (id: ${c.id})`).join('\n')}
+
+# Destination columns
+${colsStr}
+
+Rules:
+- title: rewrite into a short actionable phrase (verb + object). Omit if the note already reads as one.
+- epicId: only when the note clearly belongs to that epic. Omit when unsure.
+- category: pick the closest; default ${DEFAULT_CATEGORY_ID} when nothing matches.
+- priority: true only when urgency is explicit.
+- columnId: the default working column unless the note clearly says it is for later (then the backlog) or for today.
+- deadline: only when a specific date or time is stated.`;
+}
+
+/**
  * Renders the board as a compact text table for the system prompt.
  *
  * Deliberately NOT raw JSON: field names repeated on every card cost several
@@ -2526,6 +2766,35 @@ Task creation rules:
 }
 
 /**
+ * Resolves the active AI configuration into everything a provider call needs.
+ * @returns {Promise<{ok: true, cfg: Object, providerMeta: Object, model: string,
+ *                     apiKey: string, baseUrl: string}
+ *                  | {ok: false, status: number, error: string}>}
+ */
+async function resolveActiveAiConfig() {
+    const aiConfig = migrateAiConfig(await readJsonFile(AI_CONFIG_FILE, {}));
+    const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
+    if (!cfg) {
+        return { ok: false, status: 400, error: 'No active AI configuration. Add one via Config → AI Configuration.' };
+    }
+    const providerMeta = AI_PROVIDERS[cfg.provider];
+    if (!providerMeta) {
+        return { ok: false, status: 400, error: 'Unknown AI provider in config.' };
+    }
+    if (providerMeta.requiresKey && !cfg.apiKey) {
+        return { ok: false, status: 400, error: 'API key not set for this provider. Configure it via Config → AI Configuration.' };
+    }
+    return {
+        ok: true,
+        cfg,
+        providerMeta,
+        model: cfg.model,
+        apiKey: cfg.apiKey || '',
+        baseUrl: cfg.provider === 'custom' ? cfg.baseUrl : providerMeta.baseUrl
+    };
+}
+
+/**
  * Attempts to extract tasks JSON from a plain-text response (fallback when tool use fails).
  * Looks for a JSON block containing a "tasks" array.
  * @param {string} text
@@ -2556,7 +2825,7 @@ function extractTasksFromText(text) {
  * Calls the Anthropic Messages API.
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
-async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
+async function callAnthropicAi(apiKey, model, systemPrompt, messages, tool = PROPOSE_TASKS_TOOL) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -2569,7 +2838,7 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
             max_tokens: 4096,
             system: systemPrompt,
             messages,
-            tools: [PROPOSE_TASKS_TOOL]
+            tools: [tool]
         })
     });
 
@@ -2581,6 +2850,8 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
     const data = await response.json();
     let narrative = '';
     let rawTasks = [];
+    // Raw tool arguments, for callers using a tool other than propose_tasks.
+    let toolInput = null;
     // Surfaced to the client so the cost of the board snapshot stays visible.
     const usage = {
         inputTokens:  data.usage?.input_tokens  ?? null,
@@ -2590,7 +2861,8 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
     for (const block of (data.content || [])) {
         if (block.type === 'text') {
             narrative += (narrative ? '\n' : '') + block.text;
-        } else if (block.type === 'tool_use' && block.name === 'propose_tasks') {
+        } else if (block.type === 'tool_use' && block.name === tool.name) {
+            toolInput = block.input || null;
             rawTasks = block.input?.tasks || [];
         }
     }
@@ -2599,21 +2871,21 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative: narrative.trim(), rawTasks, usage };
+    return { narrative: narrative.trim(), rawTasks, toolInput, usage };
 }
 
 /**
  * Calls any OpenAI-compatible API (OpenAI, Groq, LM Studio, Ollama /v1, etc.).
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
-async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages) {
+async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, tool = PROPOSE_TASKS_TOOL) {
     // Transform tool to OpenAI function-calling format
-    const tool = {
+    const openAiTool = {
         type: 'function',
         function: {
-            name: PROPOSE_TASKS_TOOL.name,
-            description: PROPOSE_TASKS_TOOL.description,
-            parameters: PROPOSE_TASKS_TOOL.input_schema
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.input_schema
         }
     };
 
@@ -2627,7 +2899,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         body: JSON.stringify({
             model,
             messages: [{ role: 'system', content: systemPrompt }, ...messages],
-            tools: [tool],
+            tools: [openAiTool],
             tool_choice: 'auto'
         })
     });
@@ -2641,6 +2913,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
     const message = data.choices?.[0]?.message;
     let narrative = (message?.content || '').trim();
     let rawTasks = [];
+    let toolInput = null;
     const usage = {
         inputTokens:  data.usage?.prompt_tokens     ?? null,
         outputTokens: data.usage?.completion_tokens ?? null
@@ -2649,6 +2922,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
     if (message?.tool_calls?.length) {
         try {
             const args = JSON.parse(message.tool_calls[0].function.arguments);
+            toolInput = args;
             rawTasks = args.tasks || [];
         } catch {
             rawTasks = [];
@@ -2659,7 +2933,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative, rawTasks, usage };
+    return { narrative, rawTasks, toolInput, usage };
 }
 
 /**

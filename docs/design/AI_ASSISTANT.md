@@ -201,8 +201,8 @@ What it should be *good at*, in rough value order:
 
 | Phase | Contents |
 |---|---|
-| **1 — Foundation** | Board snapshot in the prompt; drop the forced `propose_tasks`; persist conversations; graceful-degradation plumbing; token/cost readout. *The AI can finally see the board.* |
-| **2 — Capture** | Global quick capture with background classification. Highest single pain. |
+| **1 — Foundation** ✅ shipped v2.46.0 | Board snapshot in the prompt; drop the forced `propose_tasks`; persist conversations; graceful-degradation plumbing; token/cost readout. *The AI can finally see the board.* |
+| **2 — Capture** ✅ shipped v2.47.0 | Global quick capture with background classification. Highest single pain. |
 | **3 — Model** | Story points + epic contexts (data, config UI, card display). Fully useful with AI off. |
 | **4 — Proposals** | `ai-proposals.json`, the review list, apply/reject through validated API paths. |
 | **5 — Preview** | Board preview mode with per-card accept/reject. |
