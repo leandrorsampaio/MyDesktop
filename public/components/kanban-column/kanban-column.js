@@ -104,17 +104,106 @@ class KanbanColumn extends HTMLElement {
 
     async renderTasks(tasks, taskRenderer) {
         await this._ready; // Wait until the component is initialized
-        this.columnList.innerHTML = '';
+        const list = this.columnList;
+
+        // Keep the list free of anything but task-cards so the index-based
+        // placement below lines up.
+        this.removeDropIndicator();
+        const emptyState = list.querySelector('.emptyState');
+        if (emptyState) emptyState.remove();
 
         if (tasks.length === 0) {
-            this.columnList.innerHTML = '<div class="emptyState">No tasks</div>';
+            list.innerHTML = '<div class="emptyState">No tasks</div>';
             return;
         }
 
-        tasks.forEach((task, index) => {
-            const card = taskRenderer(task, index, tasks.length);
-            this.columnList.appendChild(card);
+        // Reconcile against what is already on screen instead of wiping the
+        // list. A blanket `innerHTML = ''` destroyed and rebuilt every card in
+        // every column on every move — and since `task-card` runs a 0.3s
+        // fadeIn on mount, the whole board visibly blinked twice per drag
+        // (moveTask renders optimistically, then again after fetchTasks).
+        // Reusing elements means only genuinely new cards animate.
+        const existing = new Map(
+            Array.from(list.querySelectorAll('task-card')).map(el => [el.dataset.taskId, el])
+        );
+
+        // Drop departed cards BEFORE placing the rest. Doing it afterwards
+        // makes the index-based placement below re-insert every card that sat
+        // after the departed one — and re-inserting a node restarts its CSS
+        // animation, so a card leaving position 0 would replay fadeIn on the
+        // whole column even though every element was reused.
+        const wanted = new Set(tasks.map(t => t.id));
+        existing.forEach((el, id) => {
+            if (!wanted.has(id)) {
+                el.remove();
+                existing.delete(id);
+            }
         });
+
+        tasks.forEach((task, index) => {
+            // The renderer builds a detached element — cheap, because
+            // connectedCallback (and its template fetch) only runs on insert.
+            const fresh = taskRenderer(task, index, tasks.length);
+            let card = existing.get(task.id);
+
+            if (card) {
+                existing.delete(task.id);
+                KanbanColumn._syncCard(card, fresh);   // reuse: no re-mount, no fadeIn
+            } else {
+                card = fresh;
+                card.classList.add('--enter');         // only new cards animate in
+            }
+
+            // Everything before `index` is already in place, so this both
+            // inserts new cards and reorders moved ones.
+            if (list.children[index] !== card) {
+                list.insertBefore(card, list.children[index] || null);
+            }
+
+            // Drop .--enter once the mount animation is done, so a later
+            // re-insertion (reordering shifts the cards below a moved one)
+            // cannot replay it.
+            if (card.classList.contains('--enter')) {
+                const [enter] = card.getAnimations();
+                enter?.finished
+                    .then(() => card.classList.remove('--enter'))
+                    .catch(() => {});
+            }
+        });
+    }
+
+    /**
+     * Copies renderer-owned state from a freshly built card onto the live one,
+     * so an existing element can be reused instead of replaced.
+     *
+     * Only `data-*` attributes and classes are touched — those are what
+     * createTaskCard() owns. `hidden` (filter state), `tabindex` and
+     * `draggable` belong to the filters and the component itself and are left
+     * alone; `--dragging` (drag state) and `--enter` (in-flight mount
+     * animation) are transient and have to survive a re-render.
+     *
+     * @param {HTMLElement} target - The live card to update
+     * @param {HTMLElement} source - The detached card holding the new state
+     */
+    static _syncCard(target, source) {
+        for (const { name, value } of Array.from(source.attributes)) {
+            if (name.startsWith('data-') && target.getAttribute(name) !== value) {
+                target.setAttribute(name, value);
+            }
+        }
+        for (const { name } of Array.from(target.attributes)) {
+            if (name.startsWith('data-') && !source.hasAttribute(name)) {
+                target.removeAttribute(name);
+            }
+        }
+
+        if (target.className !== source.className) {
+            // --dragging is transient drag state and --enter is an in-flight
+            // mount animation; neither is the renderer's to clear.
+            const keep = ['--dragging', '--enter'].filter(c => target.classList.contains(c));
+            target.className = source.className;
+            if (keep.length) target.classList.add(...keep);
+        }
     }
 
     /**
@@ -188,7 +277,21 @@ class KanbanColumn extends HTMLElement {
     }
 
     // Drag and Drop Handlers
+
+    /**
+     * True when the drag is carrying files from outside the page rather than a
+     * task card being reordered. File drops are the attachment feature's
+     * business (app.js wires them per card) — the column must stand aside so
+     * it doesn't draw a drop indicator or try to move a task that isn't there.
+     * @param {DragEvent} e
+     * @returns {boolean}
+     */
+    _isFileDrag(e) {
+        return Array.from(e.dataTransfer?.types || []).includes('Files');
+    }
+
     handleDragOver(e) {
+        if (this._isFileDrag(e)) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
@@ -204,6 +307,7 @@ class KanbanColumn extends HTMLElement {
     }
 
     handleDragEnter(e) {
+        if (this._isFileDrag(e)) return;
         e.preventDefault();
         this.columnList.classList.add('--dragOver');
     }
@@ -216,6 +320,7 @@ class KanbanColumn extends HTMLElement {
     }
 
     handleDrop(e) {
+        if (this._isFileDrag(e)) return;
         e.preventDefault();
         this.columnList.classList.remove('--dragOver');
         this.removeDropIndicator();

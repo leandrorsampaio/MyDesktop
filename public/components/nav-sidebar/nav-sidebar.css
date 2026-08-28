@@ -29,7 +29,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
-    overflow-y: auto;
+    /* No overflow here: `overflow-y: auto` computes `overflow-x` to `auto` too,
+       and the absolutely-positioned tooltips (left: 100% + 8px) then create a
+       permanent horizontal scrollbar — they must be free to escape the rail. */
 }
 
 .navSidebar__spacer {

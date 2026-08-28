@@ -134,3 +134,17 @@
     border-color: var(--color-accent-error);
     color: var(--color-text-on-accent);
 }
+
+/* Attachment badge — paperclip + count beside the title */
+.aiStagedRow__attachments {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: var(--space-6, 6px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
+.aiStagedRow__attachments[hidden] {
+    display: none;
+}

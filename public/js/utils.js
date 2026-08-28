@@ -6,7 +6,7 @@
  * If you modify getWeekNumber or toCamelCase here, also update server.js.
  */
 
-import { THEMES, AUTO_THEME_LIGHT, AUTO_THEME_DARK } from './constants.js';
+import { THEMES, AUTO_THEME_LIGHT, AUTO_THEME_DARK, TEXT_ATTACHMENT_EXTENSIONS, INLINE_ATTACHMENT_MIMES } from './constants.js';
 
 /**
  * Escapes HTML special characters to prevent XSS attacks.
@@ -193,4 +193,45 @@ export function setStoredTheme(alias, value) {
         localStorage.setItem(`${alias}:theme`, value);
     } catch (e) { /* private mode — still apply below */ }
     return applyTheme(alias);
+}
+
+// ===========================================
+// Attachments
+// ===========================================
+
+/**
+ * Formats a byte count for display next to a filename.
+ * @param {number} bytes
+ * @returns {string} e.g. "184 KB", "1.4 MB"
+ */
+export function formatBytes(bytes) {
+    const n = Number(bytes) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+    return `${Math.round((n / (1024 * 1024)) * 10) / 10} MB`;
+}
+
+/**
+ * Decides the Content-Type to declare when uploading a file.
+ * Browsers leave `File.type` empty for most code files, so an extension in
+ * TEXT_ATTACHMENT_EXTENSIONS wins over whatever the OS reported — that's what
+ * makes a pasted snippet previewable instead of an opaque download.
+ * @param {File} file
+ * @returns {string} A MIME type suitable for the upload's Content-Type header.
+ */
+export function attachmentMimeFor(file) {
+    const name = (file.name || '').toLowerCase();
+    const dot = name.lastIndexOf('.');
+    const ext = dot === -1 ? '' : name.slice(dot);
+    if (ext && TEXT_ATTACHMENT_EXTENSIONS.includes(ext)) return 'text/plain';
+    return file.type || 'application/octet-stream';
+}
+
+/**
+ * Whether an attachment can be shown in the in-app viewer.
+ * @param {{mime: string}} attachment
+ * @returns {boolean}
+ */
+export function isViewableAttachment(attachment) {
+    return INLINE_ATTACHMENT_MIMES.includes(attachment?.mime);
 }

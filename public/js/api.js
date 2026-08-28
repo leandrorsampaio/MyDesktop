@@ -4,6 +4,8 @@
  * These are pure functions that return data - state updates are handled by callers.
  */
 
+import { attachmentMimeFor } from './utils.js';
+
 /** Profile-scoped API base path (e.g., '/api/work') */
 let apiBase = '/api';
 
@@ -736,4 +738,55 @@ export async function promoteToBoardApi(id) {
     }
 
     return { ok: true, data: await response.json() };
+}
+
+/**
+ * Builds the URL of a stored attachment. Used as an <img> src, an <a> href,
+ * and as the fetch target for the text preview.
+ * @param {string} taskId - The task the attachment belongs to
+ * @param {string} attachmentId
+ * @param {{download?: boolean}} [opts] - download: force a save dialog even
+ *        for types the browser would otherwise render inline
+ * @returns {string}
+ */
+export function attachmentUrl(taskId, attachmentId, { download = false } = {}) {
+    return `${apiBase}/tasks/${taskId}/attachments/${attachmentId}${download ? '?download=1' : ''}`;
+}
+
+/**
+ * Uploads one file to a task.
+ *
+ * The File is handed to fetch as the body verbatim — raw bytes, no
+ * multipart/form-data and no base64. The two pieces of metadata the server
+ * needs ride in headers instead: the type in Content-Type, the original
+ * filename percent-encoded in X-Attachment-Name (header values are
+ * ASCII-only, and filenames frequently are not).
+ *
+ * @param {string} taskId
+ * @param {File} file
+ * @returns {Promise<Object>} The created attachment record
+ */
+export async function uploadAttachmentApi(taskId, file) {
+    const response = await fetch(`${apiBase}/tasks/${taskId}/attachments`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': attachmentMimeFor(file),
+            'X-Attachment-Name': encodeURIComponent(file.name || 'attachment')
+        },
+        body: file
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Deletes one attachment from a task.
+ * @param {string} taskId
+ * @param {string} attachmentId
+ * @returns {Promise<Object>} Success response
+ */
+export async function deleteAttachmentApi(taskId, attachmentId) {
+    const response = await fetch(`${apiBase}/tasks/${taskId}/attachments/${attachmentId}`, {
+        method: 'DELETE'
+    });
+    return parseOrThrow(response);
 }

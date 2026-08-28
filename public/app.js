@@ -8,10 +8,11 @@
  * - modals.js: Modal dialog handling
  */
 
-import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, SNOOZE_CHECK_INTERVAL_MS } from './js/constants.js';
+import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, SNOOZE_CHECK_INTERVAL_MS, MAX_ATTACHMENTS_PER_TASK, MAX_ATTACHMENT_SIZE } from './js/constants.js';
 import { parsePath } from './js/router.js';
 import { initShortcuts } from './js/shortcuts.js';
-import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue } from './js/utils.js';
+import { initAttachments } from './js/attachments.js';
+import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue, formatBytes } from './js/utils.js';
 import {
     tasks,
     setTasks,
@@ -33,7 +34,7 @@ import {
     columns,
     setColumns
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi } from './js/api.js';
 // Column-delete confirmation is fully handled inside config-page.js — no
 // separate import needed since the v2.38.3 dead-modal cleanup.
 import {
@@ -86,6 +87,19 @@ import {
         taskLogSection: document.querySelector('.js-taskLogSection'),
         taskLogList: document.querySelector('.js-taskLogList'),
         taskModalActions: document.querySelector('.js-taskModalActions'),
+
+        // Attachments tab inside the task modal
+        taskTabs: document.querySelector('.js-taskTabs'),
+        attachments: document.querySelector('.js-attachments'),
+        attachmentsPanel: document.querySelector('.js-attachmentsPanel'),
+        attachmentCount: document.querySelector('.js-attachmentCount'),
+
+        // Attachment viewer modal
+        attachmentModal: document.querySelector('.js-attachmentModal'),
+        attachmentModalTitle: document.querySelector('.js-attachmentModalTitle'),
+        attachmentViewer: document.querySelector('.js-attachmentViewer'),
+        attachmentViewerBody: document.querySelector('.js-attachmentViewerBody'),
+        attachmentDownload: document.querySelector('.js-attachmentDownload'),
 
         // Reports Modal (opened via sidebar config-action in future pages)
         reportsModal: document.querySelector('.js-reportsModal'),
@@ -407,16 +421,21 @@ import {
 
             if (idx === 0) {
                 const addBtn = document.createElement('button');
+                addBtn.type = 'button';
                 addBtn.slot = 'actions';
-                addBtn.className = 'column__addBtn js-addTaskBtn';
+                // Design-system button: .btn + modifiers, no bespoke CSS.
+                // These are slotted, so they live in the document tree and
+                // styles.css reaches them (see SPEC § slotted styling).
+                addBtn.className = 'btn --primary --sm js-addTaskBtn';
                 addBtn.textContent = '+ Add Task';
                 columnEl.appendChild(addBtn);
             }
 
             if (col.hasArchive) {
                 const archiveBtn = document.createElement('button');
+                archiveBtn.type = 'button';
                 archiveBtn.slot = 'actions';
-                archiveBtn.className = 'column__archiveBtn js-archiveBtn';
+                archiveBtn.className = 'btn --secondary --sm js-archiveBtn';
                 archiveBtn.dataset.columnId = col.id;
                 archiveBtn.textContent = 'Archive';
                 columnEl.appendChild(archiveBtn);
@@ -499,6 +518,10 @@ import {
             card.dataset.deadlineText  = formatRelativeTime(task.deadline);
         }
 
+        // Attachment count — drives the paperclip badge on the card
+        const attachmentCount = (task.attachments || []).length;
+        if (attachmentCount > 0) card.dataset.attachmentCount = String(attachmentCount);
+
         // Snooze state — apply class for CSS-driven visibility
         if (task.snoozeUntil && new Date(task.snoozeUntil) > new Date()) {
             card.classList.add('--snoozed');
@@ -521,7 +544,76 @@ import {
             });
         });
 
+        // Dropping files onto a card attaches them. `dataTransfer.types`
+        // separates this from a card being dragged for reorder — the column's
+        // own handlers bail out on the same test, so the two never collide.
+        card.addEventListener('dragover', (e) => {
+            if (!e.dataTransfer.types.includes('Files')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+            card.classList.add('--fileDragOver');
+        });
+        card.addEventListener('dragleave', (e) => {
+            if (!card.contains(e.relatedTarget)) card.classList.remove('--fileDragOver');
+        });
+        card.addEventListener('drop', (e) => {
+            if (!e.dataTransfer.types.includes('Files')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            card.classList.remove('--fileDragOver');
+            attachDroppedFiles(task.id, Array.from(e.dataTransfer.files));
+        });
+
         return card;
+    }
+
+    /**
+     * Uploads files dropped directly onto a card on the board.
+     *
+     * Not optimistic: unlike a title edit there is nothing meaningful to show
+     * until the bytes are actually stored, so the badge updates when each
+     * upload lands. The task object in state is patched in place and only the
+     * affected column re-renders.
+     *
+     * @param {string} taskId - Card the files were dropped on
+     * @param {Array<File>} files
+     */
+    async function attachDroppedFiles(taskId, files) {
+        const task = findTask(taskId);
+        if (!task || files.length === 0) return;
+
+        const existing = task.attachments || [];
+        const room = MAX_ATTACHMENTS_PER_TASK - existing.length;
+        if (room <= 0) {
+            elements.toaster.warning(`A task can hold at most ${MAX_ATTACHMENTS_PER_TASK} files`);
+            return;
+        }
+
+        let accepted = files.slice(0, room);
+        const oversized = accepted.filter(f => f.size > MAX_ATTACHMENT_SIZE);
+        for (const file of oversized) {
+            elements.toaster.error(`"${file.name}" is larger than ${formatBytes(MAX_ATTACHMENT_SIZE)}`);
+        }
+        accepted = accepted.filter(f => f.size <= MAX_ATTACHMENT_SIZE);
+        if (accepted.length === 0) return;
+
+        let attached = 0;
+        for (const file of accepted) {
+            try {
+                const attachment = await uploadAttachmentApi(taskId, file);
+                task.attachments = [...(task.attachments || []), attachment];
+                attached += 1;
+            } catch (error) {
+                elements.toaster.error(error.message || `Failed to attach "${file.name}"`);
+            }
+        }
+
+        if (attached > 0) {
+            renderColumn(task.status);
+            applyAllFilters();
+            elements.toaster.success(`${attached} file${attached === 1 ? '' : 's'} attached`);
+        }
     }
 
     // ==========================================
@@ -928,6 +1020,7 @@ import {
      */
     async function init() {
         initEventListeners();
+        initAttachments(elements);
 
         /** @type {Object|null} Active profile, hoisted out of the try block so
          * the board-data loading below can read its columns array */

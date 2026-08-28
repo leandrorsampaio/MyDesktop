@@ -218,3 +218,45 @@
     font-size: var(--text-sm);
     margin-right: var(--space-6);
 }
+
+/* Attachments in the expanded panel — read-only download links */
+.archiveRow__attachments {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-8, 8px);
+    margin-top: var(--space-8, 8px);
+}
+
+.archiveRow__attachments:empty {
+    display: none;
+}
+
+.archiveRow__attachmentsTitle {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    font-weight: var(--font-weight-medium, 500);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.archiveRow__attachment {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-6, 6px);
+    padding: 2px var(--space-8, 8px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-accent-primary, #1a73e8);
+    font-size: var(--text-base, 12px);
+    text-decoration: none;
+}
+
+.archiveRow__attachment:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+}
+
+.archiveRow__attachmentSize {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}

@@ -8,7 +8,7 @@
 
 A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.43.0 (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.45.0 (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
@@ -83,6 +83,7 @@ These are the ones that get violated most often. Full list in [SPEC.md § Code R
 10. **Map lookups in loops.** When iterating one list and looking up items from another inside the loop, build a `Map` first. No `.find()` per iteration.
 11. **Race-condition lock on concurrent ops.** `moveTask` uses the `isMoving` flag with `try/finally`. Follow the same pattern for any other rapid async op.
 12. **Backlog column is permanent and hidden from Board Configuration.** Never let a user delete it; server enforces a 400. There is exactly one per profile.
+13. **File uploads go over `app.raw()`, never multipart.** `mini-server.js` has no multipart/form-data parser and doesn't need one — attachments POST the raw bytes with metadata in headers. If you add another upload route, register it with `app.raw()` and read `req.rawBody`. Never let a binary body reach the default parser: it decodes to UTF-8 and corrupts it.
 
 ---
 

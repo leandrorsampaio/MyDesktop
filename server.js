@@ -385,6 +385,230 @@ const MAX_EPICS = 20;
 const MAX_COLUMNS = 15;
 
 /**
+ * ===========================================
+ * Task attachments
+ * ===========================================
+ *
+ * Files live on disk under `data/{alias}/attachments/{taskId}/{attachmentId}{ext}`
+ * — outside `public/`, so the static handler can never reach them; the only way
+ * out is the download route below. Metadata rides along on the task object
+ * itself (like `log` does), which means archiving, restoring and exporting a
+ * task carry its attachment list for free with no join and no second request.
+ *
+ * The user's filename is NEVER used as a path component. It is stored in the
+ * JSON for display only; on disk a file is named by its generated id plus an
+ * extension derived from the MIME allowlist.
+ *
+ * Tune the three limits below to taste — they are the only knobs.
+ */
+
+/** Largest single file accepted, in bytes. */
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;          // 5 MB
+
+/** Most attachments one task may carry. */
+const MAX_ATTACHMENTS_PER_TASK = 20;
+
+/** Total attachment bytes one profile may store on disk. */
+const MAX_PROFILE_ATTACHMENT_BYTES = 200 * 1024 * 1024;  // 200 MB
+
+/** Longest original filename kept for display. */
+const ATTACHMENT_NAME_MAX_LENGTH = 200;
+
+/**
+ * MIME types stored as declared. `inline` marks the ones safe to render in the
+ * browser rather than force-download.
+ *
+ * `image/svg+xml` is deliberately absent: an SVG served from this origin can
+ * execute script against the app, and every download here is same-origin.
+ * Anything not listed still uploads fine — it is just stored as
+ * application/octet-stream and can only ever be downloaded, never rendered.
+ */
+const ATTACHMENT_TYPES = {
+    'image/png':       { ext: '.png',  inline: true  },
+    'image/jpeg':      { ext: '.jpg',  inline: true  },
+    'image/gif':       { ext: '.gif',  inline: true  },
+    'image/webp':      { ext: '.webp', inline: true  },
+    'image/avif':      { ext: '.avif', inline: true  },
+    'application/pdf': { ext: '.pdf',  inline: true  },
+    'text/plain':      { ext: '.txt',  inline: true  },
+    'text/csv':        { ext: '.csv',  inline: false },
+    'application/json':{ ext: '.json', inline: false },
+    'application/zip': { ext: '.zip',  inline: false }
+};
+
+/** Fallback for any MIME type outside the allowlist. */
+const ATTACHMENT_FALLBACK = { mime: 'application/octet-stream', ext: '.bin', inline: false };
+
+/** Stored ids are base36 from generateId(); anything else never touches a path. */
+const ATTACHMENT_ID_REGEX = /^[a-z0-9]{1,32}$/;
+const ATTACHMENT_EXT_REGEX = /^\.[a-z0-9]{1,8}$/;
+
+/**
+ * Human-readable byte count for error messages.
+ * @param {number} bytes
+ * @returns {string}
+ */
+function formatBytes(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${Math.round((bytes / (1024 * 1024)) * 10) / 10} MB`;
+}
+
+/**
+ * Cleans an uploaded filename for display. Path separators, control characters
+ * and leading dots are stripped — not because this value reaches the
+ * filesystem (it never does), but so a hostile name can't misrepresent itself
+ * in the UI or in a Content-Disposition header.
+ * @param {string|undefined} rawHeader - Percent-encoded X-Attachment-Name value.
+ * @returns {string}
+ */
+function sanitizeAttachmentName(rawHeader) {
+    let name = '';
+    try {
+        name = decodeURIComponent(rawHeader || '');
+    } catch {
+        name = String(rawHeader || '');
+    }
+    name = name
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .replace(/[\\/]/g, '_')
+        .replace(/^\.+/, '')
+        .trim()
+        .slice(0, ATTACHMENT_NAME_MAX_LENGTH);
+    return name || 'attachment';
+}
+
+/**
+ * Builds a Content-Disposition header for a download. RFC 6266: the plain
+ * `filename` carries an ASCII-safe fallback for old clients, `filename*`
+ * carries the real UTF-8 name. Quotes and backslashes are stripped from the
+ * fallback so a crafted name can't inject extra header parameters.
+ * @param {boolean} inline - Render in the browser instead of downloading.
+ * @param {string} name - Original filename.
+ * @returns {string}
+ */
+function buildContentDisposition(inline, name) {
+    const safeName = String(name || 'attachment')
+        .replace(/[^\x20-\x7e]/g, '_')
+        .replace(/["\\]/g, '_');
+    const disposition = inline ? 'inline' : 'attachment';
+    return `${disposition}; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(name || 'attachment')}`;
+}
+
+/** Directory holding one task's attachment files. */
+function attachmentsDir(alias, taskId) {
+    return path.join(DATA_DIR, alias, 'attachments', taskId);
+}
+
+/**
+ * Absolute path of one stored attachment, or null when the metadata record is
+ * malformed. Both components are re-validated here so a hand-edited JSON file
+ * can't build a path outside the attachments directory.
+ * @param {string} alias
+ * @param {string} taskId
+ * @param {{id: string, ext: string}} attachment
+ * @returns {string|null}
+ */
+function attachmentFilePath(alias, taskId, attachment) {
+    const id = attachment && attachment.id;
+    const ext = (attachment && attachment.ext) || ATTACHMENT_FALLBACK.ext;
+    if (!ATTACHMENT_ID_REGEX.test(id || '') || !ATTACHMENT_EXT_REGEX.test(ext)) return null;
+    return path.join(attachmentsDir(alias, taskId), id + ext);
+}
+
+/**
+ * Finds a task by id across every store it can live in: the board and backlog
+ * (tasks.json), the archive (archived-tasks.json) and AI staging
+ * (ai-staged-tasks.json). Attachments are keyed by task id alone, so a task
+ * keeps its files as it moves between stores.
+ * @param {Object} profileFiles - req.profileFiles
+ * @param {string} taskId
+ * @returns {Promise<{list: Array, index: number, filePath: string}|null>}
+ */
+async function findTaskInAnyStore(profileFiles, taskId) {
+    for (const filePath of [profileFiles.tasks, profileFiles.archived, profileFiles.aiStaged]) {
+        const list = await readJsonFile(filePath, []);
+        const index = list.findIndex(t => t.id === taskId);
+        if (index !== -1) return { list, index, filePath };
+    }
+    return null;
+}
+
+/**
+ * Total bytes currently stored under a profile's attachments directory.
+ * Measured from disk rather than summed from metadata so orphaned files still
+ * count against the budget — this guards disk usage, not bookkeeping.
+ * @param {string} alias
+ * @returns {Promise<number>}
+ */
+async function profileAttachmentBytes(alias) {
+    const root = path.join(DATA_DIR, alias, 'attachments');
+    let taskDirs;
+    try {
+        taskDirs = await fs.readdir(root, { withFileTypes: true });
+    } catch {
+        return 0;   // no attachments directory yet
+    }
+
+    let total = 0;
+    for (const dirent of taskDirs) {
+        if (!dirent.isDirectory()) continue;
+        const dir = path.join(root, dirent.name);
+        let files;
+        try {
+            files = await fs.readdir(dir, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+        for (const file of files) {
+            if (!file.isFile()) continue;
+            try {
+                total += (await fs.stat(path.join(dir, file.name))).size;
+            } catch { /* vanished mid-walk — not our problem */ }
+        }
+    }
+    return total;
+}
+
+/**
+ * Removes a task's whole attachment directory. Best effort: a failure here
+ * leaves disk clutter but never breaks the delete that triggered it.
+ * @param {string} alias
+ * @param {string} taskId
+ */
+async function removeTaskAttachments(alias, taskId) {
+    try {
+        await fs.rm(attachmentsDir(alias, taskId), { recursive: true, force: true });
+    } catch (err) {
+        console.warn(`Attachment cleanup failed for task ${taskId}:`, err.message);
+    }
+}
+
+/**
+ * Re-keys a task's attachment directory when the task itself gets a new id
+ * (promoting a staged task creates a new board/backlog task). Returns the
+ * attachment metadata to copy onto the new task, or an empty array.
+ * @param {string} alias
+ * @param {string} fromTaskId
+ * @param {string} toTaskId
+ * @param {Array|undefined} attachments
+ * @returns {Promise<Array>}
+ */
+async function moveTaskAttachments(alias, fromTaskId, toTaskId, attachments) {
+    const list = Array.isArray(attachments) ? attachments : [];
+    if (list.length === 0) return [];
+    try {
+        await fs.rename(attachmentsDir(alias, fromTaskId), attachmentsDir(alias, toTaskId));
+        return list;
+    } catch (err) {
+        // The files stayed put but the task they belonged to is gone — drop the
+        // metadata rather than hand the new task a list of dead links.
+        console.warn(`Attachment move failed ${fromTaskId} -> ${toTaskId}:`, err.message);
+        return [];
+    }
+}
+
+/**
  * Default columns for every new profile.
  * IDs match legacy task status values so existing tasks need no migration.
  * Source of truth: /public/js/constants.js
@@ -1050,9 +1274,167 @@ app.delete('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, 
 
         tasks.splice(taskIndex, 1);
         await writeJsonFile(req.profileFiles.tasks, tasks);
+        await removeTaskAttachments(req.params.profile, req.params.id);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete task' });
+    }
+});
+
+// ===========================================
+// Task Attachments
+// ===========================================
+
+// Upload bodies arrive as raw bytes, not multipart/form-data: the client
+// hands `fetch` the File object directly and puts the metadata in headers.
+// No boundary parsing, no encoding overhead, no dependency.
+app.raw('/api/:profile/tasks/:id/attachments');
+
+// POST upload an attachment (raw body; name in X-Attachment-Name, type in Content-Type)
+app.post('/api/:profile/tasks/:id/attachments', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const bytes = req.rawBody;
+        if (!bytes || bytes.length === 0) {
+            return res.status(400).json({ error: 'Empty upload' });
+        }
+        if (bytes.length > MAX_ATTACHMENT_SIZE) {
+            return res.status(413).json({
+                error: `File is larger than the ${formatBytes(MAX_ATTACHMENT_SIZE)} limit`
+            });
+        }
+
+        const alias = req.params.profile;
+        const taskId = req.params.id;
+
+        const found = await findTaskInAnyStore(req.profileFiles, taskId);
+        if (!found) return res.status(404).json({ error: 'Task not found' });
+
+        const task = found.list[found.index];
+        const existing = Array.isArray(task.attachments) ? task.attachments : [];
+        if (existing.length >= MAX_ATTACHMENTS_PER_TASK) {
+            return res.status(400).json({
+                error: `Maximum of ${MAX_ATTACHMENTS_PER_TASK} attachments per task`
+            });
+        }
+
+        const usedBytes = await profileAttachmentBytes(alias);
+        if (usedBytes + bytes.length > MAX_PROFILE_ATTACHMENT_BYTES) {
+            return res.status(400).json({
+                error: `Attachment storage for this profile is full (${formatBytes(MAX_PROFILE_ATTACHMENT_BYTES)}). Delete some files first.`
+            });
+        }
+
+        const declared = (req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+        const known = ATTACHMENT_TYPES[declared];
+        const attachment = {
+            id: generateId(),
+            name: sanitizeAttachmentName(req.headers['x-attachment-name']),
+            mime: known ? declared : ATTACHMENT_FALLBACK.mime,
+            ext: known ? known.ext : ATTACHMENT_FALLBACK.ext,
+            size: bytes.length,
+            uploadedAt: new Date().toISOString()
+        };
+
+        const destPath = attachmentFilePath(alias, taskId, attachment);
+        await fs.mkdir(attachmentsDir(alias, taskId), { recursive: true });
+
+        // Same write-then-rename dance as writeJsonFile: a killed process
+        // leaves a .tmp behind, never a half-written attachment the metadata
+        // already claims is complete. 0600 matches the app's other private data.
+        const tmpPath = `${destPath}.${process.pid}.${Date.now()}.tmp`;
+        await fs.writeFile(tmpPath, bytes, { mode: 0o600 });
+        try {
+            await fs.rename(tmpPath, destPath);
+        } catch (err) {
+            try { await fs.unlink(tmpPath); } catch {}
+            throw err;
+        }
+
+        task.attachments = [...existing, attachment];
+        try {
+            await writeJsonFile(found.filePath, found.list);
+        } catch (err) {
+            // Metadata never landed, so nothing references this file — remove
+            // it rather than leave a byte charge against the profile budget.
+            try { await fs.unlink(destPath); } catch {}
+            throw err;
+        }
+
+        res.status(201).json(attachment);
+    } catch (error) {
+        console.error('Error uploading attachment:', error);
+        res.status(500).json({ error: 'Failed to upload attachment' });
+    }
+});
+
+// GET download or preview an attachment. `?download=1` forces a save dialog
+// even for types that would otherwise render in the browser.
+app.get('/api/:profile/tasks/:id/attachments/:attachmentId', resolveProfile, async (req, res) => {
+    try {
+        const alias = req.params.profile;
+        const taskId = req.params.id;
+
+        const found = await findTaskInAnyStore(req.profileFiles, taskId);
+        if (!found) return res.status(404).json({ error: 'Task not found' });
+
+        const attachments = found.list[found.index].attachments || [];
+        const attachment = attachments.find(a => a.id === req.params.attachmentId);
+        if (!attachment) return res.status(404).json({ error: 'Attachment not found' });
+
+        const filePath = attachmentFilePath(alias, taskId, attachment);
+        if (!filePath || !(await fileExists(filePath))) {
+            return res.status(404).json({ error: 'Attachment file is missing' });
+        }
+
+        const type = ATTACHMENT_TYPES[attachment.mime];
+        const inline = Boolean(type && type.inline) && req.query.download !== '1';
+
+        // nosniff keeps the browser from second-guessing the stored type and
+        // rendering, say, a .bin as HTML in this app's own origin.
+        res.set('Content-Type', attachment.mime || ATTACHMENT_FALLBACK.mime);
+        res.set('X-Content-Type-Options', 'nosniff');
+        res.set('Content-Disposition', buildContentDisposition(inline, attachment.name));
+        // Content at a given attachment id never changes — only new ids appear.
+        res.set('Cache-Control', 'private, max-age=31536000, immutable');
+        res.sendFile(filePath);
+    } catch (error) {
+        console.error('Error reading attachment:', error);
+        res.status(500).json({ error: 'Failed to read attachment' });
+    }
+});
+
+// DELETE an attachment
+app.delete('/api/:profile/tasks/:id/attachments/:attachmentId', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const alias = req.params.profile;
+        const taskId = req.params.id;
+
+        const found = await findTaskInAnyStore(req.profileFiles, taskId);
+        if (!found) return res.status(404).json({ error: 'Task not found' });
+
+        const task = found.list[found.index];
+        const attachments = Array.isArray(task.attachments) ? task.attachments : [];
+        const index = attachments.findIndex(a => a.id === req.params.attachmentId);
+        if (index === -1) return res.status(404).json({ error: 'Attachment not found' });
+
+        const [removed] = attachments.splice(index, 1);
+        task.attachments = attachments;
+        await writeJsonFile(found.filePath, found.list);
+
+        // Metadata is the source of truth; the file is now unreferenced either
+        // way, so unlink failures are logged rather than surfaced as an error.
+        const filePath = attachmentFilePath(alias, taskId, removed);
+        if (filePath) {
+            try { await fs.unlink(filePath); } catch { /* already gone */ }
+        }
+        if (attachments.length === 0) {
+            try { await fs.rmdir(attachmentsDir(alias, taskId)); } catch { /* not empty or absent */ }
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting attachment:', error);
+        res.status(500).json({ error: 'Failed to delete attachment' });
     }
 });
 
@@ -2453,6 +2835,7 @@ app.delete('/api/:profile/ai/staged/:id', resolveProfile, writeLimiter, async (r
 
         staged.splice(idx, 1);
         await writeJsonFile(req.profileFiles.aiStaged, staged);
+        await removeTaskAttachments(req.params.profile, req.params.id);
         res.json({ ok: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete staged task' });
@@ -2493,6 +2876,12 @@ app.post('/api/:profile/ai/staged/:id/promote/backlog', resolveProfile, writeLim
             log:         [{ date: today, action: 'Added from AI Staging' }],
             createdDate: new Date().toISOString()
         };
+        // Promotion mints a new task id, so the attachment directory is
+        // re-keyed to match — otherwise the files would be orphaned the
+        // moment the staged task is removed below.
+        newTask.attachments = await moveTaskAttachments(
+            req.params.profile, stagedTask.id, newTask.id, stagedTask.attachments
+        );
         tasks.push(newTask);
         await writeJsonFile(req.profileFiles.tasks, tasks);
 
@@ -2537,6 +2926,10 @@ app.post('/api/:profile/ai/staged/:id/promote/board', resolveProfile, writeLimit
             log:         [{ date: today, action: 'Added from AI Staging' }],
             createdDate: new Date().toISOString()
         };
+        // See the backlog promote route: the new id takes the files with it.
+        newTask.attachments = await moveTaskAttachments(
+            req.params.profile, stagedTask.id, newTask.id, stagedTask.attachments
+        );
         tasks.push(newTask);
         await writeJsonFile(req.profileFiles.tasks, tasks);
 

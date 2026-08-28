@@ -32,60 +32,11 @@
     gap: var(--space-8);
 }
 
-/* Styles for slotted buttons */
-::slotted(button) {
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-::slotted(.column__addBtn) {
-    padding: 7px 14px;
-    border: none;
-    border-radius: var(--radius-md);
-    background-color: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-semibold);
-}
-
-::slotted(.column__addBtn:hover) {
-    background-color: var(--color-accent-primary-hover);
-    transform: translateY(-1px);
-}
-
-::slotted(.column__reportBtn) {
-    padding: 7px var(--space-12);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-semibold);
-}
-
-::slotted(.column__reportBtn:hover) {
-    background: var(--color-border);
-    color: var(--color-text-primary);
-    transform: translateY(-1px);
-}
-
-::slotted(.column__archiveBtn) {
-    padding: 7px var(--space-12);
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-semibold);
-}
-
-::slotted(.column__archiveBtn:hover) {
-    background: var(--color-border);
-    color: var(--color-text-primary);
-    transform: translateY(-1px);
-}
-
+/* Slotted action buttons (Add Task / Archive) carry .btn + modifiers from
+   styles.css. Slotted elements live in the *document* tree, so document rules
+   reach them and out-cascade anything declared here — which is why the old
+   bespoke ::slotted(.column__addBtn / .column__archiveBtn) rules are gone
+   rather than kept as a fallback. Layout only below. */
 
 .column__list {
     flex: 1;

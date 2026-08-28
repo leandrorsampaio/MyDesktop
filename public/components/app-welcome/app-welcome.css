@@ -4,10 +4,15 @@
     display: block;
 }
 
+/* Greeting and date sit on one line to keep the header short — the board is
+   the point of the page, so the chrome above it should cost as little vertical
+   space as possible. Wraps back to two lines when there isn't room. */
 .appWelcome {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-16);
+    row-gap: var(--space-4);
 }
 
 .appWelcome__title {
@@ -20,6 +25,9 @@
 }
 
 .appWelcome__dateInfo {
+    /* Never the reason the header grows: if the date can't fit beside the
+       greeting it wraps whole, rather than breaking between its own parts. */
+    white-space: nowrap;
     font-size: var(--text-lg);
     color: var(--color-text-tertiary, #9ca3af);
     display: flex;

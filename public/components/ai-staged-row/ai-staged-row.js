@@ -86,6 +86,17 @@ class AiStagedRow extends HTMLElement {
         const titleEl = this.shadowRoot.querySelector('.js-title');
         if (titleEl) titleEl.textContent = task.title || '';
 
+        // Attachment badge
+        const attachmentsEl = this.shadowRoot.querySelector('.js-attachments');
+        if (attachmentsEl) {
+            const count = (task.attachments || []).length;
+            attachmentsEl.hidden = count === 0;
+            if (count > 0) {
+                attachmentsEl.querySelector('.js-attachmentCount').textContent = String(count);
+                attachmentsEl.title = `${count} file${count === 1 ? '' : 's'} attached`;
+            }
+        }
+
         // Epic pill
         const epicPillEl = this.shadowRoot.querySelector('.js-epicPill');
         if (epicPillEl) {

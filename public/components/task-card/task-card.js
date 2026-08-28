@@ -55,6 +55,7 @@ class TaskCard extends HTMLElement {
             'data-category-icon', 'data-priority', 'data-title', 'data-description',
             'data-epic-name', 'data-epic-color', 'data-epic-alias',
             'data-deadline', 'data-deadline-level', 'data-deadline-text',
+            'data-attachment-count',
             'hidden'
         ];
     }
@@ -124,6 +125,17 @@ class TaskCard extends HTMLElement {
                 epicBarEl.textContent = epicName;
             } else {
                 epicBarEl.style.display = 'none';
+            }
+        }
+
+        // Attachment badge — paperclip + count
+        const attachmentsEl = this.shadowRoot.querySelector('.js-attachments');
+        if (attachmentsEl) {
+            const count = Number(this.dataset.attachmentCount) || 0;
+            attachmentsEl.style.display = count > 0 ? 'inline-flex' : 'none';
+            if (count > 0) {
+                attachmentsEl.querySelector('.js-attachmentCount').textContent = String(count);
+                attachmentsEl.title = `${count} file${count === 1 ? '' : 's'} attached`;
             }
         }
 

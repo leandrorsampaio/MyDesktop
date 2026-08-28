@@ -75,9 +75,17 @@
         <form class="taskForm js-taskForm">
             <div class="taskForm__grid">
             <div class="taskForm__col taskForm__col--main">
-            <div class="taskForm__group taskForm__group--grow">
-                <label>Description</label>
+            <div class="taskForm__tabs js-taskTabs" role="tablist">
+                <button type="button" class="taskForm__tab --active js-taskTab" data-tab="description" role="tab" aria-selected="true">Description</button>
+                <button type="button" class="taskForm__tab js-taskTab" data-tab="attachments" role="tab" aria-selected="false">
+                    Files<span class="taskForm__tabCount js-attachmentCount" hidden>0</span>
+                </button>
+            </div>
+            <div class="taskForm__group taskForm__group--grow js-taskPanel" data-panel="description">
                 <textarea class="js-taskDescription" placeholder="Enter task description"></textarea>
+            </div>
+            <div class="taskForm__group taskForm__group--grow js-taskPanel js-attachmentsPanel" data-panel="attachments" hidden>
+                <div class="attachments js-attachments"></div>
             </div>
             </div>
             <div class="taskForm__col taskForm__col--side">
@@ -159,6 +167,20 @@
     </modal-dialog>
 
     <!-- Reports Modal -->
+    <!-- Attachment viewer — full-size image / PDF / text preview -->
+    <modal-dialog class="js-attachmentModal" size="large">
+        <h2 slot="title" class="js-attachmentModalTitle"></h2>
+        <div class="attachmentViewer js-attachmentViewer">
+            <div class="attachmentViewer__body js-attachmentViewerBody"></div>
+            <div class="modal__actions">
+                <div class="modal__actionsRight">
+                    <a class="attachmentViewer__download js-attachmentDownload" href="#" download>Download</a>
+                    <custom-button label="Close" class="js-viewerClose"></custom-button>
+                </div>
+            </div>
+        </div>
+    </modal-dialog>
+
     <modal-dialog class="js-reportsModal" size="large">
         <span slot="title">Reports</span>
         <div class="reportsView js-reportsContainer">
@@ -177,7 +199,7 @@
             <p class="confirmDialog__message js-confirmMessage"></p>
             <div class="confirmDialog__actions">
                 <button type="button" class="btn --cancel js-confirmCancel">Cancel</button>
-                <button type="button" class="btn --delete js-confirmAccept">Confirm</button>
+                <button type="button" class="btn --delete js-confirmAccept js-modalDefault">Confirm</button>
             </div>
         </div>
     </modal-dialog>

@@ -7,6 +7,11 @@ import { DEFAULT_CATEGORY_ID, DEFAULT_TASK_TITLE } from './constants.js';
 import { escapeHtml, formatRelativeTime, toDatetimeLocalValue } from './utils.js';
 import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile, columns } from './state.js';
 import {
+    openAttachmentsFor,
+    takePendingFiles,
+    flushPendingAttachments
+} from './attachments.js';
+import {
     createTaskApi,
     updateTaskApi,
     deleteTaskApi,
@@ -81,6 +86,9 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, 
     saveBtn.setAttribute('label', isEditing ? 'Update' : 'Save');
     saveBtn.setAttribute('modifier', 'save');
     saveBtn.setAttribute('type', 'submit');
+    // Enter anywhere in the task modal (except the description textarea)
+    // saves — see <modal-dialog>.handleEnter
+    saveBtn.classList.add('js-modalDefault');
 
     elements.taskForm.onsubmit = onSubmit;
 
@@ -198,6 +206,10 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     elements.deadlineHint.textContent = '';
     elements.snoozeHint.textContent   = '';
 
+    // No task id yet — files dropped or pasted here queue up and are uploaded
+    // by the submit handler once the server has created the task.
+    openAttachmentsFor(null, []);
+
     renderTaskModalActions(false, elements, onDelete, onSubmit);
 
     elements.taskModal.open();
@@ -254,6 +266,12 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
         elements.snoozeHint.textContent = '';
     }
 
+    // Uploads happen immediately here, so keep the task in state in step with
+    // what the panel just did — the card badge reads from it.
+    openAttachmentsFor(taskId, task.attachments || [], {
+        onChange: (attachments) => { task.attachments = attachments; }
+    });
+
     renderTaskModalActions(true, elements, onDelete, onSubmit, onClone, onSendToBacklog);
 
     elements.taskModal.open();
@@ -285,6 +303,10 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
     setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, task.epicId || '');
     elements.taskLogSection.style.display = 'none';
+
+    // A clone is a brand-new task: it starts empty rather than sharing the
+    // original's files, and anything added here queues until it is saved.
+    openAttachmentsFor(null, []);
 
     if (task.deadline) {
         elements.taskDeadline.value       = toDatetimeLocalValue(new Date(task.deadline));
@@ -338,6 +360,10 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
             return;
         }
 
+        // Grabbed before the modal closes, because closing clears the panel.
+        // Empty in edit mode — those uploads already happened inline.
+        const pendingFiles = takePendingFiles();
+
         if (editingTaskId) {
             // UPDATE: Optimistic UI with rollback
             const previousTasks = createTasksSnapshot();
@@ -389,6 +415,15 @@ export function createTaskFormSubmitHandler(elements, renderColumn, renderAllCol
                 // Replace temp task with real one from server
                 replaceTask(tempId, newTask);
                 renderColumn(defaultColumnId);
+
+                // Files queued while the task had no id can be uploaded now.
+                // Deliberately after the card is on screen: the task is saved
+                // either way, and a slow upload shouldn't hold up the board.
+                if (pendingFiles.length > 0) {
+                    newTask.attachments = await flushPendingAttachments(newTask.id, pendingFiles, elements);
+                    updateTaskInState(newTask.id, { attachments: newTask.attachments });
+                    renderColumn(defaultColumnId);
+                }
             } catch (error) {
                 // Rollback on failure - remove temp task
                 removeTask(tempId);
@@ -448,7 +483,7 @@ export function openConfirmDialog({ title, message, confirmLabel = 'Confirm', ca
     els.message.textContent = message;
     els.accept.textContent = confirmLabel;
     els.cancel.textContent = cancelLabel;
-    els.accept.className = `btn --${variant} js-confirmAccept`;
+    els.accept.className = `btn --${variant} js-confirmAccept js-modalDefault`;
 
     return new Promise(resolve => {
         let settled = false;
@@ -472,6 +507,13 @@ export function openConfirmDialog({ title, message, confirmLabel = 'Confirm', ca
         els.cancel.addEventListener('click', onCancel);
         els.modal.addEventListener('modal-closed', onDismiss);
         els.modal.open();
+
+        // The modal focuses its first control (Cancel) on open. For reversible
+        // actions move focus to the accept button so Enter confirms; for
+        // irreversible ones leave it on Cancel, so a stray Enter cannot delete
+        // anything — Enter still confirms via .js-modalDefault when focus is
+        // not on a button.
+        if (variant !== 'delete') els.accept.focus();
     });
 }
 
@@ -720,6 +762,16 @@ function _openStagedTaskForm(stagedTask, elements, titlePrefix, onSave) {
     }
     elements.taskSnooze.value       = '';
     elements.snoozeHint.textContent = '';
+
+    // A staged task has a real id, so its files upload straight away — unless
+    // this is the clone path, which becomes a new task and starts empty.
+    if (titlePrefix) {
+        openAttachmentsFor(null, []);
+    } else {
+        openAttachmentsFor(stagedTask.id, stagedTask.attachments || [], {
+            onChange: (attachments) => { stagedTask.attachments = attachments; }
+        });
+    }
 
     // Render Cancel + Save only (no Delete, no Clone)
     elements.taskModalActions.innerHTML = '';

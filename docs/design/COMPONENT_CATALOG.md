@@ -49,7 +49,7 @@ Machine-readable reference for every UI element, interaction pattern, and visual
 | Element | Description | Visual |
 |---------|-------------|--------|
 | `.appHeader` | Top bar, full width of `.appShell__main` | Flex, space-between, white bg, bottom border |
-| `<app-welcome>` | Shadow DOM component | Title: "Welcome, {name}" (22px, weight 600). Subtitle: date + weekday + "Week {n}" separated by bullets (14px, grey) |
+| `<app-welcome>` | Shadow DOM component | Title: "Welcome, {name}" (22px, weight 600) and the date line — date + weekday + "Week {n}" separated by bullets (14px, grey) — **side by side on one baseline-aligned row**, wrapping to two lines only when the header is too narrow |
 | `.toolbar` | Board-page-only filter bar (injected into `.js-toolbarMount` at runtime) | Flex row, gap 8px. Contains: category dropdown, epic dropdown, priority toggle, snooze toggle, privacy toggle |
 | `<profile-selector>` | Shadow DOM component | 40px coloured circle (profile colour bg, white letters text, weight 700). Click → dropdown. Hover: scale 1.05 + shadow |
 
@@ -127,8 +127,11 @@ out here it is also painted above the cards, so particles are never hidden
 behind a neighbouring card.
 
 **Slotted buttons (light DOM, styled via `::slotted`):**
-- `.column__addBtn` — "Add Task" button. Blue bg (accent). Only on first column.
-- `.column__archiveBtn` — "Archive" button. Grey outline. Only on columns with `hasArchive: true`.
+- **Add Task** — `.btn --primary --sm`. Only on the first column.
+- **Archive** — `.btn --secondary --sm`. Only on columns with `hasArchive: true`.
+
+Both are plain design-system buttons with no bespoke CSS. They are slotted, so
+document styles reach them; `kanban-column.css` carries layout only.
 
 | State | Visual |
 |-------|--------|
@@ -150,6 +153,7 @@ Shadow DOM component. The most important visual element in the app.
       .taskCard__header        ← title text + priority star (if priority=true)
       .taskCard__desc          ← description text, 2-line clamp with ellipsis
       .taskCard__badge         ← category name + icon (hidden if category=1)
+      .taskCard__attachments   ← paperclip + count (hidden if no attachments)
       .taskCard__deadline      ← deadline chip (hidden if no deadline)
     .taskCard__editBtn         ← edit pencil button, absolute top-right, visible on hover
 ```
@@ -158,7 +162,8 @@ Shadow DOM component. The most important visual element in the app.
 
 | State | Visual |
 |-------|--------|
-| Default | White bg, 1px border, 6px radius, subtle shadow. Fade-in animation 0.3s on mount |
+| Default | White bg, 1px border, 6px radius, subtle shadow |
+| Entering (`.--enter`) | Fade-in 0.3s (opacity + 6px rise). Applied by the column's reconciler to **genuinely new** cards only — reordering or moving other cards must not replay it |
 | Hover | translateY(-1px) lift, slightly stronger shadow. Edit button becomes visible |
 | Dragging | 50% opacity, cursor: grabbing |
 | Priority | Yellow star icon (#f59e0b) next to title |
@@ -169,6 +174,8 @@ Shadow DOM component. The most important visual element in the app.
 | Snoozed (hidden mode) | display: none (invisible) |
 | Snoozed (transparent mode) | 50% opacity |
 | Category badge | Small pill: icon + category name. Hidden when category = 1 |
+| Has attachments | Paperclip icon + count, tertiary text colour, beside the category badge |
+| File dragged over (`.--fileDragOver`) | 2px accent outline, inset. Dropping attaches the files to this task |
 | Filter-hidden | `[hidden]` attribute → display: none |
 
 **Epic pill badge rendering:**
@@ -284,8 +291,11 @@ Shadow DOM component. Expandable.
 .archiveRow__panel               ← slides open below header
   Description text
   Metadata (created date, etc.)
+  .archiveRow__attachments       ← "FILES" label + one download link per file (hidden if none)
   Activity log (reversed chronological)
 ```
+
+**Attachments in the panel:** flat pill-shaped links (name + size), not the task modal's thumbnail grid. An archive row is a dense list item, and its Shadow DOM doesn't see `styles.css`, so it carries its own compact rules rather than reusing `.attachments__*`.
 
 | State | Visual |
 |-------|--------|
@@ -303,7 +313,7 @@ Shadow DOM component. Flat (no expand).
 
 ```
 .backlogRow__header              ← same column structure as archive
-  .backlogRow__col--title
+  .backlogRow__col--title          ← includes .backlogRow__attachments (paperclip + count, hidden if none)
   .backlogRow__col--epic
   .backlogRow__col--category
   .backlogRow__col--date         ← created date (not completion date)
@@ -324,7 +334,7 @@ Shadow DOM component. Flat (no expand). Wider actions column (300px) for 5 butto
 
 ```
 .aiStagedRow__header
-  .aiStagedRow__col--title
+  .aiStagedRow__col--title          ← includes .aiStagedRow__attachments (paperclip + count, hidden if none)
   .aiStagedRow__col--epic
   .aiStagedRow__col--category
   .aiStagedRow__col--actions     ← 5 buttons: Edit, Clone, →Backlog, →Board, Delete
@@ -524,7 +534,9 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 .taskForm
   .taskForm__grid
     .taskForm__col--main           ← left column
-      .taskForm__group--grow       ← Description textarea (fills column height, max 2000 chars)
+      .taskForm__tabs              ← tab strip: Description | Files (+ count badge when >0)
+      .taskForm__group--grow       ← [panel: description] textarea (fills column height, max 2000 chars)
+      .taskForm__group--grow       ← [panel: attachments] .attachments — drop zone + file grid
     .taskForm__col--side           ← right column
       .taskForm__priorityToggle    ← Priority STAR toggle (hidden checkbox; star is muted when off, yellow when on)
       .taskForm__epicSelector      ← clickable epic pills using the task-card epic-bar colour standard (tinted bg + epic-colour label via color-mix); dimmed when unselected, full opacity when selected (no border); toggleable — click the selected epic again to clear it (no "No epic" pill)
@@ -551,6 +563,10 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 **Epic pills (`.taskForm__epicSelector`):** clickable, **toggleable** single-select list (not a dropdown) — one pill per epic; clicking the selected epic again clears it (no epic), so there's no separate "No epic" pill. Default = nothing selected = no epic. Each pill uses the **same colour standard as the task-card epic bar** — a tinted background + the epic colour as the label (`--epic-color` set inline; CSS does the tint via `color-mix` with `--epic-tint`/`--epic-lighten`, so it adapts in dark mode). State (opacity only, no border): **unselected = 0.5** (dimmed), hover = 0.75, **selected = full opacity**. The toggle-off (radios don't natively un-check) is wired in `app.js` via a mousedown/click pair.
 
 **Quick datetime buttons:** `+1h`, `+3h`, `+1d`, `Morning` (next 9am), `Next Monday` (next Monday 9am). Click sets the datetime input value.
+
+**Files tab (`.attachments`):** a dashed drop zone with a *browse* file picker, above a responsive grid of `.attachments__item` tiles (140px min). Images show a thumbnail; everything else an icon tile. Each tile carries name, size, a Download link and Remove. Files arrive by drop, by paste anywhere in the modal (which auto-switches to this tab), or via browse. The whole panel gets an inset accent outline while a file is dragged over it. In **Add / Clone** mode there is no task id yet, so tiles render dashed and read "pending" — they upload after the task is saved. The tab's count badge shows saved + pending.
+
+**Attachment viewer (`.js-attachmentModal`):** a second modal stacked over the task modal, opened by clicking a previewable tile. Images render as `<img>`, PDFs in an iframe, text and code in a monospace `<pre>`; anything else shows a "no preview" note. Footer: Download link + Close. Closing it leaves the task modal and its Files tab intact.
 
 ### 6.3 Management Editors (Epics, Categories, Profiles) — inline on Config page
 

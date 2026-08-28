@@ -1,6 +1,6 @@
 # SPEC — Project Specification
 
-**Version:** 2.43.0
+**Version:** 2.44.1
 **Last Updated:** 2026-08-18
 
 ---
@@ -76,7 +76,8 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── notes.json
 │       ├── epics.json
 │       ├── categories.json
-│       └── ai-staged-tasks.json   # AI-proposed tasks awaiting promotion
+│       ├── ai-staged-tasks.json   # AI-proposed tasks awaiting promotion
+│       └── attachments/           # gitignored — {taskId}/{attachmentId}{ext}, mode 0600
 ├── tests/
 │   ├── unit/                      # utils, validation, router, archive-page, mini-server, state, filters
 │   └── api/                       # tasks, notes, reports, rate-limit, profiles, epics, categories, columns, archived, ai-staged
@@ -93,6 +94,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── shortcuts.js           # Keyboard shortcuts — initShortcuts()
     │   ├── router.js              # Client-side path parser; parsePath(), buildPath()
     │   ├── modals.js              # All modal logic
+    │   ├── attachments.js         # Task attachments — Files tab, drop/paste, viewer
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
     │   ├── backlog-page.js        # Backlog page — initBacklogPage()
     │   ├── reports-page.js        # Reports page — initReportsPage()
@@ -164,6 +166,13 @@ POST   /api/:profile/tasks               - Create task (body: { title, descripti
 PUT    /api/:profile/tasks/:id           - Update task
 DELETE /api/:profile/tasks/:id           - Delete task permanently
 POST   /api/:profile/tasks/:id/move      - Move/reorder (body: { newStatus, newPosition })
+POST   /api/:profile/tasks/:id/attachments                 - Upload one file. RAW binary body (not
+                                           multipart): type in Content-Type, percent-encoded filename
+                                           in X-Attachment-Name. Returns the attachment record.
+                                           :id may name a board, backlog, archived or staged task.
+GET    /api/:profile/tasks/:id/attachments/:attachmentId   - Stream the file. `?download=1` forces
+                                           a save dialog for an otherwise-inline type.
+DELETE /api/:profile/tasks/:id/attachments/:attachmentId   - Remove the record and the file
 POST   /api/:profile/tasks/archive       - Archive all done tasks
 POST   /api/:profile/reports/generate    - Generate report snapshot
 GET    /api/:profile/archived            - Get archived tasks
@@ -234,11 +243,13 @@ GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, arch
   log: array,          // [{ date: "YYYY-MM-DD", action: string }]
   createdDate: string, // ISO 8601
   deadline: string|null,    // ISO 8601 datetime — optional, default null
-  snoozeUntil: string|null  // ISO 8601 datetime — optional, default null
+  snoozeUntil: string|null, // ISO 8601 datetime — optional, default null
+  attachments: array        // [{ id, name, mime, ext, size, uploadedAt }] — optional, absent until
+                            // the first file is attached. See § Attachments.
 }
 ```
 
-Existing tasks without `deadline` or `snoozeUntil` behave as `null` (no chip, not snoozed) — zero migration needed.
+Existing tasks without `deadline`, `snoozeUntil` or `attachments` behave as `null` / `[]` (no chip, not snoozed, no files) — zero migration needed.
 
 **What gets logged:** moving between columns (`"Moved from 'To Do' to 'In Progress'"`), category changes (`"Category changed from X to Y"`), column deletion (`"Column 'Wait' deleted – moved to 'To Do'"`).
 **Not logged:** title/description/priority edits, epic changes, reordering within same column.
@@ -366,6 +377,20 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Clone Task:** the edit modal has a "Clone" button (indigo, `modifier="clone"`) between Cancel and Save. Clicking it calls `openCloneTaskModal()` which closes the edit modal and reopens in Add mode with all task fields copied except `log`; title is prefixed with `"(Clone) "`; snooze is copied only if still in the future. The resulting form submits as a new task creation.
 - **Send to Backlog:** the edit modal has a "Backlog" button (slate grey, `modifier="backlog"`) between Clone and Update. Only shown for board tasks (not tasks already in the backlog column). Clicking it closes the modal, moves the task to the backlog column at position 0 via `moveTask()`, and shows a success toast. The server generates a log entry: `"Moved from 'X' to 'Backlog'"`.
 
+### Modal keyboard & dismissal behaviour
+- **Backdrop click does not close.** Removed in v2.44.0 — a mis-click while editing a task discarded the whole edit. ESC and the ✕ button remain.
+- **ESC closes the topmost modal only** (static open-stack in `<modal-dialog>`), so a confirmation layered over the task modal does not take both down.
+- **Enter activates the focused button if one is focused; otherwise it activates the modal's `.js-modalDefault`.** One rule, and it makes the immediate-Enter outcome a property of where the modal puts initial focus:
+  | Modal | Focus on open | Enter does |
+  |---|---|---|
+  | Task modal (add/edit/clone) | the title field | **Saves** (`.js-modalDefault` is the Save/Update button) |
+  | Shared confirm, `variant: 'primary'` (archive, generate report) | the accept button | **Confirms** |
+  | Shared confirm, `variant: 'delete'` (delete task) | Cancel | **Cancels** — a stray Enter can't delete. Tab to the accept button and Enter there to confirm deliberately |
+  | Config-page confirms (epic / category / profile / column delete) | Cancel | **Cancels** — they carry no `.js-modalDefault` |
+  | Shortcuts cheat-sheet, report viewer | — | **Nothing** — no default action |
+- **Enter is ignored inside a `<textarea>`** (the description needs newlines) and when any modifier key is held. It is *not* ignored in the contenteditable task title, which is single-line — there Enter submits instead of inserting a line break.
+- **`.js-modalDefault` may be a `custom-button`.** That component wires its behaviour to its *inner* `<button>`, so clicking the host would never reach it; `handleEnter` reaches through the shadow root to activate the inner button.
+
 ### Confirmations
 - **One dialog, not one per action.** `openConfirmDialog({ title, message, confirmLabel, cancelLabel, variant })` in `modals.js` drives the single `<modal-dialog class="js-confirmModal">` in `index.html` and returns a `Promise<boolean>`. Adding a confirmable action needs **no new markup and no wiring** — just `if (!await openConfirmDialog({…})) return;`. Do not add another confirm modal for a new action.
 - **Every dismissal resolves `false`:** Cancel, Escape, backdrop click and the ✕ button. The ✕/ESC/backdrop paths are picked up through the component's `modal-closed` event.
@@ -374,6 +399,15 @@ These are behaviors not evident from reading the code. Know these before making 
 - **The element lookup is lazy and cached** inside `modals.js`, so page modules can call it without threading `elements` through.
 - **Confirmed actions:** deleting a task (message names the task), archiving a column (message names the column and the task count; skipped entirely with an info toast when the column is empty, so the dialog never asks about zero tasks), generating a report. The four config-page confirmations (epic / category / profile / column delete) still use their own dedicated modals — they predate this helper.
 - **Stacking works:** the task-delete confirmation opens over the still-open task modal; `<modal-dialog>`'s open-stack means ESC dismisses only the confirmation.
+
+### Board rendering (reconciliation)
+- **`renderTasks()` reconciles; it does not wipe.** It used to do `columnList.innerHTML = ''` and rebuild every card. Combined with `renderAllColumns()` rendering *all* columns and `moveTask()` rendering twice (optimistic, then again after `fetchTasks()`), a single drag destroyed and recreated **every card on the board, twice** — measured at 20 element teardowns for one move on a 9-card board. Since `task-card` ran a 0.3s `fadeIn` on mount, the whole board visibly blinked on every move.
+- **Cards are keyed by `data-task-id`.** Existing elements are reused and updated in place via `KanbanColumn._syncCard()`, which copies `data-*` attributes (adding, updating *and* removing stale ones) plus the renderer-owned classes. Now a same-column reorder reuses 100% of elements and a cross-column move reuses all but the arriving card.
+- **Departed cards are removed *before* the placement pass.** Removing them afterwards makes the index-based placement re-insert every card that sat below the departed one — and re-inserting a node restarts its CSS animations, so a card leaving position 0 would replay `fadeIn` down the whole column even though every element was reused.
+- **The mount animation is opt-in:** `:host(.--enter)` in `task-card.css`, with `--enter` added by the reconciler to genuinely new cards only and dropped via the card's `Animation.finished`. Putting it on bare `:host` meant any re-insertion replayed it. This makes the blink independent of how many nodes get repositioned, which matters because the placement pass is index-based and can re-insert O(n) nodes for one reorder.
+- **`_syncCard` deliberately does not touch** `hidden` (filter state, owned by `applyAllFilters`), `tabindex`/`draggable` (owned by the component), or the transient `--dragging` / `--enter` classes — those are preserved across a re-render, including one that lands mid-drag.
+- **The list must contain only `task-card` elements** for index-based placement to line up, so the drop indicator and empty state are removed first.
+- **Still O(n) allocations per render:** the renderer builds a detached element for every task on every render just to diff against. That is unchanged from the pre-reconciliation behaviour and is cheap (no `connectedCallback` until insert), but it is the next thing to fix if the N=1000 stress test in RELEASE.md bites.
 
 ### Celebration (confetti on arrival)
 - **What fires it:** a task *arriving* in a column whose `celebrate` flag is true. `moveTask()` in `app.js` calls `celebrateArrival(id, newStatus)` — guarded by `oldStatus !== newStatus`, so reordering inside the celebrating column does nothing. Every board move funnels through `moveTask` (drag-drop, `Cmd/Ctrl+←/→`, send-to-backlog), so there is one trigger point.
@@ -391,6 +425,38 @@ These are behaviors not evident from reading the code. Know these before making 
 - **Cleanup uses `Animation.finished`, not `animationend`.** The layer carries a single no-op `confettiLayer` animation spanning the whole burst, so one promise covers all sixteen particles; it needs no event plumbing across the shadow boundary and rejects cleanly when a re-render cancels it. (Note for anyone testing this in an automated browser: a **hidden tab freezes CSS animations entirely** — `currentTime` never advances and `animationend` never fires, though `finished` still resolves if you call `finish()`.)
 - **Reduced motion:** the whole thing sits inside `@media (prefers-reduced-motion: no-preference)`, so it never runs for users who opted out. The `--active` class then simply stays on and paints nothing.
 - **`:host` on `kanban-column` is `position: relative`** solely to be the layer's containing block. The host has no overflow of its own, which is what lets particles spill past the column edge into the board gap.
+
+### Attachments
+
+Files attached to tasks. Metadata lives on the task object (`attachments[]`), bytes live on disk.
+
+**Where the bytes go:** `data/{alias}/attachments/{taskId}/{attachmentId}{ext}` — outside `public/`, so the static handler can never reach them; the only way out is the download route. Written tmp-then-rename with mode `0600`, matching `writeJsonFile`. The directory is gitignored (`data/*/attachments/`); back it up by copying `data/`.
+
+**The user's filename never becomes a path component.** On disk a file is named by its generated id plus an extension from the MIME allowlist. The original name is stored in JSON for display only, with control characters and path separators stripped.
+
+**Why metadata is embedded on the task rather than in its own file:** archiving, restoring and exporting a task carry its attachment list along for free; `GET /tasks` already returns everything the card's paperclip badge needs, so there is no join and no second request.
+
+**One route set, every store.** `findTaskInAnyStore()` looks the task id up in `tasks.json`, then `archived-tasks.json`, then `ai-staged-tasks.json`. Because attachments are keyed by task id alone, archive → restore moves nothing on disk. Promoting a staged task is the one case that mints a *new* id, so `moveTaskAttachments()` renames the directory to match; if the rename fails the metadata is dropped rather than handing the new task dead links.
+
+**Transport is raw bytes, not multipart/form-data.** The client hands `fetch` the `File` as its body verbatim, with the type in `Content-Type` and the percent-encoded filename in `X-Attachment-Name`. `mini-server.js` exposes `app.raw(pattern)` for this: matching requests skip body parsing and arrive as `req.rawBody` (a Buffer) under a 16 MiB outer cap. Parsing the body as text would corrupt any binary payload — a PNG is not valid UTF-8, and invalid sequences decode to U+FFFD.
+
+**Limits** — three constants at the top of `server.js`, mirrored in `constants.js` so the client can reject early:
+
+| Constant | Value | Notes |
+|---|---|---|
+| `MAX_ATTACHMENT_SIZE` | 5 MB | Per file |
+| `MAX_ATTACHMENTS_PER_TASK` | 20 | |
+| `MAX_PROFILE_ATTACHMENT_BYTES` | 200 MB | Measured from disk, so orphaned files still count |
+
+**Serving rules.** `ATTACHMENT_TYPES` is an allowlist mapping MIME → `{ ext, inline }`. Anything outside it stores as `application/octet-stream` with a `.bin` extension and can only be downloaded, never rendered. `image/svg+xml` is **deliberately excluded**: a same-origin SVG can execute script against the app, and every download here is same-origin. Every response carries `X-Content-Type-Options: nosniff`; `Content-Disposition` is `inline` only for allowlisted inline types (`?download=1` overrides), with quotes and non-ASCII stripped from the plain `filename` and the real name in `filename*` (RFC 6266).
+
+**Code files upload as `text/plain`.** Browsers report an empty `File.type` for most code files, which would store them as opaque binaries. `attachmentMimeFor()` in `utils.js` overrides the OS for extensions in `TEXT_ATTACHMENT_EXTENSIONS`, so a pasted snippet previews instead of only downloading. Safe: a `text/plain` response with nosniff is never executed.
+
+**UI.** The task modal's main column has a Description/Files tab strip with a count badge. Files arrive four ways: dropped on the panel, pasted anywhere in the modal (the Print Screen → Ctrl+V path), picked via *browse*, or dropped straight onto a card on the board. `kanban-column`'s drag handlers bail out when `dataTransfer.types` contains `Files`, so a file drop never draws a drop indicator or tries to move a task.
+
+**Two panel modes.** Editing an existing task uploads immediately. Adding a *new* task (or cloning) has no id to attach to, so files queue in memory with object-URL previews and `flushPendingAttachments()` uploads them once the server returns a real task. A queued upload that fails is reported but never fails the save — the task was created regardless.
+
+**Where attachments show up:** paperclip + count on task cards, backlog rows and AI-staged rows; expanded archive rows list their files as download links (the archive has no edit modal, and its Shadow DOM doesn't see `styles.css`, so it renders its own compact list rather than reusing the modal's grid).
 
 ### Categories
 - **Category 1 cannot be deleted.** Deleting any other category reassigns its active tasks to category 1. Archived tasks are untouched.
@@ -421,7 +487,7 @@ These are behaviors not evident from reading the code. Know these before making 
 - The **backlog column** is permanent: it cannot be deleted (server returns 400), and it is hidden from the Board Configuration modal. It is always created as part of `DEFAULT_COLUMNS`.
 - **Column reorder (`PUT /api/:profile/columns`) must include every existing column exactly once** — subsets, missing ids, and duplicate ids are rejected with 400. Accepting a subset would silently drop the omitted columns (orphaning their tasks, and potentially deleting the backlog column).
 - **`isBacklog` is immutable after creation** (PUT rejects changes with 400 — unsetting it on the real backlog column would make `resolveProfile` push a second column with id `backlog` on the next request). POST rejects creating a second backlog column.
-- `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`). Columns with `isBacklog: true` are filtered out of the board view.
+- `app.js` calls `initKanban(columns)` to create `<kanban-column>` elements dynamically. The first column gets the Add Task button; columns with `hasArchive: true` get an Archive button (both are slotted light DOM, event-delegated from `.kanban`). Both use the **design-system button** — `.btn --primary --sm` and `.btn --secondary --sm` — with no bespoke CSS. They are slotted, so they live in the *document* tree and `styles.css` reaches them; the old `::slotted(.column__addBtn / .column__archiveBtn)` rules in `kanban-column.css` were deleted rather than kept, because document rules out-cascade the shadow tree anyway (same cascade rule as the rail panel note above). Columns with `isBacklog: true` are filtered out of the board view.
 
 ### Reports & Archive (independent operations)
 - **Report generation** (Reports page FAB button) snapshots all columns in order + notes. Does **not** move, archive, or delete any tasks.
@@ -563,6 +629,7 @@ These are behaviors not evident from reading the code. Know these before making 
 <app-welcome></app-welcome>
 ```
 - Static greeting + date/weekday/week-number header. No attributes, no JS API, no events.
+- **Greeting and date sit side by side on one line** (v2.44.1), baseline-aligned, to keep the header short — it costs ~23px less vertical space than the old stacked layout, on every page. `flex-wrap` returns it to two lines when the header is too narrow; the date group is `white-space: nowrap` so it wraps as a whole rather than breaking between its own parts.
 
 ### `<svg-icon>`
 ```html
@@ -595,7 +662,8 @@ These are behaviors not evident from reading the code. Know these before making 
 ```
 - Open/close: `element.open()` / `element.close()`
 - `size`: `"large"`, `"small"`, or omit for default
-- Handles close button, backdrop click, and ESC key internally
+- Handles close button and ESC key internally. **Backdrop click does NOT close** (v2.44.0) — it was too easy to lose a half-written task by mis-clicking; ESC and ✕ are the ways out.
+- **Enter confirms:** activates the element marked `.js-modalDefault` in the modal's light DOM. See Non-obvious Behaviors § Modal keyboard behaviour.
 - **Never** open/close by toggling classes directly
 - **Accessibility (v2.39.0):** host carries `role="dialog"` + `aria-modal="true"`; `aria-label` is computed from the slotted title's text on every open (titles change — "Add Task"/"Edit Task"). Focus moves into the dialog on open, Tab is trapped inside (wraps both ends; `custom-button`/`custom-picker` participate via `delegatesFocus`), and focus is restored to the pre-open element on close.
 - **Stacked modals:** a static open-stack means ESC and the focus trap only act on the **topmost** modal — a confirmation layered over the task modal no longer closes both on one keypress.

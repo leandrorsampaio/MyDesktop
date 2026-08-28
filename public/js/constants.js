@@ -156,3 +156,44 @@ export const THEMES = [
 export const AUTO_THEME_LIGHT = 'light';
 /** Theme used for the OS-dark case when a profile is on 'auto'. */
 export const AUTO_THEME_DARK = 'dark';
+
+// ===========================================
+// Task Attachments
+// ===========================================
+
+/**
+ * Largest single attachment the server accepts.
+ * Source of truth: server.js MAX_ATTACHMENT_SIZE — kept here so the client can
+ * reject an oversized file before spending bandwidth on the upload.
+ */
+export const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
+
+/**
+ * Most attachments one task may carry.
+ * Source of truth: server.js MAX_ATTACHMENTS_PER_TASK
+ */
+export const MAX_ATTACHMENTS_PER_TASK = 20;
+
+/**
+ * MIME types the server renders in the browser rather than force-downloading.
+ * Source of truth: server.js ATTACHMENT_TYPES (the `inline: true` entries).
+ * Note `image/svg+xml` is deliberately absent — see the server comment.
+ */
+export const INLINE_ATTACHMENT_MIMES = [
+    'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif',
+    'application/pdf', 'text/plain'
+];
+
+/**
+ * Extensions sent as `text/plain` regardless of what the OS reports.
+ * Browsers give `File.type` an empty string for most code files, which would
+ * store them as opaque binaries; declaring them as text means they preview in
+ * the attachment viewer. Serving them as text/plain (plus nosniff) is safe —
+ * the browser will never execute a text/plain response.
+ */
+export const TEXT_ATTACHMENT_EXTENSIONS = [
+    '.txt', '.md', '.markdown', '.log', '.diff', '.patch', '.env', '.ini', '.conf',
+    '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.css', '.scss', '.html', '.xml',
+    '.yml', '.yaml', '.toml', '.sql', '.sh', '.bash', '.zsh',
+    '.py', '.rb', '.go', '.rs', '.java', '.kt', '.swift', '.c', '.h', '.cpp', '.cs', '.php'
+];

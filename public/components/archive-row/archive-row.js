@@ -7,6 +7,9 @@
  * Events dispatched:
  *   restore-task (bubbles, composed) — { detail: { taskId } }
  */
+import { attachmentUrl } from '../../js/api.js';
+import { formatBytes } from '../../js/utils.js';
+
 class ArchiveRow extends HTMLElement {
     /** @type {[string, string]|null} Cached [html, css] templates */
     static templateCache = null;
@@ -171,6 +174,27 @@ class ArchiveRow extends HTMLElement {
                 parts.push('Deadline: None');
             }
             metaEl.textContent = parts.join('   ');
+        }
+
+        // Panel: attachments. Read-only — the archive has no edit modal, but the
+        // files a task was completed with should still be reachable. A flat list
+        // of links rather than the modal's thumbnail grid: an archive row is a
+        // dense list item, and its Shadow DOM doesn't see styles.css anyway.
+        const attachmentsEl = this.shadowRoot.querySelector('.js-attachments');
+        if (attachmentsEl) {
+            const files = task.attachments || [];
+            attachmentsEl.innerHTML = files.length === 0 ? '' : `
+                <div class="archiveRow__attachmentsTitle">Files</div>
+                ${files.map(a => `
+                    <a class="archiveRow__attachment"
+                       href="${attachmentUrl(task.id, a.id)}"
+                       target="_blank" rel="noopener"
+                       title="${this._escapeHtml(a.name)}">
+                        <span class="archiveRow__attachmentName">${this._escapeHtml(a.name)}</span>
+                        <span class="archiveRow__attachmentSize">${formatBytes(a.size)}</span>
+                    </a>
+                `).join('')}
+            `;
         }
 
         // Panel: activity log

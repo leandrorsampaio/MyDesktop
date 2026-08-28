@@ -7,8 +7,16 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    animation: fadeIn 0.3s ease-out;
     box-shadow: var(--shadow-sm);
+}
+
+/* Mount animation is opt-in via .--enter, added by kanban-column's reconciler
+   to genuinely new cards only. It used to live on bare :host, which meant it
+   replayed every time an element was re-inserted — and reordering a column
+   re-inserts the cards after the moved one, so the board visibly blinked on
+   every drag. */
+:host(.--enter) {
+    animation: fadeIn 0.3s ease-out;
 }
 
 /* Keyboard focus ring (j/k navigation) — :focus-visible only, so mouse
@@ -177,4 +185,21 @@
 .taskCard__deadline.--upcoming {
     background: var(--color-bg-tertiary);
     color: var(--color-text-tertiary);
+}
+
+/* Attachment badge — paperclip + count, sits alongside the category badge */
+.taskCard__attachments {
+    display: none;
+    align-items: center;
+    gap: 3px;
+    margin-left: var(--space-6);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    vertical-align: middle;
+}
+
+/* File drag feedback — a file dragged over a card attaches to it on drop */
+:host(.--fileDragOver) {
+    outline: 2px solid var(--color-accent-primary, #1a73e8);
+    outline-offset: -2px;
 }

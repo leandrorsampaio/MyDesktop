@@ -6,17 +6,19 @@
  *   - app.get/post/put/delete/use(path?, ...handlers)
  *   - Path params (`:foo` → req.params.foo)
  *   - JSON body parsing (when Content-Type is application/json)
+ *   - Raw binary bodies on opted-in routes (app.raw(pattern) -> req.rawBody)
  *   - Static file serving from a directory (with MIME types)
  *   - Middleware chain via next()
  *   - res.json / res.status / res.set / res.send / res.sendFile / res.redirect
- *   - req.params / req.body / req.ip
+ *   - req.params / req.body / req.query / req.ip
  *   - Automatic 500 on uncaught errors in async handlers
  *
  * Intentionally NOT implemented (because the project doesn't use them):
  *   - Error-first middleware (4-arg handlers)
  *   - next('route') / next(err) flow control
- *   - req.query, req.cookies, req.path
+ *   - req.cookies, req.path
  *   - Sub-routers, view engines, content negotiation
+ *   - multipart/form-data (attachments upload raw bytes instead - see app.raw)
  */
 
 const http = require('http');
@@ -141,20 +143,36 @@ function staticMiddleware(rootDir) {
 const MAX_BODY_SIZE = 1024 * 1024;
 
 /**
+ * Maximum body size for routes registered via `app.raw()`. Those carry file
+ * uploads rather than JSON, so they need real headroom — but the server still
+ * enforces its own, smaller per-file limit before writing anything to disk.
+ * This is only the outer guard that keeps a hostile body from filling memory.
+ */
+const MAX_RAW_BODY_SIZE = 16 * 1024 * 1024;
+
+/**
  * Read the request body and parse JSON if the Content-Type says so.
  * Sets req.body. Empty bodies → `{}` (matches Express's body-parser default,
  * so handlers can safely do `req.body.foo` without a null guard).
+ *
+ * On a raw route the bytes are handed over untouched as `req.rawBody`: a
+ * `.toString('utf8')` here would silently corrupt any binary payload, since
+ * a PNG is not valid UTF-8 and invalid sequences decode to U+FFFD.
+ *
+ * @param {import('http').IncomingMessage} req
+ * @param {{ raw?: boolean }} [opts] - raw: keep the Buffer, use the larger cap.
  */
-function parseBody(req) {
+function parseBody(req, { raw = false } = {}) {
     return new Promise((resolve, reject) => {
         const contentType = (req.headers['content-type'] || '').toLowerCase();
+        const limit = raw ? MAX_RAW_BODY_SIZE : MAX_BODY_SIZE;
         const chunks = [];
         let totalBytes = 0;
         let oversize = false;
         req.on('data', chunk => {
             if (oversize) return;          // drop further data after limit hit
             totalBytes += chunk.length;
-            if (totalBytes > MAX_BODY_SIZE) {
+            if (totalBytes > limit) {
                 oversize = true;
                 chunks.length = 0;          // free memory
                 return reject(new HttpError(413, 'Request body too large'));
@@ -163,13 +181,15 @@ function parseBody(req) {
         });
         req.on('end', () => {
             if (oversize) return;          // already rejected
-            const raw = Buffer.concat(chunks).toString('utf8');
-            if (!raw) { req.body = {}; return resolve(); }
+            const buf = Buffer.concat(chunks);
+            if (raw) { req.rawBody = buf; req.body = {}; return resolve(); }
+            const rawText = buf.toString('utf8');
+            if (!rawText) { req.body = {}; return resolve(); }
             if (contentType.includes('application/json')) {
-                try { req.body = JSON.parse(raw); }
+                try { req.body = JSON.parse(rawText); }
                 catch { return reject(new HttpError(400, 'Invalid JSON body')); }
             } else {
-                req.body = raw;
+                req.body = rawText;
             }
             resolve();
         });
@@ -210,7 +230,12 @@ function wrapResponse(res) {
                 res.statusCode = 404;
                 return res.end('Not found');
             }
-            res.setHeader('Content-Type', mimeFor(absPath));
+            // Only guess from the extension when the caller hasn't already
+            // said what this is (attachment downloads set their stored MIME
+            // type, which is authoritative). Matches res.json / res.send.
+            if (!res.getHeader('Content-Type')) {
+                res.setHeader('Content-Type', mimeFor(absPath));
+            }
             res.setHeader('Content-Length', stat.size);
             fs.createReadStream(absPath).on('error', () => res.end()).pipe(res);
         });
@@ -273,6 +298,9 @@ function createApp() {
      */
     const stack = [];
 
+    /** Compiled patterns whose bodies are delivered as raw Buffers (app.raw). */
+    const rawPatterns = [];
+
     function addRoute(method, pattern, handlers) {
         stack.push({
             kind: 'route',
@@ -295,6 +323,15 @@ function createApp() {
         post:   (p, ...h) => (addRoute('POST',   p, h), app),
         put:    (p, ...h) => (addRoute('PUT',    p, h), app),
         delete: (p, ...h) => (addRoute('DELETE', p, h), app),
+
+        /**
+         * Opt a path pattern out of body parsing: matching requests get the
+         * untouched bytes on `req.rawBody` (and an empty `req.body`), under
+         * the larger MAX_RAW_BODY_SIZE cap. Used for binary uploads, which
+         * avoids needing a multipart/form-data parser at all.
+         * @param {string} pattern - Same syntax as the route methods.
+         */
+        raw: (p) => (rawPatterns.push(compilePattern(p)), app),
 
         use(...args) {
             if (typeof args[0] === 'string') {
@@ -319,7 +356,8 @@ function createApp() {
 
                 try {
                     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-                        await parseBody(req);
+                        const isRaw = rawPatterns.some(c => matchPattern(c, req.pathname) !== null);
+                        await parseBody(req, { raw: isRaw });
                     }
 
                     let matched = false;

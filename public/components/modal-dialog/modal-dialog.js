@@ -13,6 +13,7 @@ class ModalDialog extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this._boundOnEsc = this.handleEsc.bind(this);
+        this._boundOnEnter = this.handleEnter.bind(this);
         this._boundOnTab = this._handleTabTrap.bind(this);
         /** Element that had focus before open() — restored on close */
         this._restoreFocusTo = null;
@@ -40,11 +41,9 @@ class ModalDialog extends HTMLElement {
         this.setAttribute('aria-modal', 'true');
 
         this.shadowRoot.querySelector('.modal__closeBtn').addEventListener('click', () => this.close());
-        this.shadowRoot.querySelector('.backdrop').addEventListener('click', (e) => {
-            if (e.target === this.shadowRoot.querySelector('.backdrop')) {
-                this.close();
-            }
-        });
+        // Clicking the backdrop deliberately does NOT close: it was too easy to
+        // lose a half-written task by mis-clicking. Escape and the ✕ button are
+        // the ways out.
     }
 
     static get observedAttributes() {
@@ -55,6 +54,7 @@ class ModalDialog extends HTMLElement {
         if (name !== 'open') return;
         if (newValue === null) {
             document.removeEventListener('keydown', this._boundOnEsc);
+            document.removeEventListener('keydown', this._boundOnEnter);
             document.removeEventListener('keydown', this._boundOnTab);
             const idx = ModalDialog._openStack.indexOf(this);
             if (idx !== -1) ModalDialog._openStack.splice(idx, 1);
@@ -67,6 +67,7 @@ class ModalDialog extends HTMLElement {
             this._restoreFocusTo = null;
         } else {
             document.addEventListener('keydown', this._boundOnEsc);
+            document.addEventListener('keydown', this._boundOnEnter);
             document.addEventListener('keydown', this._boundOnTab);
             ModalDialog._openStack.push(this);
             ModalDialog._syncBodyScroll();
@@ -79,6 +80,7 @@ class ModalDialog extends HTMLElement {
     disconnectedCallback() {
         // Clean up document-level event listeners to prevent memory leaks
         document.removeEventListener('keydown', this._boundOnEsc);
+        document.removeEventListener('keydown', this._boundOnEnter);
         document.removeEventListener('keydown', this._boundOnTab);
         const idx = ModalDialog._openStack.indexOf(this);
         if (idx !== -1) ModalDialog._openStack.splice(idx, 1);
@@ -107,6 +109,37 @@ class ModalDialog extends HTMLElement {
         // Escape closed every stacked modal at once
         if (ModalDialog._openStack[ModalDialog._openStack.length - 1] !== this) return;
         this.close();
+    }
+
+    /**
+     * Enter confirms the dialog: it activates the element marked
+     * `.js-modalDefault` in the modal's light DOM. A modal with no such element
+     * has no default action and Enter does nothing there.
+     *
+     * Deliberately stands aside for:
+     *  - textareas, where Enter has to insert a newline;
+     *  - a focused button, which already does the right thing natively — so
+     *    tabbing to Cancel and pressing Enter cancels rather than confirming.
+     * A contenteditable title is NOT excluded: those are single-line here, so
+     * Enter should submit rather than insert a line break.
+     */
+    handleEnter(e) {
+        if (e.key !== 'Enter') return;
+        if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (ModalDialog._openStack[ModalDialog._openStack.length - 1] !== this) return;
+
+        const target = e.composedPath()[0];
+        if (target instanceof HTMLTextAreaElement) return;
+        if (target instanceof HTMLButtonElement) return;   // also covers custom-button's inner button
+
+        const defaultAction = this.querySelector('.js-modalDefault');
+        if (!defaultAction) return;
+
+        e.preventDefault();
+        // custom-button wires its click behaviour (including form submission)
+        // to its inner <button>; clicking the host would never reach it.
+        const activate = defaultAction.shadowRoot?.querySelector('button') || defaultAction;
+        activate.click();
     }
 
     /** Sets the accessible name from the slotted title's current text.

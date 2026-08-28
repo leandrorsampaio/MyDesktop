@@ -11,3 +11,6 @@ package-lock.json
 .vscode/
 .idea/
 *.log
+
+# Task attachments — binary blobs, not source. Backed up by copying data/.
+data/*/attachments/
