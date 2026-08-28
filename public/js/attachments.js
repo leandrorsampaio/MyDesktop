@@ -46,25 +46,61 @@ export function initAttachments(elements) {
     els.attachments.addEventListener('click', handlePanelClick);
     els.attachments.addEventListener('change', handleFileInputChange);
 
-    // Drag-and-drop onto the panel. dragover must be cancelled on every event
-    // or the browser navigates to the dropped file instead of handing it over.
-    els.attachments.addEventListener('dragover', (e) => {
-        if (!hasFiles(e)) return;
+    // A thumbnail that won't decode (a truncated upload, or a file whose
+    // declared type doesn't match its bytes) would otherwise show the
+    // browser's broken-image glyph. Swap in the generic file icon instead.
+    // `error` doesn't bubble, so this listens in the capture phase.
+    els.attachments.addEventListener('error', (e) => {
+        const img = e.target;
+        if (!img.classList?.contains('attachments__thumb')) return;
+        const fallback = document.createElement('span');
+        fallback.className = 'attachments__fileIcon';
+        fallback.innerHTML = '<svg-icon icon="folder" size="20"></svg-icon>';
+        img.replaceWith(fallback);
+    }, true);
+
+    // Drag-and-drop anywhere on the open dialog — not just on the Files tab.
+    // Dropping while Description is showing switches tabs and attaches, so the
+    // user never has to find the right panel first.
+    //
+    // dragenter/dragleave fire once per element crossed, so a naive
+    // "hide on dragleave" flickers off every time the pointer moves between
+    // children. Counting enters and leaves is the reliable fix.
+    let dragDepth = 0;
+
+    els.taskModal.addEventListener('dragenter', (e) => {
+        if (!ctx || !hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth += 1;
+        showDropOverlay(true);
+    });
+
+    // dragover must be cancelled on every event or the browser navigates to
+    // the dropped file instead of handing it over.
+    els.taskModal.addEventListener('dragover', (e) => {
+        if (!ctx || !hasFiles(e)) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
-        els.attachments.classList.add('--dragOver');
     });
-    els.attachments.addEventListener('dragleave', (e) => {
-        if (!els.attachments.contains(e.relatedTarget)) {
-            els.attachments.classList.remove('--dragOver');
-        }
+
+    els.taskModal.addEventListener('dragleave', (e) => {
+        if (!ctx || !hasFiles(e)) return;
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) showDropOverlay(false);
     });
-    els.attachments.addEventListener('drop', (e) => {
-        if (!hasFiles(e)) return;
+
+    els.taskModal.addEventListener('drop', (e) => {
+        if (!ctx || !hasFiles(e)) return;
         e.preventDefault();
-        els.attachments.classList.remove('--dragOver');
+        dragDepth = 0;
+        showDropOverlay(false);
+        showPanel();
         addFiles(Array.from(e.dataTransfer.files));
     });
+
+    // A drag that ends outside the window never fires drop, and the counter
+    // would strand the overlay on screen — reset on the modal closing too.
+    window.addEventListener('dragend', () => { dragDepth = 0; showDropOverlay(false); });
 
     // Paste anywhere in the task modal — the Print Screen → Ctrl+V path.
     // Ignored while the caret is in a text field so pasting into the
@@ -96,7 +132,11 @@ export function initAttachments(elements) {
     // separate modal stacked on top — closing it must not wipe the panel
     // underneath, hence the target check.
     els.taskModal.addEventListener('modal-closed', (e) => {
-        if (e.target === els.taskModal) closeAttachments();
+        if (e.target === els.taskModal) {
+            dragDepth = 0;
+            showDropOverlay(false);
+            closeAttachments();
+        }
     });
 }
 
@@ -189,6 +229,14 @@ function isTextEntry(el) {
     return el.tagName === 'INPUT'
         || el.tagName === 'TEXTAREA'
         || el.isContentEditable === true;
+}
+
+/**
+ * Shows or hides the dialog-wide "Drop to attach" overlay.
+ * @param {boolean} visible
+ */
+function showDropOverlay(visible) {
+    if (els?.taskDropOverlay) els.taskDropOverlay.hidden = !visible;
 }
 
 function isPanelVisible() {
@@ -362,6 +410,7 @@ async function openViewer(attachment) {
     const downloadHref = attachmentUrl(ctx.taskId, attachment.id, { download: true });
 
     els.attachmentModalTitle.textContent = attachment.name;
+    els.attachmentOpen.href = url;
     els.attachmentDownload.href = downloadHref;
     els.attachmentDownload.setAttribute('download', attachment.name);
 
@@ -402,14 +451,14 @@ function render() {
         : '';
 
     const hint = ctx.taskId
-        ? 'Drop files here, paste a screenshot, or'
-        : 'Files are attached when you save the task. Drop them here, paste a screenshot, or';
+        ? 'Drop files anywhere on this dialog, or paste a screenshot.'
+        : 'Files are attached when you save the task. Drop them anywhere on this dialog, or paste a screenshot.';
 
     els.attachments.innerHTML = `
         <div class="attachments__dropZone">
             <span class="attachments__hint">${hint}</span>
-            <label class="attachments__browse">
-                browse
+            <label class="btn --secondary --sm attachments__browse">
+                Browse files
                 <input type="file" class="js-attachmentInput" multiple hidden>
             </label>
         </div>
@@ -421,11 +470,19 @@ function render() {
 /**
  * Markup for one saved attachment. Image types show a thumbnail served from
  * the download route; everything else shows an icon tile.
+ *
+ * Actions are design-system icon buttons (`.btn --ghost --icon --sm`) rather
+ * than text links: three labelled buttons don't fit a 140px tile, and this is
+ * the same vocabulary the rest of the app uses.
  */
 function savedItemHtml(taskId, a) {
     const url = attachmentUrl(taskId, a.id);
+    // No loading="lazy" here: the Files panel starts hidden behind the
+    // Description tab, so a lazy image never enters the viewport and never
+    // loads — the tile just shows a broken thumbnail. These are a handful of
+    // small local files; deferring them buys nothing.
     const preview = a.mime.startsWith('image/')
-        ? `<img class="attachments__thumb" src="${escapeHtml(url)}" alt="" loading="lazy">`
+        ? `<img class="attachments__thumb" src="${escapeHtml(url)}" alt="">`
         : `<span class="attachments__fileIcon"><svg-icon icon="folder" size="20"></svg-icon></span>`;
     const viewable = isViewableAttachment(a);
 
@@ -443,12 +500,23 @@ function savedItemHtml(taskId, a) {
                 <span class="attachments__size">${formatBytes(a.size)}</span>
             </figcaption>
             <div class="attachments__actions">
-                <a class="attachments__action"
+                <a class="btn --ghost --icon --sm"
+                   href="${escapeHtml(url)}" target="_blank" rel="noopener"
+                   title="Open in new tab" aria-label="Open ${escapeHtml(a.name)} in a new tab">
+                    <svg-icon icon="box-arrow-in-up-right" size="14"></svg-icon>
+                </a>
+                <a class="btn --ghost --icon --sm"
                    href="${escapeHtml(attachmentUrl(taskId, a.id, { download: true }))}"
-                   download="${escapeHtml(a.name)}">Download</a>
+                   download="${escapeHtml(a.name)}"
+                   title="Download" aria-label="Download ${escapeHtml(a.name)}">
+                    <svg-icon icon="download" size="14"></svg-icon>
+                </a>
                 <button type="button"
-                        class="attachments__action --remove js-attachmentRemove"
-                        data-attachment-id="${escapeHtml(a.id)}">Remove</button>
+                        class="btn --ghost --icon --sm --removeAction js-attachmentRemove"
+                        data-attachment-id="${escapeHtml(a.id)}"
+                        title="Remove" aria-label="Remove ${escapeHtml(a.name)}">
+                    <svg-icon icon="trash" size="14"></svg-icon>
+                </button>
             </div>
         </figure>
     `;
@@ -469,8 +537,11 @@ function pendingItemHtml(p) {
             </figcaption>
             <div class="attachments__actions">
                 <button type="button"
-                        class="attachments__action --remove js-attachmentRemove"
-                        data-attachment-id="${escapeHtml(p.tempId)}">Remove</button>
+                        class="btn --ghost --icon --sm --removeAction js-attachmentRemove"
+                        data-attachment-id="${escapeHtml(p.tempId)}"
+                        title="Remove" aria-label="Remove ${escapeHtml(p.file.name)}">
+                    <svg-icon icon="trash" size="14"></svg-icon>
+                </button>
             </div>
         </figure>
     `;

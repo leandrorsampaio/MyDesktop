@@ -5,8 +5,14 @@
  *   Top  (55%) — chat area: scrollable message list + pinned input
  *   Bottom (45%) — staged task list (mirrors backlog-row pattern)
  *
- * Conversation history is in-memory (cleared on page reload).
+ * Conversation history is persisted in ai-conversation.json via the server, so
+ * it survives a page reload or a server restart.
  * Staged tasks are persisted in ai-staged-tasks.json via the server.
+ *
+ * Graceful degradation: the page always renders. If the AI is unconfigured or
+ * unreachable, the transcript and staged tasks stay fully usable and only the
+ * composer is disabled, with the reason stated inline. No AI call is awaited
+ * before the page paints.
  */
 
 import {
@@ -23,7 +29,11 @@ import {
     promoteToBoardApi,
     fetchAiConfigApi,
     setActiveAiConfigApi,
-    sendAiChatApi
+    sendAiChatApi,
+    fetchAiAvailabilityApi,
+    fetchAiConversationApi,
+    saveAiConversationApi,
+    clearAiConversationApi
 } from './api.js';
 import { openEditStagedTaskModal, openCloneStagedTaskModal } from './modals.js';
 
@@ -38,6 +48,16 @@ let conversationHistory = [];
 
 /** @type {Array<Object>} In-memory mirror of ai-staged-tasks.json */
 let stagedTasks = [];
+
+/**
+ * Cumulative token usage for this page session, shown in the composer so the
+ * cost of re-sending the board snapshot on every message stays visible.
+ * @type {{ input: number, output: number, lastInput: number }}
+ */
+let tokenUsage = { input: 0, output: 0, lastInput: 0 };
+
+/** @type {{available: boolean, message?: string}} Latest AI availability. */
+let availability = { available: false };
 
 // ==========================================
 // Public entry point
@@ -68,9 +88,11 @@ export async function initAiPage(pageViewEl, { elements }) {
                         aria-label="Message input"
                     ></textarea>
                     <div class="aiPage__inputActions">
-                        <button type="button" class="aiPage__clearBtn js-aiClearBtn">Clear conversation</button>
-                        <button type="button" class="aiPage__sendBtn js-aiSendBtn">Send</button>
+                        <span class="aiPage__usage js-aiUsage" title="Tokens used this session"></span>
+                        <button type="button" class="btn --secondary --sm js-aiClearBtn">Clear conversation</button>
+                        <button type="button" class="btn --primary --sm js-aiSendBtn">Send</button>
                     </div>
+                    <div class="aiPage__notice js-aiNotice" hidden></div>
                 </div>
             </div>
             <div class="aiPage__tasks">
@@ -99,18 +121,22 @@ export async function initAiPage(pageViewEl, { elements }) {
     const countEl      = pageViewEl.querySelector('.js-stagedCount');
     const headerEl     = pageViewEl.querySelector('.js-listHeader');
     const modelSelectEl = pageViewEl.querySelector('.js-aiModelSelect');
+    const usageEl      = pageViewEl.querySelector('.js-aiUsage');
 
     // ---- Fetch initial data (page components load alongside — lazy: they're
     // not in index.html so the board cold-start doesn't pay for them) ----
-    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig;
+    let fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation;
     try {
-        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig] = await Promise.all([
+        [fetchedTasks, fetchedColumns, fetchedEpics, fetchedCategories, fetchedStaged, fetchedAiConfig, fetchedConversation] = await Promise.all([
             fetchTasksApi(),
             fetchColumnsApi(),
             fetchEpicsApi(),
             fetchCategoriesApi(),
             fetchStagedTasksApi(),
             fetchAiConfigApi(),
+            // A missing or unreadable transcript is not an error worth failing
+            // the page over — an empty conversation is a valid state.
+            fetchAiConversationApi().catch(() => ({ messages: [] })),
             import('/components/list-header/list-header.js'),
             import('/components/ai-staged-row/ai-staged-row.js')
         ]);
@@ -127,6 +153,9 @@ export async function initAiPage(pageViewEl, { elements }) {
     setCategories(fetchedCategories);
 
     stagedTasks = fetchedStaged;
+    conversationHistory = (fetchedConversation.messages || [])
+        .map(m => ({ role: m.role, content: m.content }));
+    tokenUsage = { input: 0, output: 0, lastInput: 0 };
 
     // ---- Setup list-header ----
     headerEl.setColumns([
@@ -159,27 +188,51 @@ export async function initAiPage(pageViewEl, { elements }) {
     modelSelectEl.addEventListener('change', async () => {
         const result = await setActiveAiConfigApi(modelSelectEl.value);
         if (!result.ok && toaster) toaster.error('Failed to switch model');
+        // The new config may have a key where the old one didn't (or vice
+        // versa), so the composer's enabled state has to be re-derived.
+        availability = await fetchAiAvailabilityApi();
+        _applyAvailability(availability, pageViewEl.querySelector('.js-aiNotice'), inputEl, sendBtn);
     });
 
     // ---- Initial renders ----
     _renderMessages(messagesEl);
     _renderStagedList(rowsEl, emptyEl, countEl);
+    _renderUsage(usageEl);
+
+    // ---- Availability: checked AFTER the page has painted, never awaited
+    // before it. An unconfigured or unreachable provider disables the composer
+    // with a stated reason; everything already on screen stays usable. ----
+    const noticeEl = pageViewEl.querySelector('.js-aiNotice');
+    fetchAiAvailabilityApi().then((status) => {
+        availability = status;
+        _applyAvailability(status, noticeEl, inputEl, sendBtn);
+    });
 
     // ---- Wire input events ----
-    sendBtn.addEventListener('click', () => _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements));
+    sendBtn.addEventListener('click', () => _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements, usageEl));
 
     inputEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements);
+            _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements, usageEl);
         }
     });
 
     inputEl.addEventListener('input', () => _autoGrow(inputEl));
 
-    clearBtn.addEventListener('click', () => {
+    clearBtn.addEventListener('click', async () => {
         conversationHistory = [];
+        tokenUsage = { input: 0, output: 0, lastInput: 0 };
         _renderMessages(messagesEl);
+        _renderUsage(usageEl);
+        try {
+            await clearAiConversationApi();
+        } catch {
+            // The transcript is already gone from view; a failed server clear
+            // means it reappears on reload, which is recoverable and not worth
+            // an error dialog.
+            if (toaster) toaster.warning('Conversation cleared locally, but not on the server');
+        }
     });
 
     // ---- Wire staged row events (event delegation) ----
@@ -275,21 +328,15 @@ export async function initAiPage(pageViewEl, { elements }) {
 // Private: send message
 // ==========================================
 
-async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements) {
+async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, countEl, toaster, elements, usageEl) {
     const text = inputEl.value.trim();
     if (!text) return;
 
-    // Check AI config before doing anything
-    let aiConfig;
-    try {
-        aiConfig = await fetchAiConfigApi();
-    } catch {
-        if (toaster) toaster.error('Failed to check AI configuration');
-        return;
-    }
-
-    if (!aiConfig.activeConfigId || !aiConfig.configs?.length) {
-        if (toaster) toaster.warning('Configure your AI provider first via Config → AI Configuration');
+    // Availability is already known from page load; re-checking here would add
+    // a round-trip to every message. The composer is disabled when it's false,
+    // so this only catches a race.
+    if (!availability.available) {
+        if (toaster) toaster.warning(availability.message || 'AI is not configured');
         return;
     }
 
@@ -329,13 +376,19 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
         return;
     }
 
-    const { narrative, tasks: newTasks } = result.data;
+    const { narrative, tasks: newTasks, usage } = result.data;
 
     conversationHistory.push({
         role: 'assistant',
         content: narrative || '(No response)',
         tasksAdded: newTasks.length
     });
+
+    if (usage) {
+        tokenUsage.lastInput = usage.inputTokens || 0;
+        tokenUsage.input  += usage.inputTokens  || 0;
+        tokenUsage.output += usage.outputTokens || 0;
+    }
 
     if (newTasks.length > 0) {
         stagedTasks = [...stagedTasks, ...newTasks];
@@ -345,6 +398,65 @@ async function _sendMessage(inputEl, sendBtn, messagesEl, rowsEl, emptyEl, count
 
     sendBtn.disabled = false;
     _renderMessages(messagesEl);
+    _renderUsage(usageEl);
+
+    // Persist the transcript. A failure here costs the user nothing now — the
+    // conversation is on screen — it only means this exchange is missing after
+    // a reload, so it is logged as a warning rather than surfaced as an error.
+    try {
+        await saveAiConversationApi(
+            conversationHistory
+                .filter(m => m.role === 'user' || m.role === 'assistant')
+                .map(m => ({ role: m.role, content: m.content }))
+        );
+    } catch {
+        if (toaster) toaster.warning('This exchange could not be saved for next session');
+    }
+}
+
+/**
+ * Applies AI availability to the composer. The transcript and staged tasks are
+ * never touched — they work with the AI off.
+ * @param {{available: boolean, message?: string, name?: string}} status
+ * @param {HTMLElement} noticeEl
+ * @param {HTMLTextAreaElement} inputEl
+ * @param {HTMLButtonElement} sendBtn
+ */
+function _applyAvailability(status, noticeEl, inputEl, sendBtn) {
+    const ok = Boolean(status.available);
+
+    inputEl.disabled = !ok;
+    sendBtn.disabled = !ok;
+    noticeEl.hidden = ok;
+
+    if (ok) {
+        inputEl.placeholder = 'Paste meeting notes, describe your work, or ask a question…';
+        noticeEl.textContent = '';
+        return;
+    }
+
+    // Silent disabling is the failure mode to avoid — always say why, and say
+    // what to do about it.
+    inputEl.placeholder = 'AI unavailable';
+    noticeEl.textContent = status.reason === 'offline'
+        ? `${status.message} Your conversation and staged tasks are still available.`
+        : `${status.message} Set one up in Config → AI Configuration.`;
+}
+
+/**
+ * Renders the session token counter. The board snapshot is re-sent on every
+ * message, so this is the number that tells you what the feature costs.
+ * @param {HTMLElement} usageEl
+ */
+function _renderUsage(usageEl) {
+    if (!usageEl) return;
+    const total = tokenUsage.input + tokenUsage.output;
+    if (total === 0) {
+        usageEl.textContent = '';
+        return;
+    }
+    const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+    usageEl.textContent = `last ${fmt(tokenUsage.lastInput)} in · session ${fmt(total)}`;
 }
 
 // ==========================================

@@ -92,6 +92,7 @@ import {
         taskTabs: document.querySelector('.js-taskTabs'),
         attachments: document.querySelector('.js-attachments'),
         attachmentsPanel: document.querySelector('.js-attachmentsPanel'),
+        taskDropOverlay: document.querySelector('.js-taskDropOverlay'),
         attachmentCount: document.querySelector('.js-attachmentCount'),
 
         // Attachment viewer modal
@@ -99,6 +100,7 @@ import {
         attachmentModalTitle: document.querySelector('.js-attachmentModalTitle'),
         attachmentViewer: document.querySelector('.js-attachmentViewer'),
         attachmentViewerBody: document.querySelector('.js-attachmentViewerBody'),
+        attachmentOpen: document.querySelector('.js-attachmentOpen'),
         attachmentDownload: document.querySelector('.js-attachmentDownload'),
 
         // Reports Modal (opened via sidebar config-action in future pages)

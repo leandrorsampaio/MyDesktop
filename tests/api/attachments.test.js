@@ -385,14 +385,29 @@ describe('Attachments API', () => {
             assert.strictEqual(res.status, 200);
         });
 
-        it('deletes the attachment directory when the task is deleted', async () => {
-            await upload(`/api/${TEST_PROFILE}/tasks/${taskId}/attachments`,
-                makePng(), 'image/png', 'shot.png');
+        it('deletes every attachment when the task is deleted', async () => {
+            for (const name of ['one.png', 'two.png', 'three.png']) {
+                await upload(`/api/${TEST_PROFILE}/tasks/${taskId}/attachments`,
+                    makePng(), 'image/png', name);
+            }
+            const before = await fs.readdir(path.join(ATTACHMENTS_DIR, taskId));
+            assert.strictEqual(before.length, 3);
 
             await del(`/api/${TEST_PROFILE}/tasks/${taskId}`);
 
             const exists = await fs.access(path.join(ATTACHMENTS_DIR, taskId)).then(() => true, () => false);
             assert.strictEqual(exists, false, 'attachment directory outlived its task');
+        });
+
+        it('deletes the attachment directory when a staged task is deleted', async () => {
+            const staged = await post(`/api/${TEST_PROFILE}/ai/staged`, { title: 'Throwaway proposal' });
+            await upload(`/api/${TEST_PROFILE}/tasks/${staged.body.id}/attachments`,
+                makePng(), 'image/png', 'shot.png');
+
+            await del(`/api/${TEST_PROFILE}/ai/staged/${staged.body.id}`);
+
+            const exists = await fs.access(path.join(ATTACHMENTS_DIR, staged.body.id)).then(() => true, () => false);
+            assert.strictEqual(exists, false, 'staged task directory outlived its task');
         });
 
         it('re-keys the attachment directory when a staged task is promoted', async () => {

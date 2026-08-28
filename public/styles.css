@@ -3543,46 +3543,38 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 
 .aiPage__inputActions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
+    gap: var(--space-8);
     margin-top: var(--space-8);
 }
 
-.aiPage__clearBtn {
-    font-size: var(--text-base);
+/* Clear + Send are design-system buttons (.btn --secondary --sm /
+   .btn --primary --sm). The bespoke .aiPage__clearBtn / .aiPage__sendBtn rules
+   they replaced duplicated those variants exactly, so they were removed. */
+
+/* Session token counter — the board snapshot is re-sent on every message, so
+   this is the number that shows what the feature costs. */
+.aiPage__usage {
+    margin-right: auto;
     color: var(--color-text-tertiary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-family);
-    padding: var(--space-4) 0;
-    transition: color 0.1s;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
 }
 
-.aiPage__clearBtn:hover {
-    color: var(--color-text-secondary);
-}
-
-.aiPage__sendBtn {
-    padding: 7px var(--space-20);
-    font-size: var(--text-md);
-    font-weight: var(--font-weight-semibold);
-    font-family: var(--font-family);
-    background: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-    border: none;
+/* Stated reason when the composer is disabled. Never fail silently. */
+.aiPage__notice {
+    margin-top: var(--space-8);
+    padding: var(--space-8) var(--space-12);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background-color 0.15s;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-base);
 }
 
-.aiPage__sendBtn:hover:not(:disabled) {
-    background: var(--color-accent-primary-hover);
-}
-
-.aiPage__sendBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.aiPage__notice[hidden] {
+    display: none;
 }
 
 /* ---- Tasks section (bottom 45%) ---- */
@@ -3973,15 +3965,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     gap: var(--space-12);
     flex: 1;
     min-height: var(--size-surface-lg);
-    border-radius: var(--radius-md);
-    transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Drop feedback covers the whole panel, not just the zone, so a file dragged
-   anywhere over the tab lands rather than bouncing off the gaps between items */
-.attachments.--dragOver {
-    background: rgba(var(--color-accent-primary-rgb), 0.06);
-    box-shadow: inset 0 0 0 2px var(--color-accent-primary);
 }
 
 .attachments__dropZone {
@@ -3989,7 +3972,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: var(--space-4);
+    gap: var(--space-10);
     padding: var(--space-16);
     border: 1px dashed var(--color-border);
     border-radius: var(--radius-md);
@@ -3998,10 +3981,12 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     text-align: center;
 }
 
+/* `.btn` carries no `display`, so it lands on a <label> as inline — vertical
+   padding wouldn't affect line box height. Scoped here rather than added to
+   the shared `.btn`, which would change every existing button. */
 .attachments__browse {
-    color: var(--color-accent-primary);
-    cursor: pointer;
-    text-decoration: underline;
+    display: inline-flex;
+    align-items: center;
 }
 
 .attachments__status {
@@ -4047,10 +4032,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     cursor: default;
 }
 
-a.attachments__preview {
-    text-decoration: none;
-}
-
 .attachments__thumb {
     width: 100%;
     height: 100%;
@@ -4061,7 +4042,7 @@ a.attachments__preview {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: var(--space-8);
+    padding: var(--space-8) var(--space-8) var(--space-4);
     min-width: 0;
 }
 
@@ -4078,29 +4059,55 @@ a.attachments__preview {
     font-size: var(--text-sm);
 }
 
+/* Three labelled buttons don't fit a 140px tile, so the actions are
+   design-system icon buttons: `.btn --ghost --icon --sm`. */
 .attachments__actions {
     display: flex;
-    gap: var(--space-8);
-    padding: 0 var(--space-8) var(--space-8);
+    gap: var(--space-4);
+    padding: 0 var(--space-6) var(--space-6);
 }
 
-.attachments__action {
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--color-accent-primary);
-    font-family: inherit;
-    font-size: var(--text-sm);
+.attachments__actions .btn {
     text-decoration: none;
-    cursor: pointer;
 }
 
-.attachments__action:hover {
-    text-decoration: underline;
-}
-
-.attachments__action.--remove {
+.attachments__actions .btn.--removeAction:hover {
+    background-color: rgba(var(--color-accent-error-rgb), 0.12);
     color: var(--color-accent-error);
+}
+
+/* ==========================================
+   Task modal — drag-a-file-anywhere overlay
+   ========================================== */
+.taskForm {
+    position: relative;
+}
+
+.taskForm__dropOverlay {
+    position: absolute;
+    inset: calc(-1 * var(--space-12));
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-12);
+    border: 2px dashed var(--color-accent-primary);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--color-accent-primary) 8%, var(--color-bg-primary));
+    color: var(--color-accent-primary);
+    /* The overlay is feedback, not a target: letting it swallow pointer events
+       would make the drop land on it instead of the modal's own handler. */
+    pointer-events: none;
+}
+
+.taskForm__dropOverlay[hidden] {
+    display: none;
+}
+
+.taskForm__dropOverlayText {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* ==========================================
@@ -4146,14 +4153,9 @@ a.attachments__preview {
     font-size: var(--text-base);
 }
 
-.attachmentViewer__download {
+/* `.btn` on an <a> needs an explicit display — see .attachments__browse */
+.attachmentViewer .btn {
     display: inline-flex;
     align-items: center;
-    color: var(--color-accent-primary);
-    font-size: var(--text-base);
     text-decoration: none;
-}
-
-.attachmentViewer__download:hover {
-    text-decoration: underline;
 }

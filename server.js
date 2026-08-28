@@ -902,7 +902,8 @@ async function resolveProfile(req, res, next) {
             notes: path.join(profileDir, 'notes.json'),
             epics: path.join(profileDir, 'epics.json'),
             categories: path.join(profileDir, 'categories.json'),
-            aiStaged: path.join(profileDir, 'ai-staged-tasks.json')
+            aiStaged: path.join(profileDir, 'ai-staged-tasks.json'),
+            aiConversation: path.join(profileDir, 'ai-conversation.json')
         };
         req.profile = profile;
         // Columns sorted by order for consistent use across handlers
@@ -2343,7 +2344,7 @@ app.delete('/api/:profile/categories/:id', resolveProfile, writeLimiter, async (
  */
 const PROPOSE_TASKS_TOOL = {
     name: 'propose_tasks',
-    description: 'Propose structured task objects extracted from the conversation. Call this in every response, even with an empty tasks array when no tasks are being created.',
+    description: 'Propose structured task objects extracted from the conversation. Call this ONLY when the user is asking for tasks to be created. Do not call it when answering a question about the existing board — a question deserves an answer, not tickets.',
     input_schema: {
         type: 'object',
         properties: {
@@ -2368,7 +2369,129 @@ const PROPOSE_TASKS_TOOL = {
 };
 
 /**
- * Builds the AI system prompt, injecting current profile epics and categories.
+ * Renders the board as a compact text table for the system prompt.
+ *
+ * Deliberately NOT raw JSON: field names repeated on every card cost several
+ * times what a positional table does, and the snapshot is re-sent on every
+ * message — it is the single largest cost driver in the feature.
+ *
+ * Scope is the live board plus backlog titles. Descriptions, activity logs,
+ * attachments and the archive are excluded; they are loaded on demand rather
+ * than carried in every request.
+ *
+ * @param {Array<Object>} columns - Profile columns, sorted by order
+ * @param {Array<Object>} tasks - Active tasks
+ * @param {Map<string, Object>} epicById
+ * @param {Map<number, Object>} categoryById
+ * @returns {string}
+ */
+function buildBoardSnapshot(columns, tasks, epicById, categoryById) {
+    const now = Date.now();
+    const dayseSince = (iso) => {
+        const t = Date.parse(iso || '');
+        return isNaN(t) ? '?' : Math.round((now - t) / 86400000);
+    };
+
+    // Only columns that actually exist can hold board cards. Tasks whose status
+    // matches no column are legacy rows (see AI_ASSISTANT.md § Known issue) —
+    // excluding them keeps the snapshot honest and small.
+    const columnById = new Map(columns.map(c => [c.id, c]));
+    const lines = [];
+
+    for (const col of columns) {
+        const colTasks = tasks
+            .filter(t => t.status === col.id)
+            .sort((a, b) => a.position - b.position);
+
+        lines.push(`## ${col.name}${col.isBacklog ? ' (backlog)' : ''} — ${colTasks.length}`);
+        if (colTasks.length === 0) {
+            lines.push('  (empty)');
+            continue;
+        }
+        for (const t of colTasks) {
+            const bits = [];
+            if (t.epicId && epicById.has(t.epicId)) bits.push(epicById.get(t.epicId).name);
+            const cat = categoryById.get(t.category);
+            if (cat && t.category !== DEFAULT_CATEGORY_ID) bits.push(cat.name);
+            if (t.points) bits.push(`${t.points}pt`);
+            if (t.priority) bits.push('priority');
+            if (t.deadline) bits.push(`due ${String(t.deadline).split('T')[0]}`);
+            bits.push(`${dayseSince(t.createdDate)}d old`);
+            if (Array.isArray(t.attachments) && t.attachments.length) {
+                bits.push(`${t.attachments.length} file${t.attachments.length === 1 ? '' : 's'}`);
+            }
+            lines.push(`  [${t.id}] ${t.title} — ${bits.join(', ')}`);
+        }
+    }
+
+    const orphaned = tasks.filter(t => !columnById.has(t.status)).length;
+    if (orphaned > 0) {
+        lines.push(`\n(${orphaned} legacy tasks with no matching column are excluded from this view.)`);
+    }
+
+    return lines.join('\n');
+}
+
+/**
+ * Builds the AI system prompt, injecting the current board plus the profile's
+ * epics and categories.
+ * @param {Object} ctx
+ * @param {Array<Object>} ctx.epics
+ * @param {Array<Object>} ctx.categories
+ * @param {Array<Object>} ctx.columns
+ * @param {Array<Object>} ctx.tasks
+ * @returns {string}
+ */
+function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks }) {
+    const epicById = new Map(epics.map(e => [e.id, e]));
+    const categoryById = new Map(categories.map(c => [c.id, c]));
+
+    const epicsStr = epics.length
+        ? epics.map(e => {
+            // Stakeholder/cadence are optional (added for epic-as-context work);
+            // absent on older profiles, so only rendered when present.
+            const ctxBits = [e.stakeholder && `stakeholder: ${e.stakeholder}`,
+                             e.cadence && `cadence: ${e.cadence}`].filter(Boolean);
+            const suffix = ctxBits.length ? ` — ${ctxBits.join(', ')}` : '';
+            return `  - "${e.name}" (id: "${e.id}")${suffix}`;
+        }).join('\n')
+        : '  (none defined yet)';
+
+    const catsStr = categories.map(c => `  - "${c.name}" (id: ${c.id})`).join('\n');
+    const columnsStr = columns.map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' [backlog]' : ''}`).join('\n');
+
+    return `You are a task management assistant built into a personal kanban tool. You are talking to the single person who owns this board.
+
+You can see their whole board below. Use it. When they ask a question about their work, answer it from the board — do not invent tasks, and do not turn every conversation into ticket creation.
+
+Only call propose_tasks() when the user actually wants tasks created (e.g. they paste meeting notes, or ask you to add something). A question about existing work deserves a direct answer.
+
+Be concise. This is a personal tool, not a report generator.
+
+# Columns
+${columnsStr}
+
+# Epics
+${epicsStr}
+
+# Categories
+${catsStr}
+
+# Current board
+${buildBoardSnapshot(columns, tasks, epicById, categoryById)}
+
+# Task creation rules (when proposing tasks)
+- Set priority: true only for explicitly urgent or blocking tasks
+- Set epicId to the matching epic's id only if the content clearly relates to it
+- Set deadline only if a specific date or time is explicitly stated (ISO 8601)
+- Keep titles concise and actionable (verb + object, e.g. "Update API documentation")
+- Use description for details that do not fit in the title
+- Default category is ${DEFAULT_CATEGORY_ID} (Non categorized) when nothing matches`;
+}
+
+/**
+ * Legacy prompt builder — board-free. Kept for the quick-capture classification
+ * path, which only needs epics and categories and should stay cheap.
  * @param {Array<Object>} epics
  * @param {Array<Object>} categories
  * @returns {string}
@@ -2385,7 +2508,7 @@ function buildAiSystemPrompt(epics, categories) {
     return `You are a task management assistant for a personal kanban tool.
 Your job is to help the user extract actionable tasks from unstructured text (meeting notes, emails, brain dumps) and have natural conversations about their work.
 
-Always call propose_tasks() in your response — even when no tasks are being created (pass an empty array in that case).
+Call propose_tasks() with the tasks you extract. If the text contains nothing actionable, pass an empty array.
 
 Available epics for this profile:
 ${epicsStr}
@@ -2458,6 +2581,11 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
     const data = await response.json();
     let narrative = '';
     let rawTasks = [];
+    // Surfaced to the client so the cost of the board snapshot stays visible.
+    const usage = {
+        inputTokens:  data.usage?.input_tokens  ?? null,
+        outputTokens: data.usage?.output_tokens ?? null
+    };
 
     for (const block of (data.content || [])) {
         if (block.type === 'text') {
@@ -2471,7 +2599,7 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative: narrative.trim(), rawTasks };
+    return { narrative: narrative.trim(), rawTasks, usage };
 }
 
 /**
@@ -2513,6 +2641,10 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
     const message = data.choices?.[0]?.message;
     let narrative = (message?.content || '').trim();
     let rawTasks = [];
+    const usage = {
+        inputTokens:  data.usage?.prompt_tokens     ?? null,
+        outputTokens: data.usage?.completion_tokens ?? null
+    };
 
     if (message?.tool_calls?.length) {
         try {
@@ -2527,7 +2659,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative, rawTasks };
+    return { narrative, rawTasks, usage };
 }
 
 /**
@@ -2756,6 +2888,98 @@ app.put('/api/ai/config/active', writeLimiter, async (req, res) => {
 // ===========================================
 
 // GET all staged tasks
+/**
+ * Maximum conversation turns kept on disk. Old turns fall off the front — the
+ * history is a convenience across restarts, not an archive.
+ */
+const MAX_CONVERSATION_MESSAGES = 200;
+
+// GET whether the AI is usable right now. The client calls this before
+// enabling chat so an unconfigured or key-less setup degrades to an
+// explanation instead of a failed request. Never returns the key itself.
+app.get('/api/ai/availability', async (req, res) => {
+    try {
+        const aiConfig = migrateAiConfig(await readJsonFile(AI_CONFIG_FILE, {}));
+        const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
+
+        if (!cfg) {
+            return res.json({ available: false, reason: 'no-config', message: 'No AI configuration yet.' });
+        }
+        const providerMeta = AI_PROVIDERS[cfg.provider];
+        if (!providerMeta) {
+            return res.json({ available: false, reason: 'unknown-provider', message: 'This configuration names an unknown provider.' });
+        }
+        if (providerMeta.requiresKey && !cfg.apiKey) {
+            return res.json({ available: false, reason: 'no-key', message: `No API key set for ${providerMeta.label}.` });
+        }
+        res.json({ available: true, provider: cfg.provider, model: cfg.model, name: cfg.name });
+    } catch (error) {
+        // Availability itself must never throw the UI into an error state
+        res.json({ available: false, reason: 'error', message: 'Could not read AI configuration.' });
+    }
+});
+
+// Test-only: return the system prompt that would be sent for this profile, so
+// the board snapshot can be asserted without a live AI provider. Registered
+// only when RATE_LIMIT_DISABLED=1, matching /api/_test/reset-rate-limit.
+if (RATE_LIMIT_DISABLED) {
+    app.get('/api/:profile/ai/_test/prompt', resolveProfile, async (req, res) => {
+        try {
+            const [epics, categories, tasks] = await Promise.all([
+                readJsonFile(req.profileFiles.epics, []),
+                readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
+                readJsonFile(req.profileFiles.tasks, [])
+            ]);
+            const prompt = buildAiSystemPromptWithBoard({
+                epics, categories, columns: req.columns, tasks
+            });
+            res.json({ prompt, chars: prompt.length });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to build prompt' });
+        }
+    });
+}
+
+// GET the persisted conversation
+app.get('/api/:profile/ai/conversation', resolveProfile, async (req, res) => {
+    try {
+        const stored = await readJsonFile(req.profileFiles.aiConversation, { messages: [] });
+        res.json({ messages: Array.isArray(stored.messages) ? stored.messages : [] });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read conversation' });
+    }
+});
+
+// PUT replace the persisted conversation. The client owns the transcript and
+// writes it back after each exchange; the server only bounds its length.
+app.put('/api/:profile/ai/conversation', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const { messages } = req.body;
+        if (!Array.isArray(messages)) {
+            return res.status(400).json({ error: 'messages must be an array' });
+        }
+        const clean = messages
+            .filter(m => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
+            .slice(-MAX_CONVERSATION_MESSAGES)
+            .map(m => ({ role: m.role, content: m.content, at: m.at || new Date().toISOString() }));
+
+        await writeJsonFile(req.profileFiles.aiConversation, { messages: clean });
+        res.json({ ok: true, count: clean.length });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save conversation' });
+    }
+});
+
+// DELETE clear the conversation
+app.delete('/api/:profile/ai/conversation', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        await writeJsonFile(req.profileFiles.aiConversation, { messages: [] });
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to clear conversation' });
+    }
+});
+
 app.get('/api/:profile/ai/staged', resolveProfile, async (req, res) => {
     try {
         const staged = await readJsonFile(req.profileFiles.aiStaged, []);
@@ -2985,18 +3209,24 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
         const apiKey  = cfg.apiKey || '';
         const baseUrl = cfg.provider === 'custom' ? cfg.baseUrl : providerMeta.baseUrl;
 
-        // Build system prompt with current profile epics + categories
-        const epics      = await readJsonFile(req.profileFiles.epics, []);
-        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
-        const systemPrompt = buildAiSystemPrompt(epics, categories);
+        // Build system prompt with the live board plus epics + categories.
+        // The board is what turns this from a text parser into an assistant.
+        const [epics, categories, tasks] = await Promise.all([
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
+            readJsonFile(req.profileFiles.tasks, [])
+        ]);
+        const systemPrompt = buildAiSystemPromptWithBoard({
+            epics, categories, columns: req.columns, tasks
+        });
 
         // Call the AI
-        let narrative, rawTasks;
+        let narrative, rawTasks, usage;
         try {
             if (providerMeta.format === 'anthropic') {
-                ({ narrative, rawTasks } = await callAnthropicAi(apiKey, model, systemPrompt, messages));
+                ({ narrative, rawTasks, usage } = await callAnthropicAi(apiKey, model, systemPrompt, messages));
             } else {
-                ({ narrative, rawTasks } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages));
+                ({ narrative, rawTasks, usage } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages));
             }
         } catch (aiErr) {
             return res.status(502).json({ error: 'AI provider error: ' + aiErr.message });
@@ -3018,7 +3248,7 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
             await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
         }
 
-        res.json({ narrative, tasks: newStagedTasks });
+        res.json({ narrative, tasks: newStagedTasks, usage: usage || null });
     } catch (error) {
         res.status(500).json({ error: 'AI chat failed' });
     }

@@ -790,3 +790,55 @@ export async function deleteAttachmentApi(taskId, attachmentId) {
     });
     return parseOrThrow(response);
 }
+
+/**
+ * Reports whether the AI is usable right now — configured, known provider, key
+ * present. Callers use this to degrade gracefully instead of firing a request
+ * that is guaranteed to fail. Never returns the API key.
+ * @returns {Promise<{available: boolean, reason?: string, message?: string,
+ *                    provider?: string, model?: string, name?: string}>}
+ */
+export async function fetchAiAvailabilityApi() {
+    try {
+        const response = await fetch('/api/ai/availability');
+        if (!response.ok) throw new Error('unavailable');
+        return response.json();
+    } catch {
+        // The endpoint itself failing must not break the caller's UI —
+        // an unreachable server is just another flavour of "no AI".
+        return { available: false, reason: 'offline', message: 'Cannot reach the server.' };
+    }
+}
+
+/**
+ * Fetches the persisted conversation for the active profile.
+ * @returns {Promise<{messages: Array<{role: string, content: string, at: string}>}>}
+ */
+export async function fetchAiConversationApi() {
+    const response = await fetch(`${apiBase}/ai/conversation`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Replaces the persisted conversation. The client owns the transcript; the
+ * server only bounds its length.
+ * @param {Array<{role: string, content: string}>} messages
+ * @returns {Promise<Object>}
+ */
+export async function saveAiConversationApi(messages) {
+    const response = await fetch(`${apiBase}/ai/conversation`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Clears the persisted conversation.
+ * @returns {Promise<Object>}
+ */
+export async function clearAiConversationApi() {
+    const response = await fetch(`${apiBase}/ai/conversation`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}

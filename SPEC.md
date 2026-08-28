@@ -77,6 +77,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
 │       ├── epics.json
 │       ├── categories.json
 │       ├── ai-staged-tasks.json   # AI-proposed tasks awaiting promotion
+│       ├── ai-conversation.json   # persisted assistant transcript (max 200 turns)
 │       └── attachments/           # gitignored — {taskId}/{attachmentId}{ext}, mode 0600
 ├── tests/
 │   ├── unit/                      # utils, validation, router, archive-page, mini-server, state, filters
@@ -209,7 +210,13 @@ POST   /api/ai/config/entries                      - Create new config entry (bo
 PUT    /api/ai/config/entries/:id                  - Update a config entry; empty apiKey preserves existing key
 DELETE /api/ai/config/entries/:id                  - Delete a config entry
 PUT    /api/ai/config/active                       - Set the active config (body: { configId })
-POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[] }; rate-limited 10 req/min (body: { messages: [{role,content}] })
+GET    /api/ai/availability                        - Is the AI usable right now? { available, reason?, message?, provider?, model?, name? }.
+                                                     Always 200, never throws — the basis of graceful degradation. Key never returned.
+POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[], usage }; rate-limited 10 req/min (body: { messages: [{role,content}] }).
+                                                     The system prompt carries a compact snapshot of the live board.
+GET    /api/:profile/ai/conversation               - Get the persisted transcript ({ messages: [{role, content, at}] })
+PUT    /api/:profile/ai/conversation               - Replace the transcript (body: { messages }); non-user/assistant roles dropped, capped at 200
+DELETE /api/:profile/ai/conversation               - Clear the transcript
 GET    /api/:profile/ai/staged                     - Get all staged tasks
 POST   /api/:profile/ai/staged                     - Create staged task manually (body: StagedTask fields)
 PUT    /api/:profile/ai/staged/:id                 - Update staged task
@@ -452,7 +459,13 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 
 **Code files upload as `text/plain`.** Browsers report an empty `File.type` for most code files, which would store them as opaque binaries. `attachmentMimeFor()` in `utils.js` overrides the OS for extensions in `TEXT_ATTACHMENT_EXTENSIONS`, so a pasted snippet previews instead of only downloading. Safe: a `text/plain` response with nosniff is never executed.
 
-**UI.** The task modal's main column has a Description/Files tab strip with a count badge. Files arrive four ways: dropped on the panel, pasted anywhere in the modal (the Print Screen → Ctrl+V path), picked via *browse*, or dropped straight onto a card on the board. `kanban-column`'s drag handlers bail out when `dataTransfer.types` contains `Files`, so a file drop never draws a drop indicator or tries to move a task.
+**UI.** The task modal's main column has a Description/Files tab strip with a count badge. Files arrive four ways: **dropped anywhere on the open dialog**, pasted anywhere in the modal (the Print Screen → Ctrl+V path), picked via *Browse files*, or dropped straight onto a card on the board. The last two both auto-switch to the Files tab. `kanban-column`'s drag handlers bail out when `dataTransfer.types` contains `Files`, so a file drop never draws a drop indicator or tries to move a task.
+
+**Drop overlay.** `.taskForm__dropOverlay` covers the dialog body while files are dragged over it. Two non-obvious details: (1) `dragenter`/`dragleave` fire once per element crossed, so visibility is gated on a **depth counter**, not a boolean — a boolean flickers off whenever the pointer moves between children; a `dragend` window listener and `modal-closed` both reset it, since a drag ending outside the window never fires `drop`. (2) The overlay is `pointer-events: none` — as a real hit target it would swallow the drop it is advertising.
+
+**Buttons are the design system.** Tile actions are `.btn --ghost --icon --sm` (open in new tab / download / remove — three *labelled* buttons don't fit a 140px tile); *Browse files* is `.btn --secondary --sm`; the viewer footer is `.btn --secondary`, matching its `custom-button` Close. `.btn` carries no `display`, so the `<a>`/`<label>` cases get `display: inline-flex` scoped to the attachment blocks rather than added to the shared class.
+
+**No `loading="lazy"` on thumbnails.** The Files panel starts hidden behind the Description tab, so a lazy image never enters the viewport and never loads — every saved thumbnail rendered broken. A capture-phase `error` listener swaps any thumbnail that won't decode for the generic file icon.
 
 **Two panel modes.** Editing an existing task uploads immediately. Adding a *new* task (or cloning) has no id to attach to, so files queue in memory with object-URL previews and `flushPendingAttachments()` uploads them once the server returns a real task. A queued upload that fails is reported but never fails the save — the task was created regardless.
 
@@ -549,6 +562,30 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
+
+### AI board context (v2.46.0)
+
+The system prompt carries a **compact snapshot of the live board** — this is what turns the feature from a text-to-tickets parser into an assistant. Before this it injected only epic and category *names*; the model had never seen a task.
+
+- `buildBoardSnapshot()` renders columns and their cards as a terse text table — **never raw JSON**. Repeating field names on every card costs several times what a positional line does, and the snapshot is re-sent on **every message**, making it the feature's largest cost driver. Measured against a real 34-card board: ~1,250 tokens.
+- Scope: live board + backlog. Descriptions, activity logs, attachments and the archive are excluded, to be loaded on demand.
+- Tasks whose `status` matches no column are **excluded**, with the count disclosed to the model. Real profiles carry these from before `archived-tasks.json` existed; including them would pad every request for no benefit.
+- Epic `stakeholder` / `cadence` render into the prompt when present — optional, absent on older profiles.
+- **`propose_tasks` is no longer mandatory.** The old prompt ordered the model to call it every turn, which made conversation structurally impossible: a question got tickets instead of an answer.
+- Test-only `GET /api/:profile/ai/_test/prompt` returns the built prompt so the snapshot can be asserted without a live provider. Registered only under `RATE_LIMIT_DISABLED=1`, like `/api/_test/reset-rate-limit`.
+
+### AI graceful degradation (v2.46.0)
+
+**Contract: no AI call is ever awaited before rendering something the user asked for.** The AI is an accelerator, never a dependency. Full table in [docs/design/AI_ASSISTANT.md](docs/design/AI_ASSISTANT.md).
+
+- `GET /api/ai/availability` reports whether the AI is usable (config present, known provider, key set). It always answers `200` with a boolean and, when false, both a machine-readable `reason` and a human-readable `message`.
+- The AI page checks availability **after** it paints, never before. When unavailable the transcript and staged tasks stay fully usable; only the composer is disabled, with the reason stated inline and a pointer to Config → AI Configuration. Silent disabling is the failure mode being avoided.
+- `fetchAiAvailabilityApi()` swallows its own transport errors and returns `{ available: false, reason: 'offline' }` — an unreachable server is just another flavour of "no AI", not a broken page.
+- A failed conversation save is a warning, not an error: the exchange is already on screen, it just won't survive a reload.
+
+### AI conversation persistence (v2.46.0)
+
+Stored in `data/{alias}/ai-conversation.json`. The client owns the transcript and PUTs it back after each exchange; the server drops any role that isn't `user`/`assistant` (the client's `__thinking__` placeholder must never be replayed as a real turn) and keeps the most recent 200 messages.
 
 ### AI Assistant Page
 - **Conversation history is in-memory only** — cleared on page reload. The server is stateless per request; the client sends the full `messages` array with every chat call.

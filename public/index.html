@@ -73,6 +73,11 @@
     <modal-dialog class="js-taskModal" size="large">
         <h2 slot="title" class="taskForm__title js-taskTitle" contenteditable="true" data-placeholder="New task" spellcheck="false"></h2>
         <form class="taskForm js-taskForm">
+            <!-- Shown while files are dragged anywhere over the dialog -->
+            <div class="taskForm__dropOverlay js-taskDropOverlay" hidden aria-hidden="true">
+                <svg-icon icon="paperclip" size="28"></svg-icon>
+                <span class="taskForm__dropOverlayText">Drop to attach</span>
+            </div>
             <div class="taskForm__grid">
             <div class="taskForm__col taskForm__col--main">
             <div class="taskForm__tabs js-taskTabs" role="tablist">
@@ -174,7 +179,8 @@
             <div class="attachmentViewer__body js-attachmentViewerBody"></div>
             <div class="modal__actions">
                 <div class="modal__actionsRight">
-                    <a class="attachmentViewer__download js-attachmentDownload" href="#" download>Download</a>
+                    <a class="btn --secondary js-attachmentOpen" href="#" target="_blank" rel="noopener">Open in new tab</a>
+                    <a class="btn --secondary js-attachmentDownload" href="#" download>Download</a>
                     <custom-button label="Close" class="js-viewerClose"></custom-button>
                 </div>
             </div>

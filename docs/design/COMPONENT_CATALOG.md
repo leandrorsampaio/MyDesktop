@@ -534,7 +534,8 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 .taskForm
   .taskForm__grid
     .taskForm__col--main           ← left column
-      .taskForm__tabs              ← tab strip: Description | Files (+ count badge when >0)
+      .taskForm__dropOverlay       ← "Drop to attach" overlay, covers the body during a file drag
+    .taskForm__tabs              ← tab strip: Description | Files (+ count badge when >0)
       .taskForm__group--grow       ← [panel: description] textarea (fills column height, max 2000 chars)
       .taskForm__group--grow       ← [panel: attachments] .attachments — drop zone + file grid
     .taskForm__col--side           ← right column
@@ -564,9 +565,16 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 
 **Quick datetime buttons:** `+1h`, `+3h`, `+1d`, `Morning` (next 9am), `Next Monday` (next Monday 9am). Click sets the datetime input value.
 
-**Files tab (`.attachments`):** a dashed drop zone with a *browse* file picker, above a responsive grid of `.attachments__item` tiles (140px min). Images show a thumbnail; everything else an icon tile. Each tile carries name, size, a Download link and Remove. Files arrive by drop, by paste anywhere in the modal (which auto-switches to this tab), or via browse. The whole panel gets an inset accent outline while a file is dragged over it. In **Add / Clone** mode there is no task id yet, so tiles render dashed and read "pending" — they upload after the task is saved. The tab's count badge shows saved + pending.
+**Files tab (`.attachments`):** a dashed drop zone with a `.btn --secondary --sm` *Browse files* picker, above a responsive grid of `.attachments__item` tiles (140px min). Images show a thumbnail; everything else an icon tile. Each tile carries name, size and three `.btn --ghost --icon --sm` actions — **open in new tab**, **download**, **remove** (icon-only because three labelled buttons don't fit a 140px tile; each has `title` + `aria-label`). In **Add / Clone** mode there is no task id yet, so tiles render dashed and read "pending" — they upload after the task is saved, and only *remove* is offered. The tab's count badge shows saved + pending.
 
-**Attachment viewer (`.js-attachmentModal`):** a second modal stacked over the task modal, opened by clicking a previewable tile. Images render as `<img>`, PDFs in an iframe, text and code in a monospace `<pre>`; anything else shows a "no preview" note. Footer: Download link + Close. Closing it leaves the task modal and its Files tab intact.
+**Drop overlay (`.taskForm__dropOverlay`):** dragging files anywhere over the open dialog covers its body with a dashed accent-bordered panel — paperclip icon + "Drop to attach". Dropping while the Description tab is showing switches to Files and attaches. `pointer-events: none`, so it never swallows the drop it advertises.
+
+| State | Visual |
+|-------|--------|
+| No drag | `[hidden]` |
+| File dragged over dialog | Visible: 2px dashed accent border, accent-tinted body, accent text |
+
+**Attachment viewer (`.js-attachmentModal`):** a second modal stacked over the task modal, opened by clicking a previewable tile. Images render as `<img>`, PDFs in an iframe, text and code in a monospace `<pre>`; anything else shows a "no preview" note. Footer: *Open in new tab* and *Download* (`.btn --secondary`) beside a `custom-button` Close. Closing it leaves the task modal and its Files tab intact.
 
 ### 6.3 Management Editors (Epics, Categories, Profiles) — inline on Config page
 

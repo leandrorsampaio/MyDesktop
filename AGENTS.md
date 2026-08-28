@@ -8,7 +8,7 @@
 
 A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.45.0 (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.46.0 (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
@@ -39,6 +39,7 @@ If the task is small (typo, copy edit, a single CSS tweak), this file alone is u
 | [docs/design/DESIGN_BRIEF.md](docs/design/DESIGN_BRIEF.md) | Brief for the active design-hire engagement (dark-mode redesign). Includes current tokens. | Design work, token changes, dark mode. |
 | [docs/design/COMPONENT_CATALOG.md](docs/design/COMPONENT_CATALOG.md) | Exhaustive catalog of every UI component, state, and page layout. | Touching any component's CSS or markup. |
 | [docs/design/DESIGN_PROMPTS.md](docs/design/DESIGN_PROMPTS.md) | Prompts used with the design AI. | Only if you ARE the design AI. |
+| [docs/design/AI_ASSISTANT.md](docs/design/AI_ASSISTANT.md) | AI assistant design spec: intent, data models, degradation contract, phase plan. | Any work on the AI feature. |
 
 If a doc disagrees with the code, **the code wins** — then update the doc.
 
