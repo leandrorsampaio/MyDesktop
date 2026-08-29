@@ -451,6 +451,16 @@ Full-width page. All content rendered into `.pageView`.
 
 ### 5.3 Backlog Page (`/:alias/backlog`)
 
+Also hosts **AI staging** (v2.55.0), collapsed behind a toggle at the right of the header:
+
+| State | Visual |
+|-------|--------|
+| Nothing staged | Toggle only, no badge. Section collapsed |
+| Something staged | Count badge on the toggle; section auto-opens on load |
+| Open | Roomy paste box + *Extract tasks*, then the staged rows below (Edit / Clone / → Backlog / → Board / Delete) |
+
+Sets `--archive-col-actions: 300px` on `.aiStaging` — `ai-staged-row` carries five actions and needs a wider actions column than the backlog rows it shares layout variables with.
+
 Full-width list page.
 
 ```
@@ -497,49 +507,6 @@ Split panel layout.
 
 Deep-linkable: `/:alias/reports/:reportId`.
 
-### 5.6 AI Assistant Page (`/:alias/ai`)
-
-Vertical split layout.
-
-```
-.aiPage
-  .aiPage__chat                  ← top section (~55% height)
-    .aiPage__messages            ← scrollable message list
-      .aiPage__message--user     ← right-aligned, user bubble
-      .aiPage__message--ai       ← left-aligned, AI bubble
-      .aiPage__message--thinking ← animated dots indicator
-    .aiPage__inputArea
-      .aiPage__modelSelect       ← AI model selector dropdown
-      .aiPage__input             ← textarea, auto-grows to 120px max
-      .aiPage__inputActions      ← Clear conversation + Send buttons
-  .aiPage__staged                ← bottom section (~45% height)
-    h2 + .js-stagedCount         ← "Staged Tasks" + count badge
-    <list-header>
-    .js-stagedRows
-      <ai-staged-row> x N
-```
-
-**Chat message states:**
-- User message: right-aligned bubble
-- AI message: left-aligned bubble
-- Thinking: animated 3-dot indicator
-- Task chip: "↓ N task(s) staged" displayed inline in AI response
-
-**Input states:**
-- Default: single-line height textarea
-- Typing: auto-grows vertically (max 120px)
-- Send: disabled while waiting for AI response
-- Shift+Enter: sends message. Enter alone: newline.
-
-Actions column: 300px (5 buttons).
-
----
-
-## 6. Modals & Config-Page Editors
-
-All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px), default (680px), large (960px). All clamped with min/max.
-
-> **Note (v2.37+):** the CRUD editors in §6.3–6.7 are **no longer modals** — they render inline as sections of the Configuration page (`/:alias/config`, left tabs + right panel). Their element anatomy and visual specs below still apply to the inline versions. The only modals left in the app are the task modal (§6.2), the report viewer, and the small delete-confirmation modals (§6.8).
 
 ### 5.7 Assistant (`<assistant-dock>`)
 

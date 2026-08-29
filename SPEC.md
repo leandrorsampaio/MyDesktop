@@ -102,7 +102,7 @@ A local web-based kanban task tracker used as a browser homepage. Features: drag
     │   ├── assistant-chat.js      # Shared conversation controller (dock + AI page)
     │   ├── assistant-suggestions.js # Pure board-derived openers for the dock
     │   ├── archive-page.js        # Archive page — initArchivePage(), getCompletedDate(), sortTasks()
-    │   ├── backlog-page.js        # Backlog page — initBacklogPage()
+    │   ├── backlog-page.js        # Backlog page + AI staging — initBacklogPage()
     │   ├── reports-page.js        # Reports page — initReportsPage()
     │   ├── config-page.js         # Configuration page — initConfigPage()
     │   ├── dashboard-page.js      # Dashboard page — initDashboardPage()
@@ -253,7 +253,8 @@ POST   /api/:profile/ai/staged/:id/promote/board   - Promote to first non-backlo
 ```
 GET    /              - Redirect to default profile alias
 GET    /:alias        - Serve index.html if profile exists, else redirect
-GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, archive, reports, ai, config, design-system)
+GET    /:alias/ai     - 301 → /:alias/backlog (the AI page was removed in v2.55.0)
+GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, archive, reports, config, design-system)
 ```
 
 ---
@@ -629,6 +630,25 @@ Limits: 40 entries, 300 chars each, and a separate **4000-char prompt budget** �
 **UI:** a "What the assistant remembers" block under Config → AI Assistant. Unapproved suggestions sort to the top and render dashed — the same "not committed yet" vocabulary as pending attachments and previewed cards — with a *Remember this* button. Approved entries are labelled `yours` or `suggested` and are editable inline on blur.
 
 **Note for anyone extending the prompt:** the test-only `/ai/_test/prompt` endpoint must load exactly what the chat handler loads, or it reports a prompt the model never sees. It was briefly wrong about memory for this reason.
+
+### AI staging on the backlog page (v2.55.0)
+
+The `/:alias/ai` page was **removed**. Its three jobs went to where each belongs:
+
+| Was on the AI page | Now |
+|---|---|
+| Chat transcript | The floating assistant — same conversation, every page, context-aware |
+| Proposed changes | The board's proposal bar and preview, where you see them land |
+| Model selector | Config → AI Assistant |
+| **Staged tasks** | **The backlog page** |
+
+Staged tasks moved rather than died: a staged task is *proposed work not yet committed to*, which is what the backlog is for. It also gives the backlog a second reason to be opened, which a months-stale backlog needs.
+
+An **AI staging** toggle sits at the right of the backlog header, collapsed by default — the backlog is the page's subject, not the assistant — and auto-opens when something is already waiting, with a count badge. Inside: a roomy paste box (the one thing a 30vh floating panel is bad at) and the staged rows, with all five actions intact (Edit / Clone / → Backlog / → Board / Delete). Promoting re-reads tasks so the item appears in the list below immediately.
+
+The old URL 301-redirects to `/:alias/backlog`. Unknown pages fall back to the board, so without the redirect an old bookmark would land there silently.
+
+The rail's lightning icon and the `g i` chord are gone; the assistant is the floating button.
 
 ### Assistant panel (v2.51.0, reworked v2.54.0)
 

@@ -27,7 +27,6 @@ const GO_PAGES = {
     l: 'backlog',
     a: 'archive',
     r: 'reports',
-    i: 'ai',
     c: 'config'
 };
 

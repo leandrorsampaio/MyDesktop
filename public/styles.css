@@ -1243,7 +1243,6 @@ body {
     overflow-y: auto;
 }
 
-
 .reportsList__deleteBtn {
     background: none;
     border: none;
@@ -1262,7 +1261,6 @@ body {
     color: var(--color-accent-error);
     background-color: rgba(var(--color-accent-error-rgb),0.1);
 }
-
 
 /* ==========================================
    Block: reportDetail
@@ -1483,7 +1481,6 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
-
 .checklistEditor__items {
     display: flex;
     flex-direction: column;
@@ -1685,7 +1682,6 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
-
 .epicsEditor__form {
     margin-bottom: var(--space-24);
     padding: var(--space-20);
@@ -1872,7 +1868,6 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
-
 .categoriesEditor__form {
     margin-bottom: var(--space-24);
     padding: var(--space-20);
@@ -1991,7 +1986,6 @@ body {
 .profilesEditor {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
-
 
 .profilesEditor__form {
     margin-bottom: var(--space-24);
@@ -2202,7 +2196,6 @@ body {
 .boardConfigEditor {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
-
 
 .boardConfigEditor__form {
     margin-bottom: var(--space-24);
@@ -2642,6 +2635,11 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     align-items: baseline;
     gap: var(--space-12);
     margin-bottom: var(--space-20);
+}
+
+/* Pushes the AI staging toggle to the right end of the header row */
+.backlogPage__header .js-stagingToggle {
+    margin-left: auto;
 }
 
 .backlogPage__title {
@@ -3445,98 +3443,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 }
 
-/* ==========================================
-   Block: aiPage
-   ========================================== */
-
-/* Override list-header/ai-staged-row column widths for the AI page context */
-.aiPage {
-    --archive-col-actions: 300px;
-}
-
-.aiPage {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 65px);
-    overflow: hidden;
-    width: 100%;
-}
-
-/* ---- Chat section (top 55%) ---- */
-.aiPage__chat {
-    flex: 0 0 55%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
-}
-
-.aiPage__messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-16) var(--space-24);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-12);
-}
-
-/* ---- Message bubbles ---- */
-.aiPage__message {
-    max-width: 75%;
-    padding: var(--space-10) 14px;
-    border-radius: var(--radius-lg);
-    font-size: var(--text-lg);
-    line-height: 1.55;
-    word-break: break-word;
-    white-space: pre-wrap;
-}
-
-.aiPage__message--user {
-    align-self: flex-end;
-    background: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-    border-bottom-right-radius: var(--radius-sm);
-}
-
-.aiPage__message--ai {
-    align-self: flex-start;
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
-    border-bottom-left-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-}
-
-/* ---- Thinking indicator (animated dots) ---- */
-.aiPage__message--thinking {
-    align-self: flex-start;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-lg);
-    border-bottom-left-radius: var(--radius-sm);
-    padding: var(--space-12) 18px;
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-.aiPage__message--thinking span {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-text-tertiary);
-    animation: aiThinkingDot 1.2s ease-in-out infinite;
-}
-
-.aiPage__message--thinking span:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.aiPage__message--thinking span:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
 @keyframes aiThinkingDot {
 
     0%,
@@ -3552,131 +3458,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 }
 
-/* ---- Task chip inline in AI message ---- */
-.aiPage__taskChip {
-    display: inline-block;
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-accent-primary);
-    background: rgba(var(--color-accent-primary-rgb),0.1);
-    border: 1px solid rgba(var(--color-accent-primary-rgb),0.25);
-    border-radius: 10px;
-    padding: var(--space-2) var(--space-8);
-    align-self: flex-start;
-}
-
-/* ---- Input area ---- */
-.aiPage__inputArea {
-    flex-shrink: 0;
-    padding: var(--space-12) var(--space-24);
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
-}
-
-.aiPage__input {
-    width: 100%;
-    resize: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-8) var(--space-12);
-    font-family: var(--font-family);
-    font-size: var(--text-lg);
-    color: var(--color-text-primary);
-    background: var(--color-bg-primary);
-    max-height: var(--size-surface-sm);
-    overflow-y: auto;
-    outline: none;
-    transition: border-color 0.15s;
-    line-height: 1.5;
-}
-
-.aiPage__input:focus {
-    border-color: var(--color-accent-primary);
-}
-
-.aiPage__inputActions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: var(--space-8);
-    margin-top: var(--space-8);
-}
-
-/* Clear + Send are design-system buttons (.btn --secondary --sm /
-   .btn --primary --sm). The bespoke .aiPage__clearBtn / .aiPage__sendBtn rules
-   they replaced duplicated those variants exactly, so they were removed. */
-
-/* Session token counter — the board snapshot is re-sent on every message, so
-   this is the number that shows what the feature costs. */
-.aiPage__usage {
-    margin-right: auto;
-    color: var(--color-text-tertiary);
-    font-size: var(--text-sm);
-    font-variant-numeric: tabular-nums;
-}
-
-/* Stated reason when the composer is disabled. Never fail silently. */
-.aiPage__notice {
-    margin-top: var(--space-8);
-    padding: var(--space-8) var(--space-12);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-secondary);
-    color: var(--color-text-secondary);
-    font-size: var(--text-base);
-}
-
-.aiPage__notice[hidden] {
-    display: none;
-}
-
-/* ---- Tasks section (bottom 45%) ---- */
-.aiPage__tasks {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--color-bg-secondary);
-}
-
-.aiPage__tasksHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-10) var(--space-24);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
-    flex-shrink: 0;
-}
-
-.aiPage__tasksTitle {
-    font-size: var(--text-md);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    margin: 0;
-}
-
-.aiPage__count {
-    font-size: var(--text-base);
-    color: var(--color-text-tertiary);
-}
-
-.aiPage__tableWrap {
-    flex: 1;
-    overflow-y: auto;
-}
-
-.aiPage__emptyState {
-    padding: var(--space-32) var(--space-24);
-    text-align: center;
-    font-size: var(--text-lg);
-    color: var(--color-text-tertiary);
-}
-
-.aiPage__rows {
-    /* rows container — no additional styling needed */
-}
-
 /* ==========================================
    Block: aiConfig (AI Configuration modal)
    ========================================== */
@@ -3686,7 +3467,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     flex-direction: column;
     gap: var(--space-16);
 }
-
 
 .aiConfig__group {
     display: flex;
@@ -3872,40 +3652,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 
 .aiConfig__backBtn:hover {
     color: var(--color-text-primary);
-}
-
-/* AI page model selector bar */
-.aiPage__modelBar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-    padding: var(--space-6) var(--space-12);
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-secondary);
-}
-
-.aiPage__modelLabel {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-secondary);
-    white-space: nowrap;
-}
-
-.aiPage__modelSelect {
-    font-size: var(--text-md);
-    font-family: var(--font-family);
-    color: var(--color-text-primary);
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 3px var(--space-6);
-    outline: none;
-    flex: 1;
-    min-width: 0;
-}
-
-.aiPage__modelSelect:focus {
-    border-color: var(--color-accent-primary);
 }
 /* ==========================================
    Keyboard Shortcuts Help Modal
@@ -4268,36 +4014,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 }
 
 /* ==========================================
-   AI page — proposed changes
-   ========================================== */
-.aiPage__proposals {
-    display: flex;
-    flex-direction: column;
-    max-height: 34%;
-    overflow: hidden;
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-secondary);
-}
-
-/* Hidden entirely when the buffer is empty — an empty review list is not
-   information worth taking up space in a split layout. */
-.aiPage__proposals[hidden] {
-    display: none;
-}
-
-.aiPage__proposalActions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-}
-
-.aiPage__proposalRows {
-    flex: 1;
-    overflow-y: auto;
-    background: var(--color-bg-primary);
-}
-
-/* ==========================================
    Proposal bar / board preview mode
    ========================================== */
 .proposalBar {
@@ -4437,4 +4153,99 @@ body.--previewing .column__archiveBtn {
 .memoryEditor__deleteBtn:hover {
     background: rgba(var(--color-accent-error-rgb), 0.12);
     color: var(--color-accent-error);
+}
+
+/* ==========================================
+   AI staging (backlog page)
+   ==========================================
+   Staged tasks are proposed work that hasn't been committed to — which is
+   what the backlog is for, so the two live together. Collapsed by default:
+   the backlog is the page's subject, not the assistant. */
+.aiStaging {
+    /* ai-staged-row carries five actions, so it needs a wider actions column
+       than the archive/backlog rows it shares its layout variables with.
+       This override used to live on the AI page. */
+    --archive-col-actions: 300px;
+
+    margin-bottom: var(--space-24);
+    padding: var(--space-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+}
+
+.aiStaging[hidden] {
+    display: none;
+}
+
+/* Roomy on purpose — this exists for the one thing the floating assistant is
+   bad at: pasting a long transcript. */
+.aiStaging__input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 72px;
+    padding: var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-md);
+    resize: vertical;
+}
+
+.aiStaging__input:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+}
+
+.aiStaging__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    margin-top: var(--space-8);
+}
+
+.aiStaging__hint {
+    flex: 1;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+}
+
+.aiStaging__rows {
+    margin-top: var(--space-12);
+}
+
+.aiStaging__rows:empty {
+    display: none;
+}
+
+.aiStaging__empty {
+    margin-top: var(--space-12);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+}
+
+.aiStaging__empty[hidden] {
+    display: none;
+}
+
+/* Count of what is waiting, on the toggle itself */
+.backlogPage__stagedBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    margin-left: var(--space-6);
+    padding: 0 var(--space-4);
+    border-radius: 8px;
+    background: var(--color-accent-primary);
+    color: var(--color-text-on-accent);
+    font-size: var(--text-sm);
+    line-height: 1;
+}
+
+.backlogPage__stagedBadge[hidden] {
+    display: none;
 }

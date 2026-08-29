@@ -4591,6 +4591,16 @@ app.get('/', async (req, res) => {
 
 // Sub-page URLs: /:alias/dashboard, /:alias/backlog, /:alias/archive, /:alias/reports, /:alias/ai
 // Serves the same app shell as /:alias — client-side JS reads pathname to render the correct view.
+/**
+ * The AI page was removed in v2.55.0 — chat moved to the floating assistant
+ * and staging moved onto the backlog page. Old links and bookmarks would
+ * otherwise land silently on the board (unknown pages fall back to it), so
+ * they are pointed at where the feature actually went.
+ */
+app.get('/:alias/ai', (req, res) => {
+    res.redirect(301, `/${req.params.alias}/backlog`);
+});
+
 app.get('/:alias/:page', async (req, res) => {
     const { alias } = req.params;
 

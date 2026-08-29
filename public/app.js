@@ -1486,12 +1486,6 @@ import {
                         console.error('Reports page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load reports page');
                     });
-                } else if (page === 'ai') {
-                    const { initAiPage } = await import('./js/ai-page.js');
-                    initAiPage(elements.pageView, { elements }).catch(err => {
-                        console.error('AI page error:', err);
-                        if (elements.toaster) elements.toaster.error('Failed to load AI page');
-                    });
                 } else if (page === 'config') {
                     const { initConfigPage } = await import('./js/config-page.js');
                     initConfigPage(elements.pageView, { elements }).catch(err => {
