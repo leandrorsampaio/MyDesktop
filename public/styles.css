@@ -22,10 +22,6 @@
     --color-accent-info: #6b7280;
 
     /* Extra solid accents — button modifiers, stars, strong/text variants */
-    --color-accent-clone: #5758BB;
-    --color-accent-clone-hover: #4A4AA8;
-    --color-accent-backlog: #636E72;
-    --color-accent-backlog-hover: #535c60;
     --color-accent-error-strong: #dc2626;   /* delete:hover, urgent deadline/label text */
     --color-accent-warning-text: #b45309;   /* warning text on a light warning tint */
     --color-accent-gold: #E8B923;           /* favourite / default star */
@@ -65,6 +61,16 @@
     --shadow-md: 0 4px 12px rgba(var(--color-shadow-rgb), 0.1);
     --shadow-lg: 0 20px 60px rgba(var(--color-shadow-rgb), 0.15);
     --shadow-focus: 0 0 0 3px rgba(var(--color-accent-primary-rgb), 0.12);
+
+    /* === Control heights ===
+       Buttons size themselves by padding while inputs add a 1px border on top,
+       so a button and a field with identical padding end up ~2px apart — which
+       is exactly why they never lined up. Both now take an explicit height from
+       this scale instead, which makes alignment a property of the token rather
+       than of arithmetic. */
+    --control-height-sm: 28px;
+    --control-height-md: 36px;
+    --control-height-lg: 44px;
 
     /* === Board Layout === */
     --column-min-width: 280px;
@@ -180,10 +186,6 @@
     --color-accent-gold: #f0c948;
 
     /* Button modifiers */
-    --color-accent-clone: #6d6ec9;
-    --color-accent-clone-hover: #8284d6;
-    --color-accent-backlog: #6b757a;
-    --color-accent-backlog-hover: #7c868b;
 
     /* Overlay + inverse + epic rendering for dark surfaces */
     --color-overlay: rgba(0, 0, 0, 0.6);
@@ -536,6 +538,21 @@ body {
     padding: var(--space-20);
 }
 
+/* The checklist is as tall as its items; notes take everything left over, so
+   the panel has no dead space under it. The component itself carries
+   `flex: 1 1 auto; min-height: 0` (see notes-widget.css); this keeps the
+   section chrome from capping it. */
+notes-widget.sidebar__section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* The checklist stays exactly as tall as its contents. */
+daily-checklist.sidebar__section {
+    flex: 0 0 auto;
+}
+
 .sidebar__section.--hidden {
     display: none;
 }
@@ -806,12 +823,18 @@ body {
 }
 
 .btn {
-    padding: var(--space-10) var(--space-20);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: var(--control-height-md);
+    padding: 0 var(--space-20);
     border: none;
     border-radius: var(--radius-md);
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
     font-family: inherit;
+    white-space: nowrap;
     cursor: pointer;
     transition: background-color 0.15s, transform 0.15s;
 }
@@ -900,13 +923,48 @@ body {
 
 /* Sizes (md is the default carried by `.btn` itself) */
 .btn.--sm {
-    padding: var(--space-6) var(--space-12);
+    height: var(--control-height-sm);
+    padding: 0 var(--space-12);
     font-size: var(--text-sm);
 }
 
 .btn.--lg {
-    padding: var(--space-12) var(--space-24);
+    height: var(--control-height-lg);
+    padding: 0 var(--space-24);
     font-size: var(--text-xl);
+}
+
+/* ==========================================
+   Form controls — same scale as the buttons
+   ==========================================
+   Single-line controls only: a textarea sizes to its content and must keep
+   doing so. Listed explicitly rather than blanket-matching `input`, so a
+   checkbox or radio is never given a 36px box. */
+.field,
+.memoryEditor__input,
+.epicsEditor__nameInput,
+.epicsEditor__contextField input,
+.aiStaging__addInput,
+.configPage__input,
+.configPage__panel input[type="text"],
+.configPage__panel input[type="number"],
+.configPage__panel select {
+    box-sizing: border-box;
+    height: var(--control-height-md);
+    padding: 0 var(--space-12);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-lg);
+}
+
+.field.--sm,
+.configPage__panel input.--sm {
+    height: var(--control-height-sm);
+    padding: 0 var(--space-8);
+    font-size: var(--text-md);
 }
 
 /* Shape modifiers */
@@ -1697,7 +1755,7 @@ body {
 
 .epicsEditor__nameInput {
     flex: 1;
-    padding: var(--space-10) 14px;
+    /* height/padding/border come from the shared control-size rule */
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background-color: var(--color-bg-primary);
@@ -1752,16 +1810,29 @@ body {
 
 .epicsEditor__itemMain {
     display: flex;
-    align-items: center;
+    /* The name column is taller than the controls beside it (input + alias),
+       so align to the top and let the row's own height follow the name. */
+    align-items: flex-start;
     gap: var(--space-12);
 }
 
+/* The colour dot centres against the name input rather than the whole
+   two-line column. */
+.epicsEditor__itemMain .epicsEditor__itemColor {
+    margin-top: calc((var(--control-height-md) - 24px) / 2);
+}
+
 /* Stakeholder / cadence / expectations — what makes an epic a silo rather
-   than a label. Wraps to one column on narrow viewports. */
+   than a label. Wraps to one column on narrow viewports.
+
+   Indented by the colour dot plus its gap so these fields line up with the
+   name input above them, rather than starting flush against the card edge
+   while the name starts 36px in — which read as crooked. */
 .epicsEditor__itemContext {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-8) var(--space-12);
+    margin-left: calc(24px + var(--space-12));
     padding-top: var(--space-10);
     border-top: 1px solid var(--color-border);
 }
@@ -1786,13 +1857,7 @@ body {
 
 .epicsEditor__contextField input {
     width: 100%;
-    padding: var(--space-6) var(--space-8);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    font-family: inherit;
-    font-size: var(--text-md);
+    /* height/padding/border come from the shared control-size rule */
 }
 
 @media (max-width: 720px) {
@@ -1833,6 +1898,8 @@ body {
     box-shadow: var(--shadow-focus);
 }
 
+/* Sits under the name input, indented to match that input's inner padding
+   so the two read as one column. */
 .epicsEditor__itemAlias {
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
@@ -1844,8 +1911,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    flex-shrink: 0;
+    width: var(--control-height-md);
+    height: var(--control-height-md);
     background: rgba(var(--color-accent-error-rgb),0.1);
     border: none;
     border-radius: 10px;
@@ -4007,9 +4075,9 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     color: var(--color-accent-primary);
 }
 
-/* The ceiling. Dashed to say "this is the end of the scale" — anything bigger
-   is a split, not a larger number, so there is deliberately no 21. */
-.taskForm__pointPill.--ceiling span {
+/* The "too big to size" value, shown as ∞. Dashed because it is a prompt to
+   split rather than an estimate. */
+.taskForm__pointPill.--infinite span {
     border-style: dashed;
 }
 
@@ -4074,13 +4142,7 @@ body.--previewing .column__archiveBtn {
 
 .memoryEditor__input {
     flex: 1;
-    padding: var(--space-8) var(--space-10);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    font-family: inherit;
-    font-size: var(--text-md);
+    /* height/padding/border come from the shared control-size rule */
 }
 
 .memoryEditor__list {
@@ -4329,4 +4391,74 @@ body.--previewing .column__archiveBtn {
 
 .reportSummary__silo--attention .reportSummary__siloName {
     color: var(--color-accent-warning-text, var(--color-accent-warning));
+}
+
+/* ==========================================
+   Task modal — spacing and collapsed schedule
+   ========================================== */
+
+/* The priority toggle is the first thing in the right column and was sitting
+   flush against the dialog's top edge. */
+.taskForm__col--side > .taskForm__group:first-child {
+    margin-top: var(--space-4);
+}
+
+/* Schedule collapses: it is the least-used section and was taking most of the
+   column's height while almost always empty. */
+.taskForm__scheduleSection {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-16);
+}
+
+.taskForm__scheduleSummary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+}
+
+.taskForm__scheduleSummary::-webkit-details-marker {
+    display: none;
+}
+
+/* A caret that turns, rather than the browser's default triangle */
+.taskForm__scheduleSummary::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.taskForm__scheduleSection[open] .taskForm__scheduleSummary::before {
+    transform: rotate(90deg);
+}
+
+/* When a date IS set, say so on the collapsed summary — otherwise collapsing
+   would hide the fact that the task is scheduled at all. */
+.taskForm__scheduleHint {
+    color: var(--color-accent-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.taskForm__scheduleSection[open] .taskForm__scheduleRow {
+    margin-top: var(--space-16);
+}
+
+/* ---- Activity tab ---- */
+.taskForm__logEmpty {
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-md);
+}
+
+.taskForm__logEmpty[hidden] {
+    display: none;
 }

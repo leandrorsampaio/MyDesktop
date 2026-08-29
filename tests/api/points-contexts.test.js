@@ -24,7 +24,7 @@ const TASKS_FILE = path.join(PROFILE_DIR, 'tasks.json');
 const EPICS_FILE = path.join(PROFILE_DIR, 'epics.json');
 
 /** Mirrors server.js STORY_POINTS. */
-const STORY_POINTS = [1, 2, 3, 5, 8, 13];
+const STORY_POINTS = [1, 2, 3, 5, 8, 13, 21, 34, 100];
 
 function makeRequest(method, urlPath, body = null) {
     return new Promise((resolve, reject) => {
@@ -101,17 +101,21 @@ describe('Story points & epic contexts', () => {
         });
 
         it('rejects a value off the scale', async () => {
-            for (const bad of [4, 7, 21, 0, -1, 1.5]) {
+            for (const bad of [4, 7, 55, 99, 0, -1, 1.5]) {
                 const res = await post(`/api/${TEST_PROFILE}/tasks`, { title: 'Bad', points: bad });
                 assert.strictEqual(res.status, 400, `points ${bad} was accepted`);
             }
         });
 
-        it('rejects 21 specifically — the scale stops at 13 by design', async () => {
-            // Anything bigger than the ceiling is a split, not a larger number.
-            const res = await post(`/api/${TEST_PROFILE}/tasks`, { title: 'Too big', points: 21 });
+        it('tops out at 100, the "too big to size" value', async () => {
+            // 100 stands for infinity: a prompt to split, not an estimate.
+            // Nothing above it exists, so nothing above it is accepted.
+            const ok = await post(`/api/${TEST_PROFILE}/tasks`, { title: 'Unsizable', points: 100 });
+            assert.strictEqual(ok.status, 201);
+
+            const res = await post(`/api/${TEST_PROFILE}/tasks`, { title: 'Beyond', points: 200 });
             assert.strictEqual(res.status, 400);
-            assert.match(res.body.error, /1, 2, 3, 5, 8, 13/);
+            assert.match(res.body.error, /1, 2, 3, 5, 8, 13, 21, 34, 100/);
         });
 
         it('updates and clears via PUT', async () => {

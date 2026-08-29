@@ -513,9 +513,9 @@ Deep-linkable: `/:alias/reports/:reportId`.
 A permanent **AI** button, bottom-left of every page, that grows a panel out of itself on click.
 
 ```
-:host                          ← position: fixed, bottom-left, z-index 1500
-  .assistant__launcher         ← always visible pill: lightning + "AI" + pending badge
-  .assistant__panel            ← 30vh (min 260 / max 50vh), anchored above the launcher
+:host                          ← position: fixed, bottom-RIGHT, z-index 1500
+  .assistant__launcher         ← 56px circle, bolt icon only, pending badge on the corner
+  .assistant__panel            ← clamp(420px, 50vw, 1200px) x 50vh, anchored above the launcher
     .assistant__header         ← the resolved context + clear + close
     .assistant__messages       ← transcript, or the board-derived empty state
     .assistant__notice         ← stated reason when the composer is disabled
@@ -526,7 +526,7 @@ A permanent **AI** button, bottom-left of every page, that grows a panel out of 
 | State | Visual |
 |-------|--------|
 | Closed | Just the launcher pill. No layout space reserved |
-| Opening | Scales from `bottom left` over 180ms — it comes *out of* the button. Inside `prefers-reduced-motion: no-preference` |
+| Opening | Scales from `bottom right` over 180ms — it comes *out of* the button. Inside `prefers-reduced-motion: no-preference` |
 | Open | Panel in the bottom band only; the top half of the screen is never covered |
 | Over a modal | Painted above it (1500 vs 1000). Toasts stay above both |
 | Context: board/page | Header reads "About the board", "About the archive" |
@@ -560,6 +560,12 @@ Global one-line capture bar. Present on every page, opened with `c`. **Not a mod
 | Classified | Chip disappears; the card may gain an epic, category and move column |
 
 Positioned at 18vh rather than centred: capture is a passing action and should not read as a dialog demanding a decision.
+
+### 6.04 Control sizes
+
+Every button, single-line field, picker and select takes its height from one scale — `--control-height-sm/md/lg` = 28/36/44px. Buttons used to size by padding while fields added a 1px border on top, which is why they never lined up.
+
+**A button placed beside a field uses the same size.** A `--sm` button next to a default field is the mismatch this scale exists to prevent.
 
 ### 6.05 Report Summary (in the report viewer)
 
@@ -608,7 +614,7 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
   .taskForm__grid
     .taskForm__col--main           ← left column
       .taskForm__dropOverlay       ← "Drop to attach" overlay, covers the body during a file drag
-    .taskForm__tabs              ← tab strip: Description | Files (+ count badge when >0)
+    .taskForm__tabs              ← tab strip: Description | Files (+ count) | Activity (hidden when a task has no log)
       .taskForm__group--grow       ← [panel: description] textarea (fills column height, max 2000 chars)
       .taskForm__group--grow       ← [panel: attachments] .attachments — drop zone + file grid
     .taskForm__col--side           ← right column
@@ -616,7 +622,7 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
       .taskForm__pointsSelector    ← story point pills (1/2/3/5/8/13); toggleable — click the selected value again to clear. The 13 pill is dashed: it is the ceiling, and there is deliberately no 21
       .taskForm__epicSelector      ← clickable epic pills using the task-card epic-bar colour standard (tinted bg + epic-colour label via color-mix); dimmed when unselected, full opacity when selected (no border); toggleable — click the selected epic again to clear it (no "No epic" pill)
       .taskForm__categorySelector  ← Pill-style radio buttons (one per category, grid layout)
-      .taskForm__scheduleSection   ← Deadline section
+      .taskForm__scheduleSection   ← <details>, collapsed by default; its summary names a set deadline so collapsing cannot hide one
         .taskForm__scheduleRow     ← datetime input + quick buttons (+1h, +3h, +1d, Morning, Next Monday)
         .taskForm__timeHint        ← calculated "in X hours/days" text
       .taskForm__scheduleSection   ← Snooze section (same layout as deadline)
@@ -629,9 +635,9 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 
 | Mode | Title | Buttons (left to right) |
 |------|-------|------------------------|
-| Add | "Add Task" | Cancel, Save (blue) |
-| Edit | "Edit Task" | Cancel, Clone (indigo), Backlog (slate, hidden if task is already in backlog), Update (blue), Delete (red) |
-| Clone | "Add Task" | Cancel, Save (blue) — form pre-filled from source task, title prefixed with "(Clone) " |
+| Add | "Add Task" | Save (primary) |
+| Edit | "Edit Task" | Clone (secondary), Backlog (secondary, hidden if already in backlog), Update (primary), Delete (danger). **No Cancel** — the ✕ already closes, and two controls doing one job crowded the row |
+| Clone | "Add Task" | Save (primary) — form pre-filled from source task, title prefixed with "(Clone) " |
 
 **Category selector:** Grid of pill-shaped radio buttons. Each shows icon + category name. Selected pill has accent bg. Category 1 included but badge hidden on cards.
 

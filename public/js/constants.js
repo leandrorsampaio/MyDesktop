@@ -211,20 +211,24 @@ export const TEXT_ATTACHMENT_EXTENSIONS = [
  *
  * Source of truth: server.js STORY_POINTS
  */
-export const STORY_POINTS = [1, 2, 3, 5, 8, 13];
+export const STORY_POINTS = [1, 2, 3, 5, 8, 13, 21, 34, 100];
 
 /** Human-readable meaning of each point value, shown as a tooltip. */
 export const STORY_POINT_LABELS = {
-    1:  'Do it now — minutes',
-    2:  'Under an hour',
-    3:  'Half a day',
-    5:  'A day',
-    8:  'Approaching too big',
-    13: 'One to two days — the ceiling'
+    1:   'Do it now — minutes',
+    2:   'Under an hour',
+    3:   'Half a day',
+    5:   'A day',
+    8:   'Approaching too big',
+    13:  'One to two days',
+    21:  'Several days',
+    34:  'A week or more',
+    100: 'Too big to size — split it'
 };
 
 /**
- * Largest value on the scale. Anything bigger is a split, not a number —
- * the UI says so rather than offering a 21.
+ * The "infinity" value: too big to estimate, and a prompt to split rather
+ * than a size. Rendered as ∞ in the UI, stored as 100 so it needs no special
+ * casing in sorting or validation.
  */
-export const STORY_POINTS_CEILING = 13;
+export const STORY_POINTS_INFINITE = 100;

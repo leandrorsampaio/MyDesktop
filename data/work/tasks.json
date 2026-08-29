@@ -5143,29 +5143,5 @@
     "createdDate": "2026-08-28T12:44:01.652Z",
     "deadline": null,
     "snoozeUntil": null
-  },
-  {
-    "id": "mtdex0bx0ng7bgmed",
-    "title": "New taskasdsadasd",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 8,
-    "log": [],
-    "createdDate": "2026-08-28T20:36:52.845Z",
-    "deadline": null,
-    "snoozeUntil": null,
-    "attachments": [
-      {
-        "id": "mtdex0c81nwka36ox",
-        "name": "Screenshot 2026-08-28 at 00.31.53.png",
-        "mime": "image/png",
-        "ext": ".png",
-        "size": 1115167,
-        "uploadedAt": "2026-08-28T20:36:52.857Z"
-      }
-    ]
   }
 ]

@@ -188,6 +188,27 @@ describe('Report periods', () => {
             assert.deepStrictEqual(res.body.activity.completed.map(t => t.title), ['Finished today']);
         });
 
+        it('floors the period in UTC, matching how log dates are written', async () => {
+            // Log entries are `new Date().toISOString().split('T')[0]` — UTC
+            // dates. Flooring the period in *local* time mixes the two: east of
+            // Greenwich, local midnight is later than the UTC midnight it is
+            // compared against, so work logged that day is ruled out. It bites
+            // hardest in the small hours, when the local and UTC dates differ.
+            await generate();
+
+            // Deliberately the UTC date, exactly as the app records it.
+            const utcToday = new Date().toISOString().split('T')[0];
+            await seedTasks([task({
+                title: 'Logged with a UTC date',
+                status: 'done',
+                log: [{ date: utcToday, action: "Moved from 'To Do' to 'Done'" }]
+            })]);
+
+            const res = await generate();
+            assert.deepStrictEqual(res.body.activity.completed.map(t => t.title),
+                ['Logged with a UTC date']);
+        });
+
         it('does not count open work as completed', async () => {
             await seedTasks([
                 task({ title: 'Still going', status: 'inprogress', log: [{ date: logDate(1), action: 'Moved' }] })

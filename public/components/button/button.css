@@ -3,12 +3,19 @@
 }
 
 .btn {
-    padding: var(--space-10) var(--space-20);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    /* Same control-height scale as .btn and text fields in styles.css */
+    height: var(--control-height-md, 36px);
+    padding: 0 var(--space-20);
     border: none;
     border-radius: var(--radius-md, 6px);
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
     font-family: inherit;
+    white-space: nowrap;
     cursor: pointer;
     transition: all 0.15s;
 }
@@ -23,39 +30,28 @@
     background-color: var(--color-border, #e5e7eb);
 }
 
+/* Secondary: a neutral action that is not the primary one. Replaces the
+   bespoke "clone" and "backlog" colours, which were outside the palette —
+   colour in this app means epic and priority, not button identity. */
+.btn[modifier="secondary"] {
+    background-color: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-secondary, #4b5563);
+}
+
+.btn[modifier="secondary"]:hover {
+    background-color: var(--color-border, #e5e7eb);
+    color: var(--color-text-primary, #111827);
+}
+
 /* Save/Update Style */
 .btn[modifier="save"] {
     background-color: var(--color-accent-primary, #1a73e8);
     color: var(--color-text-on-accent);
-    padding: var(--space-10) var(--space-24);
+    padding: 0 var(--space-24);
 }
 
 .btn[modifier="save"]:hover {
     background-color: var(--color-accent-primary-hover, #1557b0);
-    transform: translateY(-1px);
-}
-
-/* Clone Style */
-.btn[modifier="clone"] {
-    background-color: var(--color-accent-clone);
-    color: var(--color-text-on-accent);
-    padding: var(--space-10) 18px;
-}
-
-.btn[modifier="clone"]:hover {
-    background-color: var(--color-accent-clone-hover);
-    transform: translateY(-1px);
-}
-
-/* Backlog Style */
-.btn[modifier="backlog"] {
-    background-color: var(--color-accent-backlog);
-    color: var(--color-text-on-accent);
-    padding: var(--space-10) 18px;
-}
-
-.btn[modifier="backlog"]:hover {
-    background-color: var(--color-accent-backlog-hover);
     transform: translateY(-1px);
 }
 

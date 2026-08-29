@@ -3,7 +3,7 @@
  * Handles all modal dialogs: task add/edit, reports, archived tasks, checklist, and confirmations.
  */
 
-import { DEFAULT_CATEGORY_ID, DEFAULT_TASK_TITLE, STORY_POINTS, STORY_POINT_LABELS, STORY_POINTS_CEILING } from './constants.js';
+import { DEFAULT_CATEGORY_ID, DEFAULT_TASK_TITLE, STORY_POINTS, STORY_POINT_LABELS, STORY_POINTS_INFINITE } from './constants.js';
 import { escapeHtml, formatRelativeTime, toDatetimeLocalValue } from './utils.js';
 import { tasks, editingTaskId, setEditingTaskId, createTasksSnapshot, restoreTasksFromSnapshot, replaceTask, generateTempId, removeTask, epics, setEpics, categories, setCategories, profiles, setProfiles, activeProfile, columns } from './state.js';
 import {
@@ -78,10 +78,8 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, 
     const rightActions = document.createElement('div');
     rightActions.className = 'modal__actionsRight';
 
-    const cancelBtn = document.createElement('custom-button');
-    cancelBtn.setAttribute('label', 'Cancel');
-    cancelBtn.addEventListener('click', () => elements.taskModal.close());
-
+    // No Cancel button: the ✕ in the header already closes the dialog, and two
+    // controls doing the same thing crowds a row that has four already.
     const saveBtn = document.createElement('custom-button');
     saveBtn.setAttribute('label', isEditing ? 'Update' : 'Save');
     saveBtn.setAttribute('modifier', 'save');
@@ -92,12 +90,10 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, 
 
     elements.taskForm.onsubmit = onSubmit;
 
-    rightActions.appendChild(cancelBtn);
-
     if (isEditing && onClone) {
         const cloneBtn = document.createElement('custom-button');
         cloneBtn.setAttribute('label', 'Clone');
-        cloneBtn.setAttribute('modifier', 'clone');
+        cloneBtn.setAttribute('modifier', 'secondary');
         cloneBtn.addEventListener('click', onClone);
         rightActions.appendChild(cloneBtn);
     }
@@ -105,7 +101,7 @@ export function renderTaskModalActions(isEditing, elements, onDelete, onSubmit, 
     if (isEditing && onSendToBacklog) {
         const backlogBtn = document.createElement('custom-button');
         backlogBtn.setAttribute('label', 'Backlog');
-        backlogBtn.setAttribute('modifier', 'backlog');
+        backlogBtn.setAttribute('modifier', 'secondary');
         backlogBtn.addEventListener('click', onSendToBacklog);
         rightActions.appendChild(backlogBtn);
     }
@@ -187,6 +183,56 @@ export function focusTaskTitle(titleEl, selectAll = false) {
 }
 
 /**
+ * Reflects the schedule state onto the collapsed summary, and opens the
+ * section when something is set.
+ *
+ * Collapsing a section that holds a live deadline would hide the fact that
+ * the task is scheduled at all, which is worse than the space it saves.
+ *
+ * @param {Object} elements - DOM element references
+ */
+export function syncScheduleSummary(elements) {
+    const details = document.querySelector('.js-scheduleDetails');
+    const hint = document.querySelector('.js-scheduleSummaryHint');
+    if (!details || !hint) return;
+
+    const hasDeadline = Boolean(elements.taskDeadline?.value);
+    const hasSnooze = Boolean(elements.taskSnooze?.value);
+
+    const parts = [];
+    if (hasDeadline) parts.push(`due ${elements.taskDeadline.value.split('T')[0]}`);
+    if (hasSnooze) parts.push('snoozed');
+    hint.textContent = parts.join(' · ');
+
+    details.open = hasDeadline || hasSnooze;
+}
+
+/**
+ * Renders the Activity tab — the task's log, newest first.
+ *
+ * Lives in a tab beside Files rather than in the right-hand column, where it
+ * used to compete with the fields for space.
+ *
+ * @param {Object} elements - DOM element references
+ * @param {Array<{date: string, action: string}>} [log]
+ */
+export function renderTaskLog(elements, log) {
+    const entries = Array.isArray(log) ? log : [];
+    const tab = document.querySelector('.js-activityTab');
+
+    if (elements.taskLogList) {
+        elements.taskLogList.innerHTML = [...entries].reverse().map(entry => `
+            <li><span class="taskForm__logDate">${escapeHtml(entry.date || '')}</span> ${escapeHtml(entry.action || '')}</li>
+        `).join('');
+    }
+    const empty = document.querySelector('.js-taskLogEmpty');
+    if (empty) empty.hidden = entries.length > 0;
+    // A task with no history yet has nothing to show, so the tab stays out of
+    // the way rather than offering an empty panel.
+    if (tab) tab.hidden = entries.length === 0;
+}
+
+/**
  * Opens the add task modal.
  * @param {Object} elements - DOM element references
  * @param {Function} onDelete - Callback for delete button
@@ -200,7 +246,7 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     setCategorySelection(DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, '');
     renderPointsPills(elements.pointsPills, null);
-    elements.taskLogSection.style.display = 'none';
+    renderTaskLog(elements, []);
 
     elements.taskDeadline.value       = '';
     elements.taskSnooze.value         = '';
@@ -210,6 +256,8 @@ export function openAddTaskModal(elements, onDelete, onSubmit) {
     // No task id yet — files dropped or pasted here queue up and are uploaded
     // by the submit handler once the server has created the task.
     openAttachmentsFor(null, []);
+
+    syncScheduleSummary(elements);
 
     renderTaskModalActions(false, elements, onDelete, onSubmit);
 
@@ -239,15 +287,7 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
     renderEpicPills(elements.epicPills, task.epicId || '');
     renderPointsPills(elements.pointsPills, task.points ?? null);
 
-    // Render task log
-    if (task.log && task.log.length > 0) {
-        elements.taskLogSection.style.display = 'block';
-        elements.taskLogList.innerHTML = task.log.map(entry => `
-            <li><span class="taskForm__logDate">${entry.date}</span>: ${escapeHtml(entry.action)}</li>
-        `).join('');
-    } else {
-        elements.taskLogSection.style.display = 'none';
-    }
+    renderTaskLog(elements, task.log);
 
     // Deadline
     if (task.deadline) {
@@ -273,6 +313,8 @@ export function openEditModal(taskId, elements, onDelete, onSubmit, onClone, onS
     openAttachmentsFor(taskId, task.attachments || [], {
         onChange: (attachments) => { task.attachments = attachments; }
     });
+
+    syncScheduleSummary(elements);
 
     renderTaskModalActions(true, elements, onDelete, onSubmit, onClone, onSendToBacklog);
 
@@ -305,7 +347,7 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
     setCategorySelection(task.category || DEFAULT_CATEGORY_ID);
     renderEpicPills(elements.epicPills, task.epicId || '');
     renderPointsPills(elements.pointsPills, task.points ?? null);
-    elements.taskLogSection.style.display = 'none';
+    renderTaskLog(elements, []);
 
     // A clone is a brand-new task: it starts empty rather than sharing the
     // original's files, and anything added here queues until it is saved.
@@ -329,6 +371,8 @@ export function openCloneTaskModal(taskId, elements, onDelete, onSubmit) {
     }
 
     renderTaskModalActions(false, elements, onDelete, onSubmit);
+
+    syncScheduleSummary(elements);
 
     requestAnimationFrame(() => {
         elements.taskModal.open();
@@ -813,10 +857,10 @@ export function renderPointsPills(container, selectedPoints) {
     for (const value of STORY_POINTS) {
         const lbl = document.createElement('label');
         lbl.className = 'taskForm__pointPill';
-        // The ceiling carries its meaning in the tooltip: bigger than this is
-        // a split, which is the whole reason the scale stops here.
         lbl.title = STORY_POINT_LABELS[value] || '';
-        if (value === STORY_POINTS_CEILING) lbl.classList.add('--ceiling');
+        // 100 is the "too big to size" value — shown as ∞, because that is what
+        // it means. Stored as a number so sorting and validation stay simple.
+        if (value === STORY_POINTS_INFINITE) lbl.classList.add('--infinite');
 
         const radio = document.createElement('input');
         radio.type = 'radio';
@@ -825,7 +869,7 @@ export function renderPointsPills(container, selectedPoints) {
         if (Number(selectedPoints) === value) radio.checked = true;
 
         const span = document.createElement('span');
-        span.textContent = String(value);
+        span.textContent = value === STORY_POINTS_INFINITE ? '∞' : String(value);
 
         lbl.appendChild(radio);
         lbl.appendChild(span);
@@ -872,7 +916,7 @@ function _openStagedTaskForm(stagedTask, elements, titlePrefix, onSave) {
     renderEpicPills(elements.epicPills, stagedTask.epicId || '');
     renderPointsPills(elements.pointsPills, stagedTask.points ?? null);
 
-    elements.taskLogSection.style.display = 'none';
+    renderTaskLog(elements, []);
 
     if (stagedTask.deadline && !titlePrefix) {
         elements.taskDeadline.value       = toDatetimeLocalValue(new Date(stagedTask.deadline));
@@ -939,6 +983,8 @@ function _openStagedTaskForm(stagedTask, elements, titlePrefix, onSave) {
     };
 
     cancelBtn.addEventListener('click', onCancel);
+
+    syncScheduleSummary(elements);
 
     elements.taskModal.open();
     focusTaskTitle(elements.taskTitle, true);

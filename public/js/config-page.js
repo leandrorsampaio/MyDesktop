@@ -248,7 +248,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     <div class="memoryEditor">
                         <div class="memoryEditor__addRow">
                             <input type="text" class="memoryEditor__input js-cfg-memoryInput" placeholder="e.g. A 5 is one focused day for me" maxlength="300" />
-                            <button type="button" class="btn --primary --sm js-cfg-memoryAddBtn">Add</button>
+                            <button type="button" class="btn --primary js-cfg-memoryAddBtn">Add</button>
                         </div>
                         <div class="memoryEditor__list js-cfg-memoryList"></div>
                     </div>

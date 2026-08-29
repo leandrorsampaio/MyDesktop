@@ -24,11 +24,10 @@ class PageFab extends HTMLElement {
             <style>
                 :host {
                     position: fixed;
-                    /* Bottom-LEFT is the assistant launcher's spot now, and it
-                       is present on every page. The FAB moves to the right so
-                       the two never collide. */
+                    /* Bottom-RIGHT is the assistant launcher's spot, and it is
+                       present on every page, so the FAB sits on the left. */
                     bottom: 32px;
-                    right: 32px;
+                    left: 32px;
                     z-index: 100;
                 }
                 button {

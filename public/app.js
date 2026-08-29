@@ -57,7 +57,8 @@ import {
     openDeleteConfirmation,
     openConfirmDialog,
     createTaskFormSubmitHandler,
-    setQuickDateTime
+    setQuickDateTime,
+    syncScheduleSummary
 } from './js/modals.js';
 
 (function() {
@@ -102,7 +103,6 @@ import {
         taskTitle: document.querySelector('.js-taskTitle'),
         taskDescription: document.querySelector('.js-taskDescription'),
         taskPriority: document.querySelector('.js-taskPriority'),
-        taskLogSection: document.querySelector('.js-taskLogSection'),
         taskLogList: document.querySelector('.js-taskLogList'),
         taskModalActions: document.querySelector('.js-taskModalActions'),
 
@@ -1232,8 +1232,14 @@ import {
         });
 
         // Task form: manual datetime input → update hints
-        elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
-        elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
+        elements.taskDeadline.addEventListener('input', () => {
+            updateDateHint(elements.deadlineHint, elements.taskDeadline.value);
+            syncScheduleSummary(elements);
+        });
+        elements.taskSnooze.addEventListener('input', () => {
+            updateDateHint(elements.snoozeHint, elements.taskSnooze.value);
+            syncScheduleSummary(elements);
+        });
 
         // Epic and point pills are toggleable: clicking the selected one again
         // clears it (= no epic / unestimated). Radios don't natively un-check,

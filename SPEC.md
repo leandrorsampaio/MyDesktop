@@ -741,6 +741,8 @@ Reports now carry a `period` and an `activity` breakdown:
 
 **The date-only trap.** Log entries are `YYYY-MM-DD` app-wide, so a log-derived completion parses to **midnight**. Compared against an exact period start of, say, 15:20 today, everything finished earlier that day is ruled out — silently dropping a day of work from a report shown to a manager. Day-precision stamps are therefore compared against the **start of the period's day** (`taskCompletedAt` returns `{ at, precision }`). Erring toward one duplicated item at a boundary beats losing a day's work.
 
+**And that floor must be UTC.** Log dates are written as `new Date().toISOString().split('T')[0]` — UTC dates — and `Date.parse` reads them back as UTC midnight. Flooring in *local* time mixes the two: east of Greenwich local midnight is later than the UTC midnight it is compared against, so the day's work is ruled out anyway. It bites hardest in the small hours, when the local and UTC dates differ. `startOfDayUtc()`, with a regression test.
+
 ### AI report summary (v2.56.0)
 
 `POST /:profile/reports/:id/summarise` turns a report's activity into what gets read out in a one-to-one:
@@ -759,15 +761,25 @@ summary: { tldr, silos: [{ epic, stakeholder, bullets[] }], attention[], generat
 - Reports predating `activity` return `summarised: false` with a reason rather than being summarised from a snapshot.
 - **Copy as bullets** puts it on the clipboard as plain text, which is where it ends up anyway.
 
+### Control height scale (v2.57.0)
+
+`--control-height-sm / md / lg` (28 / 36 / 44px) in `:root`.
+
+Buttons sized themselves by padding while fields added a 1px border on top, so a button and a field with identical padding landed ~2px apart — which is why they never lined up. Both now take an **explicit height** from this scale, making alignment a property of the token rather than of arithmetic. `.btn`, `custom-button` and `custom-picker` all use it, as do the listed single-line text controls.
+
+Textareas are deliberately excluded: they size to content. The control list is explicit rather than a blanket `input` match, so a checkbox is never given a 36px box.
+
+**A button placed beside a field must use the same size.** A `--sm` button next to a default field is the mismatch this scale exists to prevent.
+
 ### Story points (v2.48.0)
 
-`task.points` — one of `1, 2, 3, 5, 8, 13`, or `null` for unestimated. `STORY_POINTS` in `server.js` and `constants.js` (source of truth: the server).
+`task.points` — one of `1, 2, 3, 5, 8, 13, 21, 34, 100`, or `null` for unestimated. `STORY_POINTS` in `server.js` and `constants.js` (source of truth: the server).
 
-| 1 | 2 | 3 | 5 | 8 | 13 |
-|---|---|---|---|---|---|
-| do it now — minutes | under an hour | half a day | a day | nearly too big | one to two days — the ceiling |
+| 1 | 2 | 3 | 5 | 8 | 13 | 21 | 34 | 100 |
+|---|---|---|---|---|---|---|---|---|
+| minutes | under an hour | half a day | a day | nearly too big | one to two days | several days | a week or more | **∞ — too big to size** |
 
-**There is deliberately no 21.** Anything bigger than 13 is a split, not a larger number, and splitting is the primary job points do here. The ceiling pill is dashed in the UI to say so. The server rejects any other value, including 4, 7 and 21.
+**100 stands for infinity**: not an estimate but a prompt to split. It is stored as `100` rather than a glyph so sorting and validation need no special casing, and rendered as `∞` in the pills and on the card chip. Its pill is dashed for the same reason. The server rejects anything off the scale, including 4, 7 and 55.
 
 **No velocity, burndown or sprint reporting is built on these, and none should be** — that is team ceremony, and this is a single-user tool. Points exist to answer "is this too big?" and "what fits today?".
 

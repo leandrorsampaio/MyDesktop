@@ -383,15 +383,17 @@ const DEFAULT_CATEGORY_ID = 1;
 /**
  * Valid story-point values.
  *
- * A deliberately short modified-Fibonacci scale: 1 means "do it now", 13 means
- * "one to two days" and is the ceiling. Anything bigger is not a number, it's
- * a split — which is the primary job points do in a single-user tool. There is
- * no velocity, burndown or sprint reporting built on these, and there
+ * A modified-Fibonacci scale. 1 means "do it now"; 13 is one to two days.
+ * 21 and 34 exist for work that genuinely is bigger, and **100 stands for
+ * infinity** — too big to size, and a signal to split rather than an estimate.
+ * (100 rather than an ∞ glyph so it needs no new icon and still sorts.)
+ *
+ * There is no velocity, burndown or sprint reporting built on these, and there
  * shouldn't be: that is team ceremony.
  *
  * Source of truth: /public/js/constants.js
  */
-const STORY_POINTS = [1, 2, 3, 5, 8, 13];
+const STORY_POINTS = [1, 2, 3, 5, 8, 13, 21, 34, 100];
 
 /** Longest free-text value on an epic's context fields. */
 const EPIC_CONTEXT_MAX_LENGTH = 500;
@@ -1730,10 +1732,19 @@ function taskCompletedAt(task, doneColumnIds) {
     return stamps.length ? { at: Math.max(...stamps), precision: 'day' } : null;
 }
 
-/** Start of the day containing `stamp`, in local time. */
-function startOfDay(stamp) {
+/**
+ * Start of the UTC day containing `stamp`.
+ *
+ * UTC, not local: log entries are written as `new Date().toISOString()` split
+ * at the T, so they are **UTC** dates, and `Date.parse` reads them back as UTC
+ * midnight. Flooring in local time mixes the two — east of Greenwich, local
+ * midnight is *later* than the UTC midnight it is compared against, so work
+ * logged that day is ruled out. This bites hardest in the small hours, when
+ * the local and UTC dates differ.
+ */
+function startOfDayUtc(stamp) {
     const d = new Date(stamp);
-    d.setHours(0, 0, 0, 0);
+    d.setUTCHours(0, 0, 0, 0);
     return d.getTime();
 }
 
@@ -1808,7 +1819,7 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
         // stamps are therefore measured against the start of the period's day.
         // Erring toward one duplicated item at a boundary is far better than
         // silently dropping a day of work from a report shown to a manager.
-        const periodStartDay = startOfDay(periodStart);
+        const periodStartDay = startOfDayUtc(periodStart);
         const completedInPeriod = (task) => {
             const done = taskCompletedAt(task, doneColumnIds);
             if (!done) return false;
@@ -2861,7 +2872,7 @@ const CLASSIFY_TASK_TOOL = {
             epicId:   { type: 'string',  description: 'Epic ID from the provided list, only when the note clearly belongs to it. Omit otherwise.' },
             category: { type: 'integer', description: 'Category ID from the provided list.' },
             priority: { type: 'boolean', description: 'true only when the note says it is urgent or blocking.' },
-            points:   { type: 'integer', description: 'Rough size: 1 = minutes, 2 = under an hour, 3 = half a day, 5 = a day, 8 = nearly too big, 13 = one to two days (the ceiling). Omit when the note gives no idea of size.' },
+            points:   { type: 'integer', description: 'Rough size: 1 = minutes, 2 = under an hour, 3 = half a day, 5 = a day, 8 = nearly too big, 13 = one to two days, 21/34 = bigger, 100 = too big to size (split it). Omit when the note gives no idea of size.' },
             columnId: { type: 'string',  description: 'Destination column ID from the provided list.' },
             deadline: { type: 'string',  description: 'ISO 8601 datetime, only when a specific date or time is stated. Omit otherwise.' }
         },
@@ -3161,7 +3172,7 @@ const PROPOSE_CHANGES_TOOL = {
                         priority:    { type: 'boolean', description: 'update only — new priority flag' },
                         category:    { type: 'integer', description: 'update only — new category ID' },
                         epicId:      { type: 'string',  description: 'update only — new epic ID, or empty string to clear' },
-                        points:      { type: 'integer', description: 'update only — new size (1, 2, 3, 5, 8, 13)' },
+                        points:      { type: 'integer', description: 'update only — new size (1, 2, 3, 5, 8, 13, 21, 34, 100)' },
                         deadline:    { type: 'string',  description: 'update only — ISO 8601 datetime, or empty string to clear' },
                         newStatus:   { type: 'string',  description: 'move only — destination column ID' }
                     },
@@ -3218,7 +3229,7 @@ Rules:
 - epicId: only when the note clearly belongs to that epic. Omit when unsure.
 - category: pick the closest; default ${DEFAULT_CATEGORY_ID} when nothing matches.
 - priority: true only when urgency is explicit.
-- points: one of ${STORY_POINTS.join(', ')}. 13 is the ceiling — anything that sounds bigger should be captured as-is and split later, not given a bigger number. Omit when the note gives no sense of size.
+- points: one of ${STORY_POINTS.join(', ')}. 13 is one to two days; 100 means too big to size and should be split. Omit when the note gives no sense of size.
 - columnId: the default working column unless the note clearly says it is for later (then the backlog) or for today.
 - deadline: only when a specific date or time is stated.`;
 }

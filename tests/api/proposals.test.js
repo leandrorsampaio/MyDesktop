@@ -177,7 +177,7 @@ describe('AI proposals API', () => {
         it('re-validates at apply time, not just when stored', async () => {
             // A hand-edited or outdated payload must be caught by the same
             // validators the ordinary routes use.
-            await seedProposals([proposal({ id: 'p1', taskId, payload: { points: 21 } })]);
+            await seedProposals([proposal({ id: 'p1', taskId, payload: { points: 55 } })]);
             const res = await post(`/api/${TEST_PROFILE}/ai/proposals/p1/apply`);
 
             assert.strictEqual(res.status, 409);

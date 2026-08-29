@@ -102,12 +102,19 @@
                 <button type="button" class="taskForm__tab js-taskTab" data-tab="attachments" role="tab" aria-selected="false">
                     Files<span class="taskForm__tabCount js-attachmentCount" hidden>0</span>
                 </button>
+                <button type="button" class="taskForm__tab js-taskTab js-activityTab" data-tab="activity" role="tab" aria-selected="false">
+                    Activity
+                </button>
             </div>
             <div class="taskForm__group taskForm__group--grow js-taskPanel" data-panel="description">
                 <textarea class="js-taskDescription" placeholder="Enter task description"></textarea>
             </div>
             <div class="taskForm__group taskForm__group--grow js-taskPanel js-attachmentsPanel" data-panel="attachments" hidden>
                 <div class="attachments js-attachments"></div>
+            </div>
+            <div class="taskForm__group taskForm__group--grow js-taskPanel" data-panel="activity" hidden>
+                <ul class="taskForm__logList js-taskLogList"></ul>
+                <p class="taskForm__logEmpty js-taskLogEmpty">Nothing logged yet.</p>
             </div>
             </div>
             <div class="taskForm__col taskForm__col--side">
@@ -140,9 +147,12 @@
                 </div>
             </div>
 
-            <!-- Schedule: Deadline + Snooze -->
-            <div class="taskForm__group taskForm__scheduleSection">
-                <label>Schedule</label>
+            <!-- Schedule: Deadline + Snooze. Collapsed by default — it is the
+                 least-used section and was taking most of the column. -->
+            <details class="taskForm__group taskForm__scheduleSection js-scheduleDetails">
+                <summary class="taskForm__scheduleSummary">
+                    Schedule<span class="taskForm__scheduleHint js-scheduleSummaryHint"></span>
+                </summary>
 
                 <!-- Deadline -->
                 <div class="taskForm__scheduleRow">
@@ -177,15 +187,8 @@
                     </div>
                     <div class="taskForm__timeHint js-snoozeHint"></div>
                 </div>
-            </div>
+            </details>
 
-            <!-- Task Log (only shown in edit mode) -->
-            <div class="taskForm__group taskForm__log js-taskLogSection" style="display: none;">
-                <label>Activity Log</label>
-                <ul class="taskForm__logList js-taskLogList">
-                    <!-- Log entries will be rendered here -->
-                </ul>
-            </div>
             </div><!-- /taskForm__col--side -->
             </div><!-- /taskForm__grid -->
 

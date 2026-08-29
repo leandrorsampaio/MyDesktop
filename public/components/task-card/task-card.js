@@ -165,8 +165,9 @@ class TaskCard extends HTMLElement {
             const points = this.dataset.points;
             pointsEl.style.display = points ? 'inline-flex' : 'none';
             if (points) {
-                pointsEl.textContent = points;
-                pointsEl.title = `${points} points`;
+                // 100 is the "too big to size" value — see STORY_POINTS_INFINITE.
+                pointsEl.textContent = points === '100' ? '∞' : points;
+                pointsEl.title = points === '100' ? 'Too big to size — split it' : `${points} points`;
             }
         }
 
