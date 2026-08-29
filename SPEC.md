@@ -186,7 +186,8 @@ GET    /api/:profile/tasks/:id/attachments/:attachmentId   - Stream the file. `?
                                            a save dialog for an otherwise-inline type.
 DELETE /api/:profile/tasks/:id/attachments/:attachmentId   - Remove the record and the file
 POST   /api/:profile/tasks/archive       - Archive all done tasks
-POST   /api/:profile/reports/generate    - Generate report snapshot
+POST   /api/:profile/reports/generate    - Generate a report for the period since the last one
+POST   /api/:profile/reports/:id/summarise - Write the AI summary. Always 200; { summarised, reason?, report }
 GET    /api/:profile/archived            - Get archived tasks
 POST   /api/:profile/archived/:id/restore - Restore task to first column (adds log entry)
 GET    /api/:profile/export              - Full profile data export: one JSON bundle
@@ -384,6 +385,17 @@ Staged tasks live in `data/{alias}/ai-staged-tasks.json`. They are **not** real 
   generatedDate: string, // ISO datetime
   weekNumber: number,
   dateRange: string,
+  period: {              // v2.56.0 — absent on older reports
+    start, end,          // ISO datetimes
+    since: 'previous-report' | 'default-window'
+  },
+  activity: {            // v2.56.0 — what actually happened in the period
+    completed, advanced, created, attention   // arrays of report tasks
+  },
+  summary: {             // v2.56.0 — optional, written by the AI
+    tldr, silos: [{ epic, stakeholder, bullets[] }], attention[],
+    generatedAt, model
+  },
   content: {
     // NEW format (v2.26+): one entry per column in order
     columns: [{ columnId, columnName, tasks }],
@@ -398,7 +410,7 @@ Staged tasks live in `data/{alias}/ai-staged-tasks.json`. They are **not** real 
 }
 ```
 
-Each task in report content: `{ id, title, description, category, categoryName, epicId }`.
+Each task in report content: `{ id, title, description, category, categoryName, epicId, epicName, points }`.
 `renderReportView` detects which format is present (`content.columns` array vs legacy keys) and renders accordingly.
 
 ---
@@ -713,6 +725,39 @@ A stale proposal returns `409 { discarded: true }` and is removed: re-offering s
 Capped at `MAX_PROPOSALS` (50). An unbounded review list stops being reviewable, which defeats the point.
 
 **UI:** a `<proposal-row>` per change in a Proposed Changes section on the AI page, above Staged Tasks, hidden entirely when the buffer is empty. Each row states the verb, the task, the change in one line, and the AI's reason. `delete` is the only verb that gets colour — it is the only irreversible one.
+
+### Reports have a period (v2.56.0)
+
+A report used to be a **board snapshot** — every column as it stood. That answers "what is on my board", not "what did I do", which is the question a weekly one-to-one actually asks. Two concrete failures on real data: the Done column accumulates until you archive, so it spanned weeks rather than the period; and anything **archived** during the week was missing from the report entirely.
+
+Reports now carry a `period` and an `activity` breakdown:
+
+- **Period** runs from the previous report's `generatedDate` — literally "since we last spoke" — falling back to `DEFAULT_REPORT_PERIOD_DAYS` (7) when there is no previous report.
+- **completed** merges tasks in a `hasArchive` column with the archive, filtered by completion time.
+- **advanced / created / attention** cover moved-but-unfinished, new, and overdue-or-untouched.
+- `epicName` and `points` ride along, so a summary can group by silo even if the epic is later renamed.
+
+**Archiving now stamps `archivedDate`.** Completion used to be inferred from the last log entry, which records the last *move* — usually but not always the moment work finished.
+
+**The date-only trap.** Log entries are `YYYY-MM-DD` app-wide, so a log-derived completion parses to **midnight**. Compared against an exact period start of, say, 15:20 today, everything finished earlier that day is ruled out — silently dropping a day of work from a report shown to a manager. Day-precision stamps are therefore compared against the **start of the period's day** (`taskCompletedAt` returns `{ at, precision }`). Erring toward one duplicated item at a boundary beats losing a day's work.
+
+### AI report summary (v2.56.0)
+
+`POST /:profile/reports/:id/summarise` turns a report's activity into what gets read out in a one-to-one:
+
+```js
+summary: { tldr, silos: [{ epic, stakeholder, bullets[] }], attention[], generatedAt, model }
+```
+
+**Grouping and counting are done in code, not by the model** — deterministic, free, and not something to trust a model with. The model does the one thing code cannot: **ticket titles are not presentation bullets**. Rewriting `"ESB-767 - Shipping address not changes on order"` into `"Fixed shipping addresses not updating on orders"`, and merging several related tickets into one line, is the manual work this replaces.
+
+- Grouped **by epic**, with the epic's `stakeholder` attached — which is what makes the grouping useful in a conversation rather than merely tidy.
+- `attention[]` is for things to *raise* rather than report; a one-to-one is also where blockers get surfaced.
+- Model output is validated: silo names are matched against epics actually present in the report, so **a hallucinated silo cannot reach a document taken into a meeting**.
+- The prompt carries only the report's activity, never the board snapshot — one period, cheaper, and no invitation to discuss out-of-scope work.
+- Fired **after** generation, never as part of it: the report must appear instantly and must never fail because a model was slow or absent. Same endpoint backs the *Regenerate summary* button.
+- Reports predating `activity` return `summarised: false` with a reason rather than being summarised from a snapshot.
+- **Copy as bullets** puts it on the clipboard as plain text, which is where it ends up anyway.
 
 ### Story points (v2.48.0)
 

@@ -1052,3 +1052,17 @@ export async function sendAiChatStreamApi(messages, onDelta, context = null) {
     }
     return { ok: true, data: result };
 }
+
+/**
+ * Asks the AI to summarise a report for a one-to-one.
+ *
+ * Best effort by contract: the server answers 200 with `summarised: false`
+ * and the untouched report when the AI cannot help, so a report is never
+ * blocked on, or damaged by, a missing model.
+ * @param {string} reportId
+ * @returns {Promise<{summarised: boolean, reason?: string, report: Object}>}
+ */
+export async function summariseReportApi(reportId) {
+    const response = await fetch(`${apiBase}/reports/${reportId}/summarise`, { method: 'POST' });
+    return parseOrThrow(response);
+}

@@ -605,6 +605,8 @@ export function renderReportView(report, elements) {
                 <h3>${escapeHtml(report.title)}</h3>
             </div>
 
+            ${renderReportSummary(report)}
+
             ${columnSectionsHtml}
 
             <div class="reportDetail__section">
@@ -631,6 +633,73 @@ export function renderReportView(report, elements) {
  * @param {Array<Object>} taskList - Array of task objects to display
  * @returns {string} HTML string for the report section
  */
+/**
+ * Renders the AI summary block at the top of a report — the part that gets
+ * read out in a one-to-one, above the raw data that backs it.
+ *
+ * Three states: a written summary, a report old enough to predate period
+ * tracking, or one whose summary hasn't been written yet.
+ *
+ * @param {Object} report
+ * @returns {string} HTML
+ */
+export function renderReportSummary(report) {
+    // Reports generated before periods existed are board snapshots; there is
+    // nothing honest to summarise from them.
+    if (!report.activity) return '';
+
+    const summary = report.summary;
+    if (!summary) {
+        return `
+            <div class="reportSummary reportSummary--empty">
+                <div class="reportSummary__title">Summary</div>
+                <p class="reportSummary__hint">Not written yet.</p>
+                <button type="button" class="btn --secondary --sm js-resummariseBtn">Regenerate summary</button>
+            </div>
+        `;
+    }
+
+    const period = report.period
+        ? `${report.period.start.split('T')[0]} → ${report.period.end.split('T')[0]}`
+        : '';
+
+    const silosHtml = summary.silos.map(silo => `
+        <div class="reportSummary__silo">
+            <div class="reportSummary__siloName">
+                ${escapeHtml(silo.epic)}
+                ${silo.stakeholder ? `<span class="reportSummary__stakeholder">${escapeHtml(silo.stakeholder)}</span>` : ''}
+            </div>
+            <ul class="reportSummary__bullets">
+                ${silo.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+            </ul>
+        </div>
+    `).join('');
+
+    const attentionHtml = summary.attention?.length ? `
+        <div class="reportSummary__silo reportSummary__silo--attention">
+            <div class="reportSummary__siloName">Needs attention</div>
+            <ul class="reportSummary__bullets">
+                ${summary.attention.map(a => `<li>${escapeHtml(a)}</li>`).join('')}
+            </ul>
+        </div>
+    ` : '';
+
+    return `
+        <div class="reportSummary">
+            <div class="reportSummary__head">
+                <div class="reportSummary__title">Summary${period ? ` · ${escapeHtml(period)}` : ''}</div>
+                <div class="reportSummary__actions">
+                    <button type="button" class="btn --secondary --sm js-copyBulletsBtn">Copy as bullets</button>
+                    <button type="button" class="btn --secondary --sm js-resummariseBtn">Regenerate summary</button>
+                </div>
+            </div>
+            <p class="reportSummary__tldr">${escapeHtml(summary.tldr)}</p>
+            ${silosHtml}
+            ${attentionHtml}
+        </div>
+    `;
+}
+
 export function renderReportSection(title, taskList) {
     if (!taskList || taskList.length === 0) {
         return `

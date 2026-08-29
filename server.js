@@ -1702,6 +1702,52 @@ app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (re
 });
 
 // POST generate report (snapshot only, no archiving)
+/**
+ * When a task was finished, as an epoch ms, or null if it never was.
+ *
+ * `archivedDate` is authoritative when present (recorded at archive time).
+ * Older archived tasks predate that field, and tasks sitting in a done column
+ * have not been archived at all, so both fall back to the newest log entry —
+ * which for those is the move into the done column.
+ *
+ * @param {Object} task
+ * @param {Set<string>} doneColumnIds - Columns that count as finished
+ * @returns {number|null}
+ */
+function taskCompletedAt(task, doneColumnIds) {
+    if (task.archivedDate) {
+        const stamp = Date.parse(task.archivedDate);
+        if (!isNaN(stamp)) return { at: stamp, precision: 'exact' };
+    }
+    const isDone = task.status === 'archived' || doneColumnIds.has(task.status);
+    if (!isDone) return null;
+
+    const stamps = (task.log || [])
+        .map(entry => Date.parse(entry.date))
+        .filter(n => !isNaN(n));
+    // Log entries are `YYYY-MM-DD` across the whole app, so this can only ever
+    // be resolved to a day — see the comparison in `inPeriod`.
+    return stamps.length ? { at: Math.max(...stamps), precision: 'day' } : null;
+}
+
+/** Start of the day containing `stamp`, in local time. */
+function startOfDay(stamp) {
+    const d = new Date(stamp);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+}
+
+/** Newest activity on a task, for "did this move at all?" questions. */
+function taskLastActivityAt(task) {
+    const stamps = [task.createdDate, ...(task.log || []).map(e => e.date)]
+        .map(v => Date.parse(v))
+        .filter(n => !isNaN(n));
+    return stamps.length ? Math.max(...stamps) : 0;
+}
+
+/** Default reporting window when there is no previous report to measure from. */
+const DEFAULT_REPORT_PERIOD_DAYS = 7;
+
 app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
@@ -1714,13 +1760,20 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
         const weekNumber = getWeekNumber(now);
         const dateRange = formatDateRange(now);
 
+        // Epic names are carried into the report so a summary can group by
+        // silo later, even if the epic is renamed or deleted afterwards.
+        const epics = await readJsonFile(req.profileFiles.epics, []);
+        const epicLookup = new Map(epics.map(e => [e.id, e]));
+
         const mapTask = t => ({
             id: t.id,
             title: t.title,
             description: t.description,
             category: t.category || 1,
             categoryName: categoryLookup.get(t.category || 1) || 'Non categorized',
-            epicId: t.epicId || null
+            epicId: t.epicId || null,
+            epicName: t.epicId ? (epicLookup.get(t.epicId)?.name || null) : null,
+            points: t.points ?? null
         });
 
         // Snapshot all columns in board order, capturing current column names
@@ -1730,12 +1783,88 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
             tasks: tasks.filter(t => t.status === col.id).map(mapTask)
         }));
 
+        // ---- The reporting period ----
+        //
+        // A report used to be a board snapshot: it answered "what is on my
+        // board", not "what did I do". For a weekly catch-up the second
+        // question is the one that matters, so the report now covers the span
+        // since the previous one — which is exactly "since we last spoke".
+        const previous = reports.length
+            ? reports.reduce((a, b) => (Date.parse(a.generatedDate) > Date.parse(b.generatedDate) ? a : b))
+            : null;
+        const previousAt = previous ? Date.parse(previous.generatedDate) : NaN;
+        const usePrevious = !isNaN(previousAt);
+        const periodStart = usePrevious
+            ? previousAt
+            : now.getTime() - DEFAULT_REPORT_PERIOD_DAYS * 86400000;
+
+        const doneColumnIds = new Set(req.columns.filter(c => c.hasArchive).map(c => c.id));
+        const inPeriod = (stamp) => stamp !== null && !isNaN(stamp) && stamp >= periodStart && stamp <= now.getTime();
+
+        // A completion inferred from a log entry only has day resolution, so
+        // comparing it against an exact instant loses work: a report generated
+        // at 15:20 would rule out everything finished earlier the same day,
+        // because the log says only "2026-08-29" (i.e. midnight). Day-precision
+        // stamps are therefore measured against the start of the period's day.
+        // Erring toward one duplicated item at a boundary is far better than
+        // silently dropping a day of work from a report shown to a manager.
+        const periodStartDay = startOfDay(periodStart);
+        const completedInPeriod = (task) => {
+            const done = taskCompletedAt(task, doneColumnIds);
+            if (!done) return false;
+            const floor = done.precision === 'day' ? periodStartDay : periodStart;
+            return done.at >= floor && done.at <= now.getTime();
+        };
+
+        // Finished work lives in two places: a done column (not archived yet)
+        // and the archive. Both count, or everything archived during the week
+        // silently vanishes from the report — which is what used to happen.
+        const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
+        const completed = [...tasks, ...archivedTasks]
+            .filter(completedInPeriod)
+            .map(mapTask);
+
+        const completedIds = new Set(completed.map(t => t.id));
+        const openTasks = tasks.filter(t =>
+            !completedIds.has(t.id) &&
+            req.columns.some(c => c.id === t.status) &&
+            !doneColumnIds.has(t.status)
+        );
+
+        const activity = {
+            completed,
+            // Moved during the period but not finished — the "in flight" story.
+            advanced: openTasks
+                .filter(t => (t.log || []).some(e => {
+                    const at = Date.parse(e.date);   // day precision, as above
+                    return !isNaN(at) && at >= periodStartDay && at <= now.getTime();
+                }))
+                .map(mapTask),
+            created: openTasks
+                .filter(t => inPeriod(Date.parse(t.createdDate)))
+                .map(mapTask),
+            // Things worth raising rather than reporting: overdue, or open and
+            // untouched for the whole period.
+            attention: openTasks
+                .filter(t =>
+                    (t.deadline && Date.parse(t.deadline) < now.getTime()) ||
+                    taskLastActivityAt(t) < periodStartDay
+                )
+                .map(mapTask)
+        };
+
         const report = {
             id: generateId(),
             title: `Week ${weekNumber} (${dateRange})`,
             generatedDate: now.toISOString(),
             weekNumber,
             dateRange,
+            period: {
+                start: new Date(periodStart).toISOString(),
+                end: now.toISOString(),
+                since: usePrevious ? 'previous-report' : 'default-window'
+            },
+            activity,
             content: {
                 columns: columnsSnapshot
             },
@@ -1782,10 +1911,16 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
         // Filtering by `t.status !== 'done'` after the loop would keep them (status
         // is now 'archived'), and hardcoding 'done' breaks archive from other columns.
         const archivedIds = new Set(doneTasks.map(t => t.id));
+        const archivedAt = new Date().toISOString();
         for (const task of doneTasks) {
             task.status = 'archived';
             // Store category name so it persists even if category is later deleted
             task.categoryName = categoryLookup.get(task.category || 1) || 'Non categorized';
+            // When it left the board. Reports need a completion timestamp, and
+            // inferring one from the last log entry is guesswork — that entry
+            // records the last *move*, which is usually but not always the
+            // moment the work finished.
+            task.archivedDate = archivedAt;
             archivedTasks.push(task);
         }
 
@@ -1900,6 +2035,99 @@ app.post('/api/:profile/archived/:id/restore', resolveProfile, writeLimiter, asy
     } catch (error) {
         console.error('Restore error:', error);
         res.status(500).json({ error: 'Failed to restore task' });
+    }
+});
+
+/**
+ * POST write (or rewrite) a report's AI summary.
+ *
+ * Separate from generation on purpose: a report must appear instantly and
+ * must never fail because a model was slow or absent. The client fires this
+ * afterwards, and the same endpoint backs the Regenerate button — the first
+ * phrasing is not always the one you want to put in front of your manager.
+ *
+ * Always answers 200: `{ summarised: false, reason }` when the AI cannot
+ * help, with the report untouched.
+ */
+app.post('/api/:profile/reports/:id/summarise', resolveProfile, aiLimiter, async (req, res) => {
+    try {
+        const reports = await readJsonFile(req.profileFiles.reports, []);
+        const report = reports.find(r => r.id === req.params.id);
+        if (!report) return res.status(404).json({ error: 'Report not found' });
+
+        if (!report.activity) {
+            // Reports generated before v2.56.0 are board snapshots with no
+            // period, so there is nothing honest to summarise.
+            return res.status(200).json({
+                summarised: false,
+                reason: 'This report predates period tracking. Generate a new one to summarise it.',
+                report
+            });
+        }
+
+        const resolved = await resolveActiveAiConfig();
+        if (!resolved.ok) {
+            return res.status(200).json({ summarised: false, reason: resolved.error, report });
+        }
+
+        const [epics, memories] = await Promise.all([
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.aiMemory, [])
+        ]);
+
+        const systemPrompt = buildReportSummaryPrompt(report, epics, memories);
+        const messages = [{ role: 'user', content: 'Summarise this period for my one-to-one.' }];
+
+        let call;
+        try {
+            call = resolved.providerMeta.format === 'anthropic'
+                ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt, messages, [WRITE_REPORT_SUMMARY_TOOL])
+                : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt, messages, [WRITE_REPORT_SUMMARY_TOOL]);
+        } catch (aiErr) {
+            return res.status(200).json({ summarised: false, reason: aiErr.message, report });
+        }
+
+        const input = call.toolCalls.find(c => c.name === WRITE_REPORT_SUMMARY_TOOL.name)?.input;
+        if (!input || typeof input.tldr !== 'string') {
+            return res.status(200).json({ summarised: false, reason: 'The model returned no summary', report });
+        }
+
+        // Model output is advisory: epic names are matched against the ones
+        // actually in the report, so a hallucinated silo cannot appear in a
+        // document being taken into a meeting.
+        const knownEpics = new Set(
+            [...(report.activity.completed || []), ...(report.activity.advanced || []),
+             ...(report.activity.created || []), ...(report.activity.attention || [])]
+                .map(t => t.epicName || 'Unfiled')
+        );
+        const epicByName = new Map(epics.map(e => [e.name, e]));
+
+        report.summary = {
+            tldr: input.tldr.trim().slice(0, 600),
+            silos: (Array.isArray(input.silos) ? input.silos : [])
+                .filter(silo => silo && typeof silo.epic === 'string' && knownEpics.has(silo.epic))
+                .map(silo => ({
+                    epic: silo.epic,
+                    stakeholder: epicByName.get(silo.epic)?.stakeholder || '',
+                    bullets: (Array.isArray(silo.bullets) ? silo.bullets : [])
+                        .filter(b => typeof b === 'string' && b.trim())
+                        .map(b => b.trim().slice(0, 300))
+                        .slice(0, 6)
+                }))
+                .filter(silo => silo.bullets.length > 0),
+            attention: (Array.isArray(input.attention) ? input.attention : [])
+                .filter(a => typeof a === 'string' && a.trim())
+                .map(a => a.trim().slice(0, 300))
+                .slice(0, 6),
+            generatedAt: new Date().toISOString(),
+            model: resolved.model
+        };
+
+        await writeJsonFile(req.profileFiles.reports, reports);
+        res.json({ summarised: true, report });
+    } catch (error) {
+        console.error('Report summary failed:', error);
+        res.status(500).json({ error: 'Failed to summarise report' });
     }
 });
 
@@ -2779,6 +3007,117 @@ function renderMemoryForPrompt(memories) {
         lines.push(line);
     }
     return lines.join('\n');
+}
+
+/**
+ * Tool for turning a report's raw activity into something presentable.
+ *
+ * The grouping and counting are done in code — deterministic, free, and not
+ * something a model should be trusted with. What the model is for is the one
+ * thing code cannot do: ticket titles are not presentation bullets. Rewriting
+ * "ESB-767 - Shipping address not changes on order" into "Fixed shipping
+ * addresses not updating on orders", and merging several related tickets into
+ * a single line, is the manual work this replaces.
+ */
+const WRITE_REPORT_SUMMARY_TOOL = {
+    name: 'write_report_summary',
+    description: 'Summarise a period of work for a one-to-one with a manager. Call exactly once.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            tldr: { type: 'string', description: 'One or two sentences covering the period. Plain and factual; no filler, no adjectives like "successfully".' },
+            silos: {
+                type: 'array',
+                description: 'One entry per epic that saw activity, in the order given. Omit epics with nothing to report.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        epic: { type: 'string', description: 'Epic name exactly as given' },
+                        bullets: {
+                            type: 'array',
+                            description: 'Presentation-ready lines. Past tense, start with a verb, no ticket ids, merge related tickets into one line.',
+                            items: { type: 'string' }
+                        }
+                    },
+                    required: ['epic', 'bullets']
+                }
+            },
+            attention: {
+                type: 'array',
+                description: 'Things to raise rather than report — blocked, overdue, or needing a decision from the manager. Empty array if none.',
+                items: { type: 'string' }
+            }
+        },
+        required: ['tldr', 'silos']
+    }
+};
+
+/**
+ * Builds the report-summary prompt from a report's activity.
+ *
+ * Deliberately does NOT carry the board snapshot: this is about one period,
+ * and sending the whole board would cost more and invite the model to talk
+ * about work that isn't in scope.
+ *
+ * @param {Object} report
+ * @param {Array<Object>} epics
+ * @param {Array<Object>} memories
+ * @returns {string}
+ */
+function buildReportSummaryPrompt(report, epics, memories) {
+    const epicByName = new Map(epics.map(e => [e.name, e]));
+    const memoryStr = renderMemoryForPrompt(memories);
+
+    /** Groups a task list by epic name, preserving "no epic" as its own bucket. */
+    const groupByEpic = (list) => {
+        const groups = new Map();
+        for (const task of list) {
+            const key = task.epicName || 'Unfiled';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(task);
+        }
+        return groups;
+    };
+
+    const renderGroup = (label, list) => {
+        if (!list.length) return `## ${label}\n  (nothing)`;
+        const lines = [`## ${label}`];
+        for (const [epicName, items] of groupByEpic(list)) {
+            const epic = epicByName.get(epicName);
+            const who = epic?.stakeholder ? ` — reported to: ${epic.stakeholder}` : '';
+            lines.push(`### ${epicName}${who}`);
+            for (const task of items) {
+                const detail = task.description ? ` — ${task.description.slice(0, 160)}` : '';
+                lines.push(`  - ${task.title}${detail}`);
+            }
+        }
+        return lines.join('\n');
+    };
+
+    const activity = report.activity || { completed: [], advanced: [], created: [], attention: [] };
+
+    return `You are writing the notes someone will take into a weekly one-to-one with their manager, and paste into a slide.
+
+Period: ${report.period?.start?.split('T')[0]} to ${report.period?.end?.split('T')[0]}.
+
+Call write_report_summary exactly once.
+
+Rules:
+- Bullets are for a presentation. Past tense, start with a verb, no ticket ids, no "worked on".
+- MERGE related tickets into one line. Three tickets about the same deploy are one bullet, not three.
+- Keep each epic to at most 4 bullets — pick what a manager would care about.
+- Use the epic names exactly as given below, and keep them in the same order.
+- Say nothing you cannot see in the data. If an epic had no activity, leave it out entirely rather than writing "no progress".
+- attention[] is for things to raise: blocked, overdue, or needing a decision. Leave it empty if there is nothing.
+${memoryStr ? `\n# What you know about how they work\n${memoryStr}\n` : ''}
+${renderGroup('Finished in this period', activity.completed)}
+
+${renderGroup('Moved forward but not finished', activity.advanced)}
+
+${renderGroup('Started in this period', activity.created)}
+
+${renderGroup('Open, overdue or untouched — candidates for attention', activity.attention)}
+${report.notes ? `\n## Their own notes for the period\n${report.notes.slice(0, 1500)}` : ''}`;
 }
 
 /**

@@ -561,6 +561,26 @@ Global one-line capture bar. Present on every page, opened with `c`. **Not a mod
 
 Positioned at 18vh rather than centred: capture is a passing action and should not read as a dialog demanding a decision.
 
+### 6.05 Report Summary (in the report viewer)
+
+Sits above the raw report columns — this is the part read out in a one-to-one; the columns below are the evidence.
+
+```
+.reportSummary
+  .reportSummary__head       ← "SUMMARY · date → date" + Copy as bullets + Regenerate
+  .reportSummary__tldr       ← one or two sentences
+  .reportSummary__silo       ← per epic: name + stakeholder + bullets
+  .reportSummary__silo--attention  ← things to raise, warning-coloured heading
+```
+
+| State | Visual |
+|-------|--------|
+| Not written yet | "Not written yet." + Regenerate button |
+| Written | TLDR, then one block per silo, then Needs attention |
+| Legacy report (no period) | Block omitted entirely — a board snapshot has nothing honest to summarise |
+
+Stakeholder renders beside the epic name in tertiary text: it's what makes the grouping useful in a conversation rather than merely tidy.
+
 ### 6.1 Modal Dialog Component
 
 ```

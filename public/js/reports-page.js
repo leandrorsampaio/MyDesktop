@@ -3,7 +3,7 @@
  */
 
 import {
-    fetchReportsApi, generateReportApi, deleteReportApi
+    fetchReportsApi, generateReportApi, deleteReportApi, summariseReportApi
 } from './api.js';
 import { renderReportView, openConfirmDialog } from './modals.js';
 
@@ -89,11 +89,41 @@ export async function initReportsPage(pageViewEl, { elements }) {
 
     renderRows();
 
+    /** @type {string|null} The report currently open in the viewer. */
+    let openReportId = null;
+
+    /**
+     * Puts the summary on the clipboard as plain bullets, ready to paste into
+     * slides — which is where these end up.
+     * @param {Object} report
+     */
+    async function copySummaryAsBullets(report) {
+        if (!report?.summary) return;
+        const lines = [report.summary.tldr, ''];
+        for (const silo of report.summary.silos) {
+            lines.push(silo.stakeholder ? `${silo.epic} (${silo.stakeholder})` : silo.epic);
+            for (const bullet of silo.bullets) lines.push(`• ${bullet}`);
+            lines.push('');
+        }
+        if (report.summary.attention?.length) {
+            lines.push('Needs attention');
+            for (const item of report.summary.attention) lines.push(`• ${item}`);
+        }
+        try {
+            await navigator.clipboard.writeText(lines.join('\n').trim());
+            if (toaster) toaster.success('Copied — paste into your slides');
+        } catch {
+            // Clipboard access can be denied; the text is still on screen.
+            if (toaster) toaster.warning('Could not copy — select the text above instead');
+        }
+    }
+
     // View report — open modal with report content
     pageViewEl.addEventListener('view-report', (e) => {
         const { reportId } = e.detail;
         const report = reports.find(r => r.id === reportId);
         if (!report) return;
+        openReportId = reportId;
         renderReportView(report, elements);
         // Attach back button → close modal (renderReportView no longer
         // attaches its own handler; v2.38.3 deleted the dead modal-list path)
@@ -121,6 +151,47 @@ export async function initReportsPage(pageViewEl, { elements }) {
     });
 
     // FAB — generate new report (confirmed: it appends a permanent snapshot)
+    /**
+     * Writes (or rewrites) a report's AI summary and refreshes the list.
+     * @param {string} reportId
+     * @param {{silent?: boolean}} [opts] - silent skips the "no summary" notice,
+     *        used for the automatic pass after generating.
+     */
+    async function summariseReport(reportId, { silent = false } = {}) {
+        try {
+            const result = await summariseReportApi(reportId);
+            const index = reports.findIndex(r => r.id === reportId);
+            if (index !== -1 && result.report) reports[index] = result.report;
+
+            if (result.summarised) {
+                if (toaster && !silent) toaster.success('Summary ready');
+                // If the report is open, repaint it with the summary in place.
+                if (openReportId === reportId) renderReportView(reports[index], elements);
+            } else if (toaster && !silent) {
+                toaster.warning(result.reason || 'Could not summarise this report');
+            }
+        } catch {
+            if (toaster && !silent) toaster.error('Failed to summarise');
+        }
+    }
+
+    // Re-summarise from the open report view — the first phrasing is not
+    // always the one you want to put in front of a manager.
+    elements.reportsContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.js-resummariseBtn')) {
+            const btn = e.target.closest('.js-resummariseBtn');
+            btn.disabled = true;
+            btn.textContent = 'Summarising…';
+            summariseReport(openReportId).finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Regenerate summary';
+            });
+        }
+        if (e.target.closest('.js-copyBulletsBtn')) {
+            copySummaryAsBullets(reports.find(r => r.id === openReportId));
+        }
+    });
+
     pageViewEl.querySelector('page-fab').addEventListener('fab-click', async () => {
         const confirmed = await openConfirmDialog({
             title: 'Generate Report',
@@ -143,6 +214,11 @@ export async function initReportsPage(pageViewEl, { elements }) {
                 } catch {
                     // Toast already shown; user can reload
                 }
+
+                // Summarise afterwards, never as part of generating. The report
+                // is already saved and on screen; the summary is an enrichment
+                // that must not be able to delay or fail it.
+                summariseReport(result.data.id, { silent: true });
             } else {
                 if (toaster) toaster.error(result.error);
             }

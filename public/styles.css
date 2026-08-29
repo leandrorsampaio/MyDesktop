@@ -4249,3 +4249,84 @@ body.--previewing .column__archiveBtn {
 .backlogPage__stagedBadge[hidden] {
     display: none;
 }
+
+/* ==========================================
+   Report summary (AI)
+   ==========================================
+   Sits above the raw report data: this is the part read out in a one-to-one,
+   the columns below are the evidence for it. */
+.reportSummary {
+    margin-bottom: var(--space-24);
+    padding: var(--space-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+}
+
+.reportSummary__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    margin-bottom: var(--space-12);
+}
+
+.reportSummary__title {
+    flex: 1;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.reportSummary__actions {
+    display: flex;
+    gap: var(--space-8);
+}
+
+.reportSummary__hint {
+    margin: 0 0 var(--space-12);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-md);
+}
+
+.reportSummary__tldr {
+    margin: 0 0 var(--space-16);
+    color: var(--color-text-primary);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+}
+
+.reportSummary__silo {
+    margin-bottom: var(--space-12);
+}
+
+.reportSummary__siloName {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-8);
+    margin-bottom: var(--space-4);
+    color: var(--color-text-primary);
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Who this silo reports to — the thing that makes the grouping useful in a
+   conversation rather than just tidy. */
+.reportSummary__stakeholder {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+}
+
+.reportSummary__bullets {
+    margin: 0;
+    padding-left: var(--space-20);
+    color: var(--color-text-secondary);
+    font-size: var(--text-md);
+    line-height: 1.6;
+}
+
+.reportSummary__silo--attention .reportSummary__siloName {
+    color: var(--color-accent-warning-text, var(--color-accent-warning));
+}
