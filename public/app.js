@@ -27,6 +27,7 @@ import {
     restoreTasksFromSnapshot,
     findTask,
     removeTask,
+    editingTaskId,
     epics,
     setEpics,
     categories,
@@ -713,6 +714,29 @@ import {
         });
 
         dock.addEventListener('assistant-closed', () => refreshAssistantSuggestions());
+
+        // Context is implicit: the assistant floats over every page, so what a
+        // question means depends on where it was asked. Resolved per send, not
+        // when the panel opened — the user may have navigated or opened a card
+        // since. An open card is the strongest signal there is.
+        assistantChat.setContextProvider(() => {
+            const { page } = parsePath();
+            const openTaskId = elements.taskModal?.hasAttribute('open') ? editingTaskId : null;
+            return { page, taskId: openTaskId || null };
+        });
+
+        // The header says what the assistant is currently about, because
+        // implicit context the user can't see is just confusing.
+        const syncContextLabel = () => {
+            const { page } = parsePath();
+            const openTask = elements.taskModal?.hasAttribute('open') && editingTaskId
+                ? findTask(editingTaskId)
+                : null;
+            dock.setContextLabel(openTask ? `About "${openTask.title}"` : `About the ${page}`);
+        };
+        syncContextLabel();
+        elements.taskModal?.addEventListener('modal-opened', syncContextLabel);
+        elements.taskModal?.addEventListener('modal-closed', syncContextLabel);
     }
 
     /**
@@ -1210,17 +1234,6 @@ import {
         // Task form: manual datetime input → update hints
         elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
         elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
-
-        // Per-task entry point. Seeds the dock with the task's title and
-        // closes the modal, so the assistant answers about something the user
-        // can still see on the board behind it.
-        document.querySelector('.js-askAboutTask')?.addEventListener('click', () => {
-            const title = elements.taskTitle.textContent.trim();
-            elements.taskModal.close();
-            elements.assistantDock?.open(
-                title ? `About the task "${title}": ` : ''
-            );
-        });
 
         // Epic and point pills are toggleable: clicking the selected one again
         // clears it (= no epic / unestimated). Radios don't natively un-check,

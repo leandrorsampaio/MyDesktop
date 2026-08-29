@@ -166,6 +166,41 @@ describe('AI board context & conversation', () => {
             assert.match(res.body.prompt, /propose_changes\(\)/);
         });
 
+        it('says nothing about location when no context is sent', async () => {
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt`);
+            assert.ok(!res.body.prompt.includes('# Where they are right now'),
+                'an empty context section is noise the model reads every turn');
+        });
+
+        it('names the page the assistant was opened from', async () => {
+            // The assistant floats over every page, so the same question means
+            // different things depending on where it was asked.
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt?page=archive`);
+            assert.match(res.body.prompt, /# Where they are right now/);
+            assert.match(res.body.prompt, /They are on the archive\./);
+        });
+
+        it('names an open card, and says to assume the talk is about it', async () => {
+            const created = await post(`/api/${TEST_PROFILE}/tasks`, { title: 'Refactor auth' });
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt?page=board&taskId=${created.body.id}`);
+
+            assert.match(res.body.prompt, /They have this task open: \[.+\] "Refactor auth" in To Do\./);
+            assert.match(res.body.prompt, /assume the conversation is about it/);
+        });
+
+        it('ignores a task id that does not exist', async () => {
+            // Context is a client hint; it is re-checked against real data
+            // before anything reaches the prompt.
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt?page=board&taskId=made-up`);
+            assert.ok(!res.body.prompt.includes('They have this task open'));
+            assert.match(res.body.prompt, /They are on the board\./);
+        });
+
+        it('ignores an unknown page name', async () => {
+            const res = await get(`/api/${TEST_PROFILE}/ai/_test/prompt?page=nonsense`);
+            assert.ok(!res.body.prompt.includes('# Where they are right now'));
+        });
+
         it('tells the model nothing it proposes is applied automatically', async () => {
             // The propose-first guarantee has to be stated in the prompt, not
             // just enforced in code — the model's tone depends on knowing it.

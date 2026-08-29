@@ -140,9 +140,13 @@ The snapshot is re-sent every message — that is the main cost driver, and the 
 
 ## UX
 
-### The dock
+### The assistant panel
 
-A **right-hand dock** that squeezes the board rather than covering it — during review the board must stay visible and interactive. (The existing rail slide-over covers content with a backdrop; wrong tool here.) Resizable, opens from any page, carries that page's context.
+**Shipped as a right-hand dock in v2.51.0 and reworked in v2.54.0** — the dock was the wrong shape. It was a layout feature reachable only by keyboard, with a separate per-card button. What it should be, and now is:
+
+A permanent **AI button, bottom-left, on every page**, growing a panel out of itself on click. It floats over everything including modals, and lives in the bottom band of the screen so the top half — where the work is — is never covered.
+
+**Context is implicit.** No per-card button: open the panel with a card on screen and the conversation is about that card; open it on the archive and it is about the archive. The panel says which, so the user can see what it assumed.
 
 The `/ai` page stays for long paste-a-transcript sessions.
 

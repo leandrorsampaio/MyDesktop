@@ -614,11 +614,11 @@ export async function setActiveAiConfigApi(configId) {
  * @param {Array<{ role: string, content: string }>} messages - Full conversation history
  * @returns {Promise<{ok: boolean, data?: { narrative: string, tasks: Array<Object> }, error?: string}>}
  */
-export async function sendAiChatApi(messages) {
+export async function sendAiChatApi(messages, context = null) {
     const response = await fetch(`${apiBase}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify({ messages, context })
     });
 
     if (!response.ok) {
@@ -996,13 +996,13 @@ export async function deleteMemoryApi(id) {
  * @param {Function} onDelta - Called with each text fragment as it arrives
  * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
  */
-export async function sendAiChatStreamApi(messages, onDelta) {
+export async function sendAiChatStreamApi(messages, onDelta, context = null) {
     let response;
     try {
         response = await fetch(`${apiBase}/ai/chat/stream`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages })
+            body: JSON.stringify({ messages, context })
         });
     } catch {
         return { ok: false, error: 'Could not reach the server' };

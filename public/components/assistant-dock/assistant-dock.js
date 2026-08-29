@@ -1,37 +1,37 @@
 /**
- * assistant-dock — the assistant as a panel beside the board, not a page.
+ * assistant-dock — the assistant as a permanent floating panel.
  *
- * A dock rather than a slide-over: during review the board has to stay visible
- * and interactive, and the rail's existing slide-out panel covers content with
- * a backdrop. This one squeezes the layout instead, so the board keeps working
- * while you talk about it.
+ * One button, bottom-left, present on every page and above everything else
+ * including modals (z-index 1500; toasts stay above at 2000). Clicking it
+ * grows a panel out of the button into the bottom band of the screen — the
+ * top half is where the real work is, so the assistant never covers it.
  *
- * The conversation itself lives in `js/assistant-chat.js` — the `/:alias/ai`
- * page drives the same controller, so the two surfaces show one thread rather
- * than two copies of it.
+ * **Context is implicit.** There is no per-card "Ask AI" button, because
+ * there doesn't need to be: the assistant knows what you are looking at.
+ * Open it with a card on screen and the conversation is about that card; open
+ * it on the archive and it is about the archive. `app.js` supplies that via
+ * `assistant-chat.js`'s context provider, resolved fresh on every send.
+ *
+ * The conversation lives in `js/assistant-chat.js`, shared with the
+ * `/:alias/ai` page, so the two surfaces show one thread.
  *
  * API:
- *   open(prompt?)  — show the dock; an optional prompt is pre-filled, not sent
+ *   open(prompt?)  — show the panel; an optional prompt is pre-filled, not sent
  *   close()
  *   toggle()
  *   isOpen
  *   setSuggestions(list)   — board-derived openers for the empty state
- *   setPendingCount(n)     — proposals awaiting review, shown in the header
+ *   setPendingCount(n)     — proposals awaiting review, badged on the launcher
+ *   setContextLabel(text)  — what the assistant is currently about
  *
  * Events dispatched (bubble + composed):
  *   assistant-replied  — { detail: { tasks, proposals } }
  *   assistant-closed
- *   review-proposals   — the header's pending badge was clicked
+ *   review-proposals   — the pending badge was clicked
  */
 
 import * as chat from '../../js/assistant-chat.js';
 import { escapeHtml } from '../../js/utils.js';
-
-/** Width bounds, in px. Narrower than this and the transcript stops working. */
-const MIN_WIDTH = 300;
-const MAX_WIDTH = 720;
-const DEFAULT_WIDTH = 380;
-const WIDTH_STORAGE_KEY = 'assistantDockWidth';
 
 class AssistantDock extends HTMLElement {
     /** @type {Promise<[string, string]>|null} Cached templates Promise — store
@@ -45,10 +45,9 @@ class AssistantDock extends HTMLElement {
         this._open = false;
         this._suggestions = [];
         this._pendingCount = 0;
+        this._contextLabel = 'Assistant';
         this._unsubscribe = null;
         this._onDocKeydown = this._handleDocKeydown.bind(this);
-        this._onDragMove = this._handleDragMove.bind(this);
-        this._onDragEnd = this._handleDragEnd.bind(this);
     }
 
     async connectedCallback() {
@@ -65,14 +64,16 @@ class AssistantDock extends HTMLElement {
         this.shadowRoot.innerHTML = html;
         this.shadowRoot.prepend(style);
 
+        this._panelEl = this.shadowRoot.querySelector('.js-panel');
+        this._launcherEl = this.shadowRoot.querySelector('.js-launcher');
         this._messagesEl = this.shadowRoot.querySelector('.js-messages');
         this._inputEl = this.shadowRoot.querySelector('.js-input');
         this._sendBtn = this.shadowRoot.querySelector('.js-sendBtn');
         this._usageEl = this.shadowRoot.querySelector('.js-usage');
         this._noticeEl = this.shadowRoot.querySelector('.js-notice');
         this._pendingEl = this.shadowRoot.querySelector('.js-pending');
+        this._contextEl = this.shadowRoot.querySelector('.js-context');
 
-        this._applyStoredWidth();
         this._wireEvents();
 
         // Re-render on every controller change, including ones the *other*
@@ -84,8 +85,6 @@ class AssistantDock extends HTMLElement {
     disconnectedCallback() {
         this._unsubscribe?.();
         document.removeEventListener('keydown', this._onDocKeydown);
-        window.removeEventListener('mousemove', this._onDragMove);
-        window.removeEventListener('mouseup', this._onDragEnd);
     }
 
     // ==========================================
@@ -99,7 +98,8 @@ class AssistantDock extends HTMLElement {
     open(prompt) {
         this._open = true;
         this.classList.add('--open');
-        document.body.classList.add('--assistantOpen');
+        if (this._panelEl) this._panelEl.hidden = false;
+        this._launcherEl?.setAttribute('aria-expanded', 'true');
         if (prompt && this._inputEl) {
             this._inputEl.value = prompt;
             this._autoGrow();
@@ -111,7 +111,8 @@ class AssistantDock extends HTMLElement {
     close() {
         this._open = false;
         this.classList.remove('--open');
-        document.body.classList.remove('--assistantOpen');
+        if (this._panelEl) this._panelEl.hidden = true;
+        this._launcherEl?.setAttribute('aria-expanded', 'false');
         this.dispatchEvent(new CustomEvent('assistant-closed', { bubbles: true, composed: true }));
     }
 
@@ -135,18 +136,33 @@ class AssistantDock extends HTMLElement {
         if (this._pendingEl) this._render();
     }
 
+    /**
+     * Sets the header line describing what the assistant is currently about.
+     * Context is implicit, so it has to be visible — otherwise the user can't
+     * tell whether a question will be read as being about the open card.
+     * @param {string} text
+     */
+    setContextLabel(text) {
+        this._contextLabel = text || 'Assistant';
+        if (this._contextEl) this._contextEl.textContent = this._contextLabel;
+    }
+
     // ==========================================
     // Internals
     // ==========================================
 
     _wireEvents() {
+        this._launcherEl.addEventListener('click', () => this.toggle());
         this.shadowRoot.querySelector('.js-closeBtn').addEventListener('click', () => this.close());
 
         this.shadowRoot.querySelector('.js-clearBtn').addEventListener('click', async () => {
             await chat.clear();
         });
 
-        this._pendingEl.addEventListener('click', () => {
+        this._pendingEl.addEventListener('click', (e) => {
+            // The badge lives inside the launcher, so its click would toggle
+            // the panel as well without this.
+            e.stopPropagation();
             this.dispatchEvent(new CustomEvent('review-proposals', { bubbles: true, composed: true }));
         });
 
@@ -169,9 +185,6 @@ class AssistantDock extends HTMLElement {
             this._send();
         });
 
-        this.shadowRoot.querySelector('.js-resizer')
-            .addEventListener('mousedown', (e) => this._handleDragStart(e));
-
         document.addEventListener('keydown', this._onDocKeydown);
     }
 
@@ -186,50 +199,6 @@ class AssistantDock extends HTMLElement {
             return;
         }
         this.close();
-    }
-
-    // ---- Resizing ----
-
-    _applyStoredWidth() {
-        let width = DEFAULT_WIDTH;
-        try {
-            const stored = Number(localStorage.getItem(WIDTH_STORAGE_KEY));
-            if (stored) width = stored;
-        } catch {
-            // Private mode or blocked storage — the default is fine.
-        }
-        this._setWidth(width);
-    }
-
-    _setWidth(width) {
-        const clamped = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(width)));
-        this.style.setProperty('--dock-width', `${clamped}px`);
-        return clamped;
-    }
-
-    _handleDragStart(e) {
-        e.preventDefault();
-        this._dragStartX = e.clientX;
-        this._dragStartWidth = this.getBoundingClientRect().width;
-        document.body.classList.add('--dockResizing');
-        window.addEventListener('mousemove', this._onDragMove);
-        window.addEventListener('mouseup', this._onDragEnd);
-    }
-
-    _handleDragMove(e) {
-        // The dock is on the right, so dragging left widens it.
-        this._setWidth(this._dragStartWidth + (this._dragStartX - e.clientX));
-    }
-
-    _handleDragEnd() {
-        document.body.classList.remove('--dockResizing');
-        window.removeEventListener('mousemove', this._onDragMove);
-        window.removeEventListener('mouseup', this._onDragEnd);
-        try {
-            localStorage.setItem(WIDTH_STORAGE_KEY, String(this.getBoundingClientRect().width));
-        } catch {
-            // Not being able to remember the width is not worth telling anyone.
-        }
     }
 
     // ---- Sending ----
@@ -322,14 +291,14 @@ class AssistantDock extends HTMLElement {
      */
     _emptyStateHtml() {
         if (this._suggestions.length === 0) {
-            return `<div class="dock__empty">Ask about your board, paste meeting notes, or describe what you need to do.</div>`;
+            return `<div class="assistant__empty">Ask about your board, paste meeting notes, or describe what you need to do.</div>`;
         }
         return `
-            <div class="dock__suggestions">
+            <div class="assistant__suggestions">
                 ${this._suggestions.map(s => `
-                    <button type="button" class="dock__suggestion js-suggestion" data-suggestion-id="${escapeHtml(s.id)}">
-                        <span class="dock__suggestionFact">${escapeHtml(s.fact)}</span>
-                        <span class="dock__suggestionAction">${escapeHtml(s.action)} →</span>
+                    <button type="button" class="assistant__suggestion js-suggestion" data-suggestion-id="${escapeHtml(s.id)}">
+                        <span class="assistant__suggestionFact">${escapeHtml(s.fact)}</span>
+                        <span class="assistant__suggestionAction">${escapeHtml(s.action)} →</span>
                     </button>
                 `).join('')}
             </div>
@@ -341,7 +310,7 @@ class AssistantDock extends HTMLElement {
         if (message.role === 'pending') {
             // A quiet line, not animated dots — see the visual rules in
             // docs/design/AI_ASSISTANT.md.
-            return `<div class="dock__message --pending">Reading your board…</div>`;
+            return `<div class="assistant__message --pending">Reading your board…</div>`;
         }
 
         const outcomes = [];
@@ -349,9 +318,9 @@ class AssistantDock extends HTMLElement {
         if (message.proposalsAdded) outcomes.push(`${message.proposalsAdded} change${message.proposalsAdded === 1 ? '' : 's'} proposed`);
 
         return `
-            <div class="dock__message --${message.role}">
-                <div class="dock__messageText">${escapeHtml(message.content)}</div>
-                ${outcomes.length ? `<div class="dock__messageMeta">${escapeHtml(outcomes.join(' · '))}</div>` : ''}
+            <div class="assistant__message --${message.role}">
+                <div class="assistant__messageText">${escapeHtml(message.content)}</div>
+                ${outcomes.length ? `<div class="assistant__messageMeta">${escapeHtml(outcomes.join(' · '))}</div>` : ''}
             </div>
         `;
     }

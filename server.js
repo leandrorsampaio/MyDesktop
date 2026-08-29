@@ -2715,6 +2715,55 @@ function normaliseMemory(raw) {
 }
 
 /**
+ * Human-readable names for the pages the assistant can be opened from.
+ * Used to tell the model what the user is looking at, which is the difference
+ * between a generic answer and a useful one.
+ */
+const PAGE_LABELS = {
+    board:     'the board',
+    dashboard: 'the dashboard',
+    backlog:   'the backlog',
+    archive:   'the archive',
+    reports:   'the reports page',
+    ai:        'the AI page',
+    config:    'the configuration page'
+};
+
+/**
+ * Describes what the user is currently looking at.
+ *
+ * The assistant floats over every page, so "what did you mean by this?" has a
+ * different answer depending on where it was asked. An open card is the
+ * strongest signal — the question is almost certainly about that card.
+ *
+ * @param {{page?: string, taskId?: string}|null} context
+ * @param {Array<Object>} tasks
+ * @param {Array<Object>} columns
+ * @returns {string} Empty string when there is nothing useful to say.
+ */
+function renderChatContext(context, tasks, columns) {
+    if (!context || typeof context !== 'object') return '';
+
+    const lines = [];
+    const page = typeof context.page === 'string' ? context.page : '';
+    if (PAGE_LABELS[page]) lines.push(`They are on ${PAGE_LABELS[page]}.`);
+
+    if (typeof context.taskId === 'string') {
+        const task = tasks.find(t => t.id === context.taskId);
+        if (task) {
+            const column = columns.find(c => c.id === task.status);
+            lines.push(
+                `They have this task open: [${task.id}] "${task.title}"` +
+                `${column ? ` in ${column.name}` : ''}.` +
+                ' Unless they say otherwise, assume the conversation is about it.'
+            );
+        }
+    }
+
+    return lines.join('\n');
+}
+
+/**
  * Renders approved memories for the system prompt, within the budget.
  * @param {Array<Object>} memories
  * @returns {string} Empty string when there is nothing approved.
@@ -2909,7 +2958,7 @@ function buildBoardSnapshot(columns, tasks, epicById, categoryById) {
  * @param {Array<Object>} ctx.tasks
  * @returns {string}
  */
-function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memories = [] }) {
+function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memories = [], context = null }) {
     const epicById = new Map(epics.map(e => [e.id, e]));
     const categoryById = new Map(categories.map(c => [c.id, c]));
 
@@ -2932,6 +2981,7 @@ function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memor
     const columnsStr = columns.map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' [backlog]' : ''}`).join('\n');
 
     const memoryStr = renderMemoryForPrompt(memories);
+    const contextStr = renderChatContext(context, tasks, columns);
 
     return `You are a task management assistant built into a personal kanban tool. You are talking to the single person who owns this board.
 
@@ -2949,6 +2999,9 @@ If you notice something durable about how this person works — a naming convent
 
 Be concise. This is a personal tool, not a report generator.
 
+${contextStr ? `# Where they are right now
+${contextStr}
+` : ''}
 ${memoryStr ? `# What you already know about how they work
 ${memoryStr}
 ` : ''}
@@ -3825,6 +3878,8 @@ app.get('/api/ai/availability', async (req, res) => {
 // only when RATE_LIMIT_DISABLED=1, matching /api/_test/reset-rate-limit.
 if (RATE_LIMIT_DISABLED) {
     app.get('/api/:profile/ai/_test/prompt', resolveProfile, async (req, res) => {
+        // ?page= and ?taskId= mirror the `context` a real chat request sends,
+        // so context rendering can be asserted without a live provider.
         try {
             // Must load exactly what the chat handler loads, or this endpoint
             // reports a prompt the model never actually sees.
@@ -3835,7 +3890,10 @@ if (RATE_LIMIT_DISABLED) {
                 readJsonFile(req.profileFiles.aiMemory, [])
             ]);
             const prompt = buildAiSystemPromptWithBoard({
-                epics, categories, columns: req.columns, tasks, memories
+                epics, categories, columns: req.columns, tasks, memories,
+                context: (req.query.page || req.query.taskId)
+                    ? { page: req.query.page, taskId: req.query.taskId }
+                    : null
             });
             res.json({ prompt, chars: prompt.length });
         } catch (error) {
@@ -3887,7 +3945,10 @@ async function prepareAiChat(req) {
         epics,
         categories,
         systemPrompt: buildAiSystemPromptWithBoard({
-            epics, categories, columns: req.columns, tasks, memories
+            epics, categories, columns: req.columns, tasks, memories,
+            // Untrusted client hint about where the user is; every field is
+            // re-checked against real data before it reaches the prompt.
+            context: req.body.context || null
         }),
         // Three verbs: create new work, change existing work, remember a fact.
         tools: [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL, PROPOSE_MEMORY_TOOL]

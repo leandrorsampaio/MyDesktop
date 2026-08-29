@@ -1,73 +1,132 @@
-/* Closed: takes no space at all, so the board layout is untouched when the
-   assistant isn't in use. */
+/* Floats over everything, bottom-left, on every page.
+   z-index 1500 puts it above modals (1000) but below toasts (2000) — feedback
+   must stay visible even with the assistant open. */
 :host {
-    display: none;
-    flex: 0 0 var(--dock-width, 380px);
-    width: var(--dock-width, 380px);
-    min-width: 0;
-}
-
-:host(.--open) {
+    position: fixed;
+    left: calc(var(--space-48, 48px) + var(--space-16, 16px));
+    bottom: var(--space-16, 16px);
+    z-index: 1500;
     display: block;
 }
 
-.dock {
-    display: flex;
-    height: 100vh;
-    border-left: 1px solid var(--color-border, #e5e7eb);
-    background: var(--color-bg-secondary, #f8f9fa);
-}
-
-/* Drag edge. 5px is wide enough to hit without being visible furniture. */
-.dock__resizer {
-    flex: 0 0 5px;
-    margin-right: -2px;
-    cursor: col-resize;
-    background: transparent;
-}
-
-.dock__resizer:hover {
-    background: var(--color-accent-primary, #1a73e8);
-    opacity: 0.4;
-}
-
-.dock__panel {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-}
-
-.dock__header {
-    display: flex;
+/* ==========================================
+   Launcher — always present
+   ========================================== */
+.assistant__launcher {
+    display: inline-flex;
     align-items: center;
-    gap: var(--space-8, 8px);
-    padding: var(--space-12, 12px) var(--space-16, 16px);
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
-}
-
-.dock__title {
-    flex: 1;
-    color: var(--color-text-primary, #111827);
-    font-size: var(--text-md, 13px);
+    gap: var(--space-6, 6px);
+    padding: var(--space-8, 8px) var(--space-12, 12px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 999px;
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-secondary, #4b5563);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    font-family: inherit;
+    font-size: var(--text-base, 12px);
     font-weight: var(--font-weight-semibold, 600);
-}
-
-/* Proposals waiting. Clickable — it is the way back to the board preview. */
-.dock__pending {
-    padding: 2px var(--space-8, 8px);
-    border: 1px solid var(--color-accent-primary, #1a73e8);
-    border-radius: var(--radius-sm, 4px);
-    color: var(--color-accent-primary, #1a73e8);
-    font-size: var(--text-sm, 11px);
+    letter-spacing: 0.04em;
     cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-.dock__pending[hidden] {
+.assistant__launcher:hover {
+    border-color: var(--color-accent-primary, #1a73e8);
+    color: var(--color-accent-primary, #1a73e8);
+    transform: translateY(-1px);
+}
+
+:host(.--open) .assistant__launcher {
+    border-color: var(--color-accent-primary, #1a73e8);
+    color: var(--color-accent-primary, #1a73e8);
+}
+
+/* Proposals waiting for review. Sits on the launcher so it is visible from
+   any page without opening anything. */
+.assistant__launcherBadge {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 var(--space-4, 4px);
+    border-radius: 8px;
+    background: var(--color-accent-primary, #1a73e8);
+    color: var(--color-text-on-accent, #fff);
+    font-size: var(--text-sm, 11px);
+    line-height: 16px;
+    text-align: center;
+}
+
+.assistant__launcherBadge[hidden] {
     display: none;
 }
 
-.dock__iconBtn {
+/* ==========================================
+   Panel — grows out of the launcher
+   ========================================== */
+.assistant__panel {
+    position: absolute;
+    left: 0;
+    /* Sits directly above the launcher, so the whole thing stays in the
+       bottom band of the page — the top half is where the real work is. */
+    bottom: calc(100% + var(--space-8, 8px));
+    display: flex;
+    flex-direction: column;
+    width: min(460px, calc(100vw - var(--space-48, 48px) - var(--space-32, 32px)));
+    height: 30vh;
+    min-height: 260px;
+    /* Never past the middle of the screen. */
+    max-height: 50vh;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);
+    background: var(--color-bg-primary, #fff);
+    box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.15));
+    overflow: hidden;
+    /* Growing from the corner it was launched from is what makes the panel
+       read as coming *out of* the button rather than appearing over it. */
+    transform-origin: bottom left;
+}
+
+.assistant__panel[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :host(.--open) .assistant__panel {
+        animation: assistantGrow 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+}
+
+@keyframes assistantGrow {
+    from {
+        opacity: 0;
+        transform: scale(0.86) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.assistant__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 8px);
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Says what the assistant is currently about — the board, a page, or the card
+   you have open. Context is implicit, so it has to be visible. */
+.assistant__context {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assistant__iconBtn {
     width: 22px;
     height: 22px;
     padding: 0;
@@ -81,75 +140,74 @@
     cursor: pointer;
 }
 
-.dock__iconBtn:hover {
+.assistant__iconBtn:hover {
     background: var(--color-bg-tertiary, #f3f4f6);
     color: var(--color-text-primary, #111827);
 }
 
-.dock__messages {
+.assistant__messages {
     flex: 1;
-    overflow-y: auto;
-    padding: var(--space-16, 16px);
     display: flex;
     flex-direction: column;
-    gap: var(--space-12, 12px);
+    gap: var(--space-10, 10px);
+    padding: var(--space-12, 12px);
+    overflow-y: auto;
 }
 
-/* No bubbles, no avatars, no tails. The user's turn is indented; the
-   assistant's is plain text at full width — see the visual rules in
-   docs/design/AI_ASSISTANT.md. */
-.dock__message {
+/* No bubbles with tails, no avatars. The user's turn is indented; the
+   assistant's is plain text at full width. */
+.assistant__message {
     font-size: var(--text-md, 13px);
     line-height: 1.5;
 }
 
-.dock__message.--user {
+.assistant__message.--user {
     align-self: flex-end;
     max-width: 88%;
-    padding: var(--space-8, 8px) var(--space-12, 12px);
+    padding: var(--space-6, 6px) var(--space-10, 10px);
     border-radius: var(--radius-md, 6px);
     background: var(--color-bg-tertiary, #f3f4f6);
     color: var(--color-text-primary, #111827);
 }
 
-.dock__message.--assistant {
+.assistant__message.--assistant {
     color: var(--color-text-primary, #111827);
 }
 
-.dock__message.--pending {
+.assistant__message.--pending {
     color: var(--color-text-tertiary, #9ca3af);
     font-style: italic;
 }
 
-.dock__messageText {
+.assistant__messageText {
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-.dock__messageMeta {
-    margin-top: var(--space-4, 4px);
+.assistant__messageMeta {
+    margin-top: 2px;
     color: var(--color-text-tertiary, #9ca3af);
     font-size: var(--text-sm, 11px);
 }
 
 /* ---- Empty state: facts about this board, each with a verb ---- */
-.dock__empty {
+.assistant__empty {
     color: var(--color-text-tertiary, #9ca3af);
     font-size: var(--text-md, 13px);
     line-height: 1.5;
 }
 
-.dock__suggestions {
+.assistant__suggestions {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8, 8px);
+    gap: var(--space-6, 6px);
 }
 
-.dock__suggestion {
+.assistant__suggestion {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: var(--space-10, 10px) var(--space-12, 12px);
+    gap: 1px;
+    padding: var(--space-8, 8px) var(--space-10, 10px);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-md, 6px);
     background: var(--color-bg-primary, #fff);
@@ -159,46 +217,48 @@
     transition: border-color 0.15s ease;
 }
 
-.dock__suggestion:hover {
+.assistant__suggestion:hover {
     border-color: var(--color-accent-primary, #1a73e8);
 }
 
-.dock__suggestionFact {
+.assistant__suggestionFact {
     color: var(--color-text-primary, #111827);
     font-size: var(--text-md, 13px);
 }
 
-.dock__suggestionAction {
+.assistant__suggestionAction {
     color: var(--color-accent-primary, #1a73e8);
     font-size: var(--text-base, 12px);
 }
 
 /* ---- Composer ---- */
-.dock__notice {
-    margin: 0 var(--space-16, 16px) var(--space-8, 8px);
-    padding: var(--space-8, 8px) var(--space-12, 12px);
+.assistant__notice {
+    margin: 0 var(--space-12, 12px) var(--space-8, 8px);
+    padding: var(--space-6, 6px) var(--space-10, 10px);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-md, 6px);
-    background: var(--color-bg-primary, #fff);
     color: var(--color-text-secondary, #4b5563);
     font-size: var(--text-base, 12px);
 }
 
-.dock__notice[hidden] {
+.assistant__notice[hidden] {
     display: none;
 }
 
-.dock__composer {
-    padding: var(--space-12, 12px) var(--space-16, 16px) var(--space-16, 16px);
+.assistant__composer {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-8, 8px);
+    padding: var(--space-10, 10px) var(--space-12, 12px);
     border-top: 1px solid var(--color-border, #e5e7eb);
 }
 
-.dock__input {
-    width: 100%;
+.assistant__input {
+    flex: 1;
     box-sizing: border-box;
-    min-height: 44px;
-    max-height: 160px;
-    padding: var(--space-8, 8px) var(--space-10, 10px);
+    min-height: 34px;
+    max-height: 120px;
+    padding: var(--space-6, 6px) var(--space-8, 8px);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-md, 6px);
     background: var(--color-bg-primary, #fff);
@@ -208,32 +268,17 @@
     resize: none;
 }
 
-.dock__input:focus {
+.assistant__input:focus {
     outline: none;
     border-color: var(--color-accent-primary, #1a73e8);
 }
 
-.dock__input:disabled {
+.assistant__input:disabled {
     opacity: 0.6;
 }
 
-.dock__composerRow {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8, 8px);
-    margin-top: var(--space-8, 8px);
-}
-
-/* The board snapshot is re-sent every message, so this is what the
-   assistant costs. */
-.dock__usage {
-    flex: 1;
-    color: var(--color-text-tertiary, #9ca3af);
-    font-size: var(--text-sm, 11px);
-    font-variant-numeric: tabular-nums;
-}
-
-.dock__sendBtn {
+.assistant__sendBtn {
+    flex-shrink: 0;
     padding: var(--space-6, 6px) var(--space-12, 12px);
     border: none;
     border-radius: var(--radius-md, 6px);
@@ -245,7 +290,27 @@
     cursor: pointer;
 }
 
-.dock__sendBtn:disabled {
+.assistant__sendBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.assistant__usage {
+    padding: 0 var(--space-12, 12px) var(--space-8, 8px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    font-variant-numeric: tabular-nums;
+}
+
+/* On a narrow viewport the panel spans the width it can get, still anchored
+   to the bottom band. */
+@media (max-width: 720px) {
+    :host {
+        left: var(--space-8, 8px);
+        right: var(--space-8, 8px);
+    }
+
+    .assistant__panel {
+        width: calc(100vw - var(--space-16, 16px));
+    }
 }

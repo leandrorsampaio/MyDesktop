@@ -541,28 +541,32 @@ All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px)
 
 > **Note (v2.37+):** the CRUD editors in §6.3–6.7 are **no longer modals** — they render inline as sections of the Configuration page (`/:alias/config`, left tabs + right panel). Their element anatomy and visual specs below still apply to the inline versions. The only modals left in the app are the task modal (§6.2), the report viewer, and the small delete-confirmation modals (§6.8).
 
-### 5.7 Assistant Dock (`<assistant-dock>`)
+### 5.7 Assistant (`<assistant-dock>`)
 
-The assistant as a panel beside the board. Opens with `a`, from *Ask AI* in the task modal, or from code.
+A permanent **AI** button, bottom-left of every page, that grows a panel out of itself on click.
 
 ```
-.dock
-  .dock__resizer               ← 5px drag edge, left side (300–720px, remembered)
-  .dock__panel
-    .dock__header              ← "Assistant" + pending badge + clear + close
-    .dock__messages            ← transcript, or the board-derived empty state
-    .dock__notice              ← stated reason when the composer is disabled
-    .dock__composer            ← textarea + token readout + Send
+:host                          ← position: fixed, bottom-left, z-index 1500
+  .assistant__launcher         ← always visible pill: lightning + "AI" + pending badge
+  .assistant__panel            ← 30vh (min 260 / max 50vh), anchored above the launcher
+    .assistant__header         ← the resolved context + clear + close
+    .assistant__messages       ← transcript, or the board-derived empty state
+    .assistant__notice         ← stated reason when the composer is disabled
+    .assistant__composer       ← textarea + Send
+    .assistant__usage          ← session token counter
 ```
 
 | State | Visual |
 |-------|--------|
-| Closed | `display: none` on the host — the board layout is untouched |
-| Open | Third grid track; the board squeezes rather than being covered |
+| Closed | Just the launcher pill. No layout space reserved |
+| Opening | Scales from `bottom left` over 180ms — it comes *out of* the button. Inside `prefers-reduced-motion: no-preference` |
+| Open | Panel in the bottom band only; the top half of the screen is never covered |
+| Over a modal | Painted above it (1500 vs 1000). Toasts stay above both |
+| Context: board/page | Header reads "About the board", "About the archive" |
+| Context: card open | Header reads `About "Refactor auth"` — no button needed on the card |
+| Proposals pending | Count badge on the launcher, visible from any page; clicking it opens board preview |
 | Empty | Up to three board-derived suggestions, each a fact + a verb |
 | Thinking | A quiet "Reading your board…" line — **not** animated dots |
-| AI unavailable | Composer disabled with the reason stated inline |
-| Proposals pending | Clickable badge in the header — the way back to board preview |
 
 **Messages:** no bubbles with tails, no avatars. The user's turn is indented on a tertiary background; the assistant's is plain text at full width. No colour of its own.
 

@@ -630,11 +630,17 @@ Limits: 40 entries, 300 chars each, and a separate **4000-char prompt budget** �
 
 **Note for anyone extending the prompt:** the test-only `/ai/_test/prompt` endpoint must load exactly what the chat handler loads, or it reports a prompt the model never sees. It was briefly wrong about memory for this reason.
 
-### Assistant dock (v2.51.0)
+### Assistant panel (v2.51.0, reworked v2.54.0)
 
-The assistant as a panel beside the board rather than a page you navigate to. Opens with `a` from anywhere, from the "Ask AI" button in the task modal's tab strip (seeded with that task's title, *not* sent), or programmatically. The `/:alias/ai` page stays for long paste-a-transcript sessions.
+A permanent **AI** button, bottom-left, on every page. Clicking it grows a panel out of the button; `a` still toggles it.
 
-**It squeezes, it doesn't cover.** During review the board has to stay visible and interactive, so the dock is a third track in the `.appShell` grid — `body.--assistantOpen` switches the template to `48px 1fr auto`. A `flex-basis` on the child does nothing here; the shell is a grid, not a flex row. Resizable by its left edge (300–720px), remembered in `localStorage`.
+**Floats over everything.** `position: fixed`, `z-index: 1500` — above modals (1000), below toasts (2000) so feedback stays visible with the panel open. It takes no layout track and reserves no space.
+
+**Stays in the bottom band.** `height: 30vh` (min 260px, max 50vh), anchored just above the launcher, so the top half of the screen — where the actual work is — is never covered. `transform-origin: bottom left` plus a 180ms scale makes it read as coming *out of* the button rather than appearing over the page; the animation is inside `prefers-reduced-motion: no-preference`.
+
+**Context is implicit — there is no per-card "Ask AI" button.** `app.js` installs a context provider on `assistant-chat.js`, resolved **fresh on every send** rather than when the panel opened, since the user may have navigated or opened a card since. An open task modal wins over the page: `{ page, taskId }`. The server's `renderChatContext()` re-checks both against real data before they reach the prompt — an unknown task id or page name is dropped — and tells the model to assume the conversation is about an open card unless told otherwise. The panel header shows the resolved context ("About the board", `About "Refactor auth"`), because implicit context the user cannot see is just confusing.
+
+The `/:alias/ai` page stays for long paste-a-transcript sessions and shares the same conversation.
 
 **One conversation, two surfaces.** `public/js/assistant-chat.js` owns the transcript, the pending placeholder, token accounting and persistence; the dock and the AI page both subscribe with `onChange()` and render from `getState()`. This is not just tidiness — both surfaces exist on the same page, and two copies of the history would each PUT the whole transcript to `ai-conversation.json` and clobber each other.
 
@@ -866,7 +872,7 @@ Stored in `data/{alias}/ai-conversation.json`. The client owns the transcript an
 
 The assistant panel (`public/components/assistant-dock/`). Present on every page.
 
-- **API:** `open(prompt?)` (pre-fills but never sends — an entry point starts the sentence, it doesn't speak for you), `close()`, `toggle()`, `isOpen`, `setSuggestions(list)`, `setPendingCount(n)`
+- **API:** `open(prompt?)` (pre-fills but never sends), `close()`, `toggle()`, `isOpen`, `setSuggestions(list)`, `setPendingCount(n)`, `setContextLabel(text)`
 - **Events:** `assistant-replied` `{ tasks, proposals }`, `assistant-closed`, `review-proposals` (the header's pending badge — the way back to board preview)
 - Subscribes to `assistant-chat.js` in `connectedCallback` and unsubscribes in `disconnectedCallback`.
 - Escape closes it, except when a modal is open (that Escape is the modal's) or the composer holds unsent text (which it clears instead — a stray Escape must not discard a half-written message).

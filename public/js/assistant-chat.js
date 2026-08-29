@@ -55,6 +55,22 @@ function emitThrottled() {
     });
 }
 
+/**
+ * Returns what the user is currently looking at, e.g. `{ page, taskId }`.
+ *
+ * The assistant floats over every page, so the same question means different
+ * things depending on where it was asked. `app.js` installs this because only
+ * it knows about routing and the open modal; the controller just calls it at
+ * send time so the context is always current, never stale.
+ * @type {Function|null}
+ */
+let contextProvider = null;
+
+/** @param {Function} fn */
+export function setContextProvider(fn) {
+    contextProvider = fn;
+}
+
 /** @type {Set<Function>} Subscribers re-rendered on every state change. */
 const listeners = new Set();
 
@@ -134,12 +150,17 @@ export async function send(text) {
     const streaming = history[history.length - 1];
     let streamed = '';
 
+    // Resolved now, not when the dock opened — the user may have navigated or
+    // opened a card since.
+    let context = null;
+    try { context = contextProvider ? contextProvider() : null; } catch { context = null; }
+
     let result = await sendAiChatStreamApi(apiMessages, (delta) => {
         streamed += delta;
         streaming.role = 'assistant';
         streaming.content = streamed;
         emitThrottled();
-    });
+    }, context);
 
     // Fall back to the buffered endpoint if the stream never got going. Not
     // every OpenAI-compatible server streams correctly, and that should cost a
@@ -147,7 +168,7 @@ export async function send(text) {
     // working, so a later failure is a real error, not a reason to re-ask.
     if (!result.ok && streamed === '') {
         try {
-            result = await sendAiChatApi(apiMessages);
+            result = await sendAiChatApi(apiMessages, context);
         } catch {
             result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
         }

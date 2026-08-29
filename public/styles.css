@@ -4340,39 +4340,8 @@ body.--previewing .column__archiveBtn {
    Assistant dock — layout
    ========================================== */
 
-/* The shell is a grid (rail + main), so an open dock needs its own track —
-   a flex-basis on the child would do nothing here. `auto` lets the dock's own
-   width win and squeezes `1fr` main, rather than covering it. */
-body.--assistantOpen .appShell {
-    grid-template-columns: 48px 1fr auto;
-}
-
-/* No text selection while dragging the dock's edge, or the drag paints a
-   selection across the whole board. */
-body.--dockResizing {
-    user-select: none;
-    cursor: col-resize;
-}
-
-/* "Ask AI" sits at the right end of the task modal's tab strip — the one
-   place in that dialog with room, and a natural home for a per-task action. */
-.taskForm__askBtn {
-    margin-left: auto;
-    padding: var(--space-4) var(--space-8);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--color-text-tertiary);
-    font-family: inherit;
-    font-size: var(--text-sm);
-    cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.taskForm__askBtn:hover {
-    border-color: var(--color-accent-primary);
-    color: var(--color-accent-primary);
-}
+/* The assistant floats over the page rather than taking a layout track, so
+   nothing here reserves space for it — see assistant-dock.css. */
 
 /* ==========================================
    Assistant memory editor (config page)
