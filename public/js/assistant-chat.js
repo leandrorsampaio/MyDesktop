@@ -9,10 +9,14 @@
  *
  * Views subscribe with `onChange()` and re-render from `getState()`. The
  * module owns no DOM.
+ *
+ * Replies stream by default, falling back to the buffered endpoint when the
+ * stream produces nothing — see `send()`.
  */
 
 import {
     sendAiChatApi,
+    sendAiChatStreamApi,
     fetchAiConversationApi,
     saveAiConversationApi,
     clearAiConversationApi,
@@ -33,6 +37,23 @@ let availability = { available: false };
 
 /** True while a request is in flight — views disable their composer. */
 let busy = false;
+
+/**
+ * Streaming re-renders the transcript on every token, which for a whole
+ * conversation is far too much work per frame. Emits are coalesced onto an
+ * animation frame instead: the text still appears as it is written, but the
+ * DOM is touched at most once per paint.
+ */
+let emitScheduled = false;
+
+function emitThrottled() {
+    if (emitScheduled) return;
+    emitScheduled = true;
+    requestAnimationFrame(() => {
+        emitScheduled = false;
+        emit();
+    });
+}
 
 /** @type {Set<Function>} Subscribers re-rendered on every state change. */
 const listeners = new Set();
@@ -108,14 +129,31 @@ export async function send(text) {
         .filter(m => m.role === 'user' || m.role === 'assistant')
         .map(m => ({ role: m.role, content: m.content }));
 
-    let result;
-    try {
-        result = await sendAiChatApi(apiMessages);
-    } catch {
-        result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
+    // The pending row becomes the assistant's reply and fills in as text
+    // arrives, so the wait happens where the user is already looking.
+    const streaming = history[history.length - 1];
+    let streamed = '';
+
+    let result = await sendAiChatStreamApi(apiMessages, (delta) => {
+        streamed += delta;
+        streaming.role = 'assistant';
+        streaming.content = streamed;
+        emitThrottled();
+    });
+
+    // Fall back to the buffered endpoint if the stream never got going. Not
+    // every OpenAI-compatible server streams correctly, and that should cost a
+    // retry rather than the message. Once text has arrived the stream was
+    // working, so a later failure is a real error, not a reason to re-ask.
+    if (!result.ok && streamed === '') {
+        try {
+            result = await sendAiChatApi(apiMessages);
+        } catch {
+            result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
+        }
     }
 
-    history = history.filter(m => m.role !== 'pending');
+    history = history.filter(m => m.role !== 'pending' && m !== streaming);
     busy = false;
 
     if (!result.ok) {
@@ -126,7 +164,7 @@ export async function send(text) {
     const { narrative, tasks = [], proposals = [], usage: turnUsage } = result.data;
     history.push({
         role: 'assistant',
-        content: narrative || '(No response)',
+        content: narrative || streamed || '(No response)',
         tasksAdded: tasks.length,
         proposalsAdded: proposals.length
     });

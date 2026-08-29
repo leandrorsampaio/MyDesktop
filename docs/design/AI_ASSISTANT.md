@@ -212,7 +212,15 @@ What it should be *good at*, in rough value order:
 | **5 — Preview** ✅ shipped v2.50.0 | Board preview mode with per-card accept/reject. |
 | **6 — Dock** ✅ shipped v2.51.0 | Move the chat into the right-hand dock; board-computed empty state; per-card entry points. |
 | **7 — Memory** ✅ shipped v2.52.0 | `ai-memory.json`, config-page editor, AI-proposed entries. |
-| **8 — Polish** | Streaming responses. Moves up if the chosen provider is slow — ten seconds of silence in a persistent dock reads as broken. |
+| **8 — Polish** ✅ shipped v2.53.0 | Streaming responses. Moves up if the chosen provider is slow — ten seconds of silence in a persistent dock reads as broken. |
+
+---
+
+## Status
+
+All eight phases have shipped (v2.46.0 – v2.53.0). Implementation detail now lives in [SPEC.md](../../SPEC.md); this document keeps the intent and the decisions.
+
+**Not yet exercised against a real model end to end.** Every phase is verified against the API and mock providers, but no phase has been driven by an actual LLM reply. That is the gap to close before merging.
 
 ---
 

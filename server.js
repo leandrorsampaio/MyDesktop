@@ -3213,6 +3213,87 @@ function extractTasksFromText(text) {
 }
 
 /**
+ * Incrementally splits a byte stream into complete SSE events.
+ *
+ * Server-sent events are newline-delimited and a network chunk can end
+ * anywhere — mid-line, mid-event, mid-UTF-8-character. This keeps the tail of
+ * an incomplete line in `buffer` until the rest arrives, which is the whole
+ * reason it exists as its own function: getting it wrong silently truncates
+ * the model's output.
+ *
+ * Source of truth: /public/js/utils.js — duplicated here because server.js
+ * runs in Node.js and cannot import ES modules from /public. Change both.
+ *
+ * @param {string} buffer - Leftover text from the previous chunk
+ * @param {string} chunk - Newly decoded text
+ * @returns {{events: Array<{event: string|null, data: string}>, buffer: string}}
+ */
+function parseSseChunk(buffer, chunk) {
+    const text = buffer + chunk;
+    // Events are separated by a blank line. Tolerate CRLF as well as LF.
+    const parts = text.split(/\r?\n\r?\n/);
+    const remainder = parts.pop();   // possibly incomplete — keep for next time
+
+    const events = [];
+    for (const part of parts) {
+        if (!part.trim()) continue;
+        let eventName = null;
+        const dataLines = [];
+        for (const line of part.split(/\r?\n/)) {
+            if (line.startsWith('event:')) eventName = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+            // Comment lines (":" prefixed) and unknown fields are ignored.
+        }
+        if (dataLines.length > 0) {
+            events.push({ event: eventName, data: dataLines.join('\n') });
+        }
+    }
+    return { events, buffer: remainder };
+}
+
+/**
+ * Accumulates streamed tool-call fragments into finished tool calls.
+ *
+ * Both providers stream a tool's JSON arguments as a series of string
+ * fragments, so nothing can be parsed until the stream ends. This collects
+ * them by index and parses once at the end — a fragment that never completes
+ * is dropped rather than throwing, so a truncated tool call can't take the
+ * whole reply with it.
+ */
+class ToolCallAccumulator {
+    constructor() {
+        /** @type {Map<number|string, {name: string, json: string}>} */
+        this._calls = new Map();
+    }
+
+    /**
+     * @param {number|string} index - Provider's block/tool index
+     * @param {string|null} name - Set on the first fragment
+     * @param {string} jsonFragment
+     */
+    push(index, name, jsonFragment = '') {
+        if (!this._calls.has(index)) this._calls.set(index, { name: name || '', json: '' });
+        const call = this._calls.get(index);
+        if (name) call.name = name;
+        call.json += jsonFragment;
+    }
+
+    /** @returns {Array<{name: string, input: Object}>} */
+    finish() {
+        const out = [];
+        for (const call of this._calls.values()) {
+            if (!call.name) continue;
+            try {
+                out.push({ name: call.name, input: call.json ? JSON.parse(call.json) : {} });
+            } catch {
+                // Incomplete or malformed arguments — skip this call, keep the rest.
+            }
+        }
+        return out;
+    }
+}
+
+/**
  * Calls the Anthropic Messages API.
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
@@ -3264,6 +3345,159 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages, tools = [P
     }
 
     return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
+}
+
+/**
+ * Streaming Anthropic call. Narrative text is handed to `onText` as it
+ * arrives; tool calls are accumulated and returned once the stream ends,
+ * because their arguments are only valid JSON when complete.
+ *
+ * @param {Function} onText - Called with each text delta
+ * @returns {Promise<{narrative: string, rawTasks: Array, toolCalls: Array, usage: Object}>}
+ */
+async function streamAnthropicAi(apiKey, model, systemPrompt, messages, tools, onText) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({ model, max_tokens: 4096, system: systemPrompt, messages, tools, stream: true })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Anthropic API error ${response.status}`);
+    }
+
+    const accumulator = new ToolCallAccumulator();
+    const usage = { inputTokens: null, outputTokens: null };
+    let narrative = '';
+
+    await readSseStream(response, (event) => {
+        let payload;
+        try { payload = JSON.parse(event.data); } catch { return; }
+
+        switch (payload.type) {
+            case 'message_start':
+                usage.inputTokens = payload.message?.usage?.input_tokens ?? null;
+                break;
+            case 'content_block_start':
+                if (payload.content_block?.type === 'tool_use') {
+                    accumulator.push(payload.index, payload.content_block.name);
+                }
+                break;
+            case 'content_block_delta':
+                if (payload.delta?.type === 'text_delta') {
+                    narrative += payload.delta.text;
+                    onText(payload.delta.text);
+                } else if (payload.delta?.type === 'input_json_delta') {
+                    accumulator.push(payload.index, null, payload.delta.partial_json || '');
+                }
+                break;
+            case 'message_delta':
+                if (payload.usage?.output_tokens != null) usage.outputTokens = payload.usage.output_tokens;
+                break;
+        }
+    });
+
+    const toolCalls = accumulator.finish();
+    const proposeTasks = toolCalls.find(c => c.name === PROPOSE_TASKS_TOOL.name);
+    let rawTasks = proposeTasks?.input?.tasks || [];
+    if (!rawTasks.length && narrative) rawTasks = extractTasksFromText(narrative);
+
+    return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
+}
+
+/**
+ * Streaming OpenAI-compatible call. Same contract as the Anthropic version.
+ */
+async function streamOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, tools, onText) {
+    const openAiTools = tools.map(t => ({
+        type: 'function',
+        function: { name: t.name, description: t.description, parameters: t.input_schema }
+    }));
+
+    const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'authorization': `Bearer ${apiKey || 'none'}`,
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            tools: openAiTools,
+            tool_choice: 'auto',
+            stream: true,
+            // Not every OpenAI-compatible server honours this; usage stays
+            // null when it doesn't, which the client renders as no counter.
+            stream_options: { include_usage: true }
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `AI provider error ${response.status}`);
+    }
+
+    const accumulator = new ToolCallAccumulator();
+    const usage = { inputTokens: null, outputTokens: null };
+    let narrative = '';
+
+    await readSseStream(response, (event) => {
+        if (event.data === '[DONE]') return;
+        let payload;
+        try { payload = JSON.parse(event.data); } catch { return; }
+
+        if (payload.usage) {
+            usage.inputTokens  = payload.usage.prompt_tokens     ?? usage.inputTokens;
+            usage.outputTokens = payload.usage.completion_tokens ?? usage.outputTokens;
+        }
+
+        const delta = payload.choices?.[0]?.delta;
+        if (!delta) return;
+
+        if (typeof delta.content === 'string' && delta.content) {
+            narrative += delta.content;
+            onText(delta.content);
+        }
+        for (const call of (delta.tool_calls || [])) {
+            accumulator.push(
+                call.index ?? 0,
+                call.function?.name || null,
+                call.function?.arguments || ''
+            );
+        }
+    });
+
+    const toolCalls = accumulator.finish();
+    const proposeTasks = toolCalls.find(c => c.name === PROPOSE_TASKS_TOOL.name);
+    let rawTasks = proposeTasks?.input?.tasks || [];
+    if (!rawTasks.length && narrative) rawTasks = extractTasksFromText(narrative);
+
+    return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
+}
+
+/**
+ * Reads a fetch Response body as SSE, invoking `onEvent` per complete event.
+ * @param {Response} response
+ * @param {Function} onEvent
+ */
+async function readSseStream(response, onEvent) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // stream: true keeps multi-byte characters intact across chunks
+        const parsed = parseSseChunk(buffer, decoder.decode(value, { stream: true }));
+        buffer = parsed.buffer;
+        for (const event of parsed.events) onEvent(event);
+    }
 }
 
 /**
@@ -3608,6 +3842,134 @@ if (RATE_LIMIT_DISABLED) {
             res.status(500).json({ error: 'Failed to build prompt' });
         }
     });
+}
+
+/**
+ * Validates a chat request and assembles everything a provider call needs.
+ *
+ * Shared by the buffered and streaming chat routes so the two can't drift on
+ * validation, prompt construction or which tools are offered.
+ *
+ * @param {Object} req
+ * @returns {Promise<{ok: true, resolved: Object, systemPrompt: string, tools: Array,
+ *                     epics: Array, categories: Array, messages: Array}
+ *                  | {ok: false, status: number, error: string}>}
+ */
+async function prepareAiChat(req) {
+    const { messages } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+        return { ok: false, status: 400, error: 'messages must be a non-empty array' };
+    }
+    for (const m of messages) {
+        if (!m || typeof m.role !== 'string' || typeof m.content !== 'string') {
+            return { ok: false, status: 400, error: 'Each message must have role and content strings' };
+        }
+        if (m.role !== 'user' && m.role !== 'assistant') {
+            return { ok: false, status: 400, error: 'Message role must be "user" or "assistant"' };
+        }
+    }
+
+    const resolved = await resolveActiveAiConfig();
+    if (!resolved.ok) return resolved;
+
+    const [epics, categories, tasks, memories] = await Promise.all([
+        readJsonFile(req.profileFiles.epics, []),
+        readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
+        readJsonFile(req.profileFiles.tasks, []),
+        readJsonFile(req.profileFiles.aiMemory, [])
+    ]);
+
+    return {
+        ok: true,
+        resolved,
+        messages,
+        epics,
+        categories,
+        systemPrompt: buildAiSystemPromptWithBoard({
+            epics, categories, columns: req.columns, tasks, memories
+        }),
+        // Three verbs: create new work, change existing work, remember a fact.
+        tools: [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL, PROPOSE_MEMORY_TOOL]
+    };
+}
+
+/**
+ * Turns a model's tool output into stored staged tasks, proposals and memory
+ * suggestions. Nothing here touches the board — every output is a reviewable
+ * buffer entry.
+ *
+ * Shared by both chat routes.
+ *
+ * @param {Object} req
+ * @param {{rawTasks: Array, toolCalls: Array, epics: Array, categories: Array}} input
+ * @returns {Promise<{tasks: Array, proposals: Array, memories: Array}>}
+ */
+async function persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories }) {
+    const validEpicIds     = new Set(epics.map(e => e.id));
+    const validCategoryIds = new Set(categories.map(c => c.id));
+
+    // --- New tasks → AI staging ---
+    const newStagedTasks = [];
+    for (const raw of (rawTasks || [])) {
+        const task = normaliseStagedTask(raw, generateId(), validEpicIds, validCategoryIds);
+        if (task) newStagedTasks.push(task);
+    }
+    if (newStagedTasks.length > 0) {
+        const existing = await readJsonFile(req.profileFiles.aiStaged, []);
+        await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
+    }
+
+    // --- Changes to existing tasks → the review buffer ---
+    const rawChanges = (toolCalls || [])
+        .filter(c => c.name === PROPOSE_CHANGES_TOOL.name)
+        .flatMap(c => Array.isArray(c.input?.changes) ? c.input.changes : []);
+
+    let newProposals = [];
+    if (rawChanges.length > 0) {
+        const boardTasks = await readJsonFile(req.profileFiles.tasks, []);
+        newProposals = rawChanges
+            .map(raw => normaliseProposal(raw, {
+                validTaskIds: new Set(boardTasks.map(t => t.id)),
+                validColumnIds: new Set(req.columns.map(c => c.id)),
+                validEpicIds,
+                validCategoryIds
+            }))
+            .filter(Boolean);
+
+        if (newProposals.length > 0) {
+            const existing = await readJsonFile(req.profileFiles.aiProposals, []);
+            // Newest first, capped — an unbounded review list stops being
+            // reviewable, which defeats the point of the buffer.
+            await writeJsonFile(
+                req.profileFiles.aiProposals,
+                [...newProposals, ...existing].slice(0, MAX_PROPOSALS)
+            );
+        }
+    }
+
+    // --- Durable facts → memory, unapproved ---
+    const rawFacts = (toolCalls || [])
+        .filter(c => c.name === PROPOSE_MEMORY_TOOL.name)
+        .flatMap(c => Array.isArray(c.input?.facts) ? c.input.facts : []);
+
+    let newMemories = [];
+    if (rawFacts.length > 0) {
+        const existing = await readJsonFile(req.profileFiles.aiMemory, []);
+        const seen = new Set(existing.map(m => m.text.toLowerCase()));
+        newMemories = rawFacts
+            .map(normaliseMemory)
+            .filter(m => m && !seen.has(m.text.toLowerCase()));
+
+        if (newMemories.length > 0 && existing.length < MAX_MEMORIES) {
+            newMemories = newMemories.slice(0, MAX_MEMORIES - existing.length);
+            await writeJsonFile(req.profileFiles.aiMemory, [...existing, ...newMemories]);
+        } else {
+            newMemories = [];
+        }
+    }
+
+    return { tasks: newStagedTasks, proposals: newProposals, memories: newMemories };
 }
 
 // ===========================================
@@ -4055,145 +4417,94 @@ app.post('/api/:profile/ai/staged/:id/promote/board', resolveProfile, writeLimit
 // POST send a message to the AI; returns { narrative, tasks }
 app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) => {
     try {
-        const { messages } = req.body;
+        const prep = await prepareAiChat(req);
+        if (!prep.ok) return res.status(prep.status).json({ error: prep.error });
 
-        if (!Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ error: 'messages must be a non-empty array' });
-        }
-        for (const m of messages) {
-            if (!m || typeof m.role !== 'string' || typeof m.content !== 'string') {
-                return res.status(400).json({ error: 'Each message must have role and content strings' });
-            }
-            if (m.role !== 'user' && m.role !== 'assistant') {
-                return res.status(400).json({ error: 'Message role must be "user" or "assistant"' });
-            }
-        }
+        const { resolved, systemPrompt, tools, messages, epics, categories } = prep;
 
-        // Load AI config
-        const rawConfig = await readJsonFile(AI_CONFIG_FILE, {});
-        const aiConfig  = migrateAiConfig(rawConfig);
-        const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
-        if (!cfg) {
-            return res.status(400).json({ error: 'No active AI configuration. Add one via Config → AI Configuration.' });
-        }
-
-        const providerMeta = AI_PROVIDERS[cfg.provider];
-        if (!providerMeta) {
-            return res.status(400).json({ error: 'Unknown AI provider in config.' });
-        }
-
-        if (providerMeta.requiresKey && !cfg.apiKey) {
-            return res.status(400).json({ error: 'API key not set for this provider. Configure it via Config → AI Configuration.' });
-        }
-
-        const model   = cfg.model;
-        const apiKey  = cfg.apiKey || '';
-        const baseUrl = cfg.provider === 'custom' ? cfg.baseUrl : providerMeta.baseUrl;
-
-        // Build system prompt with the live board plus epics + categories.
-        // The board is what turns this from a text parser into an assistant.
-        const [epics, categories, tasks, memories] = await Promise.all([
-            readJsonFile(req.profileFiles.epics, []),
-            readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
-            readJsonFile(req.profileFiles.tasks, []),
-            readJsonFile(req.profileFiles.aiMemory, [])
-        ]);
-        const systemPrompt = buildAiSystemPromptWithBoard({
-            epics, categories, columns: req.columns, tasks, memories
-        });
-
-        // Two tools: propose_tasks creates new work, propose_changes edits
-        // what already exists. A single turn may legitimately use both.
-        const chatTools = [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL, PROPOSE_MEMORY_TOOL];
-
-        // Call the AI
         let narrative, rawTasks, toolCalls, usage;
         try {
-            if (providerMeta.format === 'anthropic') {
-                ({ narrative, rawTasks, toolCalls, usage } = await callAnthropicAi(apiKey, model, systemPrompt, messages, chatTools));
-            } else {
-                ({ narrative, rawTasks, toolCalls, usage } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, chatTools));
-            }
+            const call = resolved.providerMeta.format === 'anthropic'
+                ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt, messages, tools)
+                : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt, messages, tools);
+            ({ narrative, rawTasks, toolCalls, usage } = call);
         } catch (aiErr) {
             return res.status(502).json({ error: 'AI provider error: ' + aiErr.message });
         }
 
-        // Validate and normalise raw tasks
-        const validEpicIds     = new Set(epics.map(e => e.id));
-        const validCategoryIds = new Set(categories.map(c => c.id));
-        const newStagedTasks   = [];
-
-        for (const raw of rawTasks) {
-            const task = normaliseStagedTask(raw, generateId(), validEpicIds, validCategoryIds);
-            if (task) newStagedTasks.push(task);
-        }
-
-        // Persist new staged tasks
-        if (newStagedTasks.length > 0) {
-            const existing = await readJsonFile(req.profileFiles.aiStaged, []);
-            await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
-        }
-
-        // Proposed changes land in the review buffer. Nothing here touches the
-        // board — applying is a separate, explicitly-clicked request.
-        const rawChanges = (toolCalls || [])
-            .filter(c => c.name === PROPOSE_CHANGES_TOOL.name)
-            .flatMap(c => Array.isArray(c.input?.changes) ? c.input.changes : []);
-
-        let newProposals = [];
-        if (rawChanges.length > 0) {
-            const boardTasks = await readJsonFile(req.profileFiles.tasks, []);
-            const proposalCtx = {
-                validTaskIds: new Set(boardTasks.map(t => t.id)),
-                validColumnIds: new Set(req.columns.map(c => c.id)),
-                validEpicIds: new Set(epics.map(e => e.id)),
-                validCategoryIds: new Set(categories.map(c => c.id))
-            };
-            newProposals = rawChanges
-                .map(raw => normaliseProposal(raw, proposalCtx))
-                .filter(Boolean);
-
-            if (newProposals.length > 0) {
-                const existing = await readJsonFile(req.profileFiles.aiProposals, []);
-                // Newest first, capped — an unbounded review list stops being
-                // reviewable, which defeats the point of the buffer.
-                const merged = [...newProposals, ...existing].slice(0, MAX_PROPOSALS);
-                await writeJsonFile(req.profileFiles.aiProposals, merged);
-            }
-        }
-
-        // Memory proposals are stored unapproved: they are shown for review on
-        // the config page and never reach a prompt until the user says so.
-        const rawFacts = (toolCalls || [])
-            .filter(c => c.name === PROPOSE_MEMORY_TOOL.name)
-            .flatMap(c => Array.isArray(c.input?.facts) ? c.input.facts : []);
-
-        let newMemories = [];
-        if (rawFacts.length > 0) {
-            const existing = await readJsonFile(req.profileFiles.aiMemory, []);
-            const seen = new Set(existing.map(m => m.text.toLowerCase()));
-            newMemories = rawFacts
-                .map(normaliseMemory)
-                .filter(m => m && !seen.has(m.text.toLowerCase()));
-
-            if (newMemories.length > 0 && existing.length < MAX_MEMORIES) {
-                const room = MAX_MEMORIES - existing.length;
-                newMemories = newMemories.slice(0, room);
-                await writeJsonFile(req.profileFiles.aiMemory, [...existing, ...newMemories]);
-            } else {
-                newMemories = [];
-            }
-        }
+        const stored = await persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories });
 
         res.json({
             narrative,
-            tasks: newStagedTasks,
-            proposals: newProposals,
-            memories: newMemories,
+            tasks: stored.tasks,
+            proposals: stored.proposals,
+            memories: stored.memories,
             usage: usage || null
         });
     } catch (error) {
         res.status(500).json({ error: 'AI chat failed' });
+    }
+});
+
+/**
+ * Streaming chat. Same inputs and same stored outputs as the buffered route
+ * above — the only difference is that narrative text arrives as it is written.
+ *
+ * Kept as a SEPARATE endpoint rather than a flag on the existing one, so the
+ * buffered path stays intact as a fallback: not every OpenAI-compatible server
+ * streams correctly, and a client that fails to stream can simply retry
+ * against /ai/chat.
+ *
+ * Wire format (server-sent events):
+ *   event: text   data: {"delta":"..."}   — narrative, token by token
+ *   event: done   data: {tasks, proposals, memories, usage}
+ *   event: error  data: {"error":"..."}
+ *
+ * Tool calls are NOT streamed: their arguments are only valid JSON once
+ * complete, so they are accumulated and processed before `done` is sent.
+ */
+app.post('/api/:profile/ai/chat/stream', resolveProfile, aiLimiter, async (req, res) => {
+    const prep = await prepareAiChat(req);
+    if (!prep.ok) return res.status(prep.status).json({ error: prep.error });
+
+    const { resolved, systemPrompt, tools, messages, epics, categories } = prep;
+
+    res.set('Content-Type', 'text/event-stream; charset=utf-8');
+    // no-cache and no-transform keep proxies from buffering the stream, which
+    // would defeat the point entirely.
+    res.set('Cache-Control', 'no-cache, no-transform');
+    res.set('Connection', 'keep-alive');
+    res.set('X-Accel-Buffering', 'no');
+
+    const send = (event, payload) => {
+        if (res.writableEnded) return;
+        res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    try {
+        const call = resolved.providerMeta.format === 'anthropic'
+            ? await streamAnthropicAi(resolved.apiKey, resolved.model, systemPrompt, messages, tools,
+                (delta) => send('text', { delta }))
+            : await streamOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt, messages, tools,
+                (delta) => send('text', { delta }));
+
+        const stored = await persistAiToolOutput(req, {
+            rawTasks: call.rawTasks, toolCalls: call.toolCalls, epics, categories
+        });
+
+        send('done', {
+            narrative: call.narrative,
+            tasks: stored.tasks,
+            proposals: stored.proposals,
+            memories: stored.memories,
+            usage: call.usage || null
+        });
+        res.end();
+    } catch (error) {
+        // Headers are already sent, so a status code is no longer available —
+        // the failure has to travel as an event the client can act on.
+        send('error', { error: error.message || 'AI provider error' });
+        res.end();
     }
 });
 

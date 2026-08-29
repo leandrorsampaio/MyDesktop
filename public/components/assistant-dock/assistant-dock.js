@@ -243,15 +243,31 @@ class AssistantDock extends HTMLElement {
 
         const result = await chat.send(text);
         if (!result.ok) {
-            this._noticeEl.hidden = false;
-            this._noticeEl.textContent = result.error;
+            this._showNotice(result.error, 'send-failed');
             return;
         }
+        this._hideNotice();
         this.dispatchEvent(new CustomEvent('assistant-replied', {
             bubbles: true,
             composed: true,
             detail: { tasks: result.tasks, proposals: result.proposals }
         }));
+    }
+
+    /**
+     * @param {string} text
+     * @param {'unavailable'|'send-failed'} kind - Why it is showing
+     */
+    _showNotice(text, kind) {
+        this._noticeEl.textContent = text;
+        this._noticeEl.dataset.kind = kind;
+        this._noticeEl.hidden = false;
+    }
+
+    _hideNotice() {
+        this._noticeEl.hidden = true;
+        this._noticeEl.textContent = '';
+        delete this._noticeEl.dataset.kind;
     }
 
     _autoGrow() {
@@ -280,14 +296,22 @@ class AssistantDock extends HTMLElement {
         this._sendBtn.textContent = busy ? 'Thinking…' : 'Send';
 
         // Silent disabling is the failure mode to avoid: always say why.
+        //
+        // The notice serves two purposes — "the AI is unavailable" and "that
+        // last message failed" — so it records which one it is showing. Reading
+        // the reason off a `dataset` flag rather than sniffing the message text
+        // means rewording a string can't silently break the clearing logic.
         if (!usable) {
-            this._noticeEl.hidden = false;
-            this._noticeEl.textContent = availability.reason === 'offline'
-                ? `${availability.message} The conversation is still here.`
-                : `${availability.message || 'AI is not configured.'} Set one up in Config → AI Configuration.`;
+            this._showNotice(
+                availability.reason === 'offline'
+                    ? `${availability.message} The conversation is still here.`
+                    : `${availability.message || 'AI is not configured.'} Set one up in Config → AI Configuration.`,
+                'unavailable'
+            );
             this._inputEl.placeholder = 'AI unavailable';
-        } else if (this._noticeEl.textContent && this._noticeEl.textContent.includes('Config →')) {
-            this._noticeEl.hidden = true;
+        } else if (this._noticeEl.dataset.kind === 'unavailable') {
+            // Availability came back; a stale "not configured" notice would lie.
+            this._hideNotice();
             this._inputEl.placeholder = 'Ask about your board…';
         }
     }

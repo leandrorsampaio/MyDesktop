@@ -223,8 +223,11 @@ DELETE /api/ai/config/entries/:id                  - Delete a config entry
 PUT    /api/ai/config/active                       - Set the active config (body: { configId })
 GET    /api/ai/availability                        - Is the AI usable right now? { available, reason?, message?, provider?, model?, name? }.
                                                      Always 200, never throws — the basis of graceful degradation. Key never returned.
-POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[], usage }; rate-limited 10 req/min (body: { messages: [{role,content}] }).
+POST   /api/:profile/ai/chat                       - Send chat messages; returns { narrative, tasks[], proposals[], memories[], usage };
+                                                     rate-limited 10 req/min (body: { messages: [{role,content}] }).
                                                      The system prompt carries a compact snapshot of the live board.
+POST   /api/:profile/ai/chat/stream                - Same inputs and stored outputs, streamed as server-sent events:
+                                                     `text` deltas, then one `done` with the full payload, or `error`.
 GET    /api/:profile/ai/memory                     - All memories (approved + awaiting review)
 POST   /api/:profile/ai/memory                     - Add one by hand (body: { text }); approved immediately
 PUT    /api/:profile/ai/memory/:id                 - Edit text and/or approve (body: { text?, approved? })
@@ -590,6 +593,24 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
 - **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
+
+### Streaming replies (v2.53.0)
+
+`POST /api/:profile/ai/chat/stream` returns server-sent events instead of one JSON body:
+
+```
+event: text   data: {"delta":"Three "}
+event: done   data: {narrative, tasks, proposals, memories, usage}
+event: error  data: {"error":"..."}
+```
+
+**A separate endpoint, not a flag.** The buffered `/ai/chat` stays intact as a fallback: not every OpenAI-compatible server streams correctly, and a client whose stream fails before producing any text simply retries there. Once text *has* arrived the stream was working, so a later failure is a real error and is reported rather than re-asked.
+
+**Tool calls are not streamed.** Both providers emit a tool's JSON arguments as fragments that are only valid once complete, so `ToolCallAccumulator` collects them by index and parses at the end; a fragment that never completes is dropped rather than throwing. All validation and persistence happen before `done` is sent, which is why the streamed and buffered routes store identical results — they share `prepareAiChat()` and `persistAiToolOutput()`.
+
+**`parseSseChunk()` is the piece to be careful with.** A network chunk can end mid-line or mid-event, so the incomplete tail is carried into the next chunk. Getting it wrong silently truncates the model's output, so it is a pure function with its own tests — including one that feeds a payload one character at a time and one that asserts every chunk size parses identically. Source of truth is `public/js/utils.js`; `server.js` carries a duplicate with the standard note.
+
+**Rendering is coalesced onto an animation frame.** Re-rendering the whole transcript per token is far too much work per frame. One consequence worth knowing: in a background tab `requestAnimationFrame` is paused, so intermediate text isn't painted — the unconditional final `emit()` still renders the complete reply when the tab is next visible. Correctness is preserved; only intermediate paints are skipped.
 
 ### Assistant memory (v2.52.0)
 

@@ -4,7 +4,7 @@
  * These are pure functions that return data - state updates are handled by callers.
  */
 
-import { attachmentMimeFor } from './utils.js';
+import { attachmentMimeFor, parseSseChunk } from './utils.js';
 
 /** Profile-scoped API base path (e.g., '/api/work') */
 let apiBase = '/api';
@@ -981,4 +981,74 @@ export async function updateMemoryApi(id, data) {
 export async function deleteMemoryApi(id) {
     const response = await fetch(`${apiBase}/ai/memory/${id}`, { method: 'DELETE' });
     return parseOrThrow(response);
+}
+
+/**
+ * Streaming chat. Narrative text arrives token by token via `onDelta`; the
+ * resolved value carries everything the buffered endpoint returns.
+ *
+ * Deliberately reports failure rather than throwing on a non-OK response, so
+ * the caller can fall back to the buffered endpoint. Not every
+ * OpenAI-compatible server streams correctly, and a broken stream should cost
+ * a retry rather than the whole message.
+ *
+ * @param {Array<{role: string, content: string}>} messages
+ * @param {Function} onDelta - Called with each text fragment as it arrives
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function sendAiChatStreamApi(messages, onDelta) {
+    let response;
+    try {
+        response = await fetch(`${apiBase}/ai/chat/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages })
+        });
+    } catch {
+        return { ok: false, error: 'Could not reach the server' };
+    }
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        return { ok: false, error: body.error || `Request failed (${response.status})` };
+    }
+    if (!response.body) {
+        // No readable stream (very old browser, or a proxy that buffered it).
+        return { ok: false, error: 'Streaming not available' };
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result = null;
+    let streamError = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // stream: true keeps multi-byte characters intact across chunks
+        const parsed = parseSseChunk(buffer, decoder.decode(value, { stream: true }));
+        buffer = parsed.buffer;
+
+        for (const event of parsed.events) {
+            let payload;
+            try { payload = JSON.parse(event.data); } catch { continue; }
+
+            if (event.event === 'text' && typeof payload.delta === 'string') {
+                onDelta(payload.delta);
+            } else if (event.event === 'done') {
+                result = payload;
+            } else if (event.event === 'error') {
+                streamError = payload.error || 'AI provider error';
+            }
+        }
+    }
+
+    if (streamError) return { ok: false, error: streamError };
+    if (!result) {
+        // The connection closed without a `done` event — the reply is
+        // incomplete, and treating it as success would store half an answer.
+        return { ok: false, error: 'The response ended unexpectedly' };
+    }
+    return { ok: true, data: result };
 }

@@ -235,3 +235,45 @@ export function attachmentMimeFor(file) {
 export function isViewableAttachment(attachment) {
     return INLINE_ATTACHMENT_MIMES.includes(attachment?.mime);
 }
+
+// ===========================================
+// Server-sent events
+// ===========================================
+
+/**
+ * Incrementally splits a server-sent-event stream into complete events.
+ *
+ * A network chunk can end anywhere — mid-line, mid-event — so the tail of an
+ * incomplete line is returned in `buffer` and prepended to the next chunk.
+ * Getting this wrong silently truncates the model's output, which is why it
+ * lives in one place with its own tests.
+ *
+ * NOTE: server.js has its own copy, because Node cannot import ES modules
+ * from /public. This file is the source of truth — change both together.
+ *
+ * @param {string} buffer - Leftover text from the previous chunk
+ * @param {string} chunk - Newly decoded text
+ * @returns {{events: Array<{event: string|null, data: string}>, buffer: string}}
+ */
+export function parseSseChunk(buffer, chunk) {
+    const text = buffer + chunk;
+    // Events are separated by a blank line. Tolerate CRLF as well as LF.
+    const parts = text.split(/\r?\n\r?\n/);
+    const remainder = parts.pop();   // possibly incomplete — keep for next time
+
+    const events = [];
+    for (const part of parts) {
+        if (!part.trim()) continue;
+        let eventName = null;
+        const dataLines = [];
+        for (const line of part.split(/\r?\n/)) {
+            if (line.startsWith('event:')) eventName = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+            // Comment lines (":" prefixed) and unknown fields are ignored.
+        }
+        if (dataLines.length > 0) {
+            events.push({ event: eventName, data: dataLines.join('\n') });
+        }
+    }
+    return { events, buffer: remainder };
+}
