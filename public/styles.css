@@ -3567,6 +3567,23 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     border-color: var(--color-accent-primary);
 }
 
+/* Model field + its "Fetch models" button share a row; the button sizes to
+   its label so the input keeps the remaining width. */
+.aiConfig__inputRow {
+    display: flex;
+    gap: var(--space-8);
+    align-items: center;
+}
+
+.aiConfig__inputRow .aiConfig__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.aiConfig__inputRow .btn {
+    flex: 0 0 auto;
+}
+
 .aiConfig__fieldHint {
     font-size: var(--text-base);
     color: var(--color-text-tertiary);

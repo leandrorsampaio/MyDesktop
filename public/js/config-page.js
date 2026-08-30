@@ -230,7 +230,12 @@ export async function initConfigPage(pageViewEl, { elements }) {
                             </div>
                             <div class="aiConfig__group">
                                 <label class="aiConfig__label">Model</label>
-                                <input type="text" class="aiConfig__input js-cfg-aiModelInput" placeholder="Enter model name" />
+                                <div class="aiConfig__inputRow">
+                                    <input type="text" class="aiConfig__input js-cfg-aiModelInput" placeholder="Enter model name" list="cfgAiModelList" />
+                                    <button type="button" class="btn --sm js-cfg-aiFetchModels" disabled>Fetch models</button>
+                                </div>
+                                <datalist id="cfgAiModelList"></datalist>
+                                <p class="aiConfig__fieldHint js-cfg-aiModelHint">Model ids change without notice. Save the entry, then fetch the list the provider actually offers.</p>
                             </div>
                             <div class="aiConfig__group">
                                 <label class="aiConfig__label">API Key</label>
@@ -984,6 +989,8 @@ export async function initConfigPage(pageViewEl, { elements }) {
     const aiCustomUrlGrp = $('.js-cfg-aiCustomUrlGroup');
     const aiCustomUrl   = $('.js-cfg-aiCustomUrl');
     const aiModelInput  = $('.js-cfg-aiModelInput');
+    const aiFetchModelsBtn = $('.js-cfg-aiFetchModels');
+    const aiModelList   = $('#cfgAiModelList');
     const aiKeyInput    = $('.js-cfg-aiKeyInput');
     const aiKeyHint     = $('.js-cfg-aiKeyHint');
     const aiError       = $('.js-cfg-aiError');
@@ -1088,6 +1095,11 @@ export async function initConfigPage(pageViewEl, { elements }) {
         aiError.style.display = 'none';
         syncProviderFields();
         aiSaveBtn.dataset.editId = isEdit ? entry.id : '';
+        // Fetching asks the provider with the *stored* key, so it needs a saved
+        // entry. A new one has nothing to authenticate with yet.
+        aiFetchModelsBtn.disabled = !isEdit;
+        aiFetchModelsBtn.title = isEdit ? '' : 'Save this configuration first';
+        aiModelList.innerHTML = '';
         aiNameInput.focus();
     }
 
@@ -1096,6 +1108,36 @@ export async function initConfigPage(pageViewEl, { elements }) {
         const isDefaultOfOther = Object.values(AI_PROVIDER_DEFAULTS).some(d => d !== def && d.defaultModel && d.defaultModel === aiModelInput.value);
         if (isDefaultOfOther || !aiModelInput.value.trim()) aiModelInput.value = def?.defaultModel || '';
         syncProviderFields();
+    });
+
+    aiFetchModelsBtn.addEventListener('click', async () => {
+        const editId = aiSaveBtn.dataset.editId;
+        if (!editId) return;
+
+        const original = aiFetchModelsBtn.textContent;
+        aiFetchModelsBtn.disabled = true;
+        aiFetchModelsBtn.textContent = 'Fetching…';
+        try {
+            const res = await fetch(`/api/ai/config/entries/${editId}/models`);
+            const data = await res.json();
+            if (!res.ok) {
+                toaster.error(data.error || 'Could not fetch models');
+                return;
+            }
+            aiModelList.innerHTML = data.models
+                .map(id => `<option value="${escapeHtml(id)}"></option>`).join('');
+            if (data.models.length === 0) {
+                toaster.warning('The provider listed no models.');
+            } else {
+                toaster.success(`${data.models.length} model${data.models.length === 1 ? '' : 's'} available — click the Model field to pick one.`);
+                aiModelInput.focus();
+            }
+        } catch {
+            toaster.error('Could not reach the server');
+        } finally {
+            aiFetchModelsBtn.disabled = false;
+            aiFetchModelsBtn.textContent = original;
+        }
     });
 
     aiAddBtn.addEventListener('click', () => aiShowForm(null));

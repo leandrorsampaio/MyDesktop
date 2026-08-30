@@ -4180,6 +4180,71 @@ app.delete('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
     }
 });
 
+// GET /api/ai/config/entries/:id/models — list the models this provider offers.
+//
+// Model ids are provider trivia that change without notice, and a wrong one
+// fails at the worst moment: mid-conversation, as an opaque provider error.
+// This asks the provider directly, using the stored key. It is a read-only
+// call that sends NO board data — only the key travels, and only to the host
+// the entry already points at.
+app.get('/api/ai/config/entries/:id/models', async (req, res) => {
+    try {
+        const config = migrateAiConfig(await readJsonFile(AI_CONFIG_FILE, {}));
+        const cfg = (config.configs || []).find(c => c.id === req.params.id);
+        if (!cfg) return res.status(404).json({ error: 'Config entry not found' });
+
+        const providerMeta = AI_PROVIDERS[cfg.provider];
+        if (!providerMeta) return res.status(400).json({ error: 'Unknown AI provider in config.' });
+        if (providerMeta.requiresKey && !cfg.apiKey) {
+            return res.status(400).json({ error: 'Save an API key first, then fetch the model list.' });
+        }
+
+        const baseUrl = (providerMeta.allowsBaseUrl && cfg.baseUrl) ? cfg.baseUrl : providerMeta.baseUrl;
+        if (!baseUrl) return res.status(400).json({ error: 'Set a Base URL first.' });
+
+        const isAnthropic = providerMeta.format === 'anthropic';
+        const url = isAnthropic
+            ? `${baseUrl.replace(/\/+$/, '')}/v1/models`
+            : `${baseUrl.replace(/\/+$/, '')}/models`;
+        const headers = isAnthropic
+            ? { 'x-api-key': cfg.apiKey, 'anthropic-version': '2023-06-01' }
+            : { 'Authorization': `Bearer ${cfg.apiKey}` };
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        let response;
+        try {
+            response = await fetch(url, { headers, signal: controller.signal });
+        } finally {
+            clearTimeout(timeout);
+        }
+
+        if (!response.ok) {
+            const detail = (await response.text().catch(() => '')).slice(0, 300);
+            return res.status(502).json({
+                error: `Provider returned ${response.status}.`,
+                detail
+            });
+        }
+
+        // OpenAI-compatible and Anthropic both answer { data: [{ id, ... }] }.
+        const body = await response.json();
+        const models = (body.data || [])
+            .map(m => m.id)
+            .filter(Boolean)
+            .sort();
+
+        res.json({ models, endpoint: url });
+    } catch (error) {
+        // Never let a provider being unreachable read as a bug in the app.
+        res.status(502).json({
+            error: error.name === 'AbortError'
+                ? 'The provider did not answer within 15 seconds.'
+                : `Could not reach the provider: ${error.message}`
+        });
+    }
+});
+
 // PUT /api/ai/config/active — set the active config entry
 app.put('/api/ai/config/active', writeLimiter, async (req, res) => {
     try {
