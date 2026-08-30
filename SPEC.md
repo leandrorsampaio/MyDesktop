@@ -217,6 +217,12 @@ DELETE /api/:profile/columns/:id         - Delete column; tasks moved to first c
 
 ### AI Assistant (global config + profile-scoped staged tasks)
 ```
+AI providers (`AI_PROVIDERS` in server.js): anthropic (anthropic format);
+openai, groq, google, kimi, custom (openai-compatible). A provider with
+`allowsBaseUrl` (kimi, custom) may override the registry's base URL —
+Kimi has two regional hosts, and switching between them shouldn't cost
+you the provider's defaults by forcing a drop to Custom.
+
 GET    /api/ai/config                              - Get AI config (returns { activeConfigId, configs: [{ id, name, provider, model, customUrl?, hasKey: bool }] } — key never returned)
 POST   /api/ai/config/entries                      - Create new config entry (body: { name, provider, model, apiKey?, customUrl? })
 PUT    /api/ai/config/entries/:id                  - Update a config entry; empty apiKey preserves existing key

@@ -50,12 +50,24 @@ const AI_PROVIDERS = {
         defaultModel: 'gemini-2.0-flash',
         requiresKey: true
     },
+    kimi: {
+        label: 'Kimi (Moonshot)',
+        format: 'openai-compatible',
+        // Moonshot runs two regional hosts — this is the international one.
+        // `allowsBaseUrl` lets the China endpoint (api.moonshot.cn/v1) be set
+        // without dropping to the Custom provider and losing the defaults.
+        baseUrl: 'https://api.moonshot.ai/v1',
+        defaultModel: 'kimi-k3',
+        requiresKey: true,
+        allowsBaseUrl: true
+    },
     custom: {
         label: 'Custom / Local',
         format: 'openai-compatible',
         baseUrl: null,
         defaultModel: '',
-        requiresKey: false
+        requiresKey: false,
+        allowsBaseUrl: true
     }
 };
 
@@ -3584,7 +3596,9 @@ async function resolveActiveAiConfig() {
         providerMeta,
         model: cfg.model,
         apiKey: cfg.apiKey || '',
-        baseUrl: cfg.provider === 'custom' ? cfg.baseUrl : providerMeta.baseUrl
+        // A stored baseUrl wins when the provider allows one (Custom, and Kimi
+        // for its China host); otherwise the registry default stands.
+        baseUrl: (providerMeta.allowsBaseUrl && cfg.baseUrl) ? cfg.baseUrl : providerMeta.baseUrl
     };
 }
 

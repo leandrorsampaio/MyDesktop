@@ -28,7 +28,8 @@ const AI_PROVIDER_DEFAULTS = {
     openai:    { label: 'OpenAI',                              defaultModel: 'gpt-4o-mini',              requiresKey: true  },
     groq:      { label: 'Groq',                               defaultModel: 'llama-3.3-70b-versatile',  requiresKey: true  },
     google:    { label: 'Google AI Studio (Gemini)',           defaultModel: 'gemini-2.0-flash',         requiresKey: true  },
-    custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false }
+    kimi:      { label: 'Kimi (Moonshot)',                     defaultModel: 'kimi-k3',                  requiresKey: true,  allowsBaseUrl: true },
+    custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false, allowsBaseUrl: true }
 };
 
 /**
@@ -218,13 +219,14 @@ export async function initConfigPage(pageViewEl, { elements }) {
                                     <option value="openai">OpenAI</option>
                                     <option value="groq">Groq</option>
                                     <option value="google">Google AI Studio (Gemini)</option>
+                                    <option value="kimi">Kimi (Moonshot)</option>
                                     <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
                                 </select>
                             </div>
                             <div class="aiConfig__group js-cfg-aiCustomUrlGroup" style="display:none;">
                                 <label class="aiConfig__label">Base URL</label>
                                 <input type="text" class="aiConfig__input js-cfg-aiCustomUrl" placeholder="http://localhost:1234/v1" />
-                                <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
+                                <p class="aiConfig__fieldHint js-cfg-aiUrlHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
                             </div>
                             <div class="aiConfig__group">
                                 <label class="aiConfig__label">Model</label>
@@ -1053,6 +1055,26 @@ export async function initConfigPage(pageViewEl, { elements }) {
         }
     }
 
+    /**
+     * Shows or hides the provider-dependent fields.
+     *
+     * The Base URL field is no longer Custom-only: Kimi runs two regional
+     * hosts, and switching between them shouldn't cost you the provider's
+     * defaults by forcing a drop to Custom.
+     */
+    function syncProviderFields() {
+        const provider = aiProviderSel.value;
+        const meta = AI_PROVIDER_DEFAULTS[provider];
+        const urlHint = $('.js-cfg-aiUrlHint');
+
+        aiCustomUrlGrp.style.display = meta?.allowsBaseUrl ? '' : 'none';
+
+        if (!urlHint) return;
+        urlHint.textContent = provider === 'kimi'
+            ? 'Defaults to the international host (api.moonshot.ai/v1). Use https://api.moonshot.cn/v1 for the China platform. Leave blank for the default.'
+            : 'OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.';
+    }
+
     function aiShowForm(entry) {
         const isEdit = !!entry;
         aiListPanel.style.display = 'none';
@@ -1064,7 +1086,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
         aiKeyInput.value    = '';
         aiKeyHint.textContent = isEdit && entry.hasKey ? 'Key saved — leave blank to keep current' : '';
         aiError.style.display = 'none';
-        aiCustomUrlGrp.style.display = aiProviderSel.value === 'custom' ? '' : 'none';
+        syncProviderFields();
         aiSaveBtn.dataset.editId = isEdit ? entry.id : '';
         aiNameInput.focus();
     }
@@ -1073,7 +1095,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
         const def = AI_PROVIDER_DEFAULTS[aiProviderSel.value];
         const isDefaultOfOther = Object.values(AI_PROVIDER_DEFAULTS).some(d => d !== def && d.defaultModel && d.defaultModel === aiModelInput.value);
         if (isDefaultOfOther || !aiModelInput.value.trim()) aiModelInput.value = def?.defaultModel || '';
-        aiCustomUrlGrp.style.display = aiProviderSel.value === 'custom' ? '' : 'none';
+        syncProviderFields();
     });
 
     aiAddBtn.addEventListener('click', () => aiShowForm(null));
