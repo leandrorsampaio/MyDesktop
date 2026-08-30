@@ -262,6 +262,32 @@ describe('The interview', () => {
         });
     });
 
+    describe('When the model says nothing', () => {
+        // Models routinely answer a tool-use turn with the tool call alone.
+        // Passing that straight through renders an empty message bubble: the
+        // work happened and the transcript shows a blank. Seen live on Kimi K3.
+
+        const outcome = async (q) => (await get(api(`/ai/_test/outcome?${q}`))).body.narrative;
+
+        it('describes what the reply actually did', async () => {
+            assert.strictEqual(await outcome('memories=1'), 'Noted 1 thing to remember.');
+            assert.strictEqual(await outcome('memories=3'), 'Noted 3 things to remember.');
+            assert.strictEqual(await outcome('tasks=2'), 'Staged 2 tasks.');
+            assert.strictEqual(await outcome('proposals=1'), 'Proposed 1 change.');
+        });
+
+        it('combines them', async () => {
+            assert.strictEqual(
+                await outcome('tasks=1&proposals=2&memories=1'),
+                'Staged 1 task, proposed 2 changes, noted 1 thing to remember.'
+            );
+        });
+
+        it('stays empty when nothing happened, so a silent reply still reads as one', async () => {
+            assert.strictEqual(await outcome('tasks=0&proposals=0&memories=0'), '');
+        });
+    });
+
     describe('Interview conversations', () => {
 
         it('starts its own thread, so it can be re-run any time', async () => {

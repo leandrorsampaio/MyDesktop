@@ -171,3 +171,40 @@ describe('generateId pattern', () => {
         assert.ok(id.length >= 10, `ID "${id}" should be at least 10 chars`);
     });
 });
+
+describe('renderInlineMarkdown', () => {
+    const MODULE_URL = require('node:url').pathToFileURL(
+        require('node:path').join(__dirname, '..', '..', 'public', 'js', 'utils.js')
+    ).href;
+
+    // Models emit **bold**, *italic* and `code` whether asked to or not.
+    // Showing the asterisks raw looks broken; rendering them unsafely is worse.
+
+    it('renders the emphasis a chat model actually produces', async () => {
+        const { renderInlineMarkdown } = await import(MODULE_URL);
+        assert.strictEqual(renderInlineMarkdown('**Mikael** appears 22 times'),
+            '<strong>Mikael</strong> appears 22 times');
+        assert.strictEqual(renderInlineMarkdown('the `ESB-` prefix'),
+            'the <code>ESB-</code> prefix');
+        assert.strictEqual(renderInlineMarkdown('a *little* emphasis'),
+            'a <em>little</em> emphasis');
+    });
+
+    it('escapes before it formats, so markup in a reply cannot reach the DOM', async () => {
+        const { renderInlineMarkdown } = await import(MODULE_URL);
+        const out = renderInlineMarkdown('<img src=x onerror=alert(1)> **safe**');
+        assert.ok(!out.includes('<img'), 'raw tag survived');
+        assert.ok(out.includes('&lt;img'), 'tag was not escaped');
+        assert.ok(out.includes('<strong>safe</strong>'), 'formatting was lost');
+    });
+
+    it('leaves a bullet asterisk alone', async () => {
+        const { renderInlineMarkdown } = await import(MODULE_URL);
+        assert.strictEqual(renderInlineMarkdown('* first\n* second'), '* first\n* second');
+    });
+
+    it('does not read emphasis inside code', async () => {
+        const { renderInlineMarkdown } = await import(MODULE_URL);
+        assert.strictEqual(renderInlineMarkdown('`a**b**c`'), '<code>a**b**c</code>');
+    });
+});

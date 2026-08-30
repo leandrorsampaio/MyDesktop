@@ -3039,7 +3039,9 @@ How to run the interview:
 - Ask about the highest-count unknowns first — those matter most.
 - A name might be a person, a vendor, a client or a system. Ask which; do not guess.
 - Accept short, messy answers. "mikael is my boss, euvic are external devs" is a complete answer to two questions.
-- After each answer, call propose_memory() with one entry per fact learned, choosing the right category, then ask your next questions.
+- After each answer, call propose_memory() with one entry per fact learned, choosing the right category.
+- ALWAYS write your next questions as ordinary text in the same reply as the tool call. A reply containing only a tool call shows the user a blank message.
+- If they decline a question or ask to skip it, drop it and move on. Never ask it again.
 - When you run out of genuine gaps, say so plainly and stop. Do not invent questions to fill space.
 
 Open by saying in one line what you scanned and what you are missing, then ask your first three questions.`;
@@ -4599,6 +4601,20 @@ app.get('/api/ai/availability', async (req, res) => {
 // the board snapshot can be asserted without a live AI provider. Registered
 // only when RATE_LIMIT_DISABLED=1, matching /api/_test/reset-rate-limit.
 if (RATE_LIMIT_DISABLED) {
+    // Test-only: the receipt shown when a model answers with a tool call and no
+    // text. Reachable without a provider, since provoking a silent reply from a
+    // live model on demand is not something a test can rely on.
+    app.get('/api/:profile/ai/_test/outcome', resolveProfile, (req, res) => {
+        const count = (key) => Array.from({ length: Number(req.query[key]) || 0 }, () => ({}));
+        res.json({
+            narrative: describeToolOutcome({
+                tasks: count('tasks'),
+                proposals: count('proposals'),
+                memories: count('memories')
+            })
+        });
+    });
+
     app.get('/api/:profile/ai/_test/prompt', resolveProfile, async (req, res) => {
         // ?page= and ?taskId= mirror the `context` a real chat request sends,
         // so context rendering can be asserted without a live provider.
@@ -4725,6 +4741,33 @@ async function prepareAiChat(req) {
  * @param {{rawTasks: Array, toolCalls: Array, epics: Array, categories: Array}} input
  * @returns {Promise<{tasks: Array, proposals: Array, memories: Array}>}
  */
+/**
+ * A plain description of what a reply did, for when the model says nothing.
+ *
+ * Models routinely answer a tool-use turn with the tool call alone and no
+ * accompanying text. Passing that through renders an empty message bubble: the
+ * work happened, and the transcript shows a blank. Observed live on Kimi K3
+ * answering an interview question.
+ *
+ * Deliberately flat and factual — it is a receipt, not the model pretending to
+ * have spoken.
+ *
+ * @param {{tasks: Array, proposals: Array, memories: Array}} stored
+ * @returns {string} Empty when nothing happened, so a genuinely empty reply
+ *          still reads as one.
+ */
+function describeToolOutcome(stored) {
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    const parts = [];
+    if (stored.tasks?.length) parts.push(`staged ${plural(stored.tasks.length, 'task')}`);
+    if (stored.proposals?.length) parts.push(`proposed ${plural(stored.proposals.length, 'change')}`);
+    if (stored.memories?.length) parts.push(`noted ${plural(stored.memories.length, 'thing')} to remember`);
+    if (!parts.length) return '';
+
+    const sentence = parts.join(', ');
+    return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
+}
+
 async function persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories }) {
     const validEpicIds     = new Set(epics.map(e => e.id));
     const validCategoryIds = new Set(categories.map(c => c.id));
@@ -5640,7 +5683,7 @@ app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) =>
         const stored = await persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories });
 
         res.json({
-            narrative,
+            narrative: narrative || describeToolOutcome(stored),
             tasks: stored.tasks,
             proposals: stored.proposals,
             memories: stored.memories,
@@ -5697,8 +5740,13 @@ app.post('/api/:profile/ai/chat/stream', resolveProfile, aiLimiter, async (req, 
             rawTasks: call.rawTasks, toolCalls: call.toolCalls, epics, categories
         });
 
+        // Nothing was streamed and the model only called tools — the client has
+        // an empty bubble on screen, so give it something true to show.
+        const fallback = call.narrative ? '' : describeToolOutcome(stored);
+        if (fallback) send('text', { delta: fallback });
+
         send('done', {
-            narrative: call.narrative,
+            narrative: call.narrative || fallback,
             tasks: stored.tasks,
             proposals: stored.proposals,
             memories: stored.memories,

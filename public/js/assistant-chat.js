@@ -31,7 +31,8 @@ import {
 
 /**
  * @type {Array<{role: 'user'|'assistant'|'pending', content: string,
- *               tasksAdded?: number, proposalsAdded?: number}>}
+ *               tasksAdded?: number, proposalsAdded?: number,
+ *               memoriesAdded?: number}>}
  */
 let history = [];
 
@@ -386,12 +387,13 @@ export async function send(text) {
         return { ok: false, error: result.error || 'AI request failed' };
     }
 
-    const { narrative, tasks = [], proposals = [], usage: turnUsage } = result.data;
+    const { narrative, tasks = [], proposals = [], memories = [], usage: turnUsage } = result.data;
     history.push({
         role: 'assistant',
         content: narrative || streamed || '(No response)',
         tasksAdded: tasks.length,
-        proposalsAdded: proposals.length
+        proposalsAdded: proposals.length,
+        memoriesAdded: memories.length
     });
 
     if (turnUsage) {
@@ -402,7 +404,7 @@ export async function send(text) {
 
     emit();
     persist();   // fire and forget — see below
-    return { ok: true, tasks, proposals };
+    return { ok: true, tasks, proposals, memories };
 }
 
 /**

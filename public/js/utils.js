@@ -20,6 +20,45 @@ export function escapeHtml(text) {
 }
 
 /**
+ * Renders the small amount of Markdown a chat model actually emits.
+ *
+ * Models write `**bold**`, `*italic*` and `` `code` `` whether or not you ask
+ * them to, and showing the asterisks raw looks broken. This is not a Markdown
+ * parser and is not trying to be one — block structure (headings, tables) is
+ * left as written, because the assistant's replies are short.
+ *
+ * Safe by construction: the text is HTML-escaped FIRST, so the only tags that
+ * can reach the DOM are the ones added afterwards from a fixed set. Never
+ * reorder those two steps.
+ *
+ * @param {string} text
+ * @returns {string} HTML
+ */
+export function renderInlineMarkdown(text) {
+    // Escapes without touching the DOM, so this is pure and testable in Node.
+    // Also covers quotes, which the innerHTML trick in escapeHtml does not.
+    const escaped = String(text).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+
+    // Code spans are lifted out before emphasis runs and put back after.
+    // Formatting them first is not enough: the later passes would still match
+    // asterisks *inside* the code, so `a**b**c` came back bolded.
+    const codeSpans = [];
+    const withoutCode = escaped.replace(/`([^`\n]+)`/g, (_, code) => {
+        codeSpans.push(code);
+        return `\u0000${codeSpans.length - 1}\u0000`;
+    });
+
+    return withoutCode
+        .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+        // Single asterisks only when they wrap a word — avoids mangling a bare
+        // `*` used as a bullet at the start of a line.
+        .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s.,;:!?)]|$)/g, '$1<em>$2</em>')
+        .replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codeSpans[Number(i)]}</code>`);
+}
+
+/**
  * Calculates the ISO week number for a given date.
  * @param {Date} date - The date to get the week number for
  * @returns {number} The ISO week number (1-53)

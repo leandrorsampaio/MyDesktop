@@ -31,7 +31,7 @@
  */
 
 import * as chat from '../../js/assistant-chat.js';
-import { escapeHtml } from '../../js/utils.js';
+import { escapeHtml, renderInlineMarkdown } from '../../js/utils.js';
 
 class AssistantDock extends HTMLElement {
     /** @type {Promise<[string, string]>|null} Cached templates Promise — store
@@ -457,10 +457,15 @@ class AssistantDock extends HTMLElement {
         const outcomes = [];
         if (message.tasksAdded) outcomes.push(`${message.tasksAdded} task${message.tasksAdded === 1 ? '' : 's'} staged`);
         if (message.proposalsAdded) outcomes.push(`${message.proposalsAdded} change${message.proposalsAdded === 1 ? '' : 's'} proposed`);
+        // Memories were missing here, so an interview turn — which produces
+        // nothing else — showed no sign of having done anything at all.
+        if (message.memoriesAdded) outcomes.push(`${message.memoriesAdded} to remember — approve in Config`);
 
         return `
             <div class="assistant__message --${message.role}">
-                <div class="assistant__messageText">${escapeHtml(message.content)}</div>
+                <div class="assistant__messageText">${message.role === 'assistant'
+                    ? renderInlineMarkdown(message.content)
+                    : escapeHtml(message.content)}</div>
                 ${outcomes.length ? `<div class="assistant__messageMeta">${escapeHtml(outcomes.join(' · '))}</div>` : ''}
             </div>
         `;
