@@ -229,6 +229,14 @@
     <!-- Shared Confirmation Modal — generic, driven entirely by
          openConfirmDialog() in modals.js. Every confirmable action reuses
          this one dialog: pass copy, await a boolean. Do not add another. -->
+    <!-- Plain-text viewer. Used for the assistant's memory as Markdown: the
+         JSON file is the source of truth, but a profile is something you read
+         to check it is right. -->
+    <modal-dialog class="js-markdownModal" size="large">
+        <span slot="title">Markdown</span>
+        <pre class="markdownView js-markdownContainer"></pre>
+    </modal-dialog>
+
     <modal-dialog class="js-confirmModal" size="small">
         <span slot="title" class="js-confirmTitle">Are you sure?</span>
         <div class="confirmDialog">

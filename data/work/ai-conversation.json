@@ -1,12 +1,13 @@
 {
-  "activeId": "conv1788091017705",
+  "activeId": "conv1788124373280",
   "conversations": [
     {
-      "id": "conv1788091017705",
+      "id": "conv1788124373280",
       "title": "New conversation",
-      "createdAt": "2026-08-30T11:56:57.000Z",
-      "updatedAt": "2026-08-30T11:56:57.000Z",
+      "createdAt": "2026-08-30T21:12:53.000Z",
+      "updatedAt": "2026-08-30T21:12:53.000Z",
       "skillIds": [],
+      "mode": "chat",
       "messages": []
     }
   ]

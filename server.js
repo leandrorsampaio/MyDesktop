@@ -2895,6 +2895,158 @@ const CLASSIFY_TASK_TOOL = {
 
 /**
  * ===========================================
+ * The interview
+ * ===========================================
+ *
+ * The assistant knows the board but not the world around it — who Mikael is,
+ * what EUVIC do, what an abbreviation stands for. None of that is derivable
+ * from the data, so the only way to get it is to ask.
+ *
+ * The questions are grounded in a digest computed here, in code, across every
+ * task including the archive: recurring title prefixes, capitalised names that
+ * appear repeatedly, epics with no stakeholder recorded. Sending the archive
+ * itself would cost thousands of tokens to say what a hundred characters can.
+ *
+ * Computing it in code has a second benefit: the digest renders with the AI
+ * switched off, so the config page can always show what it would ask about.
+ */
+
+/** Ignored when scanning titles for names — common words that capitalise. */
+const NAME_STOPWORDS = new Set([
+    'the', 'and', 'for', 'with', 'from', 'new', 'add', 'fix', 'check', 'prod',
+    'test', 'todo', 'wip', 'plan', 'email', 'meeting', 'call', 'review', 'update',
+    'create', 'remove', 'delete', 'change', 'page', 'component', 'components',
+    'bug', 'issue', 'ticket', 'tickets', 'task', 'tasks', 'design', 'system',
+    'not', 'all', 'run', 'get', 'set', 'use', 'app', 'api', 'css', 'html', 'pdf',
+    'url', 'json', 'error', 'errors', 'file', 'files', 'list', 'link', 'links',
+    'this', 'that', 'have', 'has', 'was', 'why', 'how', 'what', 'when', 'who',
+    'jira', 'prod', 'dev', 'qa', 'uat', 'sit',
+    // Verbs and nouns that recur in titles and read as names to the scanner.
+    'follow', 'image', 'images', 'emails', 'mail', 'banner', 'search', 'print',
+    'deploy', 'release', 'wiki', 'account', 'message', 'messages', 'procedure',
+    'schedule', 'wait', 'done', 'draft', 'note', 'notes'
+]);
+
+/** How often a token must appear before it is worth asking about. */
+const DIGEST_MIN_OCCURRENCES = 3;
+
+/** Most items of any one kind to put in front of the model. */
+const DIGEST_MAX_PER_KIND = 12;
+
+/**
+ * Builds the list of things the assistant does not yet know about.
+ *
+ * @param {Object} input
+ * @param {Array<Object>} input.tasks - Live tasks.
+ * @param {Array<Object>} input.archived - Archived tasks; the richest source of
+ *        recurring names, since it holds most of the history.
+ * @param {Array<Object>} input.epics
+ * @param {Array<Object>} input.memories - Used to rule out what is already known.
+ * @returns {{prefixes: Array, names: Array, epicsMissingContext: Array,
+ *            totals: Object, hasGaps: boolean}}
+ */
+function buildInterviewDigest({ tasks = [], archived = [], epics = [], memories = [] }) {
+    const all = [...tasks, ...archived];
+
+    // Anything already named in an approved memory is not a gap. Matched
+    // case-insensitively on whole words so "SDS" in a memory rules out the SDS
+    // prefix without also ruling out every word containing those letters.
+    const knownText = memories
+        .filter(m => m.approved)
+        .map(m => m.text.toLowerCase())
+        .join(' | ');
+    const alreadyKnown = (token) =>
+        new RegExp(`\\b${token.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(knownText);
+
+    const prefixCounts = new Map();
+    const nameCounts = new Map();
+
+    for (const task of all) {
+        const title = typeof task.title === 'string' ? task.title.trim() : '';
+        if (!title) continue;
+
+        // A ticket-style prefix: leading capitals, optionally hyphenated, before
+        // a number or separator. ESB-593, LIT-LWC, PLAN:
+        const prefix = title.match(/^([A-Z][A-Z0-9]{1,7}(?:-[A-Z]{2,6})?)(?=[-:\s]|\d)/);
+        if (prefix) {
+            const key = prefix[1];
+            prefixCounts.set(key, (prefixCounts.get(key) || 0) + 1);
+        }
+
+        // Capitalised words that are not sentence-initial and not stopwords:
+        // the shape a person or vendor name takes in a task title.
+        for (const word of title.split(/[\s,./()[\]]+/).slice(1)) {
+            const clean = word.replace(/[^A-Za-z]/g, '');
+            if (clean.length < 3 || clean.length > 20) continue;
+            if (!/^[A-Z][a-z]+$|^[A-Z]{2,}$/.test(clean)) continue;
+            if (NAME_STOPWORDS.has(clean.toLowerCase())) continue;
+            nameCounts.set(clean, (nameCounts.get(clean) || 0) + 1);
+        }
+    }
+
+    const rank = (map) => [...map.entries()]
+        .filter(([token, count]) => count >= DIGEST_MIN_OCCURRENCES && !alreadyKnown(token))
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, DIGEST_MAX_PER_KIND)
+        .map(([token, count]) => ({ token, count }));
+
+    const epicsMissingContext = epics
+        .filter(e => !e.stakeholder && !e.cadence && !e.expectations)
+        .map(e => e.name);
+
+    const prefixes = rank(prefixCounts);
+    const names = rank(nameCounts);
+
+    return {
+        prefixes,
+        names,
+        epicsMissingContext,
+        totals: {
+            tasks: tasks.length,
+            archived: archived.length,
+            withoutEpic: all.filter(t => !t.epicId).length,
+            knownFacts: memories.filter(m => m.approved).length
+        },
+        hasGaps: prefixes.length > 0 || names.length > 0 || epicsMissingContext.length > 0
+    };
+}
+
+/**
+ * The system prompt for interview mode.
+ *
+ * Deliberately a different prompt rather than a skill: during an interview the
+ * assistant should not be proposing tasks or board changes at all, and the
+ * board snapshot it normally carries is just noise here.
+ */
+function buildInterviewPrompt(digest, memories) {
+    const known = renderMemoryForPrompt(memories);
+    const list = (items) => items.map(i => `${i.token} (${i.count}\u00d7)`).join(', ');
+
+    return `You are interviewing the owner of a personal kanban board to learn about them and their work, so that future conversations are grounded rather than generic.
+
+Your job in this conversation is to ASK, not to help with tasks. Do not propose tasks or board changes. Do not summarise their board back to them.
+
+Below is what came out of scanning all ${digest.totals.tasks + digest.totals.archived} of their tasks, including ${digest.totals.archived} archived ones. These are things that appear repeatedly and that you cannot explain from the data alone.
+
+${digest.names.length ? `Recurring names you do not recognise: ${list(digest.names)}` : ''}
+${digest.prefixes.length ? `Recurring title prefixes: ${list(digest.prefixes)}` : ''}
+${digest.epicsMissingContext.length ? `Epics with no stakeholder recorded: ${digest.epicsMissingContext.join(', ')}` : ''}
+
+${known ? `# What you already know — do not ask about any of this again\n${known}` : '# You know nothing about them yet.'}
+
+How to run the interview:
+- Ask at most THREE questions per message, numbered. Never more.
+- Ask about the highest-count unknowns first — those matter most.
+- A name might be a person, a vendor, a client or a system. Ask which; do not guess.
+- Accept short, messy answers. "mikael is my boss, euvic are external devs" is a complete answer to two questions.
+- After each answer, call propose_memory() with one entry per fact learned, choosing the right category, then ask your next questions.
+- When you run out of genuine gaps, say so plainly and stop. Do not invent questions to fill space.
+
+Open by saying in one line what you scanned and what you are missing, then ask your first three questions.`;
+}
+
+/**
+ * ===========================================
  * Skills
  * ===========================================
  *
@@ -3040,7 +3192,7 @@ const MEMORY_PROMPT_BUDGET = 4000;
  */
 const PROPOSE_MEMORY_TOOL = {
     name: 'propose_memory',
-    description: 'Propose a durable fact about how this person works, worth remembering across conversations — a naming convention, what an epic means, how they size things. Only for things that will still be true next month; never for one-off details about a single task. Proposals are reviewed by the user before they are used.',
+    description: 'Propose a durable fact worth remembering across conversations: who someone is ("Mikael is my boss"), what a term or abbreviation means ("SDS is the design system"), what a project or epic covers, or how this person prefers to work. Only for things that will still be true next month; never for one-off details about a single task. Proposals are reviewed by the user before they are used.',
     input_schema: {
         type: 'object',
         properties: {
@@ -3049,7 +3201,12 @@ const PROPOSE_MEMORY_TOOL = {
                 items: {
                     type: 'object',
                     properties: {
-                        text: { type: 'string', description: 'One sentence, stated as a fact. E.g. "ESB- prefixed tickets always belong to the ECOM epic."' }
+                        text: { type: 'string', description: 'One sentence, stated as a fact. E.g. "ESB- prefixed tickets always belong to the ECOM epic."' },
+                        category: {
+                            type: 'string',
+                            enum: ['person', 'term', 'project', 'preference', 'other'],
+                            description: 'person = who someone is; term = what a word or abbreviation means; project = what an epic or project covers; preference = how they like to work.'
+                        }
                     },
                     required: ['text']
                 }
@@ -3070,6 +3227,7 @@ function normaliseMemory(raw) {
     return {
         id: generateId(),
         text: text.slice(0, MEMORY_TEXT_MAX_LENGTH),
+        category: normaliseMemoryCategory(raw.category),
         source: 'ai',
         approved: false,
         createdAt: new Date().toISOString()
@@ -3131,16 +3289,30 @@ function renderChatContext(context, tasks, columns) {
  * @returns {string} Empty string when there is nothing approved.
  */
 function renderMemoryForPrompt(memories) {
-    const lines = [];
+    const LABELS = {
+        person: 'People',
+        term: 'Terms and abbreviations',
+        project: 'Projects and epics',
+        preference: 'How they like to work',
+        other: 'Other'
+    };
+    const byCategory = new Map(MEMORY_CATEGORIES.map(c => [c, []]));
     let budget = MEMORY_PROMPT_BUDGET;
+
     for (const memory of memories) {
         if (!memory.approved) continue;
         const line = `- ${memory.text}`;
         if (line.length > budget) break;
         budget -= line.length;
-        lines.push(line);
+        byCategory.get(normaliseMemoryCategory(memory.category)).push(line);
     }
-    return lines.join('\n');
+
+    // Grouped rather than one flat list: a model reading "Mikael is my boss"
+    // under a People heading is far likelier to use it as such.
+    return MEMORY_CATEGORIES
+        .filter(c => byCategory.get(c).length)
+        .map(c => `${LABELS[c]}:\n${byCategory.get(c).join('\n')}`)
+        .join('\n\n');
 }
 
 /**
@@ -3469,7 +3641,9 @@ Call neither when the user is simply asking a question — a question deserves a
 
 Nothing you propose is applied automatically. Every proposal is reviewed by the user first, so be specific and give a short reason for each change.
 
-If you notice something durable about how this person works — a naming convention, what an epic really covers, how they size things — call propose_memory() so it is remembered next time. Only for things that will still be true next month, and never for details about one task.
+If you notice something durable — who a person is, what a term means, what an epic really covers, how they size things — call propose_memory() so it is remembered next time. Only for things that will still be true next month, and never for details about one task.
+
+If something in their message refers to a person, system or abbreviation you do not know, and knowing it would change your answer, end with ONE short question asking what it is. One question at most, only when it genuinely matters, and never when you already answered from the board.
 
 Be concise. This is a personal tool, not a report generator.
 
@@ -4431,13 +4605,22 @@ if (RATE_LIMIT_DISABLED) {
         try {
             // Must load exactly what the chat handler loads, or this endpoint
             // reports a prompt the model never actually sees.
-            const [epics, categories, tasks, memories, skills] = await Promise.all([
+            const [epics, categories, tasks, memories, skills, archived] = await Promise.all([
                 readJsonFile(req.profileFiles.epics, []),
                 readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
                 readJsonFile(req.profileFiles.tasks, []),
                 readJsonFile(req.profileFiles.aiMemory, []),
-                readJsonFile(req.profileFiles.aiSkills, [])
+                readJsonFile(req.profileFiles.aiSkills, []),
+                readJsonFile(req.profileFiles.archived, [])
             ]);
+
+            // ?mode=interview mirrors an interview chat request, so the very
+            // different prompt it sends can be asserted without a provider.
+            if (req.query.mode === 'interview') {
+                const digest = buildInterviewDigest({ tasks, archived, epics, memories });
+                const interviewPrompt = buildInterviewPrompt(digest, memories);
+                return res.json({ prompt: interviewPrompt, chars: interviewPrompt.length });
+            }
             // ?skillIds=a,b mirrors the per-conversation selection a real chat
             // request sends, on top of the always-on ones.
             const selectedSkillIds = (req.query.skillIds || '').split(',').filter(Boolean);
@@ -4484,13 +4667,33 @@ async function prepareAiChat(req) {
     const resolved = await resolveActiveAiConfig();
     if (!resolved.ok) return resolved;
 
-    const [epics, categories, tasks, memories, skills] = await Promise.all([
+    const isInterview = req.body.mode === 'interview';
+
+    const [epics, categories, tasks, memories, skills, archived] = await Promise.all([
         readJsonFile(req.profileFiles.epics, []),
         readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
         readJsonFile(req.profileFiles.tasks, []),
         readJsonFile(req.profileFiles.aiMemory, []),
-        readJsonFile(req.profileFiles.aiSkills, [])
+        readJsonFile(req.profileFiles.aiSkills, []),
+        // Only the interview reads the archive: it is the richest source of
+        // recurring names, and nothing else needs it on every message.
+        isInterview ? readJsonFile(req.profileFiles.archived, []) : Promise.resolve([])
     ]);
+
+    if (isInterview) {
+        const digest = buildInterviewDigest({ tasks, archived, epics, memories });
+        return {
+            ok: true,
+            resolved,
+            messages,
+            epics,
+            categories,
+            systemPrompt: buildInterviewPrompt(digest, memories),
+            // One verb only. An interview that quietly filed tickets would be
+            // a different feature than the one the user agreed to.
+            tools: [PROPOSE_MEMORY_TOOL]
+        };
+    }
 
     return {
         ok: true,
@@ -4598,6 +4801,20 @@ async function persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories
  * @param {*} text
  * @returns {{valid: boolean, error?: string, text?: string}}
  */
+/**
+ * What a memory is *about*.
+ *
+ * The flat list worked while memory only held working conventions, but "Mikael
+ * is my boss" and "a 13 is two days" are different kinds of fact and read badly
+ * interleaved. Categories are what turn the list into a profile you can skim.
+ */
+const MEMORY_CATEGORIES = ['person', 'term', 'project', 'preference', 'other'];
+
+/** @param {string} value @returns {string} A valid category, defaulting to 'other'. */
+function normaliseMemoryCategory(value) {
+    return MEMORY_CATEGORIES.includes(value) ? value : 'other';
+}
+
 function validateMemoryText(text) {
     if (typeof text !== 'string' || text.trim() === '') {
         return { valid: false, error: 'Memory text is required' };
@@ -4631,6 +4848,7 @@ app.post('/api/:profile/ai/memory', resolveProfile, writeLimiter, async (req, re
         const memory = {
             id: generateId(),
             text: validation.text,
+            category: normaliseMemoryCategory(req.body.category),
             source: 'user',
             approved: true,
             createdAt: new Date().toISOString()
@@ -4661,6 +4879,9 @@ app.put('/api/:profile/ai/memory/:id', resolveProfile, writeLimiter, async (req,
                 return res.status(400).json({ error: 'approved must be a boolean' });
             }
             memory.approved = req.body.approved;
+        }
+        if (req.body.category !== undefined) {
+            memory.category = normaliseMemoryCategory(req.body.category);
         }
 
         await writeJsonFile(req.profileFiles.aiMemory, memories);
@@ -4801,6 +5022,62 @@ app.delete('/api/:profile/ai/proposals', resolveProfile, writeLimiter, async (re
 });
 
 // ===========================================
+// Interview Routes (profile-scoped)
+// ===========================================
+
+// GET what the assistant does not know yet. Computed in code across every
+// task including the archive, so it answers with the AI switched off — the
+// config page uses it to show whether an interview is worth running.
+app.get('/api/:profile/ai/interview/digest', resolveProfile, async (req, res) => {
+    try {
+        const [tasks, archived, epics, memories] = await Promise.all([
+            readJsonFile(req.profileFiles.tasks, []),
+            readJsonFile(req.profileFiles.archived, []),
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.aiMemory, [])
+        ]);
+        res.json(buildInterviewDigest({ tasks, archived, epics, memories }));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to build interview digest' });
+    }
+});
+
+// GET everything the assistant knows, as Markdown.
+//
+// The JSON file is the source of truth, but a profile is something you read to
+// check it is right, and a list of quoted strings is not that.
+app.get('/api/:profile/ai/memory/markdown', resolveProfile, async (req, res) => {
+    try {
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        const LABELS = {
+            person: 'People', term: 'Terms and abbreviations',
+            project: 'Projects and epics', preference: 'How I like to work', other: 'Other'
+        };
+        const approved = memories.filter(m => m.approved);
+
+        let md = `# What the assistant knows about me\n\n`;
+        if (approved.length === 0) {
+            md += '_Nothing yet. Run the interview to fill this in._\n';
+        } else {
+            for (const category of MEMORY_CATEGORIES) {
+                const items = approved.filter(m => normaliseMemoryCategory(m.category) === category);
+                if (!items.length) continue;
+                md += `## ${LABELS[category]}\n\n${items.map(m => `- ${m.text}`).join('\n')}\n\n`;
+            }
+        }
+        const pending = memories.filter(m => !m.approved);
+        if (pending.length) {
+            md += `## Awaiting your approval\n\n${pending.map(m => `- ${m.text}`).join('\n')}\n`;
+        }
+        // res.type() is Express-only; the shim exposes setHeader + send.
+        res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+        res.send(md);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to render memory' });
+    }
+});
+
+// ===========================================
 // AI Skills Routes (profile-scoped)
 // ===========================================
 
@@ -4908,7 +5185,7 @@ function deriveConversationTitle(messages) {
 /** @returns {Object} A fresh, empty conversation. */
 function newConversation() {
     const now = new Date().toISOString();
-    return { id: generateId(), title: 'New conversation', createdAt: now, updatedAt: now, skillIds: [], messages: [] };
+    return { id: generateId(), title: 'New conversation', createdAt: now, updatedAt: now, skillIds: [], mode: 'chat', messages: [] };
 }
 
 /**
@@ -4976,6 +5253,7 @@ const toConversationSummary = (c) => ({
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
     skillIds: c.skillIds || [],
+    mode: c.mode || 'chat',
     messageCount: (c.messages || []).length
 });
 
@@ -4988,6 +5266,7 @@ app.get('/api/:profile/ai/conversation', resolveProfile, async (req, res) => {
             id: active.id,
             title: active.title,
             skillIds: active.skillIds || [],
+            mode: active.mode || 'chat',
             messages: active.messages || []
         });
     } catch (error) {
@@ -5055,9 +5334,12 @@ app.post('/api/:profile/ai/conversations', resolveProfile, writeLimiter, async (
         const store = await readConversationStore(req);
         const active = store.conversations.find(c => c.id === store.activeId);
 
+        const mode = req.body?.mode === 'interview' ? 'interview' : 'chat';
+
         // Starting a new thread from an untouched one would leave a trail of
-        // empty "New conversation" rows, so reuse it instead.
-        if (active && (active.messages || []).length === 0) {
+        // empty "New conversation" rows, so reuse it instead — unless the mode
+        // differs, since a thread's mode is fixed once it has one.
+        if (active && (active.messages || []).length === 0 && (active.mode || 'chat') === mode) {
             if (Array.isArray(req.body?.skillIds)) {
                 active.skillIds = req.body.skillIds.filter(id => typeof id === 'string');
                 await writeConversationStore(req, store);
@@ -5066,11 +5348,16 @@ app.post('/api/:profile/ai/conversations', resolveProfile, writeLimiter, async (
         }
 
         const convo = newConversation();
+        convo.mode = mode;
+        convo.title = mode === 'interview'
+            ? `Interview — ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+            : convo.title;
         // A new thread inherits the current one's skills: switching topic is
-        // not usually a request to change voice.
-        convo.skillIds = Array.isArray(req.body?.skillIds)
+        // not usually a request to change voice. An interview takes none —
+        // its prompt is its own, and a voice skill would fight it.
+        convo.skillIds = mode === 'interview' ? [] : (Array.isArray(req.body?.skillIds)
             ? req.body.skillIds.filter(id => typeof id === 'string')
-            : (active?.skillIds || []);
+            : (active?.skillIds || []));
         store.conversations.push(convo);
         store.activeId = convo.id;
         await writeConversationStore(req, store);

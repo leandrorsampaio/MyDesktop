@@ -123,6 +123,8 @@ import {
 
         // Reports Modal (opened via sidebar config-action in future pages)
         reportsModal: document.querySelector('.js-reportsModal'),
+        markdownModal: document.querySelector('.js-markdownModal'),
+        markdownContainer: document.querySelector('.js-markdownContainer'),
         reportsContainer: document.querySelector('.js-reportsContainer'),
 
         // Archived Tasks Modal (opened via sidebar config-action in future pages)

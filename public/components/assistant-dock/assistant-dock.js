@@ -145,6 +145,23 @@ class AssistantDock extends HTMLElement {
         if (this._messagesEl) this._render();
     }
 
+    /**
+     * Starts an interview and shows any failure where the user is looking.
+     *
+     * The trigger lives on the config page, but the conversation lands here —
+     * so a failed start has to report into this panel. Routing it back to a
+     * toast on the page behind leaves an empty transcript and no explanation.
+     *
+     * @returns {Promise<{ok: boolean, error?: string}>}
+     */
+    async startInterview() {
+        this.open();
+        const result = await chat.startInterview();
+        if (!result.ok) this._showNotice(result.error, 'send-failed');
+        else this._hideNotice();
+        return result;
+    }
+
     /** @param {number} count - Proposals awaiting review. */
     setPendingCount(count) {
         this._pendingCount = count || 0;

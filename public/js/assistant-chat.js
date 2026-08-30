@@ -51,7 +51,7 @@ let busy = false;
  * only way to start a new topic destroyed the previous one. The list is
  * summaries only — transcripts are fetched when a thread is opened.
  */
-let activeConversation = { id: null, title: 'New conversation', skillIds: [] };
+let activeConversation = { id: null, title: 'New conversation', skillIds: [], mode: 'chat' };
 let conversations = [];
 
 /** Every defined skill, always-on or not. */
@@ -143,7 +143,8 @@ export async function init() {
     activeConversation = {
         id: conversation.id || null,
         title: conversation.title || 'New conversation',
-        skillIds: conversation.skillIds || []
+        skillIds: conversation.skillIds || [],
+        mode: conversation.mode || 'chat'
     };
     conversations = list.conversations || [];
     skills = Array.isArray(skillList) ? skillList : [];
@@ -178,16 +179,17 @@ async function refreshConversations() {
  * conversation stays in the history rather than being destroyed.
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
-export async function startNewConversation() {
+export async function startNewConversation(mode) {
     if (busy) return { ok: false, error: 'Wait for the current reply' };
     try {
-        const convo = await createAiConversationApi(activeConversation.skillIds);
+        const convo = await createAiConversationApi(activeConversation.skillIds, mode);
         history = [];
         usage = { input: 0, output: 0, lastInput: 0 };
         activeConversation = {
             id: convo.id,
             title: convo.title,
-            skillIds: convo.skillIds || []
+            skillIds: convo.skillIds || [],
+            mode: convo.mode || 'chat'
         };
         await refreshConversations();
         emit();
@@ -195,6 +197,26 @@ export async function startNewConversation() {
     } catch {
         return { ok: false, error: 'Could not start a new conversation' };
     }
+}
+
+/**
+ * Starts an interview: a fresh thread whose prompt is about learning who you
+ * are rather than helping with tasks.
+ *
+ * Always its own thread, so it can be re-run whenever — after switching model,
+ * or when the board has moved on — without disturbing anything else.
+ *
+ * @param {string} [opener] - First message; the model is prompted to open by
+ *        saying what it scanned, so this only has to start it.
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function startInterview(opener = 'Interview me.') {
+    if (!availability.available) {
+        return { ok: false, error: availability.message || 'AI is not configured' };
+    }
+    const started = await startNewConversation('interview');
+    if (!started.ok) return started;
+    return send(opener);
 }
 
 /**
@@ -214,7 +236,8 @@ export async function openConversation(id) {
         activeConversation = {
             id: convo.id,
             title: convo.title,
-            skillIds: convo.skillIds || []
+            skillIds: convo.skillIds || [],
+            mode: convo.mode || 'chat'
         };
         await refreshConversations();
         emit();
@@ -257,7 +280,8 @@ export async function deleteConversation(id) {
             activeConversation = {
                 id: convo.id || result.activeId,
                 title: convo.title || 'New conversation',
-                skillIds: convo.skillIds || []
+                skillIds: convo.skillIds || [],
+                mode: convo.mode || 'chat'
             };
         }
         await refreshConversations();
@@ -340,7 +364,7 @@ export async function send(text) {
         streaming.role = 'assistant';
         streaming.content = streamed;
         emitThrottled();
-    }, context, activeConversation.skillIds || []);
+    }, context, activeConversation.skillIds || [], activeConversation.mode);
 
     // Fall back to the buffered endpoint if the stream never got going. Not
     // every OpenAI-compatible server streams correctly, and that should cost a
@@ -348,7 +372,7 @@ export async function send(text) {
     // working, so a later failure is a real error, not a reason to re-ask.
     if (!result.ok && streamed === '') {
         try {
-            result = await sendAiChatApi(apiMessages, context, activeConversation.skillIds || []);
+            result = await sendAiChatApi(apiMessages, context, activeConversation.skillIds || [], activeConversation.mode);
         } catch {
             result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
         }

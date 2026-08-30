@@ -614,11 +614,11 @@ export async function setActiveAiConfigApi(configId) {
  * @param {Array<{ role: string, content: string }>} messages - Full conversation history
  * @returns {Promise<{ok: boolean, data?: { narrative: string, tasks: Array<Object> }, error?: string}>}
  */
-export async function sendAiChatApi(messages, context = null, skillIds = []) {
+export async function sendAiChatApi(messages, context = null, skillIds = [], mode = 'chat') {
     const response = await fetch(`${apiBase}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, context, skillIds })
+        body: JSON.stringify({ messages, context, skillIds, mode })
     });
 
     if (!response.ok) {
@@ -858,11 +858,11 @@ export async function fetchAiConversationsApi() {
  * @param {Array<string>} [skillIds] - Skills for the new thread.
  * @returns {Promise<Object>} The now-active conversation.
  */
-export async function createAiConversationApi(skillIds) {
+export async function createAiConversationApi(skillIds, mode) {
     const response = await fetch(`${apiBase}/ai/conversations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(skillIds ? { skillIds } : {})
+        body: JSON.stringify({ ...(skillIds ? { skillIds } : {}), ...(mode ? { mode } : {}) })
     });
     return parseOrThrow(response);
 }
@@ -904,6 +904,28 @@ export async function renameAiConversationApi(id, title) {
 export async function deleteAiConversationApi(id) {
     const response = await fetch(`${apiBase}/ai/conversations/${id}`, { method: 'DELETE' });
     return parseOrThrow(response);
+}
+
+/**
+ * What the assistant does not know yet, computed server-side across every task
+ * including the archive. Answers with the AI switched off.
+ * @returns {Promise<{prefixes: Array, names: Array, epicsMissingContext: Array,
+ *                    totals: Object, hasGaps: boolean}>}
+ */
+export async function fetchInterviewDigestApi() {
+    const response = await fetch(`${apiBase}/ai/interview/digest`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Everything the assistant knows, as Markdown — for reading and checking, as
+ * opposed to the JSON file, which is the source of truth.
+ * @returns {Promise<string>}
+ */
+export async function fetchMemoryMarkdownApi() {
+    const response = await fetch(`${apiBase}/ai/memory/markdown`);
+    if (!response.ok) throw new Error('Failed to render memory');
+    return response.text();
 }
 
 // ===========================================
@@ -1060,11 +1082,11 @@ export async function fetchMemoriesApi() {
  * @param {string} text
  * @returns {Promise<Object>}
  */
-export async function createMemoryApi(text) {
+export async function createMemoryApi(text, category = 'other') {
     const response = await fetch(`${apiBase}/ai/memory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, category })
     });
     return parseOrThrow(response);
 }
@@ -1108,13 +1130,13 @@ export async function deleteMemoryApi(id) {
  * @param {Function} onDelta - Called with each text fragment as it arrives
  * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
  */
-export async function sendAiChatStreamApi(messages, onDelta, context = null, skillIds = []) {
+export async function sendAiChatStreamApi(messages, onDelta, context = null, skillIds = [], mode = 'chat') {
     let response;
     try {
         response = await fetch(`${apiBase}/ai/chat/stream`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages, context, skillIds })
+            body: JSON.stringify({ messages, context, skillIds, mode })
         });
     } catch {
         return { ok: false, error: 'Could not reach the server' };

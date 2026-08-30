@@ -1012,3 +1012,20 @@ export function openEditStagedTaskModal(stagedTask, elements, { onSave }) {
 export function openCloneStagedTaskModal(stagedTask, elements, { onSave }) {
     _openStagedTaskForm(stagedTask, elements, '(Clone) ', onSave);
 }
+
+/**
+ * Shows plain text in a modal, preserving its formatting.
+ *
+ * Deliberately not rendered as HTML: this exists so the user can check what is
+ * actually stored, and rendering would hide the very characters they came to
+ * look at.
+ *
+ * @param {Object} elements
+ * @param {string} title
+ * @param {string} text
+ */
+export function openMarkdownModal(elements, title, text) {
+    elements.markdownModal.querySelector('[slot="title"]').textContent = title;
+    elements.markdownContainer.textContent = text;
+    elements.markdownModal.open();
+}

@@ -228,6 +228,8 @@ POST   /api/:profile/ai/conversations              - Start a new thread, make it
 PUT    /api/:profile/ai/conversations/:id/activate - Switch to a saved thread
 PUT    /api/:profile/ai/conversations/:id          - Rename a thread
 DELETE /api/:profile/ai/conversations/:id          - Delete a thread
+GET    /api/:profile/ai/interview/digest           - What the assistant doesn't know yet
+GET    /api/:profile/ai/memory/markdown             - Everything it knows, as Markdown
 GET    /api/:profile/ai/skills                     - List skills
 POST   /api/:profile/ai/skills                     - Create a skill
 PUT    /api/:profile/ai/skills/:id                 - Update a skill
@@ -236,6 +238,20 @@ DELETE /api/:profile/ai/skills/:id                 - Delete a skill
 Conversations are stored per profile in `ai-conversation.json` as
 `{ activeId, conversations: [...] }`. The pre-v2.58 single-transcript shape
 (`{ messages: [] }`) is migrated on read into the first saved thread.
+
+Memories carry a `category` (person | term | project | preference | other) and
+are grouped by it in the prompt, so "Mikael is my boss" reaches the model under
+a People heading rather than in a flat list.
+
+**The interview** (`mode: 'interview'` on a chat request) swaps the whole system
+prompt: the assistant asks about the user rather than helping with tasks, and is
+given only `propose_memory`. Its questions come from `buildInterviewDigest()`,
+computed in code across every task *including the archive* — recurring names,
+title prefixes, epics with no stakeholder — minus anything an approved memory
+already explains. Sending the archive itself would cost thousands of tokens to
+say what a few hundred characters can, and computing it in code means the digest
+renders with the AI switched off. An interview always gets its own conversation,
+so it can be re-run at any time (after switching model, for instance).
 
 Skills (`ai-skills.json`) are reusable instruction blocks shaping *how* the
 assistant answers, as opposed to memories, which record *what* it knows.

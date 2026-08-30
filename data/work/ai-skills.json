@@ -10,9 +10,41 @@
   {
     "id": "mtfr6j3zx8nad5tkf",
     "name": "Ticket writer",
-    "instructions": "Imperative titles under 60 chars. One outcome per ticket.",
+    "instructions": "Titles imperative and under 60 chars, one outcome each. Keep my prefixes where they apply: ESB- for ECOM Jira tickets, LIT-LWC for Lightning Web Component learning work, \"Check Prod:\" for post-deploy verification, \"PLAN:\" for planning spikes. Not everything is a ticket — plenty of my tasks are just tasks, so do not invent a prefix or a ticket number that does not exist.",
     "alwaysOn": false,
     "createdAt": "2026-08-30T11:55:44.831Z",
-    "updatedAt": "2026-08-30T11:55:44.831Z"
+    "updatedAt": "2026-08-30T12:14:41.358Z"
+  },
+  {
+    "id": "mtfruw2ufuj28acol",
+    "name": "Estimator",
+    "instructions": "When I describe work, always end with a suggested estimate from 1, 2, 3, 5, 8, 13, 21, 34, 100. 1 = do it right now. 13 = one or two days. Anything above 13 means it should be split — say so and propose the split instead of estimating it. 100 means too big to size at all.",
+    "alwaysOn": false,
+    "createdAt": "2026-08-30T12:14:41.382Z",
+    "updatedAt": "2026-08-30T12:14:41.382Z"
+  },
+  {
+    "id": "mtfruw3ey644yzmpl",
+    "name": "Manager update",
+    "instructions": "Group everything by epic, one heading per epic. Under each, short bullets an outcome at a time — what moved, what is blocked, what I need a decision on. Presentation bullets, not ticket titles: no ticket IDs unless I ask for them. No introduction and no closing paragraph.",
+    "alwaysOn": false,
+    "createdAt": "2026-08-30T12:14:41.402Z",
+    "updatedAt": "2026-08-30T12:14:41.402Z"
+  },
+  {
+    "id": "mtfruw3z4r3qu2n81",
+    "name": "Triage",
+    "instructions": "When I ask about filing or tidying up, propose an epic and a category for anything missing one, and flag likely duplicates. Give it as one list of proposals with no commentary before or after.",
+    "alwaysOn": false,
+    "createdAt": "2026-08-30T12:14:41.423Z",
+    "updatedAt": "2026-08-30T12:14:41.423Z"
+  },
+  {
+    "id": "mtfruw4lmd6blvhmc",
+    "name": "Explain as I go",
+    "instructions": "When you touch something I am still learning — Lightning Web Components, modern CSS, web components, or current front-end tooling — add one line on why, not just what. Only when it is genuinely non-obvious; do not narrate the basics.",
+    "alwaysOn": false,
+    "createdAt": "2026-08-30T12:14:41.445Z",
+    "updatedAt": "2026-08-30T12:14:41.445Z"
   }
 ]

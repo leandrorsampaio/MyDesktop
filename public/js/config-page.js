@@ -9,6 +9,7 @@ import {
     DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, THEMES
 } from './constants.js';
 import { escapeHtml, toCamelCase, getStoredTheme, setStoredTheme } from './utils.js';
+import { openMarkdownModal } from './modals.js';
 import {
     columns, setColumns, epics, setEpics, categories, setCategories, tasks,
     profiles, setProfiles, activeProfile, setActiveProfile
@@ -22,7 +23,8 @@ import {
     fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi,
     fetchProfileExportApi,
     fetchMemoriesApi, createMemoryApi, updateMemoryApi, deleteMemoryApi,
-    fetchAiSkillsApi, createAiSkillApi, updateAiSkillApi, deleteAiSkillApi
+    fetchAiSkillsApi, createAiSkillApi, updateAiSkillApi, deleteAiSkillApi,
+    fetchInterviewDigestApi, fetchMemoryMarkdownApi
 } from './api.js';
 
 const AI_PROVIDER_DEFAULTS = {
@@ -273,13 +275,32 @@ export async function initConfigPage(pageViewEl, { elements }) {
                     </div>
 
                     <h3 class="configPage__panelTitle configPage__panelTitle--spaced">What the assistant remembers</h3>
-                    <p class="configPage__panelHint">Durable facts about how you work, sent with every message. The assistant can suggest entries, but only ones you approve are used. Stored in <code>ai-memory.json</code> — plain text you can edit or delete at any time.</p>
+                    <p class="configPage__panelHint">Durable facts about you and your work, sent with every message — so they survive restarts, new conversations, and switching to a different model. The assistant can suggest entries, but only ones you approve are used. Stored in <code>ai-memory.json</code> — plain text you can edit or delete at any time.</p>
+
+                    <!-- What the assistant does not know yet. Computed from every
+                         task including the archive, so it renders with the AI off. -->
+                    <div class="interviewCard js-cfg-interviewCard">
+                        <div class="interviewCard__body">
+                            <span class="interviewCard__title">Let the assistant interview you</span>
+                            <span class="interviewCard__hint js-cfg-interviewHint">Checking what it already knows…</span>
+                        </div>
+                        <button type="button" class="btn --primary js-cfg-interviewBtn" disabled>Interview me</button>
+                    </div>
+
                     <div class="memoryEditor">
                         <div class="memoryEditor__addRow">
-                            <input type="text" class="memoryEditor__input js-cfg-memoryInput" placeholder="e.g. A 5 is one focused day for me" maxlength="300" />
+                            <input type="text" class="memoryEditor__input js-cfg-memoryInput" placeholder="e.g. Mikael is my boss" maxlength="300" />
+                            <select class="aiConfig__select memoryEditor__categorySelect js-cfg-memoryCategory">
+                                <option value="other">Other</option>
+                                <option value="person">Person</option>
+                                <option value="term">Term</option>
+                                <option value="project">Project</option>
+                                <option value="preference">Preference</option>
+                            </select>
                             <button type="button" class="btn --primary js-cfg-memoryAddBtn">Add</button>
                         </div>
                         <div class="memoryEditor__list js-cfg-memoryList"></div>
+                        <button type="button" class="aiConfig__addBtn js-cfg-memoryMarkdownBtn">View as Markdown</button>
                     </div>
                 </div>
 
@@ -1341,6 +1362,10 @@ export async function initConfigPage(pageViewEl, { elements }) {
     const memoryInput  = $('.js-cfg-memoryInput');
     const memoryAddBtn = $('.js-cfg-memoryAddBtn');
     const memoryList   = $('.js-cfg-memoryList');
+    const memoryCategorySelect = $('.js-cfg-memoryCategory');
+    const memoryMarkdownBtn    = $('.js-cfg-memoryMarkdownBtn');
+    const interviewBtn  = $('.js-cfg-interviewBtn');
+    const interviewHint = $('.js-cfg-interviewHint');
 
     /** @type {Array<Object>} Mirror of ai-memory.json */
     let memories = [];
@@ -1364,6 +1389,10 @@ export async function initConfigPage(pageViewEl, { elements }) {
                 <input type="text" class="memoryEditor__itemText js-memoryText"
                        value="${escapeHtml(memory.text)}" maxlength="300" data-memory-id="${memory.id}" />
                 <div class="memoryEditor__itemActions">
+                    <select class="memoryEditor__categorySelect js-memoryCategory" data-memory-id="${memory.id}">
+                        ${['other','person','term','project','preference'].map(c =>
+                            `<option value="${c}"${(memory.category || 'other') === c ? ' selected' : ''}>${c[0].toUpperCase() + c.slice(1)}</option>`).join('')}
+                    </select>
                     ${memory.approved
                         ? `<span class="memoryEditor__source">${memory.source === 'ai' ? 'suggested' : 'yours'}</span>`
                         : `<button type="button" class="btn --primary --sm js-memoryApprove" data-memory-id="${memory.id}">Remember this</button>`}
@@ -1388,6 +1417,19 @@ export async function initConfigPage(pageViewEl, { elements }) {
                 } catch (error) {
                     toaster.error(error.message || 'Failed to save');
                     input.value = memory.text;
+                }
+            });
+        });
+
+        memoryList.querySelectorAll('.js-memoryCategory').forEach(select => {
+            select.addEventListener('change', async () => {
+                const memory = memories.find(m => m.id === select.dataset.memoryId);
+                if (!memory) return;
+                try {
+                    Object.assign(memory, await updateMemoryApi(memory.id, { category: select.value }));
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to save');
+                    select.value = memory.category || 'other';
                 }
             });
         });
@@ -1424,8 +1466,9 @@ export async function initConfigPage(pageViewEl, { elements }) {
         const text = memoryInput.value.trim();
         if (!text) return;
         try {
-            memories.push(await createMemoryApi(text));
+            memories.push(await createMemoryApi(text, memoryCategorySelect.value));
             memoryInput.value = '';
+            memoryCategorySelect.value = 'other';
             renderMemories();
         } catch (error) {
             toaster.error(error.message || 'Failed to add');
@@ -1437,6 +1480,46 @@ export async function initConfigPage(pageViewEl, { elements }) {
         if (e.key === 'Enter') {
             e.preventDefault();
             addMemory();
+        }
+    });
+
+    /**
+     * Describes what the assistant is missing, in plain terms.
+     *
+     * Runs whether or not an AI is configured — the gaps are computed from the
+     * board, so the card is honest about what an interview would cover even
+     * when the assistant itself is unavailable.
+     */
+    fetchInterviewDigestApi()
+        .then(digest => {
+            const bits = [];
+            if (digest.names.length) bits.push(`${digest.names.length} recurring name${digest.names.length === 1 ? '' : 's'} it doesn't recognise`);
+            if (digest.prefixes.length) bits.push(`${digest.prefixes.length} title prefix${digest.prefixes.length === 1 ? '' : 'es'}`);
+            if (digest.epicsMissingContext.length) bits.push(`${digest.epicsMissingContext.length} epic${digest.epicsMissingContext.length === 1 ? '' : 's'} with no stakeholder`);
+
+            interviewHint.textContent = digest.hasGaps
+                ? `It read all ${digest.totals.tasks + digest.totals.archived} of your tasks, archive included, and found ${bits.join(', ')}. Run this again any time — after switching model, for instance.`
+                : `Nothing obvious left to ask about. Run it again after the board has moved on.`;
+            interviewBtn.disabled = false;
+        })
+        .catch(() => {
+            interviewHint.textContent = 'Could not check what it knows.';
+        });
+
+    interviewBtn.addEventListener('click', async () => {
+        const dock = document.querySelector('assistant-dock');
+        if (!dock) { toaster.error('Assistant is not available on this page'); return; }
+        // The dock reports its own failures — the conversation lands there, so
+        // that is where an explanation has to appear.
+        await dock.startInterview();
+    });
+
+    memoryMarkdownBtn.addEventListener('click', async () => {
+        try {
+            const md = await fetchMemoryMarkdownApi();
+            openMarkdownModal(elements, 'What the assistant knows about me', md);
+        } catch {
+            toaster.error('Could not render memory');
         }
     });
 
