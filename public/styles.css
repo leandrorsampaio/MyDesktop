@@ -3697,6 +3697,24 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     color: var(--color-text-primary);
 }
 
+.aiConfig__entryBtn--use:hover {
+    background: rgba(var(--color-accent-primary-rgb),0.08);
+    border-color: rgba(var(--color-accent-primary-rgb),0.3);
+    color: var(--color-accent-primary);
+}
+
+/* The active row states its status instead of offering a button that would
+   do nothing. Sized to match the buttons beside it so the row stays level. */
+.aiConfig__entryActive {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-accent-primary);
+    border: 1px solid transparent;
+}
+
 .aiConfig__entryBtn--delete:hover {
     background: rgba(var(--color-accent-error-rgb),0.08);
     border-color: rgba(var(--color-accent-error-rgb),0.3);

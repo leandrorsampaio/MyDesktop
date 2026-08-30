@@ -18,6 +18,7 @@ import {
     fetchEpicsApi, createEpicApi, updateEpicApi, deleteEpicApi,
     fetchCategoriesApi, createCategoryApi, updateCategoryApi, deleteCategoryApi,
     fetchAiConfigApi, createAiConfigEntryApi, updateAiConfigEntryApi, deleteAiConfigEntryApi,
+    setActiveAiConfigApi,
     fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi,
     fetchProfileExportApi,
     fetchMemoriesApi, createMemoryApi, updateMemoryApi, deleteMemoryApi
@@ -1033,6 +1034,31 @@ export async function initConfigPage(pageViewEl, { elements }) {
 
             const actions = document.createElement('div');
             actions.className = 'aiConfig__entryActions';
+
+            // The dot alone showed which config was in use but gave no way to
+            // change it, leaving the server's active-config route unreachable.
+            // The active row states its status rather than offering a no-op.
+            if (isActive) {
+                const activeTag = document.createElement('span');
+                activeTag.className = 'aiConfig__entryActive';
+                activeTag.textContent = 'Active';
+                actions.appendChild(activeTag);
+            } else {
+                const useBtn = document.createElement('button');
+                useBtn.type = 'button';
+                useBtn.className = 'aiConfig__entryBtn aiConfig__entryBtn--use';
+                useBtn.textContent = 'Use';
+                useBtn.title = `Make ${cfg.name} the active configuration`;
+                useBtn.addEventListener('click', async () => {
+                    const result = await setActiveAiConfigApi(cfg.id);
+                    if (!result.ok) { toaster.error(result.error || 'Failed to switch configuration'); return; }
+                    aiConfigState.activeConfigId = cfg.id;
+                    toaster.success(`Now using ${cfg.name}`);
+                    aiRenderList();
+                });
+                actions.appendChild(useBtn);
+            }
+
             const editBtn = document.createElement('button');
             editBtn.type = 'button';
             editBtn.className = 'aiConfig__entryBtn';
