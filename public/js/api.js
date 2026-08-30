@@ -614,11 +614,11 @@ export async function setActiveAiConfigApi(configId) {
  * @param {Array<{ role: string, content: string }>} messages - Full conversation history
  * @returns {Promise<{ok: boolean, data?: { narrative: string, tasks: Array<Object> }, error?: string}>}
  */
-export async function sendAiChatApi(messages, context = null) {
+export async function sendAiChatApi(messages, context = null, skillIds = []) {
     const response = await fetch(`${apiBase}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, context })
+        body: JSON.stringify({ messages, context, skillIds })
     });
 
     if (!response.ok) {
@@ -825,11 +825,11 @@ export async function fetchAiConversationApi() {
  * @param {Array<{role: string, content: string}>} messages
  * @returns {Promise<Object>}
  */
-export async function saveAiConversationApi(messages) {
+export async function saveAiConversationApi(messages, skillIds) {
     const response = await fetch(`${apiBase}/ai/conversation`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify(skillIds ? { messages, skillIds } : { messages })
     });
     return parseOrThrow(response);
 }
@@ -840,6 +840,118 @@ export async function saveAiConversationApi(messages) {
  */
 export async function clearAiConversationApi() {
     const response = await fetch(`${apiBase}/ai/conversation`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Lists saved conversations, newest first, without their transcripts.
+ * @returns {Promise<{activeId: string, conversations: Array<Object>}>}
+ */
+export async function fetchAiConversationsApi() {
+    const response = await fetch(`${apiBase}/ai/conversations`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Starts a new conversation and makes it active. An untouched thread is
+ * reused rather than leaving a trail of empty ones.
+ * @param {Array<string>} [skillIds] - Skills for the new thread.
+ * @returns {Promise<Object>} The now-active conversation.
+ */
+export async function createAiConversationApi(skillIds) {
+    const response = await fetch(`${apiBase}/ai/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(skillIds ? { skillIds } : {})
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Switches to a saved conversation.
+ * @param {string} id
+ * @returns {Promise<Object>} The conversation, transcript included.
+ */
+export async function activateAiConversationApi(id) {
+    const response = await fetch(`${apiBase}/ai/conversations/${id}/activate`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Renames a conversation.
+ * @param {string} id
+ * @param {string} title
+ * @returns {Promise<Object>}
+ */
+export async function renameAiConversationApi(id, title) {
+    const response = await fetch(`${apiBase}/ai/conversations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Deletes a saved conversation.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, activeId: string}>}
+ */
+export async function deleteAiConversationApi(id) {
+    const response = await fetch(`${apiBase}/ai/conversations/${id}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+// ===========================================
+// AI Skills API (profile-scoped)
+// ===========================================
+
+/**
+ * Fetches all defined skills.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchAiSkillsApi() {
+    const response = await fetch(`${apiBase}/ai/skills`);
+    return parseOrThrow(response);
+}
+
+/**
+ * @param {{name: string, instructions: string, alwaysOn: boolean}} data
+ * @returns {Promise<Object>}
+ */
+export async function createAiSkillApi(data) {
+    const response = await fetch(`${apiBase}/ai/skills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * @param {string} id
+ * @param {Object} data - Any subset of name, instructions, alwaysOn.
+ * @returns {Promise<Object>}
+ */
+export async function updateAiSkillApi(id, data) {
+    const response = await fetch(`${apiBase}/ai/skills/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * @param {string} id
+ * @returns {Promise<Object>}
+ */
+export async function deleteAiSkillApi(id) {
+    const response = await fetch(`${apiBase}/ai/skills/${id}`, { method: 'DELETE' });
     return parseOrThrow(response);
 }
 
@@ -996,13 +1108,13 @@ export async function deleteMemoryApi(id) {
  * @param {Function} onDelta - Called with each text fragment as it arrives
  * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
  */
-export async function sendAiChatStreamApi(messages, onDelta, context = null) {
+export async function sendAiChatStreamApi(messages, onDelta, context = null, skillIds = []) {
     let response;
     try {
         response = await fetch(`${apiBase}/ai/chat/stream`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages, context })
+            body: JSON.stringify({ messages, context, skillIds })
         });
     } catch {
         return { ok: false, error: 'Could not reach the server' };

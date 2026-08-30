@@ -1,0 +1,18 @@
+[
+  {
+    "id": "mtfr4d1myc0z98olw",
+    "name": "Be brief",
+    "instructions": "Answer in at most 3 sentences unless I ask you to expand. No preamble, no restating my question back to me.",
+    "alwaysOn": true,
+    "createdAt": "2026-08-30T11:54:03.658Z",
+    "updatedAt": "2026-08-30T11:54:03.666Z"
+  },
+  {
+    "id": "mtfr6j3zx8nad5tkf",
+    "name": "Ticket writer",
+    "instructions": "Imperative titles under 60 chars. One outcome per ticket.",
+    "alwaysOn": false,
+    "createdAt": "2026-08-30T11:55:44.831Z",
+    "updatedAt": "2026-08-30T11:55:44.831Z"
+  }
+]

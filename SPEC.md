@@ -223,6 +223,26 @@ openai, groq, google, kimi, custom (openai-compatible). A provider with
 Kimi has two regional hosts, and switching between them shouldn't cost
 you the provider's defaults by forcing a drop to Custom.
 
+GET    /api/:profile/ai/conversations              - List saved conversations (no transcripts)
+POST   /api/:profile/ai/conversations              - Start a new thread, make it active
+PUT    /api/:profile/ai/conversations/:id/activate - Switch to a saved thread
+PUT    /api/:profile/ai/conversations/:id          - Rename a thread
+DELETE /api/:profile/ai/conversations/:id          - Delete a thread
+GET    /api/:profile/ai/skills                     - List skills
+POST   /api/:profile/ai/skills                     - Create a skill
+PUT    /api/:profile/ai/skills/:id                 - Update a skill
+DELETE /api/:profile/ai/skills/:id                 - Delete a skill
+
+Conversations are stored per profile in `ai-conversation.json` as
+`{ activeId, conversations: [...] }`. The pre-v2.58 single-transcript shape
+(`{ messages: [] }`) is migrated on read into the first saved thread.
+
+Skills (`ai-skills.json`) are reusable instruction blocks shaping *how* the
+assistant answers, as opposed to memories, which record *what* it knows.
+`alwaysOn` skills apply to every conversation; the rest are selected per
+conversation and travel with it. The AI cannot propose skills — telling the
+model how to behave is the user's job.
+
 GET    /api/ai/config/entries/:id/models           - List models the provider offers
 GET    /api/ai/config                              - Get AI config (returns { activeConfigId, configs: [{ id, name, provider, model, customUrl?, hasKey: bool }] } — key never returned)
 POST   /api/ai/config/entries                      - Create new config entry (body: { name, provider, model, apiKey?, customUrl? })

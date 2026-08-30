@@ -46,6 +46,8 @@ class AssistantDock extends HTMLElement {
         this._suggestions = [];
         this._pendingCount = 0;
         this._contextLabel = 'Assistant';
+        this._historyOpen = false;
+        this._skillsOpen = false;
         this._unsubscribe = null;
         this._onDocKeydown = this._handleDocKeydown.bind(this);
     }
@@ -73,6 +75,13 @@ class AssistantDock extends HTMLElement {
         this._noticeEl = this.shadowRoot.querySelector('.js-notice');
         this._pendingEl = this.shadowRoot.querySelector('.js-pending');
         this._contextEl = this.shadowRoot.querySelector('.js-context');
+        this._historyDrawerEl = this.shadowRoot.querySelector('.js-historyDrawer');
+        this._historyListEl = this.shadowRoot.querySelector('.js-historyList');
+        this._historyBtn = this.shadowRoot.querySelector('.js-historyBtn');
+        this._skillsBarEl = this.shadowRoot.querySelector('.js-skillsBar');
+        this._skillsToggleEl = this.shadowRoot.querySelector('.js-skillsToggle');
+        this._skillsSummaryEl = this.shadowRoot.querySelector('.js-skillsSummary');
+        this._skillsMenuEl = this.shadowRoot.querySelector('.js-skillsMenu');
 
         this._wireEvents();
 
@@ -106,10 +115,16 @@ class AssistantDock extends HTMLElement {
         }
         requestAnimationFrame(() => this._inputEl?.focus());
         this._render();
+        // Skills are edited on the config page, so the cached list can be stale
+        // by the time the dock is opened again. Not awaited: the panel is
+        // already usable, and the list re-renders when it lands.
+        chat.refreshSkills();
     }
 
     close() {
         this._open = false;
+        this._setHistoryOpen(false);
+        this._setSkillsOpen(false);
         this.classList.remove('--open');
         if (this._panelEl) this._panelEl.hidden = true;
         this._launcherEl?.setAttribute('aria-expanded', 'false');
@@ -155,8 +170,42 @@ class AssistantDock extends HTMLElement {
         this._launcherEl.addEventListener('click', () => this.toggle());
         this.shadowRoot.querySelector('.js-closeBtn').addEventListener('click', () => this.close());
 
-        this.shadowRoot.querySelector('.js-clearBtn').addEventListener('click', async () => {
-            await chat.clear();
+        // Starting a new thread no longer destroys the old one — that was the
+        // whole complaint about the button this replaces.
+        this.shadowRoot.querySelector('.js-newBtn').addEventListener('click', async () => {
+            const result = await chat.startNewConversation();
+            if (!result.ok) this._showNotice(result.error, 'send-failed');
+            this._setHistoryOpen(false);
+            this._inputEl?.focus();
+        });
+
+        this._historyBtn.addEventListener('click', () => this._setHistoryOpen(!this._historyOpen));
+        this.shadowRoot.querySelector('.js-historyCloseBtn')
+            .addEventListener('click', () => this._setHistoryOpen(false));
+
+        // Delegated: the list is rebuilt on every state change.
+        this._historyListEl.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest('.js-convoDelete');
+            if (deleteBtn) {
+                e.stopPropagation();
+                const result = await chat.deleteConversation(deleteBtn.dataset.convoId);
+                if (!result.ok) this._showNotice(result.error, 'send-failed');
+                return;
+            }
+            const row = e.target.closest('.js-convoRow');
+            if (!row) return;
+            const result = await chat.openConversation(row.dataset.convoId);
+            if (!result.ok) { this._showNotice(result.error, 'send-failed'); return; }
+            this._setHistoryOpen(false);
+            this._inputEl?.focus();
+        });
+
+        this._skillsToggleEl.addEventListener('click', () => this._setSkillsOpen(!this._skillsOpen));
+        this._skillsMenuEl.addEventListener('click', async (e) => {
+            const row = e.target.closest('.js-skillRow');
+            if (!row || row.dataset.alwaysOn === 'true') return;
+            const result = await chat.toggleSkill(row.dataset.skillId);
+            if (!result.ok) this._showNotice(result.error, 'send-failed');
         });
 
         this._pendingEl.addEventListener('click', (e) => {
@@ -192,6 +241,9 @@ class AssistantDock extends HTMLElement {
         if (!this._open || e.key !== 'Escape') return;
         // Stand aside for anything stacked on top — a modal's Escape is its own.
         if (document.querySelector('modal-dialog[open]')) return;
+        // Escape closes the innermost thing first.
+        if (this._skillsOpen) { this._setSkillsOpen(false); return; }
+        if (this._historyOpen) { this._setHistoryOpen(false); return; }
         const active = this.shadowRoot.activeElement;
         if (active === this._inputEl && this._inputEl.value.trim()) {
             // Don't discard a half-written message on a stray Escape.
@@ -246,8 +298,80 @@ class AssistantDock extends HTMLElement {
 
     // ---- Rendering ----
 
+    /** @param {boolean} open */
+    _setHistoryOpen(open) {
+        this._historyOpen = open;
+        if (this._historyDrawerEl) this._historyDrawerEl.hidden = !open;
+        this._historyBtn?.setAttribute('aria-expanded', String(open));
+        if (open) this._setSkillsOpen(false);
+    }
+
+    /** @param {boolean} open */
+    _setSkillsOpen(open) {
+        this._skillsOpen = open;
+        if (this._skillsMenuEl) this._skillsMenuEl.hidden = !open;
+        this._skillsToggleEl?.setAttribute('aria-expanded', String(open));
+    }
+
+    /** Short relative age, so a list of threads is scannable without dates. */
+    _relativeTime(iso) {
+        const then = Date.parse(iso);
+        if (Number.isNaN(then)) return '';
+        const mins = Math.round((Date.now() - then) / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return `${mins}m ago`;
+        const hours = Math.round(mins / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.round(hours / 24);
+        return days < 7 ? `${days}d ago` : new Date(then).toLocaleDateString();
+    }
+
+    _renderHistory(conversations, activeId) {
+        if (conversations.length === 0) {
+            this._historyListEl.innerHTML = `<div class="assistant__drawerEmpty">No saved conversations yet.</div>`;
+            return;
+        }
+        this._historyListEl.innerHTML = conversations.map(c => `
+            <div class="assistant__convo js-convoRow${c.id === activeId ? ' --current' : ''}" data-convo-id="${escapeHtml(c.id)}" role="button" tabindex="0">
+                <span class="assistant__convoTitle">${escapeHtml(c.title)}</span>
+                <span class="assistant__convoMeta">${escapeHtml(this._relativeTime(c.updatedAt))} · ${c.messageCount} msg${c.messageCount === 1 ? '' : 's'}</span>
+                <button type="button" class="assistant__convoDelete js-convoDelete" data-convo-id="${escapeHtml(c.id)}" title="Delete conversation" aria-label="Delete conversation">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    _renderSkills(skills, activeSkills, selectedIds) {
+        // Nothing to show and nothing to choose — keep the bar out of the way.
+        if (skills.length === 0) {
+            this._skillsBarEl.hidden = true;
+            this._setSkillsOpen(false);
+            return;
+        }
+        this._skillsBarEl.hidden = false;
+
+        this._skillsSummaryEl.textContent = activeSkills.length === 0
+            ? 'Skills'
+            : `Skills: ${activeSkills.map(sk => sk.name).join(', ')}`;
+
+        this._skillsMenuEl.innerHTML = skills.map(sk => {
+            const on = sk.alwaysOn || selectedIds.includes(sk.id);
+            return `
+                <div class="assistant__skillRow js-skillRow${on ? ' --on' : ''}"
+                     data-skill-id="${escapeHtml(sk.id)}" data-always-on="${sk.alwaysOn}"
+                     role="button" tabindex="${sk.alwaysOn ? -1 : 0}">
+                    <span class="assistant__skillCheck">${on ? '✓' : ''}</span>
+                    <span class="assistant__skillName">${escapeHtml(sk.name)}</span>
+                    ${sk.alwaysOn ? '<span class="assistant__skillAlways">always on</span>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
     _render() {
-        const { history, busy, availability } = chat.getState();
+        const { history, busy, availability, conversations, activeConversation, skills, activeSkills } = chat.getState();
+
+        this._renderHistory(conversations, activeConversation.id);
+        this._renderSkills(skills, activeSkills, activeConversation.skillIds || []);
 
         this._messagesEl.innerHTML = history.length === 0
             ? this._emptyStateHtml()

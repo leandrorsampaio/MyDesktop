@@ -151,6 +151,204 @@
     color: var(--color-text-primary, #111827);
 }
 
+/* ==========================================
+   Saved conversations
+   ========================================== */
+
+/* Overlays the transcript rather than pushing it aside: opening the list is a
+   glance, and reflowing what you were reading to do it is disorienting. */
+.assistant__drawer {
+    position: absolute;
+    inset: 43px 0 0 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary, #fff);
+}
+
+.assistant__drawer[hidden] {
+    display: none;
+}
+
+.assistant__drawerHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+    font-weight: var(--font-weight-medium, 500);
+}
+
+.assistant__drawerList {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6, 6px);
+}
+
+.assistant__drawerEmpty {
+    padding: var(--space-16, 16px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-base, 12px);
+    text-align: center;
+}
+
+.assistant__convo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-8, 8px) var(--space-28, 28px) var(--space-8, 8px) var(--space-10, 10px);
+    border-radius: var(--radius-md, 6px);
+    cursor: pointer;
+}
+
+.assistant__convo:hover {
+    background: var(--color-bg-secondary, #f8f9fa);
+}
+
+.assistant__convo.--current {
+    background: rgba(var(--color-accent-primary-rgb, 26, 115, 232), 0.06);
+}
+
+.assistant__convoTitle {
+    overflow: hidden;
+    color: var(--color-text-primary, #111827);
+    font-size: var(--text-md, 13px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assistant__convoMeta {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
+/* Revealed on hover so a list of threads stays calm, but always reachable by
+   keyboard. */
+.assistant__convoDelete {
+    position: absolute;
+    top: 50%;
+    right: var(--space-6, 6px);
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    opacity: 0;
+    background: transparent;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-lg, 14px);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.assistant__convo:hover .assistant__convoDelete,
+.assistant__convoDelete:focus-visible {
+    opacity: 1;
+}
+
+.assistant__convoDelete:hover {
+    background: rgba(var(--color-accent-error-rgb, 220, 38, 38), 0.08);
+    color: var(--color-accent-error, #dc2626);
+}
+
+/* ==========================================
+   Skills
+   ========================================== */
+
+.assistant__skills {
+    position: relative;
+    padding: 0 var(--space-12, 12px);
+}
+
+.assistant__skills[hidden] {
+    display: none;
+}
+
+.assistant__skillsToggle {
+    max-width: 100%;
+    overflow: hidden;
+    padding: var(--space-2, 2px) var(--space-6, 6px);
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-sm, 11px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.assistant__skillsToggle:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-secondary, #4b5563);
+}
+
+/* Opens upward: the bar sits directly above the composer at the panel's foot. */
+.assistant__skillsMenu {
+    position: absolute;
+    bottom: calc(100% + var(--space-4, 4px));
+    left: var(--space-12, 12px);
+    z-index: 3;
+    min-width: 220px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: var(--space-4, 4px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.15));
+}
+
+.assistant__skillsMenu[hidden] {
+    display: none;
+}
+
+.assistant__skillRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 8px);
+    padding: var(--space-6, 6px) var(--space-8, 8px);
+    border-radius: var(--radius-sm, 4px);
+    font-size: var(--text-md, 13px);
+    cursor: pointer;
+}
+
+.assistant__skillRow:hover {
+    background: var(--color-bg-secondary, #f8f9fa);
+}
+
+/* An always-on skill is a property of the skill, changed in Config — showing
+   it as clickable here would promise a toggle that does nothing. */
+.assistant__skillRow[data-always-on="true"] {
+    cursor: default;
+}
+
+.assistant__skillCheck {
+    flex-shrink: 0;
+    width: 12px;
+    color: var(--color-accent-primary, #1a73e8);
+}
+
+.assistant__skillName {
+    flex: 1;
+    overflow: hidden;
+    color: var(--color-text-primary, #111827);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assistant__skillAlways {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
 .assistant__messages {
     flex: 1;
     display: flex;

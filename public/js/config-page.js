@@ -4,7 +4,7 @@
  */
 
 import {
-    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, EPIC_COLORS,
+    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, MAX_SKILLS, EPIC_COLORS,
     DEFAULT_CATEGORY_ID, DEFAULT_CHECKLIST_ITEMS,
     DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, THEMES
 } from './constants.js';
@@ -21,7 +21,8 @@ import {
     setActiveAiConfigApi,
     fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi,
     fetchProfileExportApi,
-    fetchMemoriesApi, createMemoryApi, updateMemoryApi, deleteMemoryApi
+    fetchMemoriesApi, createMemoryApi, updateMemoryApi, deleteMemoryApi,
+    fetchAiSkillsApi, createAiSkillApi, updateAiSkillApi, deleteAiSkillApi
 } from './api.js';
 
 const AI_PROVIDER_DEFAULTS = {
@@ -249,6 +250,26 @@ export async function initConfigPage(pageViewEl, { elements }) {
                                 <button type="button" class="btn --save js-cfg-aiSave">Save</button>
                             </div>
                         </div>
+                    </div>
+
+                    <h3 class="configPage__panelTitle configPage__panelTitle--spaced">Skills</h3>
+                    <p class="configPage__panelHint">Reusable instructions that shape <em>how</em> the assistant answers — its voice, length and format. Memories below record what it knows; skills tell it how to behave. Turn one <strong>always on</strong> to apply it to every conversation, or leave it off and switch it on per conversation from the assistant panel. Maximum ${MAX_SKILLS}.</p>
+                    <div class="skillsEditor">
+                        <div class="skillsEditor__list js-cfg-skillsList"></div>
+                        <div class="skillsEditor__form js-cfg-skillForm" hidden>
+                            <input type="text" class="aiConfig__input js-cfg-skillName" placeholder="Skill name, e.g. Be brief" maxlength="60" />
+                            <textarea class="aiConfig__input skillsEditor__textarea js-cfg-skillInstructions" rows="4" maxlength="1000" placeholder="Answer in at most 3 sentences unless I ask you to expand. No preamble."></textarea>
+                            <label class="skillsEditor__checkLabel">
+                                <input type="checkbox" class="js-cfg-skillAlwaysOn" />
+                                <span>Always on — apply to every conversation</span>
+                            </label>
+                            <div class="aiConfig__error js-cfg-skillError" style="display:none;"></div>
+                            <div class="configPage__actions">
+                                <button type="button" class="btn --cancel js-cfg-skillCancel">Cancel</button>
+                                <button type="button" class="btn --save js-cfg-skillSave">Save</button>
+                            </div>
+                        </div>
+                        <button type="button" class="aiConfig__addBtn js-cfg-skillAddBtn">+ Add skill</button>
                     </div>
 
                     <h3 class="configPage__panelTitle configPage__panelTitle--spaced">What the assistant remembers</h3>
@@ -1199,6 +1220,120 @@ export async function initConfigPage(pageViewEl, { elements }) {
     });
 
     aiShowList();
+
+    // ==========================================
+    // Section: Skills
+    // ==========================================
+    const skillsList        = $('.js-cfg-skillsList');
+    const skillForm         = $('.js-cfg-skillForm');
+    const skillNameInput    = $('.js-cfg-skillName');
+    const skillInstrInput   = $('.js-cfg-skillInstructions');
+    const skillAlwaysOnBox  = $('.js-cfg-skillAlwaysOn');
+    const skillError        = $('.js-cfg-skillError');
+    const skillSaveBtn      = $('.js-cfg-skillSave');
+    const skillCancelBtn    = $('.js-cfg-skillCancel');
+    const skillAddBtn       = $('.js-cfg-skillAddBtn');
+
+    /** @type {Array<Object>} Mirror of ai-skills.json */
+    let skills = [];
+
+    function renderSkills() {
+        if (skills.length === 0) {
+            skillsList.innerHTML = '<div class="emptyState">No skills yet. Add one to control how the assistant writes.</div>';
+            return;
+        }
+        skillsList.innerHTML = skills.map(skill => `
+            <div class="skillsEditor__item">
+                <div class="skillsEditor__itemInfo">
+                    <span class="skillsEditor__itemName">
+                        ${escapeHtml(skill.name)}
+                        ${skill.alwaysOn ? '<span class="skillsEditor__badge">always on</span>' : ''}
+                    </span>
+                    <span class="skillsEditor__itemInstructions">${escapeHtml(skill.instructions)}</span>
+                </div>
+                <div class="skillsEditor__itemActions">
+                    <button type="button" class="aiConfig__entryBtn js-skillEdit" data-id="${escapeHtml(skill.id)}">Edit</button>
+                    <button type="button" class="aiConfig__entryBtn aiConfig__entryBtn--delete js-skillDelete" data-id="${escapeHtml(skill.id)}" title="Delete">&times;</button>
+                </div>
+            </div>
+        `).join('');
+
+        skillsList.querySelectorAll('.js-skillEdit').forEach(btn => {
+            btn.addEventListener('click', () => showSkillForm(skills.find(sk => sk.id === btn.dataset.id)));
+        });
+        skillsList.querySelectorAll('.js-skillDelete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await deleteAiSkillApi(btn.dataset.id);
+                    skills = skills.filter(sk => sk.id !== btn.dataset.id);
+                    renderSkills();
+                    toaster.success('Skill deleted');
+                } catch {
+                    toaster.error('Could not delete skill');
+                }
+            });
+        });
+    }
+
+    /** @param {Object} [skill] - Omit to add a new one. */
+    function showSkillForm(skill) {
+        skillForm.hidden = false;
+        skillAddBtn.hidden = true;
+        skillError.style.display = 'none';
+        skillNameInput.value = skill ? skill.name : '';
+        skillInstrInput.value = skill ? skill.instructions : '';
+        skillAlwaysOnBox.checked = skill ? skill.alwaysOn : false;
+        skillSaveBtn.dataset.editId = skill ? skill.id : '';
+        skillNameInput.focus();
+    }
+
+    function hideSkillForm() {
+        skillForm.hidden = true;
+        skillAddBtn.hidden = false;
+        skillSaveBtn.dataset.editId = '';
+    }
+
+    skillAddBtn.addEventListener('click', () => {
+        if (skills.length >= MAX_SKILLS) { toaster.warning(`Maximum of ${MAX_SKILLS} skills allowed`); return; }
+        showSkillForm(null);
+    });
+    skillCancelBtn.addEventListener('click', hideSkillForm);
+
+    skillSaveBtn.addEventListener('click', async () => {
+        skillError.style.display = 'none';
+        const payload = {
+            name: skillNameInput.value.trim(),
+            instructions: skillInstrInput.value.trim(),
+            alwaysOn: skillAlwaysOnBox.checked
+        };
+        if (!payload.name) { skillError.textContent = 'Name is required'; skillError.style.display = ''; return; }
+        if (!payload.instructions) { skillError.textContent = 'Instructions are required'; skillError.style.display = ''; return; }
+
+        const editId = skillSaveBtn.dataset.editId;
+        try {
+            const saved = editId
+                ? await updateAiSkillApi(editId, payload)
+                : await createAiSkillApi(payload);
+            if (editId) {
+                const idx = skills.findIndex(sk => sk.id === editId);
+                if (idx !== -1) skills[idx] = saved;
+            } else {
+                skills.push(saved);
+            }
+            hideSkillForm();
+            renderSkills();
+            toaster.success(editId ? 'Skill updated' : 'Skill added');
+        } catch (error) {
+            skillError.textContent = error.message || 'Could not save skill';
+            skillError.style.display = '';
+        }
+    });
+
+    // Loaded after the page renders, like memory — the config page must not
+    // wait on the assistant's data to become usable.
+    fetchAiSkillsApi()
+        .then(fetched => { skills = fetched; renderSkills(); })
+        .catch(() => { skillsList.innerHTML = '<div class="emptyState">Could not load skills</div>'; });
 
     // ==========================================
     // Section: Assistant Memory

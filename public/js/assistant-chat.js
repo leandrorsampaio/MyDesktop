@@ -20,6 +20,12 @@ import {
     fetchAiConversationApi,
     saveAiConversationApi,
     clearAiConversationApi,
+    fetchAiConversationsApi,
+    createAiConversationApi,
+    activateAiConversationApi,
+    renameAiConversationApi,
+    deleteAiConversationApi,
+    fetchAiSkillsApi,
     fetchAiAvailabilityApi
 } from './api.js';
 
@@ -37,6 +43,19 @@ let availability = { available: false };
 
 /** True while a request is in flight — views disable their composer. */
 let busy = false;
+
+/**
+ * The thread being written into, and the list of saved ones.
+ *
+ * Conversations used to be a single transcript with a Clear button, so the
+ * only way to start a new topic destroyed the previous one. The list is
+ * summaries only — transcripts are fetched when a thread is opened.
+ */
+let activeConversation = { id: null, title: 'New conversation', skillIds: [] };
+let conversations = [];
+
+/** Every defined skill, always-on or not. */
+let skills = [];
 
 /**
  * Streaming re-renders the transcript on every token, which for a whole
@@ -92,7 +111,18 @@ function emit() {
  * @returns {{history: Array, usage: Object, availability: Object, busy: boolean}}
  */
 export function getState() {
-    return { history: [...history], usage: { ...usage }, availability, busy };
+    return {
+        history: [...history],
+        usage: { ...usage },
+        availability,
+        busy,
+        activeConversation: { ...activeConversation },
+        conversations: [...conversations],
+        skills: [...skills],
+        // Always-on skills apply whether or not this thread selected them,
+        // so views can show what is actually in force without re-deriving it.
+        activeSkills: skills.filter(sk => sk.alwaysOn || (activeConversation.skillIds || []).includes(sk.id))
+    };
 }
 
 /**
@@ -103,13 +133,163 @@ export function getState() {
  * of "no AI". Neither should stop a view from rendering.
  */
 export async function init() {
-    const [conversation, status] = await Promise.all([
+    const [conversation, status, list, skillList] = await Promise.all([
         fetchAiConversationApi().catch(() => ({ messages: [] })),
-        fetchAiAvailabilityApi()
+        fetchAiAvailabilityApi(),
+        fetchAiConversationsApi().catch(() => ({ conversations: [] })),
+        fetchAiSkillsApi().catch(() => [])
     ]);
     history = (conversation.messages || []).map(m => ({ role: m.role, content: m.content }));
+    activeConversation = {
+        id: conversation.id || null,
+        title: conversation.title || 'New conversation',
+        skillIds: conversation.skillIds || []
+    };
+    conversations = list.conversations || [];
+    skills = Array.isArray(skillList) ? skillList : [];
     availability = status;
     emit();
+}
+
+/** Re-reads the skill list, e.g. after editing skills on the config page. */
+export async function refreshSkills() {
+    try {
+        skills = await fetchAiSkillsApi();
+    } catch {
+        // A failed refresh leaves the previous list — better than none.
+    }
+    emit();
+}
+
+/** Re-reads the saved-conversation list without changing the open thread. */
+async function refreshConversations() {
+    try {
+        const list = await fetchAiConversationsApi();
+        conversations = list.conversations || [];
+    } catch {
+        // Leave the previous list rather than emptying the history menu.
+    }
+}
+
+/**
+ * Starts a new thread, leaving the current one saved and reachable.
+ *
+ * This is what the old Clear button should have been: the previous
+ * conversation stays in the history rather than being destroyed.
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function startNewConversation() {
+    if (busy) return { ok: false, error: 'Wait for the current reply' };
+    try {
+        const convo = await createAiConversationApi(activeConversation.skillIds);
+        history = [];
+        usage = { input: 0, output: 0, lastInput: 0 };
+        activeConversation = {
+            id: convo.id,
+            title: convo.title,
+            skillIds: convo.skillIds || []
+        };
+        await refreshConversations();
+        emit();
+        return { ok: true };
+    } catch {
+        return { ok: false, error: 'Could not start a new conversation' };
+    }
+}
+
+/**
+ * Opens a saved thread, replacing what is on screen.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function openConversation(id) {
+    if (busy) return { ok: false, error: 'Wait for the current reply' };
+    if (id === activeConversation.id) return { ok: true };
+    try {
+        const convo = await activateAiConversationApi(id);
+        history = (convo.messages || []).map(m => ({ role: m.role, content: m.content }));
+        // Usage counts what this session has spent, and reopening a thread
+        // spends nothing — resetting it keeps the number honest.
+        usage = { input: 0, output: 0, lastInput: 0 };
+        activeConversation = {
+            id: convo.id,
+            title: convo.title,
+            skillIds: convo.skillIds || []
+        };
+        await refreshConversations();
+        emit();
+        return { ok: true };
+    } catch {
+        return { ok: false, error: 'Could not open that conversation' };
+    }
+}
+
+/**
+ * @param {string} id
+ * @param {string} title
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function renameConversation(id, title) {
+    try {
+        await renameAiConversationApi(id, title);
+        if (id === activeConversation.id) activeConversation.title = title;
+        await refreshConversations();
+        emit();
+        return { ok: true };
+    } catch {
+        return { ok: false, error: 'Could not rename that conversation' };
+    }
+}
+
+/**
+ * Deletes a saved thread. Deleting the open one falls back to whatever the
+ * server made active, so the assistant always has somewhere to write.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function deleteConversation(id) {
+    try {
+        const result = await deleteAiConversationApi(id);
+        if (id === activeConversation.id) {
+            const convo = await fetchAiConversationApi();
+            history = (convo.messages || []).map(m => ({ role: m.role, content: m.content }));
+            usage = { input: 0, output: 0, lastInput: 0 };
+            activeConversation = {
+                id: convo.id || result.activeId,
+                title: convo.title || 'New conversation',
+                skillIds: convo.skillIds || []
+            };
+        }
+        await refreshConversations();
+        emit();
+        return { ok: true };
+    } catch {
+        return { ok: false, error: 'Could not delete that conversation' };
+    }
+}
+
+/**
+ * Turns a skill on or off for the open thread. Always-on skills are not
+ * toggleable here — that is a property of the skill, changed in Config.
+ * @param {string} skillId
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function toggleSkill(skillId) {
+    const current = activeConversation.skillIds || [];
+    activeConversation.skillIds = current.includes(skillId)
+        ? current.filter(id => id !== skillId)
+        : [...current, skillId];
+    emit();
+    try {
+        await saveAiConversationApi(
+            history.filter(m => m.role === 'user' || m.role === 'assistant')
+                   .map(m => ({ role: m.role, content: m.content })),
+            activeConversation.skillIds
+        );
+        return { ok: true };
+    } catch {
+        return { ok: false, error: 'Skill applied, but not saved' };
+    }
 }
 
 /** Re-checks availability, e.g. after the active model is switched. */
@@ -160,7 +340,7 @@ export async function send(text) {
         streaming.role = 'assistant';
         streaming.content = streamed;
         emitThrottled();
-    }, context);
+    }, context, activeConversation.skillIds || []);
 
     // Fall back to the buffered endpoint if the stream never got going. Not
     // every OpenAI-compatible server streams correctly, and that should cost a
@@ -168,7 +348,7 @@ export async function send(text) {
     // working, so a later failure is a real error, not a reason to re-ask.
     if (!result.ok && streamed === '') {
         try {
-            result = await sendAiChatApi(apiMessages, context);
+            result = await sendAiChatApi(apiMessages, context, activeConversation.skillIds || []);
         } catch {
             result = { ok: false, error: 'AI request failed — check your connection and provider settings' };
         }
@@ -210,23 +390,39 @@ export async function send(text) {
  */
 async function persist() {
     try {
-        await saveAiConversationApi(
+        const saved = await saveAiConversationApi(
             history
                 .filter(m => m.role === 'user' || m.role === 'assistant')
-                .map(m => ({ role: m.role, content: m.content }))
+                .map(m => ({ role: m.role, content: m.content })),
+            activeConversation.skillIds
         );
+        // The server titles an unnamed thread from its first message, so the
+        // history menu would show "New conversation" until a reload otherwise.
+        if (saved?.title && saved.title !== activeConversation.title) {
+            activeConversation.title = saved.title;
+            await refreshConversations();
+            emit();
+        }
     } catch {
         // Intentionally silent — see the docblock.
     }
 }
 
-/** Clears the transcript locally and on the server. */
+/**
+ * Empties the open thread in place, keeping it and its skills.
+ *
+ * Distinct from `startNewConversation()`: this one really does discard, and
+ * is only reachable from an explicit "Clear this conversation" action.
+ */
 export async function clear() {
     history = [];
     usage = { input: 0, output: 0, lastInput: 0 };
+    activeConversation.title = 'New conversation';
     emit();
     try {
         await clearAiConversationApi();
+        await refreshConversations();
+        emit();
         return { ok: true };
     } catch {
         return { ok: false, error: 'Cleared locally, but not on the server' };

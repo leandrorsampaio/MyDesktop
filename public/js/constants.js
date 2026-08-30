@@ -57,6 +57,9 @@ export const MAX_EPICS = 20;
 /** Maximum number of profiles allowed */
 export const MAX_PROFILES = 20;
 
+/** Source of truth: MAX_SKILLS in server.js */
+export const MAX_SKILLS = 20;
+
 /** Maximum length for profile letters */
 export const PROFILE_LETTERS_MAX = 3;
 

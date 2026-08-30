@@ -7,13 +7,34 @@
 <div class="assistant__panel js-panel" role="dialog" aria-label="Assistant" hidden>
     <header class="assistant__header">
         <span class="assistant__context js-context">Assistant</span>
-        <button type="button" class="assistant__iconBtn js-clearBtn" title="Clear conversation" aria-label="Clear conversation">⌫</button>
+        <button type="button" class="assistant__iconBtn js-historyBtn" title="Saved conversations" aria-label="Saved conversations" aria-expanded="false">☰</button>
+        <button type="button" class="assistant__iconBtn js-newBtn" title="New conversation" aria-label="New conversation">+</button>
         <button type="button" class="assistant__iconBtn js-closeBtn" title="Close" aria-label="Close assistant">&times;</button>
     </header>
+
+    <!-- Saved conversations. Overlays the transcript rather than displacing it,
+         so opening the menu never reflows what you were reading. -->
+    <div class="assistant__drawer js-historyDrawer" hidden>
+        <div class="assistant__drawerHead">
+            <span>Conversations</span>
+            <button type="button" class="assistant__iconBtn js-historyCloseBtn" aria-label="Close conversations">&times;</button>
+        </div>
+        <div class="assistant__drawerList js-historyList"></div>
+    </div>
 
     <div class="assistant__messages js-messages"></div>
 
     <div class="assistant__notice js-notice" hidden></div>
+
+    <!-- Which skills are shaping the replies. Always visible when any apply,
+         because a silent instruction changing the answers is a bug you cannot
+         see. -->
+    <div class="assistant__skills js-skillsBar" hidden>
+        <button type="button" class="assistant__skillsToggle js-skillsToggle" aria-expanded="false">
+            <span class="js-skillsSummary">Skills</span>
+        </button>
+        <div class="assistant__skillsMenu js-skillsMenu" hidden></div>
+    </div>
 
     <div class="assistant__composer">
         <textarea class="assistant__input js-input" rows="1"

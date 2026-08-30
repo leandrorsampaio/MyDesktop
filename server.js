@@ -943,7 +943,8 @@ async function resolveProfile(req, res, next) {
             aiStaged: path.join(profileDir, 'ai-staged-tasks.json'),
             aiConversation: path.join(profileDir, 'ai-conversation.json'),
             aiProposals: path.join(profileDir, 'ai-proposals.json'),
-            aiMemory: path.join(profileDir, 'ai-memory.json')
+            aiMemory: path.join(profileDir, 'ai-memory.json'),
+            aiSkills: path.join(profileDir, 'ai-skills.json')
         };
         req.profile = profile;
         // Columns sorted by order for consistent use across handlers
@@ -2894,6 +2895,116 @@ const CLASSIFY_TASK_TOOL = {
 
 /**
  * ===========================================
+ * Skills
+ * ===========================================
+ *
+ * Reusable instruction blocks that shape *how* the assistant answers, as
+ * opposed to memories, which record *what* it knows. "Answer in three
+ * sentences" is a skill; "ESB- tickets belong to ECOM" is a memory.
+ *
+ * The split matters because the two have different lifetimes. A memory is a
+ * fact that should hold next month. A skill is a preference you switch on for
+ * one conversation and off for the next — writing tickets needs a different
+ * voice from talking through a board.
+ *
+ * `alwaysOn` skills apply to every conversation, which is what makes a
+ * standing preference like brevity actually stick. The rest are selected per
+ * conversation and travel with it, so reopening an old thread restores the
+ * voice it was written in.
+ *
+ * Unlike memories, the AI cannot propose these. Telling the model how to
+ * behave is the user's job.
+ */
+const MAX_SKILLS = 20;
+
+/** Long enough to name a voice, short enough to fit a chip in the dock. */
+const SKILL_NAME_MAX_LENGTH = 60;
+
+/** A skill is a short brief, not a document. */
+const SKILL_INSTRUCTIONS_MAX_LENGTH = 1000;
+
+/**
+ * Total skill characters allowed into the prompt. Skills ride along with the
+ * board snapshot and memories on every single message, so they need their own
+ * ceiling rather than trusting the per-skill limit times the maximum count.
+ */
+const SKILLS_PROMPT_BUDGET = 4000;
+
+/**
+ * Picks the skills that apply to a request: every always-on skill, plus the
+ * ones this conversation selected.
+ *
+ * @param {Array<Object>} skills - All defined skills.
+ * @param {Array<string>} selectedIds - Ids chosen for this conversation.
+ * @returns {Array<Object>} In definition order, no duplicates.
+ */
+function selectActiveSkills(skills, selectedIds = []) {
+    const chosen = new Set(Array.isArray(selectedIds) ? selectedIds : []);
+    return skills.filter(skill => skill.alwaysOn || chosen.has(skill.id));
+}
+
+/**
+ * Renders the applicable skills for the system prompt, within the budget.
+ * @param {Array<Object>} skills - Already filtered by selectActiveSkills().
+ * @returns {string} Empty string when nothing applies.
+ */
+function renderSkillsForPrompt(skills) {
+    const blocks = [];
+    let budget = SKILLS_PROMPT_BUDGET;
+    for (const skill of skills) {
+        const block = `## ${skill.name}\n${skill.instructions}`;
+        if (block.length > budget) break;
+        budget -= block.length;
+        blocks.push(block);
+    }
+    return blocks.join('\n\n');
+}
+
+/**
+ * Validates and normalises a skill from a request body.
+ * @param {Object} raw
+ * @param {Object} [existing] - The current record, when updating.
+ * @returns {{ok: true, skill: Object}|{ok: false, error: string}}
+ */
+function normaliseSkillInput(raw, existing = null) {
+    const has = (field) => raw && Object.prototype.hasOwnProperty.call(raw, field);
+
+    const name = has('name') ? raw.name : existing?.name;
+    if (typeof name !== 'string' || !name.trim()) {
+        return { ok: false, error: 'Skill name is required' };
+    }
+    if (name.trim().length > SKILL_NAME_MAX_LENGTH) {
+        return { ok: false, error: `Skill name must be ${SKILL_NAME_MAX_LENGTH} characters or less` };
+    }
+
+    const instructions = has('instructions') ? raw.instructions : existing?.instructions;
+    if (typeof instructions !== 'string' || !instructions.trim()) {
+        return { ok: false, error: 'Skill instructions are required' };
+    }
+    if (instructions.trim().length > SKILL_INSTRUCTIONS_MAX_LENGTH) {
+        return { ok: false, error: `Skill instructions must be ${SKILL_INSTRUCTIONS_MAX_LENGTH} characters or less` };
+    }
+
+    const alwaysOn = has('alwaysOn') ? raw.alwaysOn : (existing?.alwaysOn ?? false);
+    if (typeof alwaysOn !== 'boolean') {
+        return { ok: false, error: 'alwaysOn must be a boolean' };
+    }
+
+    return {
+        ok: true,
+        skill: {
+            id: existing?.id || generateId(),
+            name: name.trim(),
+            instructions: instructions.trim(),
+            alwaysOn,
+            createdAt: existing?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }
+    };
+}
+
+/**
+ * ===========================================
  * Long-term memory
  * ===========================================
  *
@@ -3320,7 +3431,7 @@ function buildBoardSnapshot(columns, tasks, epicById, categoryById) {
  * @param {Array<Object>} ctx.tasks
  * @returns {string}
  */
-function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memories = [], context = null }) {
+function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memories = [], skills = [], context = null }) {
     const epicById = new Map(epics.map(e => [e.id, e]));
     const categoryById = new Map(categories.map(c => [c.id, c]));
 
@@ -3343,6 +3454,7 @@ function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memor
     const columnsStr = columns.map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' [backlog]' : ''}`).join('\n');
 
     const memoryStr = renderMemoryForPrompt(memories);
+    const skillsStr = renderSkillsForPrompt(skills);
     const contextStr = renderChatContext(context, tasks, columns);
 
     return `You are a task management assistant built into a personal kanban tool. You are talking to the single person who owns this board.
@@ -3361,6 +3473,13 @@ If you notice something durable about how this person works — a naming convent
 
 Be concise. This is a personal tool, not a report generator.
 
+${skillsStr ? `# How the user wants you to respond
+
+These are the user's own standing instructions. They override the general
+guidance above, including anything about length or format. Follow them exactly.
+
+${skillsStr}
+` : ''}
 ${contextStr ? `# Where they are right now
 ${contextStr}
 ` : ''}
@@ -4312,14 +4431,19 @@ if (RATE_LIMIT_DISABLED) {
         try {
             // Must load exactly what the chat handler loads, or this endpoint
             // reports a prompt the model never actually sees.
-            const [epics, categories, tasks, memories] = await Promise.all([
+            const [epics, categories, tasks, memories, skills] = await Promise.all([
                 readJsonFile(req.profileFiles.epics, []),
                 readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
                 readJsonFile(req.profileFiles.tasks, []),
-                readJsonFile(req.profileFiles.aiMemory, [])
+                readJsonFile(req.profileFiles.aiMemory, []),
+                readJsonFile(req.profileFiles.aiSkills, [])
             ]);
+            // ?skillIds=a,b mirrors the per-conversation selection a real chat
+            // request sends, on top of the always-on ones.
+            const selectedSkillIds = (req.query.skillIds || '').split(',').filter(Boolean);
             const prompt = buildAiSystemPromptWithBoard({
                 epics, categories, columns: req.columns, tasks, memories,
+                skills: selectActiveSkills(skills, selectedSkillIds),
                 context: (req.query.page || req.query.taskId)
                     ? { page: req.query.page, taskId: req.query.taskId }
                     : null
@@ -4360,11 +4484,12 @@ async function prepareAiChat(req) {
     const resolved = await resolveActiveAiConfig();
     if (!resolved.ok) return resolved;
 
-    const [epics, categories, tasks, memories] = await Promise.all([
+    const [epics, categories, tasks, memories, skills] = await Promise.all([
         readJsonFile(req.profileFiles.epics, []),
         readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
         readJsonFile(req.profileFiles.tasks, []),
-        readJsonFile(req.profileFiles.aiMemory, [])
+        readJsonFile(req.profileFiles.aiMemory, []),
+        readJsonFile(req.profileFiles.aiSkills, [])
     ]);
 
     return {
@@ -4375,6 +4500,8 @@ async function prepareAiChat(req) {
         categories,
         systemPrompt: buildAiSystemPromptWithBoard({
             epics, categories, columns: req.columns, tasks, memories,
+            // Always-on skills plus whatever this conversation selected.
+            skills: selectActiveSkills(skills, req.body.skillIds),
             // Untrusted client hint about where the user is; every field is
             // re-checked against real data before it reaches the prompt.
             context: req.body.context || null
@@ -4673,43 +4800,344 @@ app.delete('/api/:profile/ai/proposals', resolveProfile, writeLimiter, async (re
     }
 });
 
-// GET the persisted conversation
+// ===========================================
+// AI Skills Routes (profile-scoped)
+// ===========================================
+
+// GET all skills
+app.get('/api/:profile/ai/skills', resolveProfile, async (req, res) => {
+    try {
+        res.json(await readJsonFile(req.profileFiles.aiSkills, []));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read skills' });
+    }
+});
+
+// POST a new skill
+app.post('/api/:profile/ai/skills', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const skills = await readJsonFile(req.profileFiles.aiSkills, []);
+        if (skills.length >= MAX_SKILLS) {
+            return res.status(400).json({ error: `Maximum ${MAX_SKILLS} skills reached` });
+        }
+        const result = normaliseSkillInput(req.body);
+        if (!result.ok) return res.status(400).json({ error: result.error });
+
+        skills.push(result.skill);
+        await writeJsonFile(req.profileFiles.aiSkills, skills);
+        res.status(201).json(result.skill);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create skill' });
+    }
+});
+
+// PUT update a skill
+app.put('/api/:profile/ai/skills/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const skills = await readJsonFile(req.profileFiles.aiSkills, []);
+        const idx = skills.findIndex(sk => sk.id === req.params.id);
+        if (idx === -1) return res.status(404).json({ error: 'Skill not found' });
+
+        const result = normaliseSkillInput(req.body, skills[idx]);
+        if (!result.ok) return res.status(400).json({ error: result.error });
+
+        skills[idx] = result.skill;
+        await writeJsonFile(req.profileFiles.aiSkills, skills);
+        res.json(result.skill);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update skill' });
+    }
+});
+
+// DELETE a skill
+app.delete('/api/:profile/ai/skills/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const skills = await readJsonFile(req.profileFiles.aiSkills, []);
+        const remaining = skills.filter(sk => sk.id !== req.params.id);
+        if (remaining.length === skills.length) {
+            return res.status(404).json({ error: 'Skill not found' });
+        }
+        await writeJsonFile(req.profileFiles.aiSkills, remaining);
+
+        // A deleted skill must also stop applying to conversations that
+        // selected it, or reopening an old thread would silently send an id
+        // that no longer resolves.
+        const store = await readConversationStore(req);
+        let touched = false;
+        for (const convo of store.conversations) {
+            const kept = (convo.skillIds || []).filter(id => id !== req.params.id);
+            if (kept.length !== (convo.skillIds || []).length) {
+                convo.skillIds = kept;
+                touched = true;
+            }
+        }
+        if (touched) await writeConversationStore(req, store);
+
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete skill' });
+    }
+});
+
+/**
+ * Maximum saved conversations per profile. Old threads fall off by least
+ * recently touched — this is a history you can return to, not an archive.
+ */
+const MAX_CONVERSATIONS = 50;
+
+/** Longest auto-derived conversation title. */
+const CONVERSATION_TITLE_MAX_LENGTH = 60;
+
+/**
+ * Derives a thread's title from its first user message, so a saved
+ * conversation is recognisable in a list without asking the model to name it
+ * (which would cost a call, and fail when the AI is offline).
+ * @param {Array<Object>} messages
+ * @returns {string}
+ */
+function deriveConversationTitle(messages) {
+    const first = messages.find(m => m.role === 'user');
+    if (!first) return 'New conversation';
+    const flat = first.content.replace(/\s+/g, ' ').trim();
+    if (!flat) return 'New conversation';
+    return flat.length > CONVERSATION_TITLE_MAX_LENGTH
+        ? `${flat.slice(0, CONVERSATION_TITLE_MAX_LENGTH - 1)}\u2026`
+        : flat;
+}
+
+/** @returns {Object} A fresh, empty conversation. */
+function newConversation() {
+    const now = new Date().toISOString();
+    return { id: generateId(), title: 'New conversation', createdAt: now, updatedAt: now, skillIds: [], messages: [] };
+}
+
+/**
+ * Reads the conversation store, migrating the pre-v2.58 single-transcript
+ * shape (`{ messages: [] }`) into the multi-thread one.
+ *
+ * The old file held exactly one conversation with nowhere to put a second, so
+ * "clear" was the only way to start a new topic and it destroyed the previous
+ * one. Migration keeps that transcript as the first saved thread rather than
+ * discarding history on upgrade.
+ *
+ * @param {Object} req
+ * @returns {Promise<{activeId: string, conversations: Array<Object>}>}
+ */
+async function readConversationStore(req) {
+    const raw = await readJsonFile(req.profileFiles.aiConversation, {});
+
+    if (Array.isArray(raw.conversations)) {
+        const conversations = raw.conversations.filter(c => c && typeof c.id === 'string');
+        if (conversations.length === 0) {
+            const fresh = newConversation();
+            return { activeId: fresh.id, conversations: [fresh] };
+        }
+        const activeId = conversations.some(c => c.id === raw.activeId)
+            ? raw.activeId
+            : conversations[0].id;
+        return { activeId, conversations };
+    }
+
+    // Legacy shape, or an absent/empty file.
+    const legacy = Array.isArray(raw.messages) ? raw.messages : [];
+    const convo = newConversation();
+    if (legacy.length) {
+        convo.messages = legacy;
+        convo.title = deriveConversationTitle(legacy);
+        convo.createdAt = legacy[0]?.at || convo.createdAt;
+        convo.updatedAt = legacy[legacy.length - 1]?.at || convo.updatedAt;
+    }
+    return { activeId: convo.id, conversations: [convo] };
+}
+
+/** Sanitises a transcript from the client and bounds its length. */
+function cleanMessages(messages) {
+    return messages
+        .filter(m => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
+        .slice(-MAX_CONVERSATION_MESSAGES)
+        .map(m => ({ role: m.role, content: m.content, at: m.at || new Date().toISOString() }));
+}
+
+/** Persists the store, dropping the least recently touched threads over the cap. */
+async function writeConversationStore(req, store) {
+    const ordered = [...store.conversations].sort(
+        (a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0)
+    );
+    const kept = ordered.slice(0, MAX_CONVERSATIONS);
+    const activeId = kept.some(c => c.id === store.activeId) ? store.activeId : kept[0]?.id || null;
+    await writeJsonFile(req.profileFiles.aiConversation, { activeId, conversations: kept });
+    return { activeId, conversations: kept };
+}
+
+/** Strips transcripts — the list view only needs enough to pick a thread. */
+const toConversationSummary = (c) => ({
+    id: c.id,
+    title: c.title,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+    skillIds: c.skillIds || [],
+    messageCount: (c.messages || []).length
+});
+
+// GET the active conversation, with its transcript
 app.get('/api/:profile/ai/conversation', resolveProfile, async (req, res) => {
     try {
-        const stored = await readJsonFile(req.profileFiles.aiConversation, { messages: [] });
-        res.json({ messages: Array.isArray(stored.messages) ? stored.messages : [] });
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+        res.json({
+            id: active.id,
+            title: active.title,
+            skillIds: active.skillIds || [],
+            messages: active.messages || []
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to read conversation' });
     }
 });
 
-// PUT replace the persisted conversation. The client owns the transcript and
-// writes it back after each exchange; the server only bounds its length.
+// PUT replace the active conversation's transcript. The client owns the
+// transcript and writes it back after each exchange; the server bounds its
+// length and keeps the title in step with the opening message.
 app.put('/api/:profile/ai/conversation', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        const { messages } = req.body;
+        const { messages, skillIds } = req.body;
         if (!Array.isArray(messages)) {
             return res.status(400).json({ error: 'messages must be an array' });
         }
-        const clean = messages
-            .filter(m => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
-            .slice(-MAX_CONVERSATION_MESSAGES)
-            .map(m => ({ role: m.role, content: m.content, at: m.at || new Date().toISOString() }));
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
 
-        await writeJsonFile(req.profileFiles.aiConversation, { messages: clean });
-        res.json({ ok: true, count: clean.length });
+        active.messages = cleanMessages(messages);
+        active.updatedAt = new Date().toISOString();
+        if (Array.isArray(skillIds)) active.skillIds = skillIds.filter(id => typeof id === 'string');
+        // Retitle only while the thread is still unnamed, so a user's own
+        // rename is never overwritten by a later edit to the first message.
+        if (active.title === 'New conversation') active.title = deriveConversationTitle(active.messages);
+
+        await writeConversationStore(req, store);
+        res.json({ ok: true, count: active.messages.length, title: active.title });
     } catch (error) {
         res.status(500).json({ error: 'Failed to save conversation' });
     }
 });
 
-// DELETE clear the conversation
+// DELETE clear the active conversation's messages, keeping the thread itself
 app.delete('/api/:profile/ai/conversation', resolveProfile, writeLimiter, async (req, res) => {
     try {
-        await writeJsonFile(req.profileFiles.aiConversation, { messages: [] });
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+        active.messages = [];
+        active.title = 'New conversation';
+        active.updatedAt = new Date().toISOString();
+        await writeConversationStore(req, store);
         res.json({ ok: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to clear conversation' });
+    }
+});
+
+// GET the list of saved conversations, newest first, without transcripts
+app.get('/api/:profile/ai/conversations', resolveProfile, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const conversations = [...store.conversations]
+            .sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0))
+            .map(toConversationSummary);
+        res.json({ activeId: store.activeId, conversations });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read conversations' });
+    }
+});
+
+// POST start a new conversation and make it active
+app.post('/api/:profile/ai/conversations', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+
+        // Starting a new thread from an untouched one would leave a trail of
+        // empty "New conversation" rows, so reuse it instead.
+        if (active && (active.messages || []).length === 0) {
+            if (Array.isArray(req.body?.skillIds)) {
+                active.skillIds = req.body.skillIds.filter(id => typeof id === 'string');
+                await writeConversationStore(req, store);
+            }
+            return res.status(200).json(active);
+        }
+
+        const convo = newConversation();
+        // A new thread inherits the current one's skills: switching topic is
+        // not usually a request to change voice.
+        convo.skillIds = Array.isArray(req.body?.skillIds)
+            ? req.body.skillIds.filter(id => typeof id === 'string')
+            : (active?.skillIds || []);
+        store.conversations.push(convo);
+        store.activeId = convo.id;
+        await writeConversationStore(req, store);
+        res.status(201).json(convo);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create conversation' });
+    }
+});
+
+// PUT switch to a saved conversation, returning its transcript
+app.put('/api/:profile/ai/conversations/:id/activate', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const target = store.conversations.find(c => c.id === req.params.id);
+        if (!target) return res.status(404).json({ error: 'Conversation not found' });
+
+        store.activeId = target.id;
+        await writeConversationStore(req, store);
+        res.json(target);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to switch conversation' });
+    }
+});
+
+// PUT rename a conversation
+app.put('/api/:profile/ai/conversations/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+        if (!title) return res.status(400).json({ error: 'Title is required' });
+        if (title.length > CONVERSATION_TITLE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Title must be ${CONVERSATION_TITLE_MAX_LENGTH} characters or less` });
+        }
+
+        const store = await readConversationStore(req);
+        const target = store.conversations.find(c => c.id === req.params.id);
+        if (!target) return res.status(404).json({ error: 'Conversation not found' });
+
+        target.title = title;
+        await writeConversationStore(req, store);
+        res.json(toConversationSummary(target));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to rename conversation' });
+    }
+});
+
+// DELETE one saved conversation
+app.delete('/api/:profile/ai/conversations/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const remaining = store.conversations.filter(c => c.id !== req.params.id);
+        if (remaining.length === store.conversations.length) {
+            return res.status(404).json({ error: 'Conversation not found' });
+        }
+
+        // Never leave the assistant with no thread to write into: deleting the
+        // last one starts a fresh empty thread rather than an absent active id.
+        store.conversations = remaining.length ? remaining : [newConversation()];
+        if (!store.conversations.some(c => c.id === store.activeId)) {
+            const newest = [...store.conversations].sort(
+                (a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0)
+            )[0];
+            store.activeId = newest.id;
+        }
+        const saved = await writeConversationStore(req, store);
+        res.json({ ok: true, activeId: saved.activeId });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete conversation' });
     }
 });
 
