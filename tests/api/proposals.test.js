@@ -23,6 +23,7 @@ const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const PROFILE_DIR = path.join(DATA_DIR, TEST_PROFILE);
 const TASKS_FILE = path.join(PROFILE_DIR, 'tasks.json');
 const PROPOSALS_FILE = path.join(PROFILE_DIR, 'ai-proposals.json');
+const ARCHIVED_FILE = path.join(PROFILE_DIR, 'archived-tasks.json');
 
 function makeRequest(method, urlPath, body = null) {
     return new Promise((resolve, reject) => {
@@ -78,6 +79,7 @@ function proposal(overrides) {
 describe('AI proposals API', () => {
     let originalTasks;
     let originalProposals;
+    let originalArchived;
     let taskId;
 
     before(async () => {
@@ -85,10 +87,14 @@ describe('AI proposals API', () => {
         await fs.mkdir(PROFILE_DIR, { recursive: true });
         try { originalTasks = await fs.readFile(TASKS_FILE, 'utf8'); } catch { originalTasks = '[]'; }
         try { originalProposals = await fs.readFile(PROPOSALS_FILE, 'utf8'); } catch { originalProposals = null; }
+        try { originalArchived = await fs.readFile(ARCHIVED_FILE, 'utf8'); } catch { originalArchived = '[]'; }
     });
 
     beforeEach(async () => {
         await fs.writeFile(TASKS_FILE, '[]');
+        // Applied deletes now archive, so this file has to be reset too or
+        // alphabetically-later suites inherit the leftovers.
+        await fs.writeFile(ARCHIVED_FILE, '[]');
         await seedProposals([]);
         const created = await post(`/api/${TEST_PROFILE}/tasks`, { title: 'Refactor auth', points: 3 });
         taskId = created.body.id;
@@ -96,6 +102,7 @@ describe('AI proposals API', () => {
 
     after(async () => {
         await fs.writeFile(TASKS_FILE, originalTasks);
+        await fs.writeFile(ARCHIVED_FILE, originalArchived);
         if (originalProposals === null) await fs.rm(PROPOSALS_FILE, { force: true });
         else await fs.writeFile(PROPOSALS_FILE, originalProposals);
     });
@@ -139,15 +146,35 @@ describe('AI proposals API', () => {
             assert.match(res.body.task.log.at(-1).action, /Moved from 'To Do' to 'In Progress'/);
         });
 
-        it('applies a delete', async () => {
+        it('archives rather than destroys on an applied delete', async () => {
+            // A model mistake plus one click was the only permanent-data-loss
+            // path in the app. Deletes go to the archive, where Restore works.
             await seedProposals([proposal({ id: 'p1', kind: 'delete', taskId })]);
 
             const res = await post(`/api/${TEST_PROFILE}/ai/proposals/p1/apply`);
             assert.strictEqual(res.status, 200);
             assert.strictEqual(res.body.task, null);
+            assert.strictEqual(res.body.archived, true);
 
             const tasks = await get(`/api/${TEST_PROFILE}/tasks`);
-            assert.strictEqual(tasks.body.length, 0);
+            assert.strictEqual(tasks.body.length, 0, 'task left on the board');
+
+            const archived = await get(`/api/${TEST_PROFILE}/archived`);
+            const found = archived.body.find(t => t.id === taskId);
+            assert.ok(found, 'the task was destroyed instead of archived');
+            assert.ok(found.archivedDate, 'no archivedDate stamped');
+            assert.match(found.log.at(-1).action, /AI proposal/);
+        });
+
+        it('can restore a task an AI delete archived', async () => {
+            await seedProposals([proposal({ id: 'p1', kind: 'delete', taskId })]);
+            await post(`/api/${TEST_PROFILE}/ai/proposals/p1/apply`);
+
+            const restored = await post(`/api/${TEST_PROFILE}/archived/${taskId}/restore`);
+            assert.strictEqual(restored.status, 200);
+
+            const tasks = await get(`/api/${TEST_PROFILE}/tasks`);
+            assert.ok(tasks.body.some(t => t.id === taskId), 'restore did not bring it back');
         });
 
         it('logs a category change, matching the hand-driven PUT route', async () => {
@@ -243,6 +270,8 @@ describe('AI proposals API', () => {
 
             const tasks = await get(`/api/${TEST_PROFILE}/tasks`);
             assert.strictEqual(tasks.body.length, 1, 'rejecting a delete removed the task anyway');
+            const archived = await get(`/api/${TEST_PROFILE}/archived`);
+            assert.ok(!archived.body.some(t => t.id === taskId), 'rejecting a delete archived it anyway');
 
             const pending = await get(`/api/${TEST_PROFILE}/ai/proposals`);
             assert.strictEqual(pending.body.length, 0);

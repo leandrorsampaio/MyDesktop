@@ -4,7 +4,7 @@
  */
 
 import {
-    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, MAX_SKILLS, EPIC_COLORS,
+    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, MAX_SKILLS, MAX_MEMORIES, EPIC_COLORS,
     DEFAULT_CATEGORY_ID, DEFAULT_CHECKLIST_ITEMS,
     DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, THEMES
 } from './constants.js';
@@ -299,6 +299,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
                             </select>
                             <button type="button" class="btn --primary js-cfg-memoryAddBtn">Add</button>
                         </div>
+                        <p class="configPage__panelHint js-cfg-memoryCount"></p>
                         <div class="memoryEditor__list js-cfg-memoryList"></div>
                         <button type="button" class="aiConfig__addBtn js-cfg-memoryMarkdownBtn">View as Markdown</button>
                     </div>
@@ -1363,6 +1364,7 @@ export async function initConfigPage(pageViewEl, { elements }) {
     const memoryAddBtn = $('.js-cfg-memoryAddBtn');
     const memoryList   = $('.js-cfg-memoryList');
     const memoryCategorySelect = $('.js-cfg-memoryCategory');
+    const memoryCountEl        = $('.js-cfg-memoryCount');
     const memoryMarkdownBtn    = $('.js-cfg-memoryMarkdownBtn');
     const interviewBtn  = $('.js-cfg-interviewBtn');
     const interviewHint = $('.js-cfg-interviewHint');
@@ -1378,6 +1380,15 @@ export async function initConfigPage(pageViewEl, { elements }) {
      * propose-first rule the board changes follow.
      */
     function renderMemories() {
+        // A full store silently discards anything the assistant proposes, so
+        // the count has to be visible before that starts happening.
+        const full = memories.length >= MAX_MEMORIES;
+        memoryAddBtn.disabled = full;
+        memoryCountEl.textContent = memories.length
+            ? `${memories.length} of ${MAX_MEMORIES}${full ? ' — full. Delete something before the assistant can remember more.' : ''}`
+            : '';
+        memoryCountEl.classList.toggle('--full', full);
+
         if (memories.length === 0) {
             memoryList.innerHTML = '<div class="emptyState">Nothing remembered yet</div>';
             return;

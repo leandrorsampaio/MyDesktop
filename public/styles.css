@@ -3791,6 +3791,10 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
    Skills editor
    ========================================== */
 
+.configPage__panelHint.--full {
+    color: var(--color-accent-error);
+}
+
 .skillsEditor {
     display: flex;
     flex-direction: column;

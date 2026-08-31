@@ -59,6 +59,16 @@ let conversations = [];
 let skills = [];
 
 /**
+ * Skills the server could not fit into the last prompt.
+ *
+ * The dock shows a skill as active the moment it is toggled, so without this
+ * the UI would keep claiming a skill is shaping replies that never reached the
+ * model at all.
+ * @type {Array<string>}
+ */
+let skippedSkillIds = [];
+
+/**
  * Streaming re-renders the transcript on every token, which for a whole
  * conversation is far too much work per frame. Emits are coalesced onto an
  * animation frame instead: the text still appears as it is written, but the
@@ -120,6 +130,7 @@ export function getState() {
         activeConversation: { ...activeConversation },
         conversations: [...conversations],
         skills: [...skills],
+        skippedSkillIds: [...skippedSkillIds],
         // Always-on skills apply whether or not this thread selected them,
         // so views can show what is actually in force without re-deriving it.
         activeSkills: skills.filter(sk => sk.alwaysOn || (activeConversation.skillIds || []).includes(sk.id))
@@ -392,13 +403,16 @@ export async function send(text) {
         return { ok: false, error: result.error || 'AI request failed' };
     }
 
-    const { narrative, tasks = [], proposals = [], memories = [], usage: turnUsage } = result.data;
+    const { narrative, synthetic, tasks = [], proposals = [], memories = [], usage: turnUsage } = result.data;
+    skippedSkillIds = result.data.skippedSkillIds || [];
     history.push({
         role: 'assistant',
         content: narrative || streamed || '(No response)',
-        tasksAdded: tasks.length,
-        proposalsAdded: proposals.length,
-        memoriesAdded: memories.length
+        // A synthetic narrative is already a receipt ("Staged 3 tasks."), so
+        // the view's own outcome line would repeat it word for word.
+        tasksAdded: synthetic ? 0 : tasks.length,
+        proposalsAdded: synthetic ? 0 : proposals.length,
+        memoriesAdded: synthetic ? 0 : memories.length
     });
 
     if (turnUsage) {

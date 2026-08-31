@@ -60,6 +60,9 @@ export const MAX_PROFILES = 20;
 /** Source of truth: MAX_SKILLS in server.js */
 export const MAX_SKILLS = 20;
 
+/** Source of truth: MAX_MEMORIES in server.js */
+export const MAX_MEMORIES = 40;
+
 /** Maximum length for profile letters */
 export const PROFILE_LETTERS_MAX = 3;
 

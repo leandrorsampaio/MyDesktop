@@ -251,6 +251,18 @@ class AssistantDock extends HTMLElement {
             this._send();
         });
 
+        // These rows carry role="button" and tabindex, so a keyboard user is
+        // promised they behave like buttons. Without this they are dead.
+        const activateOnKey = (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const row = e.target.closest('.js-convoRow, .js-skillRow');
+            if (!row) return;
+            e.preventDefault();
+            row.click();
+        };
+        this._historyListEl.addEventListener('keydown', activateOnKey);
+        this._skillsMenuEl.addEventListener('keydown', activateOnKey);
+
         document.addEventListener('keydown', this._onDocKeydown);
     }
 
@@ -357,7 +369,7 @@ class AssistantDock extends HTMLElement {
         `).join('');
     }
 
-    _renderSkills(skills, activeSkills, selectedIds) {
+    _renderSkills(skills, activeSkills, selectedIds, skipped = []) {
         // Nothing to show and nothing to choose — keep the bar out of the way.
         if (skills.length === 0) {
             this._skillsBarEl.hidden = true;
@@ -372,28 +384,40 @@ class AssistantDock extends HTMLElement {
 
         this._skillsMenuEl.innerHTML = skills.map(sk => {
             const on = sk.alwaysOn || selectedIds.includes(sk.id);
+            const dropped = skipped.includes(sk.id);
             return `
-                <div class="assistant__skillRow js-skillRow${on ? ' --on' : ''}"
+                <div class="assistant__skillRow js-skillRow${on ? ' --on' : ''}${dropped ? ' --dropped' : ''}"
                      data-skill-id="${escapeHtml(sk.id)}" data-always-on="${sk.alwaysOn}"
-                     role="button" tabindex="${sk.alwaysOn ? -1 : 0}">
+                     role="button" tabindex="${sk.alwaysOn ? -1 : 0}"
+                     ${dropped ? 'title="Too long to fit alongside your other skills — it was not sent"' : ''}>
                     <span class="assistant__skillCheck">${on ? '✓' : ''}</span>
                     <span class="assistant__skillName">${escapeHtml(sk.name)}</span>
-                    ${sk.alwaysOn ? '<span class="assistant__skillAlways">always on</span>' : ''}
+                    ${dropped ? '<span class="assistant__skillAlways">not sent</span>'
+                              : sk.alwaysOn ? '<span class="assistant__skillAlways">always on</span>' : ''}
                 </div>
             `;
         }).join('');
     }
 
     _render() {
-        const { history, busy, availability, conversations, activeConversation, skills, activeSkills } = chat.getState();
+        const { history, busy, availability, conversations, activeConversation, skills, activeSkills, skippedSkillIds } = chat.getState();
 
         this._renderHistory(conversations, activeConversation.id);
-        this._renderSkills(skills, activeSkills, activeConversation.skillIds || []);
+        this._renderSkills(skills, activeSkills, activeConversation.skillIds || [], skippedSkillIds);
 
-        this._messagesEl.innerHTML = history.length === 0
+        // Whether to follow the conversation must be decided BEFORE the
+        // re-render, while the old scroll position is still readable.
+        const el = this._messagesEl;
+        const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+
+        el.innerHTML = history.length === 0
             ? this._emptyStateHtml()
             : history.map(m => this._messageHtml(m)).join('');
-        this._messagesEl.scrollTop = this._messagesEl.scrollHeight;
+
+        // Only follow when the user was already at the bottom. Pinning on every
+        // frame makes it impossible to scroll up and re-read while a long reply
+        // is still streaming.
+        if (wasAtBottom) el.scrollTop = el.scrollHeight;
 
         this._usageEl.textContent = chat.formatUsage();
 

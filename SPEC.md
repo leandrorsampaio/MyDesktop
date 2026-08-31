@@ -1121,6 +1121,26 @@ All CRUD editors (categories, epics, profiles, columns, checklist, AI config, ge
 
 ---
 
+## Concurrency
+
+Every store is a whole-file JSON document, so nearly every mutation is a
+read-modify-write. `writeJsonFile` is atomic per write; it does not stop two
+overlapping cycles losing one of them.
+
+**Any route that mutates a store must be wrapped in its lock** — `lockTasks`,
+`lockProposals`, `lockConversation`, `lockMemory` (all built on `withFileLock`).
+Wrap the handler at the route, leaving the body unchanged:
+
+```js
+app.post('/api/:profile/tasks', resolveProfile, writeLimiter, lockTasks(async (req, res) => {
+    // ... unchanged
+}));
+```
+
+The lock cannot help a cycle that holds its read across a slow await. Routes
+that call an AI provider mid-cycle (`classify`, `summarise`) re-read after the
+call instead.
+
 ## Code Rules
 
 Read these before writing any code. They capture every recurring mistake.

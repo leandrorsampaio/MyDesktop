@@ -329,6 +329,13 @@
     cursor: default;
 }
 
+/* Toggled on, but the prompt budget kept it out. Saying nothing here would let
+   the UI claim a skill is shaping replies the model never saw. */
+.assistant__skillRow.--dropped .assistant__skillName {
+    color: var(--color-text-tertiary, #9ca3af);
+    text-decoration: line-through;
+}
+
 .assistant__skillCheck {
     flex-shrink: 0;
     width: 12px;

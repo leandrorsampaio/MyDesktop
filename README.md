@@ -95,6 +95,25 @@ Full rule list in [SPEC.md § Code Rules](SPEC.md#code-rules).
 
 ---
 
+## A note on security
+
+There is no login, because there is no one to log in as — this is a single-user
+tool serving your own files on your own machine. The server binds to
+`127.0.0.1` by default, and that binding *is* the access control.
+
+Two things worth knowing before you change that:
+
+- **Any process on your machine can reach the API.** It can read your whole
+  board, and it can spend money through the AI chat endpoint if you have a
+  provider configured.
+- **`HOST=0.0.0.0` exposes more than a kanban board.** It also exposes an
+  endpoint that will call your AI provider on your key. On a trusted home
+  network that is usually fine; on shared or public wifi it is not.
+
+API keys are stored in `data/ai-config.json` with mode `0600` and are never
+returned by any endpoint — but they are stored in plain text, so treat that
+file the way you would treat a `.env`.
+
 ## License
 
 MIT.
