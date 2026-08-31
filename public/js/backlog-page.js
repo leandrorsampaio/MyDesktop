@@ -1,5 +1,14 @@
 /**
  * Backlog page module — renders and manages the /:alias/backlog page.
+ *
+ * Also hosts **AI staging**, which used to be its own page. A staged task is
+ * proposed work that hasn't been committed to yet — which is exactly what the
+ * backlog is for, so the two belong together. It also gives the backlog a
+ * second reason to be opened, which it badly needed.
+ *
+ * Conversation itself lives in the floating assistant, available on every
+ * page; this section is for the one thing a small floating panel is bad at —
+ * pasting a long transcript and reviewing what came out of it.
  */
 
 import {
@@ -11,8 +20,12 @@ import {
 } from './state.js';
 import {
     fetchTasksApi, fetchColumnsApi, fetchEpicsApi, fetchCategoriesApi,
-    moveTaskApi
+    moveTaskApi,
+    fetchStagedTasksApi, updateStagedTaskApi, deleteStagedTaskApi,
+    promoteToBacklogApi, promoteToBoardApi, createTaskApi
 } from './api.js';
+import { openEditStagedTaskModal, openCloneStagedTaskModal } from './modals.js';
+import * as assistantChat from './assistant-chat.js';
 
 /**
  * Initialises the backlog page inside the given container element.
@@ -28,7 +41,24 @@ export async function initBacklogPage(pageViewEl, { elements }) {
             <div class="backlogPage__header">
                 <h2 class="backlogPage__title">Backlog</h2>
                 <span class="backlogPage__count js-backlogCount">Loading…</span>
+                <button type="button" class="btn --secondary --sm js-stagingToggle" aria-expanded="false">
+                    AI staging<span class="backlogPage__stagedBadge js-stagedBadge" hidden></span>
+                </button>
             </div>
+
+            <!-- AI staging: collapsed until called for, so the backlog stays
+                 the page's subject rather than the assistant. -->
+            <section class="aiStaging js-staging" hidden>
+                <textarea class="aiStaging__input js-stagingInput" rows="3"
+                          placeholder="Paste meeting notes, or describe what came out of a conversation…"
+                          aria-label="Notes to turn into tasks"></textarea>
+                <div class="aiStaging__actions">
+                    <span class="aiStaging__hint js-stagingHint"></span>
+                    <button type="button" class="btn --primary --sm js-stagingSend">Extract tasks</button>
+                </div>
+                <div class="aiStaging__rows js-stagedRows"></div>
+                <div class="aiStaging__empty js-stagedEmpty">Nothing staged. Paste something above and the assistant will pull tasks out of it.</div>
+            </section>
             <div class="backlogPage__tableWrap js-backlogTableWrap">
                 <list-header class="js-listHeader"></list-header>
                 <div class="backlogPage__rows js-backlogRows"></div>
@@ -190,4 +220,155 @@ export async function initBacklogPage(pageViewEl, { elements }) {
 
     // Refresh backlog after task modal closes (handles delete)
     elements.taskModal.addEventListener('modal-closed', renderBacklogRows);
+
+    // ==========================================
+    // AI staging
+    // ==========================================
+    const stagingEl    = pageViewEl.querySelector('.js-staging');
+    const toggleBtn    = pageViewEl.querySelector('.js-stagingToggle');
+    const stagedBadge  = pageViewEl.querySelector('.js-stagedBadge');
+    const stagingInput = pageViewEl.querySelector('.js-stagingInput');
+    const stagingSend  = pageViewEl.querySelector('.js-stagingSend');
+    const stagingHint  = pageViewEl.querySelector('.js-stagingHint');
+    const stagedRows   = pageViewEl.querySelector('.js-stagedRows');
+    const stagedEmpty  = pageViewEl.querySelector('.js-stagedEmpty');
+
+    /** @type {Array<Object>} Mirror of ai-staged-tasks.json */
+    let stagedTasks = [];
+
+    function renderStaged() {
+        stagedBadge.hidden = stagedTasks.length === 0;
+        stagedBadge.textContent = String(stagedTasks.length);
+        stagedEmpty.hidden = stagedTasks.length > 0;
+
+        stagedRows.innerHTML = '';
+        // Map lookups rather than .find() per row — SPEC Code Rule 4.
+        const epicById = new Map(epics.map(e => [e.id, e]));
+        const categoryById = new Map(categories.map(c => [c.id, c]));
+
+        for (const task of stagedTasks) {
+            const row = document.createElement('ai-staged-row');
+            row.setTask(task, {
+                epicName:     epicById.get(task.epicId)?.name,
+                epicColor:    epicById.get(task.epicId)?.color,
+                categoryName: categoryById.get(task.category)?.name,
+                categoryIcon: categoryById.get(task.category)?.icon
+            });
+            stagedRows.appendChild(row);
+        }
+    }
+
+    /** Opens the section, e.g. because there is something waiting in it. */
+    function openStaging() {
+        stagingEl.hidden = false;
+        toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const open = stagingEl.hidden;
+        stagingEl.hidden = !open;
+        toggleBtn.setAttribute('aria-expanded', String(open));
+        if (open) stagingInput.focus();
+    });
+
+    /** Sends the pasted text to the assistant and shows what it staged. */
+    async function extractTasks() {
+        const text = stagingInput.value.trim();
+        if (!text) return;
+
+        stagingSend.disabled = true;
+        stagingHint.textContent = 'Reading…';
+
+        const result = await assistantChat.send(text);
+
+        stagingSend.disabled = false;
+        if (!result.ok) {
+            stagingHint.textContent = result.error;
+            return;
+        }
+
+        stagingInput.value = '';
+        const added = result.tasks?.length || 0;
+        stagedTasks = [...stagedTasks, ...(result.tasks || [])];
+        renderStaged();
+        stagingHint.textContent = added
+            ? `${added} task${added === 1 ? '' : 's'} staged`
+            : 'Nothing actionable found in that.';
+    }
+
+    stagingSend.addEventListener('click', extractTasks);
+
+    // ---- Staged row actions (delegated) ----
+    stagedRows.addEventListener('ai-edit', (e) => {
+        const task = stagedTasks.find(t => t.id === e.detail.taskId);
+        if (!task) return;
+        openEditStagedTaskModal(task, elements, {
+            onSave: async (data) => {
+                const res = await updateStagedTaskApi(task.id, data);
+                if (!res.ok) return toaster?.error(res.error || 'Failed to update');
+                Object.assign(task, res.data);
+                renderStaged();
+            }
+        });
+    });
+
+    stagedRows.addEventListener('ai-clone', (e) => {
+        const task = stagedTasks.find(t => t.id === e.detail.taskId);
+        if (!task) return;
+        openCloneStagedTaskModal(task, elements, {
+            onSave: async (data) => {
+                try {
+                    await createTaskApi({ ...data, status: backlogColumnId });
+                    await refreshBacklog();
+                    toaster?.success('Added to the backlog');
+                } catch (error) {
+                    toaster?.error(error.message || 'Failed to create task');
+                }
+            }
+        });
+    });
+
+    stagedRows.addEventListener('ai-delete', async (e) => {
+        const id = e.detail.taskId;
+        stagedTasks = stagedTasks.filter(t => t.id !== id);
+        renderStaged();
+        const res = await deleteStagedTaskApi(id);
+        if (!res.ok) toaster?.error(res.error || 'Failed to delete');
+    });
+
+    for (const [event, api, label] of [
+        ['ai-promote-backlog', promoteToBacklogApi, 'backlog'],
+        ['ai-promote-board',   promoteToBoardApi,   'board']
+    ]) {
+        stagedRows.addEventListener(event, async (e) => {
+            const res = await api(e.detail.taskId);
+            if (!res.ok) return toaster?.error(res.error || 'Failed to promote');
+            stagedTasks = stagedTasks.filter(t => t.id !== e.detail.taskId);
+            renderStaged();
+            await refreshBacklog();
+            toaster?.success(`Promoted to the ${label}`);
+        });
+    }
+
+    /** Re-reads tasks so a promotion shows up in the list below. */
+    async function refreshBacklog() {
+        try {
+            setTasks(await fetchTasksApi());
+            renderBacklogRows();
+        } catch {
+            // The promotion succeeded; the list is just momentarily stale.
+        }
+    }
+
+    // Loaded after the page paints — staging must never delay the backlog.
+    Promise.all([
+        fetchStagedTasksApi().catch(() => []),
+        import('/components/ai-staged-row/ai-staged-row.js')
+    ]).then(([fetched]) => {
+        stagedTasks = fetched;
+        renderStaged();
+        // Something is already waiting: open the section rather than hiding a
+        // badge behind a click.
+        if (stagedTasks.length > 0) openStaging();
+    });
 }

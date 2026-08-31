@@ -20,6 +20,45 @@ export function escapeHtml(text) {
 }
 
 /**
+ * Renders the small amount of Markdown a chat model actually emits.
+ *
+ * Models write `**bold**`, `*italic*` and `` `code` `` whether or not you ask
+ * them to, and showing the asterisks raw looks broken. This is not a Markdown
+ * parser and is not trying to be one — block structure (headings, tables) is
+ * left as written, because the assistant's replies are short.
+ *
+ * Safe by construction: the text is HTML-escaped FIRST, so the only tags that
+ * can reach the DOM are the ones added afterwards from a fixed set. Never
+ * reorder those two steps.
+ *
+ * @param {string} text
+ * @returns {string} HTML
+ */
+export function renderInlineMarkdown(text) {
+    // Escapes without touching the DOM, so this is pure and testable in Node.
+    // Also covers quotes, which the innerHTML trick in escapeHtml does not.
+    const escaped = String(text).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[ch]);
+
+    // Code spans are lifted out before emphasis runs and put back after.
+    // Formatting them first is not enough: the later passes would still match
+    // asterisks *inside* the code, so `a**b**c` came back bolded.
+    const codeSpans = [];
+    const withoutCode = escaped.replace(/`([^`\n]+)`/g, (_, code) => {
+        codeSpans.push(code);
+        return `\u0000${codeSpans.length - 1}\u0000`;
+    });
+
+    return withoutCode
+        .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+        // Single asterisks only when they wrap a word — avoids mangling a bare
+        // `*` used as a bullet at the start of a line.
+        .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s.,;:!?)]|$)/g, '$1<em>$2</em>')
+        .replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codeSpans[Number(i)]}</code>`);
+}
+
+/**
  * Calculates the ISO week number for a given date.
  * @param {Date} date - The date to get the week number for
  * @returns {number} The ISO week number (1-53)
@@ -234,4 +273,46 @@ export function attachmentMimeFor(file) {
  */
 export function isViewableAttachment(attachment) {
     return INLINE_ATTACHMENT_MIMES.includes(attachment?.mime);
+}
+
+// ===========================================
+// Server-sent events
+// ===========================================
+
+/**
+ * Incrementally splits a server-sent-event stream into complete events.
+ *
+ * A network chunk can end anywhere — mid-line, mid-event — so the tail of an
+ * incomplete line is returned in `buffer` and prepended to the next chunk.
+ * Getting this wrong silently truncates the model's output, which is why it
+ * lives in one place with its own tests.
+ *
+ * NOTE: server.js has its own copy, because Node cannot import ES modules
+ * from /public. This file is the source of truth — change both together.
+ *
+ * @param {string} buffer - Leftover text from the previous chunk
+ * @param {string} chunk - Newly decoded text
+ * @returns {{events: Array<{event: string|null, data: string}>, buffer: string}}
+ */
+export function parseSseChunk(buffer, chunk) {
+    const text = buffer + chunk;
+    // Events are separated by a blank line. Tolerate CRLF as well as LF.
+    const parts = text.split(/\r?\n\r?\n/);
+    const remainder = parts.pop();   // possibly incomplete — keep for next time
+
+    const events = [];
+    for (const part of parts) {
+        if (!part.trim()) continue;
+        let eventName = null;
+        const dataLines = [];
+        for (const line of part.split(/\r?\n/)) {
+            if (line.startsWith('event:')) eventName = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+            // Comment lines (":" prefixed) and unknown fields are ignored.
+        }
+        if (dataLines.length > 0) {
+            events.push({ event: eventName, data: dataLines.join('\n') });
+        }
+    }
+    return { events, buffer: remainder };
 }

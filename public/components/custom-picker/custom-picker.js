@@ -101,7 +101,11 @@ class CustomPicker extends HTMLElement {
                     display: inline-flex;
                     align-items: center;
                     gap: 8px;
-                    padding: 10px 14px;
+                    /* Same control-height scale as .btn and text fields, so a
+                       picker lines up with whatever sits beside it. */
+                    box-sizing: border-box;
+                    height: var(--control-height-md, 36px);
+                    padding: 0 var(--space-12, 12px);
                     border: 1px solid var(--color-border, #e5e7eb);
                     border-radius: var(--radius-md, 6px);
                     background-color: var(--color-bg-primary, #ffffff);

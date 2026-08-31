@@ -127,3 +127,25 @@
         max-width: none;
     }
 }
+
+/* Optional inline action (e.g. Undo). Underlined rather than a filled button:
+   a toast is a notification, and the action must not compete with the message
+   or with real buttons elsewhere on the page. */
+.toast__action {
+    flex-shrink: 0;
+    padding: 0;
+    margin-left: var(--space-8);
+    border: none;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    cursor: pointer;
+    opacity: 0.9;
+}
+
+.toast__action:hover {
+    opacity: 1;
+}

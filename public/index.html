@@ -59,6 +59,19 @@
                 </div>
             </header>
 
+            <!-- Proposal bar — appears when the AI has pending changes.
+                 Doubles as the preview-mode toolbar once preview is entered.
+                 Sits under the header so it reads as a state of the board
+                 rather than a floating notification. -->
+            <div class="proposalBar js-proposalBar" hidden>
+                <span class="proposalBar__text js-proposalBarText"></span>
+                <div class="proposalBar__actions">
+                    <button type="button" class="btn --secondary --sm js-previewToggleBtn">Preview on board</button>
+                    <button type="button" class="btn --primary --sm js-previewApplyAllBtn">Apply all</button>
+                    <button type="button" class="btn --secondary --sm js-previewDiscardBtn">Discard all</button>
+                </div>
+            </div>
+
             <div class="appContainer js-appContainer">
                 <!-- Main Kanban Board — columns are created dynamically by app.js -->
                 <main class="kanban js-kanban"></main>
@@ -67,12 +80,21 @@
             <!-- Placeholder page view — shown on non-board pages until those pages are built -->
             <div class="pageView js-pageView" style="display:none;"></div>
         </div><!-- /.appShell__main -->
+
+        <!-- Assistant dock — squeezes the layout rather than covering it, so
+             the board stays visible and interactive while you talk about it -->
+        <assistant-dock class="js-assistantDock"></assistant-dock>
     </div><!-- /.appShell -->
 
     <!-- Add/Edit Task Modal -->
     <modal-dialog class="js-taskModal" size="large">
         <h2 slot="title" class="taskForm__title js-taskTitle" contenteditable="true" data-placeholder="New task" spellcheck="false"></h2>
         <form class="taskForm js-taskForm">
+            <!-- Shown while files are dragged anywhere over the dialog -->
+            <div class="taskForm__dropOverlay js-taskDropOverlay" hidden aria-hidden="true">
+                <svg-icon icon="paperclip" size="28"></svg-icon>
+                <span class="taskForm__dropOverlayText">Drop to attach</span>
+            </div>
             <div class="taskForm__grid">
             <div class="taskForm__col taskForm__col--main">
             <div class="taskForm__tabs js-taskTabs" role="tablist">
@@ -80,12 +102,19 @@
                 <button type="button" class="taskForm__tab js-taskTab" data-tab="attachments" role="tab" aria-selected="false">
                     Files<span class="taskForm__tabCount js-attachmentCount" hidden>0</span>
                 </button>
+                <button type="button" class="taskForm__tab js-taskTab js-activityTab" data-tab="activity" role="tab" aria-selected="false">
+                    Activity
+                </button>
             </div>
             <div class="taskForm__group taskForm__group--grow js-taskPanel" data-panel="description">
                 <textarea class="js-taskDescription" placeholder="Enter task description"></textarea>
             </div>
             <div class="taskForm__group taskForm__group--grow js-taskPanel js-attachmentsPanel" data-panel="attachments" hidden>
                 <div class="attachments js-attachments"></div>
+            </div>
+            <div class="taskForm__group taskForm__group--grow js-taskPanel" data-panel="activity" hidden>
+                <ul class="taskForm__logList js-taskLogList"></ul>
+                <p class="taskForm__logEmpty js-taskLogEmpty">Nothing logged yet.</p>
             </div>
             </div>
             <div class="taskForm__col taskForm__col--side">
@@ -95,6 +124,13 @@
                     <svg-icon icon="star" size="20"></svg-icon>
                     <span>Priority task</span>
                 </label>
+            </div>
+
+            <div class="taskForm__group">
+                <label>Size</label>
+                <div class="taskForm__pointsSelector js-pointsPills">
+                    <!-- Point pills rendered dynamically by JS -->
+                </div>
             </div>
 
             <div class="taskForm__group">
@@ -111,9 +147,12 @@
                 </div>
             </div>
 
-            <!-- Schedule: Deadline + Snooze -->
-            <div class="taskForm__group taskForm__scheduleSection">
-                <label>Schedule</label>
+            <!-- Schedule: Deadline + Snooze. Collapsed by default — it is the
+                 least-used section and was taking most of the column. -->
+            <details class="taskForm__group taskForm__scheduleSection js-scheduleDetails">
+                <summary class="taskForm__scheduleSummary">
+                    Schedule<span class="taskForm__scheduleHint js-scheduleSummaryHint"></span>
+                </summary>
 
                 <!-- Deadline -->
                 <div class="taskForm__scheduleRow">
@@ -148,15 +187,8 @@
                     </div>
                     <div class="taskForm__timeHint js-snoozeHint"></div>
                 </div>
-            </div>
+            </details>
 
-            <!-- Task Log (only shown in edit mode) -->
-            <div class="taskForm__group taskForm__log js-taskLogSection" style="display: none;">
-                <label>Activity Log</label>
-                <ul class="taskForm__logList js-taskLogList">
-                    <!-- Log entries will be rendered here -->
-                </ul>
-            </div>
             </div><!-- /taskForm__col--side -->
             </div><!-- /taskForm__grid -->
 
@@ -167,6 +199,9 @@
     </modal-dialog>
 
     <!-- Reports Modal -->
+    <!-- Quick capture — global one-line capture bar (shortcut: c) -->
+    <quick-capture class="js-quickCapture"></quick-capture>
+
     <!-- Attachment viewer — full-size image / PDF / text preview -->
     <modal-dialog class="js-attachmentModal" size="large">
         <h2 slot="title" class="js-attachmentModalTitle"></h2>
@@ -174,7 +209,8 @@
             <div class="attachmentViewer__body js-attachmentViewerBody"></div>
             <div class="modal__actions">
                 <div class="modal__actionsRight">
-                    <a class="attachmentViewer__download js-attachmentDownload" href="#" download>Download</a>
+                    <a class="btn --secondary js-attachmentOpen" href="#" target="_blank" rel="noopener">Open in new tab</a>
+                    <a class="btn --secondary js-attachmentDownload" href="#" download>Download</a>
                     <custom-button label="Close" class="js-viewerClose"></custom-button>
                 </div>
             </div>
@@ -193,6 +229,14 @@
     <!-- Shared Confirmation Modal — generic, driven entirely by
          openConfirmDialog() in modals.js. Every confirmable action reuses
          this one dialog: pass copy, await a boolean. Do not add another. -->
+    <!-- Plain-text viewer. Used for the assistant's memory as Markdown: the
+         JSON file is the source of truth, but a profile is something you read
+         to check it is right. -->
+    <modal-dialog class="js-markdownModal" size="large">
+        <span slot="title">Markdown</span>
+        <pre class="markdownView js-markdownContainer"></pre>
+    </modal-dialog>
+
     <modal-dialog class="js-confirmModal" size="small">
         <span slot="title" class="js-confirmTitle">Are you sure?</span>
         <div class="confirmDialog">
@@ -342,6 +386,14 @@
                 <span>Show this help</span>
             </div>
             <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>c</kbd></span>
+                <span>Quick capture — jot a note, it gets filed for you</span>
+            </div>
+            <div class="shortcutsHelp__row">
+                <span class="shortcutsHelp__keys"><kbd>a</kbd></span>
+                <span>Toggle the assistant dock</span>
+            </div>
+            <div class="shortcutsHelp__row">
                 <span class="shortcutsHelp__keys"><kbd>Esc</kbd></span>
                 <span>Close modals and panels</span>
             </div>
@@ -380,6 +432,8 @@
     <script type="module" src="components/button/button.js"></script>
     <script type="module" src="components/task-card/task-card.js"></script>
     <script type="module" src="components/modal-dialog/modal-dialog.js"></script>
+    <script type="module" src="components/quick-capture/quick-capture.js"></script>
+    <script type="module" src="components/assistant-dock/assistant-dock.js"></script>
     <script type="module" src="components/daily-checklist/daily-checklist.js"></script>
     <script type="module" src="components/notes-widget/notes-widget.js"></script>
     <script type="module" src="components/kanban-column/kanban-column.js"></script>

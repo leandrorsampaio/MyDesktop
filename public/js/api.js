@@ -4,7 +4,7 @@
  * These are pure functions that return data - state updates are handled by callers.
  */
 
-import { attachmentMimeFor } from './utils.js';
+import { attachmentMimeFor, parseSseChunk } from './utils.js';
 
 /** Profile-scoped API base path (e.g., '/api/work') */
 let apiBase = '/api';
@@ -614,11 +614,11 @@ export async function setActiveAiConfigApi(configId) {
  * @param {Array<{ role: string, content: string }>} messages - Full conversation history
  * @returns {Promise<{ok: boolean, data?: { narrative: string, tasks: Array<Object> }, error?: string}>}
  */
-export async function sendAiChatApi(messages) {
+export async function sendAiChatApi(messages, context = null, skillIds = [], mode = 'chat') {
     const response = await fetch(`${apiBase}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify({ messages, context, skillIds, mode })
     });
 
     if (!response.ok) {
@@ -788,5 +788,415 @@ export async function deleteAttachmentApi(taskId, attachmentId) {
     const response = await fetch(`${apiBase}/tasks/${taskId}/attachments/${attachmentId}`, {
         method: 'DELETE'
     });
+    return parseOrThrow(response);
+}
+
+/**
+ * Reports whether the AI is usable right now — configured, known provider, key
+ * present. Callers use this to degrade gracefully instead of firing a request
+ * that is guaranteed to fail. Never returns the API key.
+ * @returns {Promise<{available: boolean, reason?: string, message?: string,
+ *                    provider?: string, model?: string, name?: string}>}
+ */
+export async function fetchAiAvailabilityApi() {
+    try {
+        const response = await fetch('/api/ai/availability');
+        if (!response.ok) throw new Error('unavailable');
+        return response.json();
+    } catch {
+        // The endpoint itself failing must not break the caller's UI —
+        // an unreachable server is just another flavour of "no AI".
+        return { available: false, reason: 'offline', message: 'Cannot reach the server.' };
+    }
+}
+
+/**
+ * Fetches the persisted conversation for the active profile.
+ * @returns {Promise<{messages: Array<{role: string, content: string, at: string}>}>}
+ */
+export async function fetchAiConversationApi() {
+    const response = await fetch(`${apiBase}/ai/conversation`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Replaces the persisted conversation. The client owns the transcript; the
+ * server only bounds its length.
+ * @param {Array<{role: string, content: string}>} messages
+ * @returns {Promise<Object>}
+ */
+export async function saveAiConversationApi(messages, skillIds) {
+    const response = await fetch(`${apiBase}/ai/conversation`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(skillIds ? { messages, skillIds } : { messages })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Clears the persisted conversation.
+ * @returns {Promise<Object>}
+ */
+export async function clearAiConversationApi() {
+    const response = await fetch(`${apiBase}/ai/conversation`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Lists saved conversations, newest first, without their transcripts.
+ * @returns {Promise<{activeId: string, conversations: Array<Object>}>}
+ */
+export async function fetchAiConversationsApi() {
+    const response = await fetch(`${apiBase}/ai/conversations`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Starts a new conversation and makes it active. An untouched thread is
+ * reused rather than leaving a trail of empty ones.
+ * @param {Array<string>} [skillIds] - Skills for the new thread.
+ * @returns {Promise<Object>} The now-active conversation.
+ */
+export async function createAiConversationApi(skillIds, mode) {
+    const response = await fetch(`${apiBase}/ai/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(skillIds ? { skillIds } : {}), ...(mode ? { mode } : {}) })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Switches to a saved conversation.
+ * @param {string} id
+ * @returns {Promise<Object>} The conversation, transcript included.
+ */
+export async function activateAiConversationApi(id) {
+    const response = await fetch(`${apiBase}/ai/conversations/${id}/activate`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Renames a conversation.
+ * @param {string} id
+ * @param {string} title
+ * @returns {Promise<Object>}
+ */
+export async function renameAiConversationApi(id, title) {
+    const response = await fetch(`${apiBase}/ai/conversations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Deletes a saved conversation.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, activeId: string}>}
+ */
+export async function deleteAiConversationApi(id) {
+    const response = await fetch(`${apiBase}/ai/conversations/${id}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * What the assistant does not know yet, computed server-side across every task
+ * including the archive. Answers with the AI switched off.
+ * @returns {Promise<{prefixes: Array, names: Array, epicsMissingContext: Array,
+ *                    totals: Object, hasGaps: boolean}>}
+ */
+export async function fetchInterviewDigestApi() {
+    const response = await fetch(`${apiBase}/ai/interview/digest`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Everything the assistant knows, as Markdown — for reading and checking, as
+ * opposed to the JSON file, which is the source of truth.
+ * @returns {Promise<string>}
+ */
+export async function fetchMemoryMarkdownApi() {
+    const response = await fetch(`${apiBase}/ai/memory/markdown`);
+    if (!response.ok) throw new Error('Failed to render memory');
+    return response.text();
+}
+
+// ===========================================
+// AI Skills API (profile-scoped)
+// ===========================================
+
+/**
+ * Fetches all defined skills.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchAiSkillsApi() {
+    const response = await fetch(`${apiBase}/ai/skills`);
+    return parseOrThrow(response);
+}
+
+/**
+ * @param {{name: string, instructions: string, alwaysOn: boolean}} data
+ * @returns {Promise<Object>}
+ */
+export async function createAiSkillApi(data) {
+    const response = await fetch(`${apiBase}/ai/skills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * @param {string} id
+ * @param {Object} data - Any subset of name, instructions, alwaysOn.
+ * @returns {Promise<Object>}
+ */
+export async function updateAiSkillApi(id, data) {
+    const response = await fetch(`${apiBase}/ai/skills/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * @param {string} id
+ * @returns {Promise<Object>}
+ */
+export async function deleteAiSkillApi(id) {
+    const response = await fetch(`${apiBase}/ai/skills/${id}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Captures a note as a task. Deliberately does not involve the AI: this call
+ * must be instant and must not fail, so the note is safe on the board before
+ * anything slower is attempted.
+ * @param {string} text - The raw captured line
+ * @returns {Promise<Object>} The created task
+ */
+export async function captureTaskApi(text) {
+    const response = await fetch(`${apiBase}/capture`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Asks the AI to classify a captured task (epic, category, priority, column).
+ *
+ * Best effort by contract: the server answers 200 with `classified: false` and
+ * the untouched task when the AI is unavailable, so callers never need to treat
+ * a missing classification as an error.
+ * @param {string} taskId
+ * @returns {Promise<{classified: boolean, reason?: string, task: Object}>}
+ */
+export async function classifyTaskApi(taskId) {
+    const response = await fetch(`${apiBase}/tasks/${taskId}/classify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Fetches the pending AI proposals for the active profile.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchProposalsApi() {
+    const response = await fetch(`${apiBase}/ai/proposals`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Applies one proposal. This is the only path from the review buffer to the
+ * board — nothing the AI proposes reaches a task without this call.
+ *
+ * A 409 means the board moved on and the proposal is now stale; the server
+ * has already discarded it, so callers should drop the row rather than retry.
+ * @param {string} proposalId
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string, stale?: boolean}>}
+ */
+export async function applyProposalApi(proposalId) {
+    const response = await fetch(`${apiBase}/ai/proposals/${proposalId}/apply`, { method: 'POST' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        return { ok: false, error: body.error || 'Failed to apply', stale: response.status === 409 };
+    }
+    return { ok: true, data: body };
+}
+
+/**
+ * Applies every pending proposal. Individual failures are reported rather than
+ * aborting the batch.
+ * @returns {Promise<{applied: number, failed: Array<{id: string, reason: string}>}>}
+ */
+export async function applyAllProposalsApi() {
+    const response = await fetch(`${apiBase}/ai/proposals/apply-all`, { method: 'POST' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Rejects one proposal without touching the board.
+ * @param {string} proposalId
+ * @returns {Promise<Object>}
+ */
+export async function rejectProposalApi(proposalId) {
+    const response = await fetch(`${apiBase}/ai/proposals/${proposalId}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Rejects every pending proposal.
+ * @returns {Promise<Object>}
+ */
+export async function rejectAllProposalsApi() {
+    const response = await fetch(`${apiBase}/ai/proposals`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Fetches the assistant's memory — both approved entries and anything the AI
+ * has proposed and is awaiting review.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchMemoriesApi() {
+    const response = await fetch(`${apiBase}/ai/memory`);
+    return parseOrThrow(response);
+}
+
+/**
+ * Adds a memory by hand. Approved immediately — the user wrote it.
+ * @param {string} text
+ * @returns {Promise<Object>}
+ */
+export async function createMemoryApi(text, category = 'other') {
+    const response = await fetch(`${apiBase}/ai/memory`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, category })
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Edits a memory's text and/or approves it. Approving an AI-proposed entry is
+ * what allows it into a prompt.
+ * @param {string} id
+ * @param {{text?: string, approved?: boolean}} data
+ * @returns {Promise<Object>}
+ */
+export async function updateMemoryApi(id, data) {
+    const response = await fetch(`${apiBase}/ai/memory/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    return parseOrThrow(response);
+}
+
+/**
+ * Deletes a memory.
+ * @param {string} id
+ * @returns {Promise<Object>}
+ */
+export async function deleteMemoryApi(id) {
+    const response = await fetch(`${apiBase}/ai/memory/${id}`, { method: 'DELETE' });
+    return parseOrThrow(response);
+}
+
+/**
+ * Streaming chat. Narrative text arrives token by token via `onDelta`; the
+ * resolved value carries everything the buffered endpoint returns.
+ *
+ * Deliberately reports failure rather than throwing on a non-OK response, so
+ * the caller can fall back to the buffered endpoint. Not every
+ * OpenAI-compatible server streams correctly, and a broken stream should cost
+ * a retry rather than the whole message.
+ *
+ * @param {Array<{role: string, content: string}>} messages
+ * @param {Function} onDelta - Called with each text fragment as it arrives
+ * @returns {Promise<{ok: boolean, data?: Object, error?: string}>}
+ */
+export async function sendAiChatStreamApi(messages, onDelta, context = null, skillIds = [], mode = 'chat') {
+    let response;
+    try {
+        response = await fetch(`${apiBase}/ai/chat/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages, context, skillIds, mode })
+        });
+    } catch {
+        return { ok: false, error: 'Could not reach the server' };
+    }
+
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        return { ok: false, error: body.error || `Request failed (${response.status})` };
+    }
+    if (!response.body) {
+        // No readable stream (very old browser, or a proxy that buffered it).
+        return { ok: false, error: 'Streaming not available' };
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result = null;
+    let streamError = null;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // stream: true keeps multi-byte characters intact across chunks
+        const parsed = parseSseChunk(buffer, decoder.decode(value, { stream: true }));
+        buffer = parsed.buffer;
+
+        for (const event of parsed.events) {
+            let payload;
+            try { payload = JSON.parse(event.data); } catch { continue; }
+
+            if (event.event === 'text' && typeof payload.delta === 'string') {
+                onDelta(payload.delta);
+            } else if (event.event === 'done') {
+                result = payload;
+            } else if (event.event === 'error') {
+                streamError = payload.error || 'AI provider error';
+            }
+        }
+    }
+
+    if (streamError) return { ok: false, error: streamError };
+    if (!result) {
+        // The connection closed without a `done` event — the reply is
+        // incomplete, and treating it as success would store half an answer.
+        return { ok: false, error: 'The response ended unexpectedly' };
+    }
+    return { ok: true, data: result };
+}
+
+/**
+ * Asks the AI to summarise a report for a one-to-one.
+ *
+ * Best effort by contract: the server answers 200 with `summarised: false`
+ * and the untouched report when the AI cannot help, so a report is never
+ * blocked on, or damaged by, a missing model.
+ * @param {string} reportId
+ * @returns {Promise<{summarised: boolean, reason?: string, report: Object}>}
+ */
+export async function summariseReportApi(reportId) {
+    const response = await fetch(`${apiBase}/reports/${reportId}/summarise`, { method: 'POST' });
     return parseOrThrow(response);
 }

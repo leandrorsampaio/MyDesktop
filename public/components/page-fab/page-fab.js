@@ -24,6 +24,8 @@ class PageFab extends HTMLElement {
             <style>
                 :host {
                     position: fixed;
+                    /* Bottom-RIGHT is the assistant launcher's spot, and it is
+                       present on every page, so the FAB sits on the left. */
                     bottom: 32px;
                     left: 32px;
                     z-index: 100;

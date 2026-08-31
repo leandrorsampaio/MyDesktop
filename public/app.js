@@ -12,6 +12,9 @@ import { DEFAULT_CATEGORY_ID, DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WA
 import { parsePath } from './js/router.js';
 import { initShortcuts } from './js/shortcuts.js';
 import { initAttachments } from './js/attachments.js';
+import { buildPreviewPlan, countPreviewedChanges } from './js/board-preview.js';
+import { buildSuggestions } from './js/assistant-suggestions.js';
+import * as assistantChat from './js/assistant-chat.js';
 import { formatRelativeTime, getDeadlineLevel, toDatetimeLocalValue, formatBytes } from './js/utils.js';
 import {
     tasks,
@@ -23,6 +26,8 @@ import {
     createTasksSnapshot,
     restoreTasksFromSnapshot,
     findTask,
+    removeTask,
+    editingTaskId,
     epics,
     setEpics,
     categories,
@@ -34,7 +39,7 @@ import {
     columns,
     setColumns
 } from './js/state.js';
-import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi } from './js/api.js';
+import { fetchTasksApi, moveTaskApi, archiveTasksApi, fetchEpicsApi, fetchCategoriesApi, fetchProfilesApi, setApiBase, fetchColumnsApi, uploadAttachmentApi, captureTaskApi, classifyTaskApi, deleteTaskApi, fetchProposalsApi, applyProposalApi, applyAllProposalsApi, rejectProposalApi, rejectAllProposalsApi } from './js/api.js';
 // Column-delete confirmation is fully handled inside config-page.js — no
 // separate import needed since the v2.38.3 dead-modal cleanup.
 import {
@@ -52,7 +57,8 @@ import {
     openDeleteConfirmation,
     openConfirmDialog,
     createTaskFormSubmitHandler,
-    setQuickDateTime
+    setQuickDateTime,
+    syncScheduleSummary
 } from './js/modals.js';
 
 (function() {
@@ -67,6 +73,19 @@ import {
 
         // Page view (placeholder for non-board pages)
         pageView: document.querySelector('.js-pageView'),
+
+        // Quick capture bar (global — every page)
+        quickCapture: document.querySelector('.js-quickCapture'),
+
+        // Assistant dock (global — every page)
+        assistantDock: document.querySelector('.js-assistantDock'),
+
+        // Pending AI proposals / board preview toolbar
+        proposalBar: document.querySelector('.js-proposalBar'),
+        proposalBarText: document.querySelector('.js-proposalBarText'),
+        previewToggleBtn: document.querySelector('.js-previewToggleBtn'),
+        previewApplyAllBtn: document.querySelector('.js-previewApplyAllBtn'),
+        previewDiscardBtn: document.querySelector('.js-previewDiscardBtn'),
 
         // Profile Selector component
         profileSelector: document.querySelector('.js-profileSelector'),
@@ -84,7 +103,6 @@ import {
         taskTitle: document.querySelector('.js-taskTitle'),
         taskDescription: document.querySelector('.js-taskDescription'),
         taskPriority: document.querySelector('.js-taskPriority'),
-        taskLogSection: document.querySelector('.js-taskLogSection'),
         taskLogList: document.querySelector('.js-taskLogList'),
         taskModalActions: document.querySelector('.js-taskModalActions'),
 
@@ -92,6 +110,7 @@ import {
         taskTabs: document.querySelector('.js-taskTabs'),
         attachments: document.querySelector('.js-attachments'),
         attachmentsPanel: document.querySelector('.js-attachmentsPanel'),
+        taskDropOverlay: document.querySelector('.js-taskDropOverlay'),
         attachmentCount: document.querySelector('.js-attachmentCount'),
 
         // Attachment viewer modal
@@ -99,10 +118,13 @@ import {
         attachmentModalTitle: document.querySelector('.js-attachmentModalTitle'),
         attachmentViewer: document.querySelector('.js-attachmentViewer'),
         attachmentViewerBody: document.querySelector('.js-attachmentViewerBody'),
+        attachmentOpen: document.querySelector('.js-attachmentOpen'),
         attachmentDownload: document.querySelector('.js-attachmentDownload'),
 
         // Reports Modal (opened via sidebar config-action in future pages)
         reportsModal: document.querySelector('.js-reportsModal'),
+        markdownModal: document.querySelector('.js-markdownModal'),
+        markdownContainer: document.querySelector('.js-markdownContainer'),
         reportsContainer: document.querySelector('.js-reportsContainer'),
 
         // Archived Tasks Modal (opened via sidebar config-action in future pages)
@@ -114,6 +136,9 @@ import {
 
         // Epic pills in task modal
         epicPills: document.querySelector('.js-epicPills'),
+
+        // Story point pills in task modal
+        pointsPills: document.querySelector('.js-pointsPills'),
 
         // Category pills in task modal
         categoryPills: document.querySelector('.js-categoryPills'),
@@ -467,13 +492,23 @@ import {
      */
     function renderColumn(columnId) {
         const columnEl = document.querySelector(`kanban-column[data-status="${columnId}"]`);
+        if (!columnEl) return;
+
+        if (previewPlan) {
+            // In preview mode the plan decides what each column shows,
+            // including ghost copies of cards moving in from elsewhere.
+            const entries = previewPlan.get(columnId) || [];
+            columnEl.renderTasks(
+                entries.map(e => ({ ...e.task, _preview: e.preview })),
+                createTaskCard
+            );
+            return;
+        }
+
         const columnTasks = tasks
             .filter(t => t.status === columnId)
             .sort((a, b) => a.position - b.position);
-
-        if (columnEl) {
-            columnEl.renderTasks(columnTasks, createTaskCard);
-        }
+        columnEl.renderTasks(columnTasks, createTaskCard);
     }
 
     /**
@@ -518,6 +553,13 @@ import {
             card.dataset.deadlineText  = formatRelativeTime(task.deadline);
         }
 
+        // Story points — drives the size chip on the card
+        if (task.points) card.dataset.points = String(task.points);
+
+        // Captured but not yet classified — the card shows a marker so a later
+        // review pass can find what the AI never got to (or got wrong).
+        if (task.needsFiling) card.dataset.needsFiling = 'true';
+
         // Attachment count — drives the paperclip badge on the card
         const attachmentCount = (task.attachments || []).length;
         if (attachmentCount > 0) card.dataset.attachmentCount = String(attachmentCount);
@@ -527,10 +569,35 @@ import {
             card.classList.add('--snoozed');
         }
 
+        // Preview annotation. A previewed board is for reviewing, not editing:
+        // cards don't drag, and untouched ones recede so the changes are what
+        // the eye lands on.
+        if (previewPlan) {
+            // Not `card.draggable = false`: renderTasks reuses existing card
+            // elements and its reconciler deliberately leaves `draggable`
+            // alone, so that would only take effect on freshly created cards.
+            // The dragstart guard below covers reused ones too.
+            if (task._preview) {
+                card.dataset.preview = task._preview.kind;
+                card.dataset.previewNote = task._preview.note;
+                card.dataset.proposalId = task._preview.proposalId;
+            } else {
+                card.dataset.preview = 'idle';
+            }
+            return card;
+        }
+
         card.draggable = true;
 
         // Drag events
         card.addEventListener('dragstart', (e) => {
+            // Preview is for reviewing, not editing. Reused cards keep this
+            // listener across a mode change, so the guard lives here rather
+            // than on the element's draggable attribute.
+            if (previewPlan) {
+                e.preventDefault();
+                return;
+            }
             e.target.classList.add('--dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', task.id);
@@ -613,6 +680,321 @@ import {
             renderColumn(task.status);
             applyAllFilters();
             elements.toaster.success(`${attached} file${attached === 1 ? '' : 's'} attached`);
+        }
+    }
+
+    // ==========================================
+    // Assistant Dock
+    // ==========================================
+
+    /**
+     * Wires the dock. Global — it opens on every page, carrying whatever
+     * context that page has.
+     *
+     * The conversation itself lives in `assistant-chat.js`, shared with the
+     * `/:alias/ai` page, so the two surfaces show one thread.
+     *
+     * Only wires events. Loading the transcript has to wait until the active
+     * profile is known, because every assistant endpoint is profile-scoped —
+     * see the `assistantChat.init()` call after `setApiBase()`.
+     */
+    function initAssistantDock() {
+        const dock = elements.assistantDock;
+        if (!dock) return;
+
+        dock.addEventListener('assistant-replied', async (e) => {
+            // A reply may have produced proposals; the board's bar and preview
+            // read from the same list, so refresh it.
+            if (e.detail.proposals?.length) await loadProposals();
+            if (e.detail.tasks?.length) {
+                elements.toaster.info(`${e.detail.tasks.length} task${e.detail.tasks.length === 1 ? '' : 's'} staged — review on the AI page`);
+            }
+        });
+
+        dock.addEventListener('review-proposals', () => {
+            if (pendingProposals.length > 0 && !previewPlan) enterPreview();
+        });
+
+        dock.addEventListener('assistant-closed', () => refreshAssistantSuggestions());
+
+        // Context is implicit: the assistant floats over every page, so what a
+        // question means depends on where it was asked. Resolved per send, not
+        // when the panel opened — the user may have navigated or opened a card
+        // since. An open card is the strongest signal there is.
+        assistantChat.setContextProvider(() => {
+            const { page } = parsePath();
+            const openTaskId = elements.taskModal?.hasAttribute('open') ? editingTaskId : null;
+            return { page, taskId: openTaskId || null };
+        });
+
+        // The header says what the assistant is currently about, because
+        // implicit context the user can't see is just confusing.
+        const syncContextLabel = () => {
+            const { page } = parsePath();
+            const openTask = elements.taskModal?.hasAttribute('open') && editingTaskId
+                ? findTask(editingTaskId)
+                : null;
+            dock.setContextLabel(openTask ? `About "${openTask.title}"` : `About the ${page}`);
+        };
+        syncContextLabel();
+        elements.taskModal?.addEventListener('modal-opened', syncContextLabel);
+        elements.taskModal?.addEventListener('modal-closed', syncContextLabel);
+    }
+
+    /**
+     * Recomputes the dock's opening suggestions from the current board.
+     *
+     * Local and synchronous: these are facts about the board, not AI output,
+     * so they render with the assistant unconfigured or unreachable.
+     */
+    function refreshAssistantSuggestions() {
+        if (!elements.assistantDock || columns.length === 0) return;
+        elements.assistantDock.setSuggestions(buildSuggestions(tasks, columns));
+        elements.assistantDock.setPendingCount(pendingProposals.length);
+    }
+
+    // ==========================================
+    // Board Preview (pending AI proposals)
+    // ==========================================
+
+    /** @type {Array<Object>} Pending proposals, mirrored from the server. */
+    let pendingProposals = [];
+
+    /**
+     * The current preview plan, or null when preview is off. Non-null is the
+     * single source of truth for "the board is in preview mode" — renderColumn
+     * and createTaskCard both branch on it.
+     * @type {Map<string, Array<Object>>|null}
+     */
+    let previewPlan = null;
+
+    /**
+     * Loads pending proposals and shows the bar if there are any.
+     *
+     * Called after the board renders, never before: a proposal is not
+     * something the user asked to wait for, and the board must not depend on
+     * this request succeeding.
+     */
+    async function loadProposals() {
+        try {
+            pendingProposals = await fetchProposalsApi();
+        } catch {
+            pendingProposals = [];   // the board is unaffected either way
+        }
+        renderProposalBar();
+    }
+
+    /** Shows/hides the proposal bar and sets its wording for the current mode. */
+    function renderProposalBar() {
+        elements.assistantDock?.setPendingCount(pendingProposals.length);
+        if (!elements.proposalBar) return;
+
+        const count = pendingProposals.length;
+        elements.proposalBar.hidden = count === 0;
+        if (count === 0) {
+            if (previewPlan) exitPreview();
+            return;
+        }
+
+        const noun = `${count} proposed change${count === 1 ? '' : 's'}`;
+        elements.proposalBar.classList.toggle('--previewing', Boolean(previewPlan));
+        elements.proposalBarText.textContent = previewPlan
+            ? `Previewing ${noun} — Esc to exit`
+            : noun;
+        elements.previewToggleBtn.textContent = previewPlan ? 'Exit preview' : 'Preview on board';
+    }
+
+    /** Builds the plan from current state and repaints the board. */
+    function enterPreview() {
+        previewPlan = buildPreviewPlan(tasks, pendingProposals, columns, {
+            columnById:   new Map(columns.map(c => [c.id, c])),
+            epicById:     new Map(epics.map(e => [e.id, e])),
+            categoryById: new Map(categories.map(c => [c.id, c]))
+        });
+        document.body.classList.add('--previewing');
+        renderAllColumns();
+        renderProposalBar();
+    }
+
+    /** Drops the plan and repaints the real board. */
+    function exitPreview() {
+        previewPlan = null;
+        document.body.classList.remove('--previewing');
+        renderAllColumns();
+        renderProposalBar();
+    }
+
+    /**
+     * Resolves one proposal from a preview card.
+     * @param {string} proposalId
+     * @param {boolean} accept - true applies, false rejects
+     */
+    async function resolveProposal(proposalId, accept) {
+        // Drop it locally first so the card disappears immediately; the
+        // outcome only changes the message, not whether it leaves the list.
+        pendingProposals = pendingProposals.filter(p => p.id !== proposalId);
+
+        if (accept) {
+            const result = await applyProposalApi(proposalId);
+            if (result.ok) {
+                await fetchTasks();
+                elements.toaster.success('Change applied');
+            } else {
+                elements.toaster[result.stale ? 'warning' : 'error'](result.error);
+            }
+        } else {
+            try {
+                await rejectProposalApi(proposalId);
+            } catch {
+                elements.toaster.warning('Rejected locally, but not on the server');
+            }
+        }
+
+        // Rebuild against the new state — an applied move changes where the
+        // remaining ghosts belong.
+        if (previewPlan && pendingProposals.length > 0) enterPreview();
+        else if (previewPlan) exitPreview();
+        else renderProposalBar();
+    }
+
+    /** Wires the proposal bar and the preview cards' accept/reject events. */
+    function initProposalControls() {
+        if (!elements.proposalBar) return;
+
+        elements.previewToggleBtn.addEventListener('click', () => {
+            previewPlan ? exitPreview() : enterPreview();
+        });
+
+        elements.previewApplyAllBtn.addEventListener('click', async () => {
+            if (pendingProposals.length === 0) return;
+            try {
+                const result = await applyAllProposalsApi();
+                pendingProposals = [];
+                exitPreview();
+                await fetchTasks();
+                if (result.failed?.length) {
+                    elements.toaster.warning(`${result.applied} applied, ${result.failed.length} were out of date`);
+                } else {
+                    elements.toaster.success(`${result.applied} change${result.applied === 1 ? '' : 's'} applied`);
+                }
+            } catch {
+                elements.toaster.error('Failed to apply changes');
+            }
+        });
+
+        elements.previewDiscardBtn.addEventListener('click', async () => {
+            if (pendingProposals.length === 0) return;
+            pendingProposals = [];
+            exitPreview();
+            try {
+                await rejectAllProposalsApi();
+            } catch {
+                elements.toaster.warning('Discarded locally, but not on the server');
+            }
+        });
+
+        // Per-card decisions. Delegated from the board container: the buttons
+        // live inside each card's shadow root, and the events are composed.
+        elements.kanban?.addEventListener('preview-accept', (e) => resolveProposal(e.detail.proposalId, true));
+        elements.kanban?.addEventListener('preview-reject', (e) => resolveProposal(e.detail.proposalId, false));
+
+        // Esc leaves preview, matching how every other transient surface here
+        // behaves. Guarded so it doesn't fight a modal that is also open.
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && previewPlan && !document.querySelector('modal-dialog[open]')) {
+                exitPreview();
+            }
+        });
+    }
+
+    // ==========================================
+    // Quick Capture
+    // ==========================================
+
+    /**
+     * Handles a captured note: create the task, then classify it in the
+     * background.
+     *
+     * Two requests on purpose. The first is instant and must not fail — the
+     * note is the thing being protected, and it is safe on the board before
+     * anything slower is attempted. The second is best effort: if the AI is
+     * unavailable the task simply keeps its "needs filing" marker.
+     *
+     * There is no confirmation step. Reviewing in the moment is exactly the
+     * friction that stops notes being captured at all, so the toast carries an
+     * Undo instead — a misfiled card beats a card that was never written down.
+     *
+     * @param {string} text - The raw captured line
+     */
+    async function handleCapture(text) {
+        let task;
+        try {
+            task = await captureTaskApi(text);
+        } catch (error) {
+            // The one failure the user must hear about: nothing was saved.
+            elements.toaster.error('Could not capture that note — nothing was saved');
+            return;
+        }
+
+        // The server inserted at position 0 and shifted every other card in
+        // that column down. Mirror that shift locally, or the optimistic
+        // insert collides with an existing position 0 and renders in the
+        // wrong slot.
+        for (const t of tasks) {
+            if (t.status === task.status) t.position += 1;
+        }
+
+        // Show it immediately. renderColumn is a no-op off the board (no
+        // matching kanban-column in the DOM), so this is safe on every page.
+        addTask(task);
+        renderColumn(task.status);
+        applyAllFilters();
+
+        const columnName = columns.find(c => c.id === task.status)?.name || 'the board';
+        elements.toaster.success(`Captured to ${columnName}`, 4000, {
+            label: 'Undo',
+            onClick: () => undoCapture(task.id)
+        });
+
+        // Classification is fire-and-forget. classifyTaskApi resolves with
+        // { classified: false } rather than rejecting when the AI is down, so
+        // only a genuine transport failure lands in the catch.
+        let result;
+        try {
+            result = await classifyTaskApi(task.id);
+        } catch {
+            return;   // task stands as captured, marker intact
+        }
+        if (!result?.classified || !result.task) return;
+
+        if (result.task.status !== task.status) {
+            // A move re-shuffles positions in the destination column too.
+            // Rather than mirror that arithmetic a second time, re-sync from
+            // the server — classification is already off the critical path,
+            // so correctness is worth one extra GET here.
+            await fetchTasks();
+        } else {
+            updateTaskInState(task.id, result.task);
+            renderColumn(task.status);
+            applyAllFilters();
+        }
+    }
+
+    /**
+     * Removes a captured task. Undo is deliberately a hard delete rather than
+     * an archive: the card is seconds old and was never intended to exist.
+     * @param {string} taskId
+     */
+    async function undoCapture(taskId) {
+        const task = findTask(taskId);
+        const status = task?.status;
+        removeTask(taskId);
+        if (status) renderColumn(status);
+        applyAllFilters();
+        try {
+            await deleteTaskApi(taskId);
+        } catch {
+            elements.toaster.error('Could not undo — refresh to see the current board');
         }
     }
 
@@ -852,22 +1234,32 @@ import {
         });
 
         // Task form: manual datetime input → update hints
-        elements.taskDeadline.addEventListener('input', () => updateDateHint(elements.deadlineHint, elements.taskDeadline.value));
-        elements.taskSnooze.addEventListener('input',   () => updateDateHint(elements.snoozeHint,   elements.taskSnooze.value));
+        elements.taskDeadline.addEventListener('input', () => {
+            updateDateHint(elements.deadlineHint, elements.taskDeadline.value);
+            syncScheduleSummary(elements);
+        });
+        elements.taskSnooze.addEventListener('input', () => {
+            updateDateHint(elements.snoozeHint, elements.taskSnooze.value);
+            syncScheduleSummary(elements);
+        });
 
-        // Epic pills are toggleable: clicking the selected epic again clears the
-        // selection (= no epic). Radios don't natively un-check, so we capture
-        // the pre-click state on mousedown and un-check on click if it was set.
-        if (elements.epicPills) {
-            elements.epicPills.addEventListener('mousedown', (e) => {
-                const radio = e.target.closest('.taskForm__epicPill')?.querySelector('input');
+        // Epic and point pills are toggleable: clicking the selected one again
+        // clears it (= no epic / unestimated). Radios don't natively un-check,
+        // so capture the pre-click state on mousedown and un-check on click if
+        // it was already set.
+        const wireTogglePills = (container, pillClass) => {
+            if (!container) return;
+            container.addEventListener('mousedown', (e) => {
+                const radio = e.target.closest(pillClass)?.querySelector('input');
                 if (radio) radio._wasChecked = radio.checked;
             });
-            elements.epicPills.addEventListener('click', (e) => {
-                const radio = e.target.closest('.taskForm__epicPill')?.querySelector('input');
+            container.addEventListener('click', (e) => {
+                const radio = e.target.closest(pillClass)?.querySelector('input');
                 if (radio && radio._wasChecked) radio.checked = false;
             });
-        }
+        };
+        wireTogglePills(elements.epicPills, '.taskForm__epicPill');
+        wireTogglePills(elements.pointsPills, '.taskForm__pointPill');
 
         // Inline-editable task title (contenteditable heading): keep it
         // single-line, plain-text, and capped at the title length.
@@ -972,6 +1364,11 @@ import {
             }
         });
 
+        // Pending AI proposals: wired here (board only — preview is a board
+        // mode), and loaded after the board has painted.
+        initProposalControls();
+        loadProposals();
+
         // Keyboard shortcuts — board page gets the full set (quick-add,
         // card focus navigation, Cmd/Ctrl+arrow card moves)
         initShortcuts({
@@ -1021,6 +1418,13 @@ import {
     async function init() {
         initEventListeners();
         initAttachments(elements);
+        initAssistantDock();
+
+        // Quick capture is global: the bar lives in index.html on every page,
+        // and the `c` shortcut opens it wherever the user happens to be.
+        elements.quickCapture?.addEventListener('capture-submit', (e) => {
+            handleCapture(e.detail.text);
+        });
 
         /** @type {Object|null} Active profile, hoisted out of the try block so
          * the board-data loading below can read its columns array */
@@ -1045,6 +1449,12 @@ import {
             setActiveProfile(matchedProfile);
             boardProfile = matchedProfile;
             setApiBase(matchedProfile.alias);
+
+            // The assistant's endpoints are profile-scoped, so its transcript
+            // can only be loaded once the API base points at a real profile.
+            // Deliberately not awaited: the page must never wait on anything
+            // AI-shaped. See the degradation contract in AI_ASSISTANT.md.
+            assistantChat.init();
             document.body.classList.add('profile-' + matchedProfile.alias);
             elements.profileSelector.setProfiles(fetchedProfiles);
             elements.profileSelector.setActiveProfile(matchedProfile);
@@ -1083,12 +1493,6 @@ import {
                     initReportsPage(elements.pageView, { elements }).catch(err => {
                         console.error('Reports page error:', err);
                         if (elements.toaster) elements.toaster.error('Failed to load reports page');
-                    });
-                } else if (page === 'ai') {
-                    const { initAiPage } = await import('./js/ai-page.js');
-                    initAiPage(elements.pageView, { elements }).catch(err => {
-                        console.error('AI page error:', err);
-                        if (elements.toaster) elements.toaster.error('Failed to load AI page');
                     });
                 } else if (page === 'config') {
                     const { initConfigPage } = await import('./js/config-page.js');
@@ -1151,6 +1555,11 @@ import {
         // Render category filters now that dynamic categories are loaded
         renderCategoryFilters(elements.categoryFilter);
         renderAllColumns();
+
+        // Suggestions are facts about the board, so they can only be computed
+        // once the board data has landed — initBoardEventListeners() runs
+        // before this point, when tasks and columns are still empty.
+        refreshAssistantSuggestions();
 
         // Snooze expiry scheduler — re-render when snoozed tasks wake up
         let _snoozedIds = new Set(

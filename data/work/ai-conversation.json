@@ -1,0 +1,34 @@
+{
+  "activeId": "mtgbdaiy6kkws6wvv",
+  "conversations": [
+    {
+      "id": "mtgbdaiy6kkws6wvv",
+      "title": "Interview — 30 Aug 2026",
+      "createdAt": "2026-08-30T21:20:52.618Z",
+      "updatedAt": "2026-08-30T21:21:08.024Z",
+      "skillIds": [],
+      "mode": "interview",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Interview me.",
+          "at": "2026-08-30T21:21:08.024Z"
+        },
+        {
+          "role": "assistant",
+          "content": "I scanned all 408 of your tasks (including the 223 archived ones) and found names and terms that keep recurring but that I can't explain from the data alone — that's what I'd like to fill in. Starting with the most frequent:\n\n1. **Mikael** appears 22 times — who is Mikael in relation to your work (boss, teammate, stakeholder, someone else)?\n2. **EUVIC** appears 14 times — is that a person, a vendor, a client, or a system?\n3. **Wishlist** appears 13 times — what does that refer to: a project, a feature, a client request list, or something else?",
+          "at": "2026-08-30T21:21:08.024Z"
+        }
+      ]
+    },
+    {
+      "id": "conv1788124373280",
+      "title": "New conversation",
+      "createdAt": "2026-08-30T21:12:53.000Z",
+      "updatedAt": "2026-08-30T21:12:53.000Z",
+      "skillIds": [],
+      "mode": "chat",
+      "messages": []
+    }
+  ]
+}

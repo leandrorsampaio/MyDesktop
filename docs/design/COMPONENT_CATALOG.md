@@ -153,6 +153,9 @@ Shadow DOM component. The most important visual element in the app.
       .taskCard__header        ← title text + priority star (if priority=true)
       .taskCard__desc          ← description text, 2-line clamp with ellipsis
       .taskCard__badge         ← category name + icon (hidden if category=1)
+      .taskCard__points        ← story point chip, right-aligned (hidden if unestimated)
+  .taskCard__preview           ← preview footer: change caption + ✓/✕ (preview mode only)
+      .taskCard__needsFiling   ← "unfiled" chip (hidden unless captured & unclassified)
       .taskCard__attachments   ← paperclip + count (hidden if no attachments)
       .taskCard__deadline      ← deadline chip (hidden if no deadline)
     .taskCard__editBtn         ← edit pencil button, absolute top-right, visible on hover
@@ -175,6 +178,13 @@ Shadow DOM component. The most important visual element in the app.
 | Snoozed (transparent mode) | 50% opacity |
 | Category badge | Small pill: icon + category name. Hidden when category = 1 |
 | Has attachments | Paperclip icon + count, tertiary text colour, beside the category badge |
+| Preview: update | Dashed border + caption of the change, with ✓/✕ |
+| Preview: outgoing | Dashed, dimmed to 0.45 — the real one is the ghost in the destination |
+| Preview: incoming | Dashed accent border — a ghost showing where a move would land |
+| Preview: delete | Dashed red border, title struck through in red |
+| Preview: idle | Dimmed to 0.4 — untouched cards recede so the changes are the subject |
+| Has points | Small outlined chip with the number, right-aligned on the title row. Tabular figures so 1 and 13 align down a column. No colour |
+| Needs filing | `unfiled` chip — dashed 1px border, tertiary text. A quick-captured card the AI hasn't classified. Deliberately not a colour: colour is reserved for epic and priority |
 | File dragged over (`.--fileDragOver`) | 2px accent outline, inset. Dropping attaches the files to this task |
 | Filter-hidden | `[hidden]` attribute → display: none |
 
@@ -352,7 +362,30 @@ Button sizing: 4px vertical, 8px horizontal padding, 11px font (smaller than oth
 
 **Events dispatched:** `ai-edit`, `ai-clone`, `ai-promote-backlog`, `ai-promote-board`, `ai-delete`
 
-### 4.5 FAB (Floating Action Button)
+### 4.5 Proposal Row (`<proposal-row>`)
+
+One AI-proposed change awaiting review. Shown in the Proposed Changes section of the AI page.
+
+```
+.proposalRow
+  .proposalRow__kind             ← UPDATE / MOVE / DELETE chip, fixed width so the column scans vertically
+  .proposalRow__body
+    .proposalRow__taskTitle      ← which task
+    .proposalRow__change         ← the change as a sentence: "size → 8, mark priority"
+    .proposalRow__reason         ← the AI's one-line justification (hidden if absent)
+  .proposalRow__actions          ← Apply / Reject
+```
+
+| State | Visual |
+|-------|--------|
+| Default | Outlined verb chip, tertiary text. No colour |
+| Delete | Verb chip and Apply button turn red — the only irreversible verb, and the only one that earns colour. Apply is relabelled "Delete" |
+| Hover row | Tertiary background |
+| Buffer empty | The whole section is `hidden` — an empty review list is not information |
+
+Buttons are styled locally from the shared tokens (document `.btn` rules don't cross the shadow boundary), matching `backlog-row` and `ai-staged-row`.
+
+### 4.6 FAB (Floating Action Button)
 
 Used on backlog page. Plain HTML element (not a Web Component).
 
@@ -418,6 +451,16 @@ Full-width page. All content rendered into `.pageView`.
 
 ### 5.3 Backlog Page (`/:alias/backlog`)
 
+Also hosts **AI staging** (v2.55.0), collapsed behind a toggle at the right of the header:
+
+| State | Visual |
+|-------|--------|
+| Nothing staged | Toggle only, no badge. Section collapsed |
+| Something staged | Count badge on the toggle; section auto-opens on load |
+| Open | Roomy paste box + *Extract tasks*, then the staged rows below (Edit / Clone / → Backlog / → Board / Delete) |
+
+Sets `--archive-col-actions: 300px` on `.aiStaging` — `ai-staged-row` carries five actions and needs a wider actions column than the backlog rows it shares layout variables with.
+
 Full-width list page.
 
 ```
@@ -464,49 +507,85 @@ Split panel layout.
 
 Deep-linkable: `/:alias/reports/:reportId`.
 
-### 5.6 AI Assistant Page (`/:alias/ai`)
 
-Vertical split layout.
+### 5.7 Assistant (`<assistant-dock>`)
+
+A permanent **AI** button, bottom-left of every page, that grows a panel out of itself on click.
 
 ```
-.aiPage
-  .aiPage__chat                  ← top section (~55% height)
-    .aiPage__messages            ← scrollable message list
-      .aiPage__message--user     ← right-aligned, user bubble
-      .aiPage__message--ai       ← left-aligned, AI bubble
-      .aiPage__message--thinking ← animated dots indicator
-    .aiPage__inputArea
-      .aiPage__modelSelect       ← AI model selector dropdown
-      .aiPage__input             ← textarea, auto-grows to 120px max
-      .aiPage__inputActions      ← Clear conversation + Send buttons
-  .aiPage__staged                ← bottom section (~45% height)
-    h2 + .js-stagedCount         ← "Staged Tasks" + count badge
-    <list-header>
-    .js-stagedRows
-      <ai-staged-row> x N
+:host                          ← position: fixed, bottom-RIGHT, z-index 1500
+  .assistant__launcher         ← 56px circle, bolt icon only, pending badge on the corner
+  .assistant__panel            ← clamp(420px, 50vw, 1200px) x 50vh, anchored above the launcher
+    .assistant__header         ← the resolved context + clear + close
+    .assistant__messages       ← transcript, or the board-derived empty state
+    .assistant__notice         ← stated reason when the composer is disabled
+    .assistant__composer       ← textarea + Send
+    .assistant__usage          ← session token counter
 ```
 
-**Chat message states:**
-- User message: right-aligned bubble
-- AI message: left-aligned bubble
-- Thinking: animated 3-dot indicator
-- Task chip: "↓ N task(s) staged" displayed inline in AI response
+| State | Visual |
+|-------|--------|
+| Closed | Just the launcher pill. No layout space reserved |
+| Opening | Scales from `bottom right` over 180ms — it comes *out of* the button. Inside `prefers-reduced-motion: no-preference` |
+| Open | Panel in the bottom band only; the top half of the screen is never covered |
+| Over a modal | Painted above it (1500 vs 1000). Toasts stay above both |
+| Context: board/page | Header reads "About the board", "About the archive" |
+| Context: card open | Header reads `About "Refactor auth"` — no button needed on the card |
+| Proposals pending | Count badge on the launcher, visible from any page; clicking it opens board preview |
+| Empty | Up to three board-derived suggestions, each a fact + a verb |
+| Thinking | A quiet "Reading your board…" line — **not** animated dots |
 
-**Input states:**
-- Default: single-line height textarea
-- Typing: auto-grows vertically (max 120px)
-- Send: disabled while waiting for AI response
-- Shift+Enter: sends message. Enter alone: newline.
+**Messages:** no bubbles with tails, no avatars. The user's turn is indented on a tertiary background; the assistant's is plain text at full width. No colour of its own.
 
-Actions column: 300px (5 buttons).
+### 6.0 Quick Capture (`<quick-capture>`)
 
----
+Global one-line capture bar. Present on every page, opened with `c`. **Not a modal** — a dialog asks to be read and dismissed; this takes a line and disappears.
 
-## 6. Modals & Config-Page Editors
+```
+.quickCapture__backdrop        ← dims the page, click to dismiss
+.quickCapture__bar             ← 560px max, fixed at 18vh (high, not centred)
+  svg-icon (lightning, 16)
+  .quickCapture__input         ← "What needs doing?", --text-xl
+  kbd "Enter"
+.quickCapture__hint            ← optional transient line under the bar
+```
 
-All modals use the `<modal-dialog>` Shadow DOM component. 3 sizes: small (540px), default (680px), large (960px). All clamped with min/max.
+| State | Visual / behaviour |
+|-------|--------------------|
+| Closed | `display: none` on the host — never tabbable while closed |
+| Open | Bar + backdrop; input focused on the next frame (it can't focus while still `display: none`) |
+| Enter | Closes **immediately**, before the network resolves — capture must feel finished when you press the key |
+| Escape / backdrop | Dismisses without capturing |
+| Captured | Card appears at the top of the first column with an `unfiled` chip; toast "Captured to X" with an **Undo** action |
+| Classified | Chip disappears; the card may gain an epic, category and move column |
 
-> **Note (v2.37+):** the CRUD editors in §6.3–6.7 are **no longer modals** — they render inline as sections of the Configuration page (`/:alias/config`, left tabs + right panel). Their element anatomy and visual specs below still apply to the inline versions. The only modals left in the app are the task modal (§6.2), the report viewer, and the small delete-confirmation modals (§6.8).
+Positioned at 18vh rather than centred: capture is a passing action and should not read as a dialog demanding a decision.
+
+### 6.04 Control sizes
+
+Every button, single-line field, picker and select takes its height from one scale — `--control-height-sm/md/lg` = 28/36/44px. Buttons used to size by padding while fields added a 1px border on top, which is why they never lined up.
+
+**A button placed beside a field uses the same size.** A `--sm` button next to a default field is the mismatch this scale exists to prevent.
+
+### 6.05 Report Summary (in the report viewer)
+
+Sits above the raw report columns — this is the part read out in a one-to-one; the columns below are the evidence.
+
+```
+.reportSummary
+  .reportSummary__head       ← "SUMMARY · date → date" + Copy as bullets + Regenerate
+  .reportSummary__tldr       ← one or two sentences
+  .reportSummary__silo       ← per epic: name + stakeholder + bullets
+  .reportSummary__silo--attention  ← things to raise, warning-coloured heading
+```
+
+| State | Visual |
+|-------|--------|
+| Not written yet | "Not written yet." + Regenerate button |
+| Written | TLDR, then one block per silo, then Needs attention |
+| Legacy report (no period) | Block omitted entirely — a board snapshot has nothing honest to summarise |
+
+Stakeholder renders beside the epic name in tertiary text: it's what makes the grouping useful in a conversation rather than merely tidy.
 
 ### 6.1 Modal Dialog Component
 
@@ -534,14 +613,16 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 .taskForm
   .taskForm__grid
     .taskForm__col--main           ← left column
-      .taskForm__tabs              ← tab strip: Description | Files (+ count badge when >0)
+      .taskForm__dropOverlay       ← "Drop to attach" overlay, covers the body during a file drag
+    .taskForm__tabs              ← tab strip: Description | Files (+ count) | Activity (hidden when a task has no log)
       .taskForm__group--grow       ← [panel: description] textarea (fills column height, max 2000 chars)
       .taskForm__group--grow       ← [panel: attachments] .attachments — drop zone + file grid
     .taskForm__col--side           ← right column
       .taskForm__priorityToggle    ← Priority STAR toggle (hidden checkbox; star is muted when off, yellow when on)
+      .taskForm__pointsSelector    ← story point pills (1/2/3/5/8/13); toggleable — click the selected value again to clear. The 13 pill is dashed: it is the ceiling, and there is deliberately no 21
       .taskForm__epicSelector      ← clickable epic pills using the task-card epic-bar colour standard (tinted bg + epic-colour label via color-mix); dimmed when unselected, full opacity when selected (no border); toggleable — click the selected epic again to clear it (no "No epic" pill)
       .taskForm__categorySelector  ← Pill-style radio buttons (one per category, grid layout)
-      .taskForm__scheduleSection   ← Deadline section
+      .taskForm__scheduleSection   ← <details>, collapsed by default; its summary names a set deadline so collapsing cannot hide one
         .taskForm__scheduleRow     ← datetime input + quick buttons (+1h, +3h, +1d, Morning, Next Monday)
         .taskForm__timeHint        ← calculated "in X hours/days" text
       .taskForm__scheduleSection   ← Snooze section (same layout as deadline)
@@ -554,9 +635,9 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 
 | Mode | Title | Buttons (left to right) |
 |------|-------|------------------------|
-| Add | "Add Task" | Cancel, Save (blue) |
-| Edit | "Edit Task" | Cancel, Clone (indigo), Backlog (slate, hidden if task is already in backlog), Update (blue), Delete (red) |
-| Clone | "Add Task" | Cancel, Save (blue) — form pre-filled from source task, title prefixed with "(Clone) " |
+| Add | "Add Task" | Save (primary) |
+| Edit | "Edit Task" | Clone (secondary), Backlog (secondary, hidden if already in backlog), Update (primary), Delete (danger). **No Cancel** — the ✕ already closes, and two controls doing one job crowded the row |
+| Clone | "Add Task" | Save (primary) — form pre-filled from source task, title prefixed with "(Clone) " |
 
 **Category selector:** Grid of pill-shaped radio buttons. Each shows icon + category name. Selected pill has accent bg. Category 1 included but badge hidden on cards.
 
@@ -564,9 +645,16 @@ Size: large. The most complex modal. The **header is the inline-editable task ti
 
 **Quick datetime buttons:** `+1h`, `+3h`, `+1d`, `Morning` (next 9am), `Next Monday` (next Monday 9am). Click sets the datetime input value.
 
-**Files tab (`.attachments`):** a dashed drop zone with a *browse* file picker, above a responsive grid of `.attachments__item` tiles (140px min). Images show a thumbnail; everything else an icon tile. Each tile carries name, size, a Download link and Remove. Files arrive by drop, by paste anywhere in the modal (which auto-switches to this tab), or via browse. The whole panel gets an inset accent outline while a file is dragged over it. In **Add / Clone** mode there is no task id yet, so tiles render dashed and read "pending" — they upload after the task is saved. The tab's count badge shows saved + pending.
+**Files tab (`.attachments`):** a dashed drop zone with a `.btn --secondary --sm` *Browse files* picker, above a responsive grid of `.attachments__item` tiles (140px min). Images show a thumbnail; everything else an icon tile. Each tile carries name, size and three `.btn --ghost --icon --sm` actions — **open in new tab**, **download**, **remove** (icon-only because three labelled buttons don't fit a 140px tile; each has `title` + `aria-label`). In **Add / Clone** mode there is no task id yet, so tiles render dashed and read "pending" — they upload after the task is saved, and only *remove* is offered. The tab's count badge shows saved + pending.
 
-**Attachment viewer (`.js-attachmentModal`):** a second modal stacked over the task modal, opened by clicking a previewable tile. Images render as `<img>`, PDFs in an iframe, text and code in a monospace `<pre>`; anything else shows a "no preview" note. Footer: Download link + Close. Closing it leaves the task modal and its Files tab intact.
+**Drop overlay (`.taskForm__dropOverlay`):** dragging files anywhere over the open dialog covers its body with a dashed accent-bordered panel — paperclip icon + "Drop to attach". Dropping while the Description tab is showing switches to Files and attaches. `pointer-events: none`, so it never swallows the drop it advertises.
+
+| State | Visual |
+|-------|--------|
+| No drag | `[hidden]` |
+| File dragged over dialog | Visible: 2px dashed accent border, accent-tinted body, accent text |
+
+**Attachment viewer (`.js-attachmentModal`):** a second modal stacked over the task modal, opened by clicking a previewable tile. Images render as `<img>`, PDFs in an iframe, text and code in a monospace `<pre>`; anything else shows a "no preview" note. Footer: *Open in new tab* and *Download* (`.btn --secondary`) beside a `custom-button` Close. Closing it leaves the task modal and its Files tab intact.
 
 ### 6.3 Management Editors (Epics, Categories, Profiles) — inline on Config page
 
@@ -577,9 +665,19 @@ Size: large. All follow the same CRUD list pattern.
 [List of existing items]         ← each item has inline-editable fields + delete button
 ```
 
+**Assistant memory** (under AI Assistant): an add row plus a list of durable facts.
+
+| State | Visual |
+|-------|--------|
+| Approved | Solid secondary background, labelled `yours` or `suggested`, text editable on blur |
+| Suggested, not yet approved | Sorted to the top, dashed accent border, *Remember this* button. Not used in any prompt until approved |
+
 **Epic management:**
 - Add: name input + colour picker (5-column grid, used colours disabled) + alias preview
-- List item: colour dot + name input (blur-to-save) + colour picker (change-to-save) + delete button
+- List item is **two stacked rows**:
+  - `.epicsEditor__itemMain` — colour dot + name input (blur-to-save) + colour picker (change-to-save) + delete button
+  - `.epicsEditor__itemContext` — Stakeholder / Cadence / Expectations, blur-to-save, separated by a 1px rule. Two-column grid (Expectations spans both), collapsing to one column under 720px
+- The context fields are what make an epic a silo you manage rather than a label. They are notes to yourself first — fully useful with the AI off — and feed the assistant's prompt when set
 
 **Category management:**
 - Add: name input + icon picker (7-column grid) + "Add" button

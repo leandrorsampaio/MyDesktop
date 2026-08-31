@@ -1,0 +1,522 @@
+/* Floats over everything, bottom-right, on every page.
+   z-index 1500 puts it above modals (1000) but below toasts (2000) — feedback
+   must stay visible even with the assistant open. */
+:host {
+    position: fixed;
+    right: var(--space-24, 24px);
+    bottom: var(--space-24, 24px);
+    z-index: 1500;
+    display: block;
+}
+
+/* ==========================================
+   Launcher — always present
+   ========================================== */
+/* A plain circle with the bolt in it — the icon carries the meaning, so the
+   label was just noise on a control that is always on screen. */
+.assistant__launcher {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-accent-primary, #1a73e8);
+    color: var(--color-text-on-accent, #fff);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.assistant__launcher:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.15));
+}
+
+:host(.--open) .assistant__launcher {
+    background: var(--color-accent-primary-hover, #1557b0);
+}
+
+/* Proposals waiting for review. Sits on the launcher so it is visible from
+   any page without opening anything. */
+.assistant__launcherBadge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 var(--space-4, 4px);
+    border: 2px solid var(--color-bg-primary, #fff);
+    border-radius: 10px;
+    background: var(--color-accent-error, #ef4444);
+    color: var(--color-text-on-accent, #fff);
+    font-family: inherit;
+    font-size: var(--text-sm, 11px);
+    font-weight: var(--font-weight-semibold, 600);
+    line-height: 16px;
+    text-align: center;
+}
+
+.assistant__launcherBadge[hidden] {
+    display: none;
+}
+
+/* ==========================================
+   Panel — grows out of the launcher
+   ========================================== */
+.assistant__panel {
+    position: absolute;
+    /* Anchored to the launcher's corner, so it grows up and to the left. */
+    right: 0;
+    bottom: calc(100% + var(--space-12, 12px));
+    display: flex;
+    flex-direction: column;
+    /* Half the screen, with a floor so it stays usable on a laptop and a
+       ceiling so an ultrawide doesn't turn the transcript into one long line. */
+    width: clamp(420px, 50vw, 1200px);
+    max-width: calc(100vw - var(--space-48, 48px) - var(--space-24, 24px));
+    height: 50vh;
+    min-height: 320px;
+    max-height: 50vh;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-lg, 8px);
+    background: var(--color-bg-primary, #fff);
+    box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.15));
+    overflow: hidden;
+    /* Growing from the corner it was launched from is what makes the panel
+       read as coming *out of* the button rather than appearing over it. */
+    transform-origin: bottom right;
+}
+
+.assistant__panel[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :host(.--open) .assistant__panel {
+        animation: assistantGrow 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+}
+
+@keyframes assistantGrow {
+    from {
+        opacity: 0;
+        transform: scale(0.86) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.assistant__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 8px);
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Says what the assistant is currently about — the board, a page, or the card
+   you have open. Context is implicit, so it has to be visible. */
+.assistant__context {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assistant__iconBtn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-lg, 14px);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.assistant__iconBtn:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+/* ==========================================
+   Saved conversations
+   ========================================== */
+
+/* Overlays the transcript rather than pushing it aside: opening the list is a
+   glance, and reflowing what you were reading to do it is disorienting. */
+.assistant__drawer {
+    position: absolute;
+    inset: 43px 0 0 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary, #fff);
+}
+
+.assistant__drawer[hidden] {
+    display: none;
+}
+
+.assistant__drawerHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+    font-weight: var(--font-weight-medium, 500);
+}
+
+.assistant__drawerList {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6, 6px);
+}
+
+.assistant__drawerEmpty {
+    padding: var(--space-16, 16px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-base, 12px);
+    text-align: center;
+}
+
+.assistant__convo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-8, 8px) var(--space-28, 28px) var(--space-8, 8px) var(--space-10, 10px);
+    border-radius: var(--radius-md, 6px);
+    cursor: pointer;
+}
+
+.assistant__convo:hover {
+    background: var(--color-bg-secondary, #f8f9fa);
+}
+
+.assistant__convo.--current {
+    background: rgba(var(--color-accent-primary-rgb, 26, 115, 232), 0.06);
+}
+
+.assistant__convoTitle {
+    overflow: hidden;
+    color: var(--color-text-primary, #111827);
+    font-size: var(--text-md, 13px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assistant__convoMeta {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
+/* Revealed on hover so a list of threads stays calm, but always reachable by
+   keyboard. */
+.assistant__convoDelete {
+    position: absolute;
+    top: 50%;
+    right: var(--space-6, 6px);
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    opacity: 0;
+    background: transparent;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-lg, 14px);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.assistant__convo:hover .assistant__convoDelete,
+.assistant__convoDelete:focus-visible {
+    opacity: 1;
+}
+
+.assistant__convoDelete:hover {
+    background: rgba(var(--color-accent-error-rgb, 220, 38, 38), 0.08);
+    color: var(--color-accent-error, #dc2626);
+}
+
+/* ==========================================
+   Skills
+   ========================================== */
+
+.assistant__skills {
+    position: relative;
+    padding: 0 var(--space-12, 12px);
+}
+
+.assistant__skills[hidden] {
+    display: none;
+}
+
+.assistant__skillsToggle {
+    max-width: 100%;
+    overflow: hidden;
+    padding: var(--space-2, 2px) var(--space-6, 6px);
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-family: inherit;
+    font-size: var(--text-sm, 11px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.assistant__skillsToggle:hover {
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-secondary, #4b5563);
+}
+
+/* Opens upward: the bar sits directly above the composer at the panel's foot. */
+.assistant__skillsMenu {
+    position: absolute;
+    bottom: calc(100% + var(--space-4, 4px));
+    left: var(--space-12, 12px);
+    z-index: 3;
+    min-width: 220px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: var(--space-4, 4px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.15));
+}
+
+.assistant__skillsMenu[hidden] {
+    display: none;
+}
+
+.assistant__skillRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8, 8px);
+    padding: var(--space-6, 6px) var(--space-8, 8px);
+    border-radius: var(--radius-sm, 4px);
+    font-size: var(--text-md, 13px);
+    cursor: pointer;
+}
+
+.assistant__skillRow:hover {
+    background: var(--color-bg-secondary, #f8f9fa);
+}
+
+/* An always-on skill is a property of the skill, changed in Config — showing
+   it as clickable here would promise a toggle that does nothing. */
+.assistant__skillRow[data-always-on="true"] {
+    cursor: default;
+}
+
+.assistant__skillCheck {
+    flex-shrink: 0;
+    width: 12px;
+    color: var(--color-accent-primary, #1a73e8);
+}
+
+.assistant__skillName {
+    flex: 1;
+    overflow: hidden;
+    color: var(--color-text-primary, #111827);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.assistant__skillAlways {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
+.assistant__messages {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10, 10px);
+    padding: var(--space-12, 12px);
+    overflow-y: auto;
+}
+
+/* No bubbles with tails, no avatars. The user's turn is indented; the
+   assistant's is plain text at full width. */
+.assistant__message {
+    font-size: var(--text-md, 13px);
+    line-height: 1.5;
+}
+
+.assistant__message.--user {
+    align-self: flex-end;
+    max-width: 88%;
+    padding: var(--space-6, 6px) var(--space-10, 10px);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-tertiary, #f3f4f6);
+    color: var(--color-text-primary, #111827);
+}
+
+.assistant__message.--assistant {
+    color: var(--color-text-primary, #111827);
+}
+
+.assistant__message.--pending {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-style: italic;
+}
+
+.assistant__messageText {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.assistant__messageMeta {
+    margin-top: 2px;
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+}
+
+/* ---- Empty state: facts about this board, each with a verb ---- */
+.assistant__empty {
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-md, 13px);
+    line-height: 1.5;
+}
+
+.assistant__suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 6px);
+}
+
+.assistant__suggestion {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: var(--space-8, 8px) var(--space-10, 10px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.assistant__suggestion:hover {
+    border-color: var(--color-accent-primary, #1a73e8);
+}
+
+.assistant__suggestionFact {
+    color: var(--color-text-primary, #111827);
+    font-size: var(--text-md, 13px);
+}
+
+.assistant__suggestionAction {
+    color: var(--color-accent-primary, #1a73e8);
+    font-size: var(--text-base, 12px);
+}
+
+/* ---- Composer ---- */
+.assistant__notice {
+    margin: 0 var(--space-12, 12px) var(--space-8, 8px);
+    padding: var(--space-6, 6px) var(--space-10, 10px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    color: var(--color-text-secondary, #4b5563);
+    font-size: var(--text-base, 12px);
+}
+
+.assistant__notice[hidden] {
+    display: none;
+}
+
+.assistant__composer {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-8, 8px);
+    padding: var(--space-10, 10px) var(--space-12, 12px);
+    border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.assistant__input {
+    flex: 1;
+    box-sizing: border-box;
+    min-height: 34px;
+    max-height: 120px;
+    padding: var(--space-6, 6px) var(--space-8, 8px);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-bg-primary, #fff);
+    color: var(--color-text-primary, #111827);
+    font-family: inherit;
+    font-size: var(--text-md, 13px);
+    resize: none;
+}
+
+.assistant__input:focus {
+    outline: none;
+    border-color: var(--color-accent-primary, #1a73e8);
+}
+
+.assistant__input:disabled {
+    opacity: 0.6;
+}
+
+.assistant__sendBtn {
+    flex-shrink: 0;
+    padding: var(--space-6, 6px) var(--space-12, 12px);
+    border: none;
+    border-radius: var(--radius-md, 6px);
+    background: var(--color-accent-primary, #1a73e8);
+    color: var(--color-text-on-accent, #fff);
+    font-family: inherit;
+    font-size: var(--text-base, 12px);
+    font-weight: var(--font-weight-semibold, 600);
+    cursor: pointer;
+}
+
+.assistant__sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.assistant__usage {
+    padding: 0 var(--space-12, 12px) var(--space-8, 8px);
+    color: var(--color-text-tertiary, #9ca3af);
+    font-size: var(--text-sm, 11px);
+    font-variant-numeric: tabular-nums;
+}
+
+/* On a narrow viewport the panel spans the width it can get, still anchored
+   to the bottom band. */
+@media (max-width: 720px) {
+    :host {
+        right: var(--space-12, 12px);
+        bottom: var(--space-12, 12px);
+    }
+
+    .assistant__panel {
+        width: calc(100vw - var(--space-24, 24px));
+        height: 60vh;
+        max-height: 60vh;
+    }
+}

@@ -1,5 +1,9 @@
+/* Grows to fill whatever the checklist above it leaves. `min-height: 0` is
+   required: a flex child defaults to min-content and would otherwise refuse
+   to shrink, pushing the textarea past the bottom of the panel. */
 :host {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 }
@@ -43,8 +47,10 @@ h3 {
 .notes__textarea {
     box-sizing: border-box;
     width: 100%;
+    /* Fills the remaining height rather than sitting at a fixed size with
+       dead space under it. The cap is gone for the same reason. */
+    flex: 1 1 auto;
     min-height: var(--size-surface-md);
-    max-height: var(--size-surface-xl);
     padding: var(--space-16);
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-md, 6px);

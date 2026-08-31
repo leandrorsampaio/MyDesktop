@@ -22,10 +22,6 @@
     --color-accent-info: #6b7280;
 
     /* Extra solid accents — button modifiers, stars, strong/text variants */
-    --color-accent-clone: #5758BB;
-    --color-accent-clone-hover: #4A4AA8;
-    --color-accent-backlog: #636E72;
-    --color-accent-backlog-hover: #535c60;
     --color-accent-error-strong: #dc2626;   /* delete:hover, urgent deadline/label text */
     --color-accent-warning-text: #b45309;   /* warning text on a light warning tint */
     --color-accent-gold: #E8B923;           /* favourite / default star */
@@ -65,6 +61,16 @@
     --shadow-md: 0 4px 12px rgba(var(--color-shadow-rgb), 0.1);
     --shadow-lg: 0 20px 60px rgba(var(--color-shadow-rgb), 0.15);
     --shadow-focus: 0 0 0 3px rgba(var(--color-accent-primary-rgb), 0.12);
+
+    /* === Control heights ===
+       Buttons size themselves by padding while inputs add a 1px border on top,
+       so a button and a field with identical padding end up ~2px apart — which
+       is exactly why they never lined up. Both now take an explicit height from
+       this scale instead, which makes alignment a property of the token rather
+       than of arithmetic. */
+    --control-height-sm: 28px;
+    --control-height-md: 36px;
+    --control-height-lg: 44px;
 
     /* === Board Layout === */
     --column-min-width: 280px;
@@ -180,10 +186,6 @@
     --color-accent-gold: #f0c948;
 
     /* Button modifiers */
-    --color-accent-clone: #6d6ec9;
-    --color-accent-clone-hover: #8284d6;
-    --color-accent-backlog: #6b757a;
-    --color-accent-backlog-hover: #7c868b;
 
     /* Overlay + inverse + epic rendering for dark surfaces */
     --color-overlay: rgba(0, 0, 0, 0.6);
@@ -536,6 +538,21 @@ body {
     padding: var(--space-20);
 }
 
+/* The checklist is as tall as its items; notes take everything left over, so
+   the panel has no dead space under it. The component itself carries
+   `flex: 1 1 auto; min-height: 0` (see notes-widget.css); this keeps the
+   section chrome from capping it. */
+notes-widget.sidebar__section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* The checklist stays exactly as tall as its contents. */
+daily-checklist.sidebar__section {
+    flex: 0 0 auto;
+}
+
 .sidebar__section.--hidden {
     display: none;
 }
@@ -806,12 +823,18 @@ body {
 }
 
 .btn {
-    padding: var(--space-10) var(--space-20);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: var(--control-height-md);
+    padding: 0 var(--space-20);
     border: none;
     border-radius: var(--radius-md);
     font-size: var(--text-lg);
     font-weight: var(--font-weight-semibold);
     font-family: inherit;
+    white-space: nowrap;
     cursor: pointer;
     transition: background-color 0.15s, transform 0.15s;
 }
@@ -900,13 +923,48 @@ body {
 
 /* Sizes (md is the default carried by `.btn` itself) */
 .btn.--sm {
-    padding: var(--space-6) var(--space-12);
+    height: var(--control-height-sm);
+    padding: 0 var(--space-12);
     font-size: var(--text-sm);
 }
 
 .btn.--lg {
-    padding: var(--space-12) var(--space-24);
+    height: var(--control-height-lg);
+    padding: 0 var(--space-24);
     font-size: var(--text-xl);
+}
+
+/* ==========================================
+   Form controls — same scale as the buttons
+   ==========================================
+   Single-line controls only: a textarea sizes to its content and must keep
+   doing so. Listed explicitly rather than blanket-matching `input`, so a
+   checkbox or radio is never given a 36px box. */
+.field,
+.memoryEditor__input,
+.epicsEditor__nameInput,
+.epicsEditor__contextField input,
+.aiStaging__addInput,
+.configPage__input,
+.configPage__panel input[type="text"],
+.configPage__panel input[type="number"],
+.configPage__panel select {
+    box-sizing: border-box;
+    height: var(--control-height-md);
+    padding: 0 var(--space-12);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-lg);
+}
+
+.field.--sm,
+.configPage__panel input.--sm {
+    height: var(--control-height-sm);
+    padding: 0 var(--space-8);
+    font-size: var(--text-md);
 }
 
 /* Shape modifiers */
@@ -1243,7 +1301,6 @@ body {
     overflow-y: auto;
 }
 
-
 .reportsList__deleteBtn {
     background: none;
     border: none;
@@ -1262,7 +1319,6 @@ body {
     color: var(--color-accent-error);
     background-color: rgba(var(--color-accent-error-rgb),0.1);
 }
-
 
 /* ==========================================
    Block: reportDetail
@@ -1483,7 +1539,6 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
-
 .checklistEditor__items {
     display: flex;
     flex-direction: column;
@@ -1685,7 +1740,6 @@ body {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
 
-
 .epicsEditor__form {
     margin-bottom: var(--space-24);
     padding: var(--space-20);
@@ -1701,7 +1755,7 @@ body {
 
 .epicsEditor__nameInput {
     flex: 1;
-    padding: var(--space-10) 14px;
+    /* height/padding/border come from the shared control-size rule */
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background-color: var(--color-bg-primary);
@@ -1743,13 +1797,73 @@ body {
     overflow-y: auto;
 }
 
+/* The item is now two stacked rows: the name/colour row, and the context row
+   below it. The flex layout the name row relied on moved to __itemMain. */
 .epicsEditor__item {
     display: flex;
-    align-items: center;
-    gap: var(--space-12);
+    flex-direction: column;
+    gap: var(--space-10);
     padding: 14px;
     background: var(--color-bg-secondary);
     border-radius: 12px;
+}
+
+.epicsEditor__itemMain {
+    display: flex;
+    /* The name column is taller than the controls beside it (input + alias),
+       so align to the top and let the row's own height follow the name. */
+    align-items: flex-start;
+    gap: var(--space-12);
+}
+
+/* The colour dot centres against the name input rather than the whole
+   two-line column. */
+.epicsEditor__itemMain .epicsEditor__itemColor {
+    margin-top: calc((var(--control-height-md) - 24px) / 2);
+}
+
+/* Stakeholder / cadence / expectations — what makes an epic a silo rather
+   than a label. Wraps to one column on narrow viewports.
+
+   Indented by the colour dot plus its gap so these fields line up with the
+   name input above them, rather than starting flush against the card edge
+   while the name starts 36px in — which read as crooked. */
+.epicsEditor__itemContext {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8) var(--space-12);
+    margin-left: calc(24px + var(--space-12));
+    padding-top: var(--space-10);
+    border-top: 1px solid var(--color-border);
+}
+
+.epicsEditor__contextField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.epicsEditor__contextField--wide {
+    grid-column: 1 / -1;
+}
+
+.epicsEditor__contextField span {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.epicsEditor__contextField input {
+    width: 100%;
+    /* height/padding/border come from the shared control-size rule */
+}
+
+@media (max-width: 720px) {
+    .epicsEditor__itemContext {
+        grid-template-columns: 1fr;
+    }
 }
 
 .epicsEditor__itemColor {
@@ -1784,6 +1898,8 @@ body {
     box-shadow: var(--shadow-focus);
 }
 
+/* Sits under the name input, indented to match that input's inner padding
+   so the two read as one column. */
 .epicsEditor__itemAlias {
     font-size: var(--text-sm);
     color: var(--color-text-tertiary);
@@ -1795,8 +1911,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    flex-shrink: 0;
+    width: var(--control-height-md);
+    height: var(--control-height-md);
     background: rgba(var(--color-accent-error-rgb),0.1);
     border: none;
     border-radius: 10px;
@@ -1818,7 +1935,6 @@ body {
 .categoriesEditor {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
-
 
 .categoriesEditor__form {
     margin-bottom: var(--space-24);
@@ -1938,7 +2054,6 @@ body {
 .profilesEditor {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
-
 
 .profilesEditor__form {
     margin-bottom: var(--space-24);
@@ -2149,7 +2264,6 @@ body {
 .boardConfigEditor {
     padding: 0 var(--space-32) var(--space-32) var(--space-32);
 }
-
 
 .boardConfigEditor__form {
     margin-bottom: var(--space-24);
@@ -2591,6 +2705,11 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     margin-bottom: var(--space-20);
 }
 
+/* Pushes the AI staging toggle to the right end of the header row */
+.backlogPage__header .js-stagingToggle {
+    margin-left: auto;
+}
+
 .backlogPage__title {
     font-size: 20px;
     font-weight: var(--font-weight-semibold);
@@ -2633,6 +2752,12 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     align-items: baseline;
     gap: var(--space-12);
     margin-bottom: var(--space-20);
+}
+
+/* Pushes the generate action to the right end of the header row, matching the
+   backlog page's AI staging toggle. */
+.reportsPage__header .js-generateReportBtn {
+    margin-left: auto;
 }
 
 .reportsPage__title {
@@ -3392,98 +3517,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 }
 
-/* ==========================================
-   Block: aiPage
-   ========================================== */
-
-/* Override list-header/ai-staged-row column widths for the AI page context */
-.aiPage {
-    --archive-col-actions: 300px;
-}
-
-.aiPage {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 65px);
-    overflow: hidden;
-    width: 100%;
-}
-
-/* ---- Chat section (top 55%) ---- */
-.aiPage__chat {
-    flex: 0 0 55%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
-}
-
-.aiPage__messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-16) var(--space-24);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-12);
-}
-
-/* ---- Message bubbles ---- */
-.aiPage__message {
-    max-width: 75%;
-    padding: var(--space-10) 14px;
-    border-radius: var(--radius-lg);
-    font-size: var(--text-lg);
-    line-height: 1.55;
-    word-break: break-word;
-    white-space: pre-wrap;
-}
-
-.aiPage__message--user {
-    align-self: flex-end;
-    background: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-    border-bottom-right-radius: var(--radius-sm);
-}
-
-.aiPage__message--ai {
-    align-self: flex-start;
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-primary);
-    border-bottom-left-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-}
-
-/* ---- Thinking indicator (animated dots) ---- */
-.aiPage__message--thinking {
-    align-self: flex-start;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-lg);
-    border-bottom-left-radius: var(--radius-sm);
-    padding: var(--space-12) 18px;
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-.aiPage__message--thinking span {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-text-tertiary);
-    animation: aiThinkingDot 1.2s ease-in-out infinite;
-}
-
-.aiPage__message--thinking span:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.aiPage__message--thinking span:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
 @keyframes aiThinkingDot {
 
     0%,
@@ -3499,139 +3532,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     }
 }
 
-/* ---- Task chip inline in AI message ---- */
-.aiPage__taskChip {
-    display: inline-block;
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-accent-primary);
-    background: rgba(var(--color-accent-primary-rgb),0.1);
-    border: 1px solid rgba(var(--color-accent-primary-rgb),0.25);
-    border-radius: 10px;
-    padding: var(--space-2) var(--space-8);
-    align-self: flex-start;
-}
-
-/* ---- Input area ---- */
-.aiPage__inputArea {
-    flex-shrink: 0;
-    padding: var(--space-12) var(--space-24);
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
-}
-
-.aiPage__input {
-    width: 100%;
-    resize: none;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-8) var(--space-12);
-    font-family: var(--font-family);
-    font-size: var(--text-lg);
-    color: var(--color-text-primary);
-    background: var(--color-bg-primary);
-    max-height: var(--size-surface-sm);
-    overflow-y: auto;
-    outline: none;
-    transition: border-color 0.15s;
-    line-height: 1.5;
-}
-
-.aiPage__input:focus {
-    border-color: var(--color-accent-primary);
-}
-
-.aiPage__inputActions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: var(--space-8);
-}
-
-.aiPage__clearBtn {
-    font-size: var(--text-base);
-    color: var(--color-text-tertiary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-family);
-    padding: var(--space-4) 0;
-    transition: color 0.1s;
-}
-
-.aiPage__clearBtn:hover {
-    color: var(--color-text-secondary);
-}
-
-.aiPage__sendBtn {
-    padding: 7px var(--space-20);
-    font-size: var(--text-md);
-    font-weight: var(--font-weight-semibold);
-    font-family: var(--font-family);
-    background: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background-color 0.15s;
-}
-
-.aiPage__sendBtn:hover:not(:disabled) {
-    background: var(--color-accent-primary-hover);
-}
-
-.aiPage__sendBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* ---- Tasks section (bottom 45%) ---- */
-.aiPage__tasks {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--color-bg-secondary);
-}
-
-.aiPage__tasksHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-10) var(--space-24);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-bg-primary);
-    flex-shrink: 0;
-}
-
-.aiPage__tasksTitle {
-    font-size: var(--text-md);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    margin: 0;
-}
-
-.aiPage__count {
-    font-size: var(--text-base);
-    color: var(--color-text-tertiary);
-}
-
-.aiPage__tableWrap {
-    flex: 1;
-    overflow-y: auto;
-}
-
-.aiPage__emptyState {
-    padding: var(--space-32) var(--space-24);
-    text-align: center;
-    font-size: var(--text-lg);
-    color: var(--color-text-tertiary);
-}
-
-.aiPage__rows {
-    /* rows container — no additional styling needed */
-}
-
 /* ==========================================
    Block: aiConfig (AI Configuration modal)
    ========================================== */
@@ -3641,7 +3541,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     flex-direction: column;
     gap: var(--space-16);
 }
-
 
 .aiConfig__group {
     display: flex;
@@ -3672,6 +3571,23 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 .aiConfig__select:focus,
 .aiConfig__input:focus {
     border-color: var(--color-accent-primary);
+}
+
+/* Model field + its "Fetch models" button share a row; the button sizes to
+   its label so the input keeps the remaining width. */
+.aiConfig__inputRow {
+    display: flex;
+    gap: var(--space-8);
+    align-items: center;
+}
+
+.aiConfig__inputRow .aiConfig__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.aiConfig__inputRow .btn {
+    flex: 0 0 auto;
 }
 
 .aiConfig__fieldHint {
@@ -3787,10 +3703,180 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     color: var(--color-text-primary);
 }
 
+.aiConfig__entryBtn--use:hover {
+    background: rgba(var(--color-accent-primary-rgb),0.08);
+    border-color: rgba(var(--color-accent-primary-rgb),0.3);
+    color: var(--color-accent-primary);
+}
+
+/* The active row states its status instead of offering a button that would
+   do nothing. Sized to match the buttons beside it so the row stays level. */
+.aiConfig__entryActive {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-accent-primary);
+    border: 1px solid transparent;
+}
+
 .aiConfig__entryBtn--delete:hover {
     background: rgba(var(--color-accent-error-rgb),0.08);
     border-color: rgba(var(--color-accent-error-rgb),0.3);
     color: var(--color-accent-error);
+}
+
+/* ==========================================
+   Interview card
+   ========================================== */
+
+.interviewCard {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    margin-bottom: var(--space-16);
+    padding: var(--space-12) var(--space-16);
+    border: 1px solid rgba(var(--color-accent-primary-rgb),0.25);
+    border-radius: var(--radius-md);
+    background: rgba(var(--color-accent-primary-rgb),0.04);
+}
+
+.interviewCard__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.interviewCard__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.interviewCard__hint {
+    color: var(--color-text-secondary);
+    font-size: var(--text-base);
+    line-height: 1.5;
+}
+
+/* Reading view for stored text — monospace and wrapped, so what is on screen
+   matches what is in the file. */
+.markdownView {
+    max-height: 60vh;
+    margin: 0;
+    overflow: auto;
+    padding: var(--space-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--text-md);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.memoryEditor__categorySelect {
+    width: auto;
+    min-width: 96px;
+    padding: var(--space-2) var(--space-6);
+    font-size: var(--text-sm);
+}
+
+/* ==========================================
+   Skills editor
+   ========================================== */
+
+.skillsEditor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.skillsEditor__item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-10);
+    padding: var(--space-10) var(--space-12);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+}
+
+.skillsEditor__itemInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.skillsEditor__itemName {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.skillsEditor__badge {
+    padding: 1px var(--space-6);
+    border-radius: var(--radius-sm);
+    background: rgba(var(--color-accent-primary-rgb),0.1);
+    color: var(--color-accent-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Clamped rather than truncated on one line: the first two lines of a brief
+   are usually enough to tell two skills apart. */
+.skillsEditor__itemInstructions {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+}
+
+.skillsEditor__itemActions {
+    display: flex;
+    gap: var(--space-4);
+    flex-shrink: 0;
+}
+
+.skillsEditor__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding: var(--space-12);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.skillsEditor__form[hidden] {
+    display: none;
+}
+
+.skillsEditor__textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: var(--font-family);
+    line-height: 1.5;
+}
+
+.skillsEditor__checkLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--color-text-secondary);
+    font-size: var(--text-base);
+    cursor: pointer;
 }
 
 .aiConfig__addBtn {
@@ -3827,40 +3913,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
 
 .aiConfig__backBtn:hover {
     color: var(--color-text-primary);
-}
-
-/* AI page model selector bar */
-.aiPage__modelBar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-    padding: var(--space-6) var(--space-12);
-    border-top: 1px solid var(--color-border);
-    background: var(--color-bg-secondary);
-}
-
-.aiPage__modelLabel {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-secondary);
-    white-space: nowrap;
-}
-
-.aiPage__modelSelect {
-    font-size: var(--text-md);
-    font-family: var(--font-family);
-    color: var(--color-text-primary);
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 3px var(--space-6);
-    outline: none;
-    flex: 1;
-    min-width: 0;
-}
-
-.aiPage__modelSelect:focus {
-    border-color: var(--color-accent-primary);
 }
 /* ==========================================
    Keyboard Shortcuts Help Modal
@@ -3973,15 +4025,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     gap: var(--space-12);
     flex: 1;
     min-height: var(--size-surface-lg);
-    border-radius: var(--radius-md);
-    transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Drop feedback covers the whole panel, not just the zone, so a file dragged
-   anywhere over the tab lands rather than bouncing off the gaps between items */
-.attachments.--dragOver {
-    background: rgba(var(--color-accent-primary-rgb), 0.06);
-    box-shadow: inset 0 0 0 2px var(--color-accent-primary);
 }
 
 .attachments__dropZone {
@@ -3989,7 +4032,7 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: var(--space-4);
+    gap: var(--space-10);
     padding: var(--space-16);
     border: 1px dashed var(--color-border);
     border-radius: var(--radius-md);
@@ -3998,10 +4041,12 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     text-align: center;
 }
 
+/* `.btn` carries no `display`, so it lands on a <label> as inline — vertical
+   padding wouldn't affect line box height. Scoped here rather than added to
+   the shared `.btn`, which would change every existing button. */
 .attachments__browse {
-    color: var(--color-accent-primary);
-    cursor: pointer;
-    text-decoration: underline;
+    display: inline-flex;
+    align-items: center;
 }
 
 .attachments__status {
@@ -4047,10 +4092,6 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     cursor: default;
 }
 
-a.attachments__preview {
-    text-decoration: none;
-}
-
 .attachments__thumb {
     width: 100%;
     height: 100%;
@@ -4061,7 +4102,7 @@ a.attachments__preview {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: var(--space-8);
+    padding: var(--space-8) var(--space-8) var(--space-4);
     min-width: 0;
 }
 
@@ -4078,29 +4119,55 @@ a.attachments__preview {
     font-size: var(--text-sm);
 }
 
+/* Three labelled buttons don't fit a 140px tile, so the actions are
+   design-system icon buttons: `.btn --ghost --icon --sm`. */
 .attachments__actions {
     display: flex;
-    gap: var(--space-8);
-    padding: 0 var(--space-8) var(--space-8);
+    gap: var(--space-4);
+    padding: 0 var(--space-6) var(--space-6);
 }
 
-.attachments__action {
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--color-accent-primary);
-    font-family: inherit;
-    font-size: var(--text-sm);
+.attachments__actions .btn {
     text-decoration: none;
-    cursor: pointer;
 }
 
-.attachments__action:hover {
-    text-decoration: underline;
-}
-
-.attachments__action.--remove {
+.attachments__actions .btn.--removeAction:hover {
+    background-color: rgba(var(--color-accent-error-rgb), 0.12);
     color: var(--color-accent-error);
+}
+
+/* ==========================================
+   Task modal — drag-a-file-anywhere overlay
+   ========================================== */
+.taskForm {
+    position: relative;
+}
+
+.taskForm__dropOverlay {
+    position: absolute;
+    inset: calc(-1 * var(--space-12));
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-12);
+    border: 2px dashed var(--color-accent-primary);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--color-accent-primary) 8%, var(--color-bg-primary));
+    color: var(--color-accent-primary);
+    /* The overlay is feedback, not a target: letting it swallow pointer events
+       would make the drop land on it instead of the modal's own handler. */
+    pointer-events: none;
+}
+
+.taskForm__dropOverlay[hidden] {
+    display: none;
+}
+
+.taskForm__dropOverlayText {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* ==========================================
@@ -4146,14 +4213,445 @@ a.attachments__preview {
     font-size: var(--text-base);
 }
 
-.attachmentViewer__download {
+/* `.btn` on an <a> needs an explicit display — see .attachments__browse */
+.attachmentViewer .btn {
     display: inline-flex;
     align-items: center;
-    color: var(--color-accent-primary);
-    font-size: var(--text-base);
     text-decoration: none;
 }
 
-.attachmentViewer__download:hover {
-    text-decoration: underline;
+/* ==========================================
+   Task modal — story point pills
+   ========================================== */
+.taskForm__pointsSelector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+}
+
+.taskForm__pointPill {
+    display: inline-flex !important;
+    margin-bottom: 0 !important;
+    cursor: pointer;
+}
+
+.taskForm__pointPill input[type="radio"] {
+    display: none;
+}
+
+/* No colour: colour means epic and priority. Selection reads as a filled
+   neutral, matching how the category pills behave. */
+.taskForm__pointPill span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    padding: var(--space-6) var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.taskForm__pointPill:hover span {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+.taskForm__pointPill input:checked + span {
+    border-color: var(--color-accent-primary);
+    background: rgba(var(--color-accent-primary-rgb), 0.12);
+    color: var(--color-accent-primary);
+}
+
+/* The "too big to size" value, shown as ∞. Dashed because it is a prompt to
+   split rather than an estimate. */
+.taskForm__pointPill.--infinite span {
+    border-style: dashed;
+}
+
+/* ==========================================
+   Proposal bar / board preview mode
+   ========================================== */
+.proposalBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding: var(--space-8) var(--space-24);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    font-size: var(--text-md);
+}
+
+.proposalBar[hidden] {
+    display: none;
+}
+
+/* While previewing, the bar is the mode indicator — the accent edge is the
+   only thing that says "you are looking at a hypothetical board". */
+.proposalBar.--previewing {
+    border-bottom-color: var(--color-accent-primary);
+    box-shadow: inset 0 -2px 0 var(--color-accent-primary);
+    color: var(--color-text-primary);
+}
+
+.proposalBar__actions {
+    display: flex;
+    gap: var(--space-8);
+}
+
+/* Preview is for reviewing, not editing: the controls that change the board
+   are out of reach until you leave. */
+body.--previewing .column__addBtn,
+body.--previewing .column__archiveBtn {
+    visibility: hidden;
+}
+
+/* ==========================================
+   Assistant dock — layout
+   ========================================== */
+
+/* The assistant floats over the page rather than taking a layout track, so
+   nothing here reserves space for it — see assistant-dock.css. */
+
+/* ==========================================
+   Assistant memory editor (config page)
+   ========================================== */
+.configPage__panelTitle--spaced {
+    margin-top: var(--space-32);
+}
+
+.memoryEditor__addRow {
+    display: flex;
+    gap: var(--space-8);
+    margin-bottom: var(--space-12);
+}
+
+.memoryEditor__input {
+    flex: 1;
+    /* height/padding/border come from the shared control-size rule */
+}
+
+.memoryEditor__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.memoryEditor__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-8) var(--space-10);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+}
+
+/* Suggested but not yet approved: dashed, the same "not committed" vocabulary
+   used for pending attachments and previewed cards. Nothing here reaches a
+   prompt until it is approved. */
+.memoryEditor__item.--pending {
+    border: 1px dashed var(--color-accent-primary);
+    background: transparent;
+}
+
+.memoryEditor__itemText {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-4) var(--space-6);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-md);
+}
+
+.memoryEditor__itemText:focus {
+    outline: none;
+    border-color: var(--color-border);
+    background: var(--color-bg-primary);
+}
+
+.memoryEditor__itemActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    flex-shrink: 0;
+}
+
+.memoryEditor__source {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+}
+
+.memoryEditor__deleteBtn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-family: inherit;
+    font-size: var(--text-lg);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.memoryEditor__deleteBtn:hover {
+    background: rgba(var(--color-accent-error-rgb), 0.12);
+    color: var(--color-accent-error);
+}
+
+/* ==========================================
+   AI staging (backlog page)
+   ==========================================
+   Staged tasks are proposed work that hasn't been committed to — which is
+   what the backlog is for, so the two live together. Collapsed by default:
+   the backlog is the page's subject, not the assistant. */
+.aiStaging {
+    /* ai-staged-row carries five actions, so it needs a wider actions column
+       than the archive/backlog rows it shares its layout variables with.
+       This override used to live on the AI page. */
+    --archive-col-actions: 300px;
+
+    margin-bottom: var(--space-24);
+    padding: var(--space-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+}
+
+.aiStaging[hidden] {
+    display: none;
+}
+
+/* Roomy on purpose — this exists for the one thing the floating assistant is
+   bad at: pasting a long transcript. */
+.aiStaging__input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 72px;
+    padding: var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--text-md);
+    resize: vertical;
+}
+
+.aiStaging__input:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+}
+
+.aiStaging__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    margin-top: var(--space-8);
+}
+
+.aiStaging__hint {
+    flex: 1;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+}
+
+.aiStaging__rows {
+    margin-top: var(--space-12);
+}
+
+.aiStaging__rows:empty {
+    display: none;
+}
+
+.aiStaging__empty {
+    margin-top: var(--space-12);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+}
+
+.aiStaging__empty[hidden] {
+    display: none;
+}
+
+/* Count of what is waiting, on the toggle itself */
+.backlogPage__stagedBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    margin-left: var(--space-6);
+    padding: 0 var(--space-4);
+    border-radius: 8px;
+    background: var(--color-accent-primary);
+    color: var(--color-text-on-accent);
+    font-size: var(--text-sm);
+    line-height: 1;
+}
+
+.backlogPage__stagedBadge[hidden] {
+    display: none;
+}
+
+/* ==========================================
+   Report summary (AI)
+   ==========================================
+   Sits above the raw report data: this is the part read out in a one-to-one,
+   the columns below are the evidence for it. */
+.reportSummary {
+    margin-bottom: var(--space-24);
+    padding: var(--space-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+}
+
+.reportSummary__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    margin-bottom: var(--space-12);
+}
+
+.reportSummary__title {
+    flex: 1;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.reportSummary__actions {
+    display: flex;
+    gap: var(--space-8);
+}
+
+.reportSummary__hint {
+    margin: 0 0 var(--space-12);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-md);
+}
+
+.reportSummary__tldr {
+    margin: 0 0 var(--space-16);
+    color: var(--color-text-primary);
+    font-size: var(--text-lg);
+    line-height: 1.5;
+}
+
+.reportSummary__silo {
+    margin-bottom: var(--space-12);
+}
+
+.reportSummary__siloName {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-8);
+    margin-bottom: var(--space-4);
+    color: var(--color-text-primary);
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Who this silo reports to — the thing that makes the grouping useful in a
+   conversation rather than just tidy. */
+.reportSummary__stakeholder {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+}
+
+.reportSummary__bullets {
+    margin: 0;
+    padding-left: var(--space-20);
+    color: var(--color-text-secondary);
+    font-size: var(--text-md);
+    line-height: 1.6;
+}
+
+.reportSummary__silo--attention .reportSummary__siloName {
+    color: var(--color-accent-warning-text, var(--color-accent-warning));
+}
+
+/* ==========================================
+   Task modal — spacing and collapsed schedule
+   ========================================== */
+
+/* The priority toggle is the first thing in the right column and was sitting
+   flush against the dialog's top edge. */
+.taskForm__col--side > .taskForm__group:first-child {
+    margin-top: var(--space-4);
+}
+
+/* Schedule collapses: it is the least-used section and was taking most of the
+   column's height while almost always empty. */
+.taskForm__scheduleSection {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-16);
+}
+
+.taskForm__scheduleSummary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+}
+
+.taskForm__scheduleSummary::-webkit-details-marker {
+    display: none;
+}
+
+/* A caret that turns, rather than the browser's default triangle */
+.taskForm__scheduleSummary::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.taskForm__scheduleSection[open] .taskForm__scheduleSummary::before {
+    transform: rotate(90deg);
+}
+
+/* When a date IS set, say so on the collapsed summary — otherwise collapsing
+   would hide the fact that the task is scheduled at all. */
+.taskForm__scheduleHint {
+    color: var(--color-accent-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.taskForm__scheduleSection[open] .taskForm__scheduleRow {
+    margin-top: var(--space-16);
+}
+
+/* ---- Activity tab ---- */
+.taskForm__logEmpty {
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--text-md);
+}
+
+.taskForm__logEmpty[hidden] {
+    display: none;
 }

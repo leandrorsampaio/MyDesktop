@@ -37,6 +37,19 @@ class TaskCard extends HTMLElement {
             }
         });
 
+        // Preview accept/reject. Dispatched rather than handled here — the card
+        // knows what it is showing, not what applying means.
+        for (const [selector, type] of [['.js-previewAccept', 'accept'], ['.js-previewReject', 'reject']]) {
+            this.shadowRoot.querySelector(selector).addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.dispatchEvent(new CustomEvent(`preview-${type}`, {
+                    bubbles: true,
+                    composed: true,
+                    detail: { proposalId: this.dataset.proposalId, taskId: this.dataset.taskId }
+                }));
+            });
+        }
+
         this.shadowRoot.querySelector('.taskCard__editBtn').addEventListener('click', (e) => {
             e.stopPropagation();
             this.dispatchEvent(new CustomEvent('request-edit', {
@@ -55,7 +68,8 @@ class TaskCard extends HTMLElement {
             'data-category-icon', 'data-priority', 'data-title', 'data-description',
             'data-epic-name', 'data-epic-color', 'data-epic-alias',
             'data-deadline', 'data-deadline-level', 'data-deadline-text',
-            'data-attachment-count',
+            'data-attachment-count', 'data-needs-filing', 'data-points',
+            'data-preview', 'data-preview-note', 'data-proposal-id',
             'hidden'
         ];
     }
@@ -126,6 +140,41 @@ class TaskCard extends HTMLElement {
             } else {
                 epicBarEl.style.display = 'none';
             }
+        }
+
+        // Preview annotation — what would happen to this card if applied.
+        // Card-level styling keys off the `data-preview` ATTRIBUTE, not a host
+        // class: kanban-column's reconciler reuses card elements and syncs
+        // data-* attributes while stripping classes the renderer didn't set,
+        // so a class toggled from in here would be wiped on the next render.
+        const previewBar = this.shadowRoot.querySelector('.js-previewBar');
+        const previewKind = this.dataset.preview;
+        if (previewBar) {
+            const annotated = previewKind && previewKind !== 'idle';
+            previewBar.style.display = annotated ? 'flex' : 'none';
+            if (annotated) {
+                this.shadowRoot.querySelector('.js-previewNote').textContent =
+                    this.dataset.previewNote || '';
+            }
+        }
+
+        // Story point chip — sits with the title, since size is a property of
+        // the work itself rather than metadata about it
+        const pointsEl = this.shadowRoot.querySelector('.js-points');
+        if (pointsEl) {
+            const points = this.dataset.points;
+            pointsEl.style.display = points ? 'inline-flex' : 'none';
+            if (points) {
+                // 100 is the "too big to size" value — see STORY_POINTS_INFINITE.
+                pointsEl.textContent = points === '100' ? '∞' : points;
+                pointsEl.title = points === '100' ? 'Too big to size — split it' : `${points} points`;
+            }
+        }
+
+        // "Needs filing" marker — a captured note the AI hasn't classified
+        const filingEl = this.shadowRoot.querySelector('.js-needsFiling');
+        if (filingEl) {
+            filingEl.style.display = this.dataset.needsFiling === 'true' ? 'inline-flex' : 'none';
         }
 
         // Attachment badge — paperclip + count

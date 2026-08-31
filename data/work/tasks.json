@@ -1104,7 +1104,7 @@
   {
     "id": "ml5hgnv8fnxyzir8h",
     "title": "Check Estimations EPIC for bart",
-    "description": "Bart asked me to check my opinion about his estimations\n--------\nBartosz Suchocki\nMate, if you find time, could you check my estimations for adding DS to advic's EPIC components? https://docs.google.com/spreadsheets/d/1r1u0Z64ym0iUUhm6MKlEGEnhDBftUGLkuP_Xv4fVDxk/edit?pli=1&gid=…  And I'd need your gmail address to share\nHey Bro, was cheking this and seems very good analysis. Congratulations. quite well done\n \nAs a gut feeling, seems quite good. Im not sure what you mean by \"md\" in the component injection but seems a fair value. The only thing you should be aware is that advic thing usually has a lot of bugs. And they take forever to fix. \n \nBut then is not your problem, just that this might delay some of the process. \n \nBut if I were you I would add a new row \"communication\" and add some 20% ovr it. Just to be in the safe side. The you could have 40 hours for example, you would have 1 week to finish (or 2 in your new 50% contract)\n \nlet me know if I can help you in anything else.",
+    "description": "Bart asked me to check my opinion about his estimations\n--------\nBartosz Suchocki\nMate, if you find time, could you check my estimations for adding DS to advic's EPIC components? https://docs.google.com/spreadsheets/d/1r1u0Z64ym0iUUhm6MKlEGEnhDBftUGLkuP_Xv4fVDxk/edit?pli=1&gid=\u2026  And I'd need your gmail address to share\nHey Bro, was cheking this and seems very good analysis. Congratulations. quite well done\n \nAs a gut feeling, seems quite good. Im not sure what you mean by \"md\" in the component injection but seems a fair value. The only thing you should be aware is that advic thing usually has a lot of bugs. And they take forever to fix. \n \nBut then is not your problem, just that this might delay some of the process. \n \nBut if I were you I would add a new row \"communication\" and add some 20% ovr it. Just to be in the safe side. The you could have 40 hours for example, you would have 1 week to finish (or 2 in your new 50% contract)\n \nlet me know if I can help you in anything else.",
     "priority": false,
     "category": 2,
     "status": "archived",
@@ -1444,7 +1444,7 @@
   {
     "id": "mlic8o62neocju3jq",
     "title": "Ping Mikael aboutemails EUVIC (and IA)",
-    "description": "@contractor.solenis.com emails to EUVIC: Any feedback from IT?​",
+    "description": "@contractor.solenis.com emails to EUVIC: Any feedback from IT?\u200b",
     "priority": false,
     "category": 6,
     "status": "archived",
@@ -1649,7 +1649,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 1,
+    "position": 2,
     "log": [
       {
         "date": "2026-02-17",
@@ -1926,7 +1926,7 @@
     "category": 1,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 2,
+    "position": 3,
     "log": [
       {
         "date": "2026-03-22",
@@ -2576,7 +2576,7 @@
     "category": 3,
     "epicId": "mlinl22lxnkra6pjt",
     "status": "todo",
-    "position": 0,
+    "position": 1,
     "log": [
       {
         "date": "2026-03-22",
@@ -4591,84 +4591,6 @@
     "snoozeUntil": null
   },
   {
-    "id": "mr8o0hoycle82772l",
-    "title": "Delete Jest File",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 5,
-    "log": [
-      {
-        "date": "2026-07-06",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-07-09",
-        "action": "Category changed from Non categorized to Development"
-      },
-      {
-        "date": "2026-07-09",
-        "action": "Moved from Today to To Do"
-      },
-      {
-        "date": "2026-07-09",
-        "action": "Moved from To Do to Backlog"
-      },
-      {
-        "date": "2026-08-06",
-        "action": "Moved from Backlog to To Do"
-      },
-      {
-        "date": "2026-08-18",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-25",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-07-06T03:33:16.306Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msh9hlk8nmpbcyg9a",
-    "title": "Deploy new Design System Package to production",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 2,
-    "log": [
-      {
-        "date": "2026-08-10",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to To Do"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from To Do to Done"
-      }
-    ],
-    "createdDate": "2026-08-06T08:36:18.152Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
     "id": "msofftdrmlkkkd7ig",
     "title": "Email signature (official)",
     "description": "",
@@ -4716,130 +4638,6 @@
     "snoozeUntil": null
   },
   {
-    "id": "msolfq9uixmnnuws7",
-    "title": "CRs / Deploy: (Design system + my account)",
-    "description": "ESB-750\nESB-751",
-    "priority": false,
-    "category": 6,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 1,
-    "log": [
-      {
-        "date": "2026-08-11",
-        "action": "Category changed from Non categorized to Generic Task"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-11",
-        "action": "Moved from In Progress to Wait"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from Wait to Done"
-      }
-    ],
-    "createdDate": "2026-08-11T11:45:09.570Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "msyq7cx5cp8xe99b1",
-    "title": "Add my own reviow on workdays (Mikael asked me)",
-    "description": "No possible\n\nHi Leandro, if you´ve just started this month, there is no Self-Evaluation possible. In the Self-Evaluation, we are looking for the performance about the last 12 month",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 4,
-    "log": [
-      {
-        "date": "2026-08-18",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-18",
-        "action": "Moved from Today to Done"
-      },
-      {
-        "date": "2026-08-18",
-        "action": "Moved from Done to Today"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-18T13:56:18.857Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mt14verrwymxv0uc4",
-    "title": "Schedule Visto EUA",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "moq8dy5b65p58w331",
-    "status": "done",
-    "position": 0,
-    "log": [
-      {
-        "date": "2026-08-20",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-20T06:22:27.975Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mt70di55nadoaxqkc",
-    "title": "Org Emails",
-    "description": "",
-    "priority": false,
-    "category": 6,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 3,
-    "log": [
-      {
-        "date": "2026-08-24",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-24",
-        "action": "Moved from In Progress to Done"
-      }
-    ],
-    "createdDate": "2026-08-24T09:03:11.129Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
     "id": "mt718ei1lgrxo77jo",
     "title": "ESB-755 - Enable pagination buttons when pricing is loading",
     "description": "",
@@ -4847,7 +4645,7 @@
     "category": 2,
     "epicId": "mlinlecx6b1djaonv",
     "status": "todo",
-    "position": 3,
+    "position": 4,
     "log": [
       {
         "date": "2026-08-24",
@@ -4890,64 +4688,6 @@
     "snoozeUntil": null
   },
   {
-    "id": "mt7hr22za4sysooci",
-    "title": "ESB-688 - Certificate information component not working (and consequently hidden)",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 8,
-    "log": [
-      {
-        "date": "2026-08-24",
-        "action": "Moved from To Do to Wait"
-      },
-      {
-        "date": "2026-08-27",
-        "action": "Moved from Wait to Done"
-      }
-    ],
-    "createdDate": "2026-08-24T17:09:36.971Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mt8e0pzue41o9up66",
-    "title": "Berlin Hotel",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": "mshovdazls9s49l6r",
-    "status": "done",
-    "position": 9,
-    "log": [
-      {
-        "date": "2026-08-25",
-        "action": "Moved from To Do to Done"
-      },
-      {
-        "date": "2026-08-25",
-        "action": "Moved from Done to Today"
-      },
-      {
-        "date": "2026-08-26",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-27",
-        "action": "Moved from In Progress to Today"
-      },
-      {
-        "date": "2026-08-27",
-        "action": "Moved from Today to Done"
-      }
-    ],
-    "createdDate": "2026-08-25T08:12:55.578Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
     "id": "mt8e22x2hub7qzilw",
     "title": "New Repo Wiki",
     "description": "",
@@ -4971,79 +4711,6 @@
       }
     ],
     "createdDate": "2026-08-25T08:13:58.982Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mt8e2wttttfyfzd56",
-    "title": "Mikael's presentation",
-    "description": "",
-    "priority": false,
-    "category": 5,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 7,
-    "log": [
-      {
-        "date": "2026-08-25",
-        "action": "Moved from To Do to In Progress"
-      },
-      {
-        "date": "2026-08-26",
-        "action": "Category changed from Non categorized to Planning"
-      },
-      {
-        "date": "2026-08-26",
-        "action": "Moved from In Progress to Done"
-      }
-    ],
-    "createdDate": "2026-08-25T08:14:37.745Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mta34k4b9roe1l9xp",
-    "title": "ESB-765 - Fallback image on migration target not working",
-    "description": "Helping Ravi with the error",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 6,
-    "log": [
-      {
-        "date": "2026-08-26",
-        "action": "Moved from To Do to Done"
-      }
-    ],
-    "createdDate": "2026-08-26T12:43:31.163Z",
-    "deadline": null,
-    "snoozeUntil": null
-  },
-  {
-    "id": "mta3a7fps8efrt0pf",
-    "title": "ESB-769 - Wishlist PDF export layout bug",
-    "description": "",
-    "priority": false,
-    "category": 2,
-    "epicId": "mlinlecx6b1djaonv",
-    "status": "done",
-    "position": 10,
-    "log": [
-      {
-        "date": "2026-08-27",
-        "action": "Moved from To Do to Today"
-      },
-      {
-        "date": "2026-08-27",
-        "action": "Moved from Today to In Progress"
-      },
-      {
-        "date": "2026-08-27",
-        "action": "Moved from In Progress to Done"
-      }
-    ],
-    "createdDate": "2026-08-26T12:47:54.661Z",
     "deadline": null,
     "snoozeUntil": null
   },
@@ -5143,29 +4810,5 @@
     "createdDate": "2026-08-28T12:44:01.652Z",
     "deadline": null,
     "snoozeUntil": null
-  },
-  {
-    "id": "mtdex0bx0ng7bgmed",
-    "title": "New taskasdsadasd",
-    "description": "",
-    "priority": false,
-    "category": 1,
-    "epicId": null,
-    "status": "todo",
-    "position": 8,
-    "log": [],
-    "createdDate": "2026-08-28T20:36:52.845Z",
-    "deadline": null,
-    "snoozeUntil": null,
-    "attachments": [
-      {
-        "id": "mtdex0c81nwka36ox",
-        "name": "Screenshot 2026-08-28 at 00.31.53.png",
-        "mime": "image/png",
-        "ext": ".png",
-        "size": 1115167,
-        "uploadedAt": "2026-08-28T20:36:52.857Z"
-      }
-    ]
   }
 ]

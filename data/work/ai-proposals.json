@@ -1,0 +1,32 @@
+[
+  {
+    "id": "mtgzlalbuelqudlm0",
+    "kind": "update",
+    "taskId": "msofftdrmlkkkd7ig",
+    "reason": "Quick admin task, well under half a day.",
+    "payload": {
+      "points": 2
+    },
+    "createdAt": "2026-08-31T08:38:56.735Z"
+  },
+  {
+    "id": "mtgzlalbm989r2t6h",
+    "kind": "update",
+    "taskId": "mt718ei1lgrxo77jo",
+    "reason": "Small, well-scoped UI fix — a few hours at most.",
+    "payload": {
+      "points": 3
+    },
+    "createdAt": "2026-08-31T08:38:56.735Z"
+  },
+  {
+    "id": "mtgzlalbl1m1dzsuo",
+    "kind": "update",
+    "taskId": "mt8e22x2hub7qzilw",
+    "reason": "Solid chunk of documentation work, roughly a day, still under the 13 threshold.",
+    "payload": {
+      "points": 8
+    },
+    "createdAt": "2026-08-31T08:38:56.735Z"
+  }
+]

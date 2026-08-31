@@ -1,0 +1,50 @@
+[
+  {
+    "id": "mtfrv2fh4f7l8z4x8",
+    "text": "When a task title starts with ESB- it is a Jira ticket in the ECOM epic. Many of my tasks have no ticket at all \u2014 a bare title is normal, not missing information.",
+    "source": "user",
+    "approved": true,
+    "createdAt": "2026-08-30T12:14:49.613Z",
+    "category": "term"
+  },
+  {
+    "id": "mtfrv2g8zzjhmnknv",
+    "text": "The SDS epic is the design system: its shared components, its LWC component library, and its releases.",
+    "source": "user",
+    "approved": true,
+    "createdAt": "2026-08-30T12:14:49.640Z",
+    "category": "project"
+  },
+  {
+    "id": "mtfrv2gvck2hjpgcy",
+    "text": "LIT-LWC tasks are my Lightning Web Components learning work, not client delivery.",
+    "source": "user",
+    "approved": true,
+    "createdAt": "2026-08-30T12:14:49.663Z",
+    "category": "term"
+  },
+  {
+    "id": "mtfrv2hhyczc71zp4",
+    "text": "'Check Prod:' tasks are post-deploy verification. They are quick, usually a 1 or a 2.",
+    "source": "user",
+    "approved": true,
+    "createdAt": "2026-08-30T12:14:49.685Z",
+    "category": "term"
+  },
+  {
+    "id": "mtfrv2i3nsttnjejh",
+    "text": "A 13 is one or two days of work. Anything bigger should be split rather than estimated.",
+    "source": "user",
+    "approved": true,
+    "createdAt": "2026-08-30T12:14:49.707Z",
+    "category": "preference"
+  },
+  {
+    "id": "mtfrv2in09d8rkgta",
+    "text": "Each epic is a silo with its own stakeholder, so they are never mixed together in a report.",
+    "source": "user",
+    "approved": true,
+    "createdAt": "2026-08-30T12:14:49.727Z",
+    "category": "preference"
+  }
+]

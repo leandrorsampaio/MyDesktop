@@ -50,12 +50,24 @@ const AI_PROVIDERS = {
         defaultModel: 'gemini-2.0-flash',
         requiresKey: true
     },
+    kimi: {
+        label: 'Kimi (Moonshot)',
+        format: 'openai-compatible',
+        // Moonshot runs two regional hosts — this is the international one.
+        // `allowsBaseUrl` lets the China endpoint (api.moonshot.cn/v1) be set
+        // without dropping to the Custom provider and losing the defaults.
+        baseUrl: 'https://api.moonshot.ai/v1',
+        defaultModel: 'kimi-k3',
+        requiresKey: true,
+        allowsBaseUrl: true
+    },
     custom: {
         label: 'Custom / Local',
         format: 'openai-compatible',
         baseUrl: null,
         defaultModel: '',
-        requiresKey: false
+        requiresKey: false,
+        allowsBaseUrl: true
     }
 };
 
@@ -241,6 +253,14 @@ function validateTaskInput(data, { requireTitle = false, validCategoryIds = null
         errors.push('Priority must be a boolean');
     }
 
+    // Story points validation — null clears the estimate
+    if (data.points !== undefined && data.points !== null) {
+        const points = Number(data.points);
+        if (!STORY_POINTS.includes(points)) {
+            errors.push(`Points must be null or one of ${STORY_POINTS.join(', ')}`);
+        }
+    }
+
     // Deadline validation
     if (data.deadline !== undefined) {
         if (data.deadline !== null) {
@@ -371,6 +391,24 @@ const MAX_CATEGORIES = 20;
 
 /** Category ID that cannot be deleted (Non categorized) */
 const DEFAULT_CATEGORY_ID = 1;
+
+/**
+ * Valid story-point values.
+ *
+ * A modified-Fibonacci scale. 1 means "do it now"; 13 is one to two days.
+ * 21 and 34 exist for work that genuinely is bigger, and **100 stands for
+ * infinity** — too big to size, and a signal to split rather than an estimate.
+ * (100 rather than an ∞ glyph so it needs no new icon and still sorts.)
+ *
+ * There is no velocity, burndown or sprint reporting built on these, and there
+ * shouldn't be: that is team ceremony.
+ *
+ * Source of truth: /public/js/constants.js
+ */
+const STORY_POINTS = [1, 2, 3, 5, 8, 13, 21, 34, 100];
+
+/** Longest free-text value on an epic's context fields. */
+const EPIC_CONTEXT_MAX_LENGTH = 500;
 
 /**
  * Maximum number of epics allowed.
@@ -902,7 +940,11 @@ async function resolveProfile(req, res, next) {
             notes: path.join(profileDir, 'notes.json'),
             epics: path.join(profileDir, 'epics.json'),
             categories: path.join(profileDir, 'categories.json'),
-            aiStaged: path.join(profileDir, 'ai-staged-tasks.json')
+            aiStaged: path.join(profileDir, 'ai-staged-tasks.json'),
+            aiConversation: path.join(profileDir, 'ai-conversation.json'),
+            aiProposals: path.join(profileDir, 'ai-proposals.json'),
+            aiMemory: path.join(profileDir, 'ai-memory.json'),
+            aiSkills: path.join(profileDir, 'ai-skills.json')
         };
         req.profile = profile;
         // Columns sorted by order for consistent use across handlers
@@ -1191,7 +1233,8 @@ app.post('/api/:profile/tasks', resolveProfile, writeLimiter, async (req, res) =
             log: [],
             createdDate: new Date().toISOString(),
             deadline:    req.body.deadline    || null,
-            snoozeUntil: req.body.snoozeUntil || null
+            snoozeUntil: req.body.snoozeUntil || null,
+            points:      req.body.points != null ? Number(req.body.points) : null
         };
 
         tasks.push(newTask);
@@ -1234,9 +1277,10 @@ app.put('/api/:profile/tasks/:id', resolveProfile, writeLimiter, async (req, res
             tasks[taskIndex].epicId = epicId || null;
         }
 
-        const { deadline, snoozeUntil } = req.body;
+        const { deadline, snoozeUntil, points } = req.body;
         if (deadline    !== undefined) tasks[taskIndex].deadline    = deadline    || null;
         if (snoozeUntil !== undefined) tasks[taskIndex].snoozeUntil = snoozeUntil || null;
+        if (points      !== undefined) tasks[taskIndex].points      = points != null ? Number(points) : null;
 
         // Handle category change with logging
         if (category !== undefined) {
@@ -1438,6 +1482,177 @@ app.delete('/api/:profile/tasks/:id/attachments/:attachmentId', resolveProfile, 
     }
 });
 
+// ===========================================
+// Quick Capture
+// ===========================================
+
+/**
+ * Longest captured note accepted. Anything past the title cap spills into the
+ * description rather than being truncated away.
+ */
+const CAPTURE_MAX_LENGTH = 2000;
+
+/**
+ * POST capture a note as a task — the hallway-conversation path.
+ *
+ * Deliberately does NOT call the AI. Capture must be instant and must never
+ * fail: this endpoint only writes a task and returns it. Classification is a
+ * separate, optional, slower request the client fires afterwards.
+ *
+ * `needsFiling: true` marks it as unreviewed so the card shows a marker and a
+ * later review pass can find it.
+ */
+app.post('/api/:profile/capture', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const raw = typeof req.body.text === 'string' ? req.body.text.trim() : '';
+        if (!raw) {
+            return res.status(400).json({ error: 'Capture text is required' });
+        }
+        if (raw.length > CAPTURE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Capture must be ${CAPTURE_MAX_LENGTH} characters or less` });
+        }
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+
+        // Land in the first non-backlog column. Classification may move it.
+        const targetColumn = req.columns.find(c => !c.isBacklog) || req.columns[0];
+
+        // Everything past the title cap is preserved in the description —
+        // a captured note is the user's own words and must never be lost.
+        const overflows = raw.length > VALIDATION.TITLE_MAX_LENGTH;
+
+        for (const t of tasks) {
+            if (t.status === targetColumn.id) t.position += 1;
+        }
+
+        const newTask = {
+            id: generateId(),
+            title: overflows ? raw.slice(0, VALIDATION.TITLE_MAX_LENGTH) : raw,
+            description: overflows ? raw : '',
+            priority: false,
+            category: DEFAULT_CATEGORY_ID,
+            epicId: null,
+            status: targetColumn.id,
+            position: 0,
+            log: [{ date: new Date().toISOString().split('T')[0], action: 'Captured' }],
+            createdDate: new Date().toISOString(),
+            deadline: null,
+            snoozeUntil: null,
+            points: null,
+            needsFiling: true
+        };
+
+        tasks.push(newTask);
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        res.status(201).json(newTask);
+    } catch (error) {
+        console.error('Capture failed:', error);
+        res.status(500).json({ error: 'Failed to capture note' });
+    }
+});
+
+/**
+ * POST classify a captured task — the slow, optional half of capture.
+ *
+ * Every failure path leaves the task exactly as captured with `needsFiling`
+ * still true. The caller treats this as best-effort: the note is already safe
+ * on the board before this runs.
+ */
+app.post('/api/:profile/tasks/:id/classify', resolveProfile, aiLimiter, async (req, res) => {
+    try {
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const taskIndex = tasks.findIndex(t => t.id === req.params.id);
+        if (taskIndex === -1) return res.status(404).json({ error: 'Task not found' });
+
+        const resolved = await resolveActiveAiConfig();
+        if (!resolved.ok) {
+            // Not an error the user needs to act on mid-capture — the task
+            // stands, it just keeps its "needs filing" marker.
+            return res.status(200).json({ classified: false, reason: resolved.error, task: tasks[taskIndex] });
+        }
+
+        const [epics, categories] = await Promise.all([
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES)
+        ]);
+
+        const task = tasks[taskIndex];
+        const noteText = task.description || task.title;
+        const systemPrompt = buildClassifyPrompt({
+            epics, categories, columns: req.columns,
+            today: new Date().toISOString().split('T')[0]
+        });
+
+        let toolInput;
+        try {
+            const call = resolved.providerMeta.format === 'anthropic'
+                ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt,
+                    [{ role: 'user', content: noteText }], [CLASSIFY_TASK_TOOL])
+                : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt,
+                    [{ role: 'user', content: noteText }], [CLASSIFY_TASK_TOOL]);
+            toolInput = call.toolCalls.find(c => c.name === CLASSIFY_TASK_TOOL.name)?.input;
+        } catch (aiErr) {
+            return res.status(200).json({ classified: false, reason: aiErr.message, task });
+        }
+
+        if (!toolInput || typeof toolInput !== 'object') {
+            return res.status(200).json({ classified: false, reason: 'Model returned no classification', task });
+        }
+
+        // Everything below is advisory input from a model — validate each field
+        // against what this profile actually has before writing any of it.
+        const validEpicIds = new Set(epics.map(e => e.id));
+        const validCategoryIds = new Set(categories.map(c => c.id));
+        const validColumnIds = new Set(req.columns.filter(c => !c.hasArchive).map(c => c.id));
+
+        if (typeof toolInput.title === 'string') {
+            const cleaned = toolInput.title.trim().slice(0, VALIDATION.TITLE_MAX_LENGTH);
+            // Keep the original wording in the description when the title is
+            // rewritten — the user's own phrasing is the record of what was said.
+            if (cleaned && cleaned !== task.title) {
+                if (!task.description) task.description = task.title;
+                task.title = cleaned;
+            }
+        }
+        if (typeof toolInput.epicId === 'string' && validEpicIds.has(toolInput.epicId)) {
+            task.epicId = toolInput.epicId;
+        }
+        if (validCategoryIds.has(Number(toolInput.category))) {
+            task.category = Number(toolInput.category);
+        }
+        if (typeof toolInput.priority === 'boolean') {
+            task.priority = toolInput.priority;
+        }
+        if (STORY_POINTS.includes(Number(toolInput.points))) {
+            task.points = Number(toolInput.points);
+        }
+        if (typeof toolInput.columnId === 'string' && validColumnIds.has(toolInput.columnId)
+            && toolInput.columnId !== task.status) {
+            const from = req.columns.find(c => c.id === task.status);
+            const to   = req.columns.find(c => c.id === toolInput.columnId);
+            for (const t of tasks) {
+                if (t.id !== task.id && t.status === toolInput.columnId) t.position += 1;
+            }
+            task.status = toolInput.columnId;
+            task.position = 0;
+            task.log.push({
+                date: new Date().toISOString().split('T')[0],
+                action: `Filed into '${to.name}'${from ? ` from '${from.name}'` : ''}`
+            });
+        }
+        if (typeof toolInput.deadline === 'string' && !isNaN(Date.parse(toolInput.deadline))) {
+            task.deadline = new Date(toolInput.deadline).toISOString();
+        }
+
+        task.needsFiling = false;
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        res.json({ classified: true, task });
+    } catch (error) {
+        console.error('Classification failed:', error);
+        res.status(500).json({ error: 'Failed to classify task' });
+    }
+});
+
 // POST move task between columns or reorder
 app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (req, res) => {
     try {
@@ -1502,6 +1717,61 @@ app.post('/api/:profile/tasks/:id/move', resolveProfile, writeLimiter, async (re
 });
 
 // POST generate report (snapshot only, no archiving)
+/**
+ * When a task was finished, as an epoch ms, or null if it never was.
+ *
+ * `archivedDate` is authoritative when present (recorded at archive time).
+ * Older archived tasks predate that field, and tasks sitting in a done column
+ * have not been archived at all, so both fall back to the newest log entry —
+ * which for those is the move into the done column.
+ *
+ * @param {Object} task
+ * @param {Set<string>} doneColumnIds - Columns that count as finished
+ * @returns {number|null}
+ */
+function taskCompletedAt(task, doneColumnIds) {
+    if (task.archivedDate) {
+        const stamp = Date.parse(task.archivedDate);
+        if (!isNaN(stamp)) return { at: stamp, precision: 'exact' };
+    }
+    const isDone = task.status === 'archived' || doneColumnIds.has(task.status);
+    if (!isDone) return null;
+
+    const stamps = (task.log || [])
+        .map(entry => Date.parse(entry.date))
+        .filter(n => !isNaN(n));
+    // Log entries are `YYYY-MM-DD` across the whole app, so this can only ever
+    // be resolved to a day — see the comparison in `inPeriod`.
+    return stamps.length ? { at: Math.max(...stamps), precision: 'day' } : null;
+}
+
+/**
+ * Start of the UTC day containing `stamp`.
+ *
+ * UTC, not local: log entries are written as `new Date().toISOString()` split
+ * at the T, so they are **UTC** dates, and `Date.parse` reads them back as UTC
+ * midnight. Flooring in local time mixes the two — east of Greenwich, local
+ * midnight is *later* than the UTC midnight it is compared against, so work
+ * logged that day is ruled out. This bites hardest in the small hours, when
+ * the local and UTC dates differ.
+ */
+function startOfDayUtc(stamp) {
+    const d = new Date(stamp);
+    d.setUTCHours(0, 0, 0, 0);
+    return d.getTime();
+}
+
+/** Newest activity on a task, for "did this move at all?" questions. */
+function taskLastActivityAt(task) {
+    const stamps = [task.createdDate, ...(task.log || []).map(e => e.date)]
+        .map(v => Date.parse(v))
+        .filter(n => !isNaN(n));
+    return stamps.length ? Math.max(...stamps) : 0;
+}
+
+/** Default reporting window when there is no previous report to measure from. */
+const DEFAULT_REPORT_PERIOD_DAYS = 7;
+
 app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (req, res) => {
     try {
         const tasks = await readJsonFile(req.profileFiles.tasks, []);
@@ -1514,13 +1784,20 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
         const weekNumber = getWeekNumber(now);
         const dateRange = formatDateRange(now);
 
+        // Epic names are carried into the report so a summary can group by
+        // silo later, even if the epic is renamed or deleted afterwards.
+        const epics = await readJsonFile(req.profileFiles.epics, []);
+        const epicLookup = new Map(epics.map(e => [e.id, e]));
+
         const mapTask = t => ({
             id: t.id,
             title: t.title,
             description: t.description,
             category: t.category || 1,
             categoryName: categoryLookup.get(t.category || 1) || 'Non categorized',
-            epicId: t.epicId || null
+            epicId: t.epicId || null,
+            epicName: t.epicId ? (epicLookup.get(t.epicId)?.name || null) : null,
+            points: t.points ?? null
         });
 
         // Snapshot all columns in board order, capturing current column names
@@ -1530,12 +1807,88 @@ app.post('/api/:profile/reports/generate', resolveProfile, writeLimiter, async (
             tasks: tasks.filter(t => t.status === col.id).map(mapTask)
         }));
 
+        // ---- The reporting period ----
+        //
+        // A report used to be a board snapshot: it answered "what is on my
+        // board", not "what did I do". For a weekly catch-up the second
+        // question is the one that matters, so the report now covers the span
+        // since the previous one — which is exactly "since we last spoke".
+        const previous = reports.length
+            ? reports.reduce((a, b) => (Date.parse(a.generatedDate) > Date.parse(b.generatedDate) ? a : b))
+            : null;
+        const previousAt = previous ? Date.parse(previous.generatedDate) : NaN;
+        const usePrevious = !isNaN(previousAt);
+        const periodStart = usePrevious
+            ? previousAt
+            : now.getTime() - DEFAULT_REPORT_PERIOD_DAYS * 86400000;
+
+        const doneColumnIds = new Set(req.columns.filter(c => c.hasArchive).map(c => c.id));
+        const inPeriod = (stamp) => stamp !== null && !isNaN(stamp) && stamp >= periodStart && stamp <= now.getTime();
+
+        // A completion inferred from a log entry only has day resolution, so
+        // comparing it against an exact instant loses work: a report generated
+        // at 15:20 would rule out everything finished earlier the same day,
+        // because the log says only "2026-08-29" (i.e. midnight). Day-precision
+        // stamps are therefore measured against the start of the period's day.
+        // Erring toward one duplicated item at a boundary is far better than
+        // silently dropping a day of work from a report shown to a manager.
+        const periodStartDay = startOfDayUtc(periodStart);
+        const completedInPeriod = (task) => {
+            const done = taskCompletedAt(task, doneColumnIds);
+            if (!done) return false;
+            const floor = done.precision === 'day' ? periodStartDay : periodStart;
+            return done.at >= floor && done.at <= now.getTime();
+        };
+
+        // Finished work lives in two places: a done column (not archived yet)
+        // and the archive. Both count, or everything archived during the week
+        // silently vanishes from the report — which is what used to happen.
+        const archivedTasks = await readJsonFile(req.profileFiles.archived, []);
+        const completed = [...tasks, ...archivedTasks]
+            .filter(completedInPeriod)
+            .map(mapTask);
+
+        const completedIds = new Set(completed.map(t => t.id));
+        const openTasks = tasks.filter(t =>
+            !completedIds.has(t.id) &&
+            req.columns.some(c => c.id === t.status) &&
+            !doneColumnIds.has(t.status)
+        );
+
+        const activity = {
+            completed,
+            // Moved during the period but not finished — the "in flight" story.
+            advanced: openTasks
+                .filter(t => (t.log || []).some(e => {
+                    const at = Date.parse(e.date);   // day precision, as above
+                    return !isNaN(at) && at >= periodStartDay && at <= now.getTime();
+                }))
+                .map(mapTask),
+            created: openTasks
+                .filter(t => inPeriod(Date.parse(t.createdDate)))
+                .map(mapTask),
+            // Things worth raising rather than reporting: overdue, or open and
+            // untouched for the whole period.
+            attention: openTasks
+                .filter(t =>
+                    (t.deadline && Date.parse(t.deadline) < now.getTime()) ||
+                    taskLastActivityAt(t) < periodStartDay
+                )
+                .map(mapTask)
+        };
+
         const report = {
             id: generateId(),
             title: `Week ${weekNumber} (${dateRange})`,
             generatedDate: now.toISOString(),
             weekNumber,
             dateRange,
+            period: {
+                start: new Date(periodStart).toISOString(),
+                end: now.toISOString(),
+                since: usePrevious ? 'previous-report' : 'default-window'
+            },
+            activity,
             content: {
                 columns: columnsSnapshot
             },
@@ -1582,10 +1935,16 @@ app.post('/api/:profile/tasks/archive', resolveProfile, writeLimiter, async (req
         // Filtering by `t.status !== 'done'` after the loop would keep them (status
         // is now 'archived'), and hardcoding 'done' breaks archive from other columns.
         const archivedIds = new Set(doneTasks.map(t => t.id));
+        const archivedAt = new Date().toISOString();
         for (const task of doneTasks) {
             task.status = 'archived';
             // Store category name so it persists even if category is later deleted
             task.categoryName = categoryLookup.get(task.category || 1) || 'Non categorized';
+            // When it left the board. Reports need a completion timestamp, and
+            // inferring one from the last log entry is guesswork — that entry
+            // records the last *move*, which is usually but not always the
+            // moment the work finished.
+            task.archivedDate = archivedAt;
             archivedTasks.push(task);
         }
 
@@ -1700,6 +2059,99 @@ app.post('/api/:profile/archived/:id/restore', resolveProfile, writeLimiter, asy
     } catch (error) {
         console.error('Restore error:', error);
         res.status(500).json({ error: 'Failed to restore task' });
+    }
+});
+
+/**
+ * POST write (or rewrite) a report's AI summary.
+ *
+ * Separate from generation on purpose: a report must appear instantly and
+ * must never fail because a model was slow or absent. The client fires this
+ * afterwards, and the same endpoint backs the Regenerate button — the first
+ * phrasing is not always the one you want to put in front of your manager.
+ *
+ * Always answers 200: `{ summarised: false, reason }` when the AI cannot
+ * help, with the report untouched.
+ */
+app.post('/api/:profile/reports/:id/summarise', resolveProfile, aiLimiter, async (req, res) => {
+    try {
+        const reports = await readJsonFile(req.profileFiles.reports, []);
+        const report = reports.find(r => r.id === req.params.id);
+        if (!report) return res.status(404).json({ error: 'Report not found' });
+
+        if (!report.activity) {
+            // Reports generated before v2.56.0 are board snapshots with no
+            // period, so there is nothing honest to summarise.
+            return res.status(200).json({
+                summarised: false,
+                reason: 'This report predates period tracking. Generate a new one to summarise it.',
+                report
+            });
+        }
+
+        const resolved = await resolveActiveAiConfig();
+        if (!resolved.ok) {
+            return res.status(200).json({ summarised: false, reason: resolved.error, report });
+        }
+
+        const [epics, memories] = await Promise.all([
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.aiMemory, [])
+        ]);
+
+        const systemPrompt = buildReportSummaryPrompt(report, epics, memories);
+        const messages = [{ role: 'user', content: 'Summarise this period for my one-to-one.' }];
+
+        let call;
+        try {
+            call = resolved.providerMeta.format === 'anthropic'
+                ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt, messages, [WRITE_REPORT_SUMMARY_TOOL])
+                : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt, messages, [WRITE_REPORT_SUMMARY_TOOL]);
+        } catch (aiErr) {
+            return res.status(200).json({ summarised: false, reason: aiErr.message, report });
+        }
+
+        const input = call.toolCalls.find(c => c.name === WRITE_REPORT_SUMMARY_TOOL.name)?.input;
+        if (!input || typeof input.tldr !== 'string') {
+            return res.status(200).json({ summarised: false, reason: 'The model returned no summary', report });
+        }
+
+        // Model output is advisory: epic names are matched against the ones
+        // actually in the report, so a hallucinated silo cannot appear in a
+        // document being taken into a meeting.
+        const knownEpics = new Set(
+            [...(report.activity.completed || []), ...(report.activity.advanced || []),
+             ...(report.activity.created || []), ...(report.activity.attention || [])]
+                .map(t => t.epicName || 'Unfiled')
+        );
+        const epicByName = new Map(epics.map(e => [e.name, e]));
+
+        report.summary = {
+            tldr: input.tldr.trim().slice(0, 600),
+            silos: (Array.isArray(input.silos) ? input.silos : [])
+                .filter(silo => silo && typeof silo.epic === 'string' && knownEpics.has(silo.epic))
+                .map(silo => ({
+                    epic: silo.epic,
+                    stakeholder: epicByName.get(silo.epic)?.stakeholder || '',
+                    bullets: (Array.isArray(silo.bullets) ? silo.bullets : [])
+                        .filter(b => typeof b === 'string' && b.trim())
+                        .map(b => b.trim().slice(0, 300))
+                        .slice(0, 6)
+                }))
+                .filter(silo => silo.bullets.length > 0),
+            attention: (Array.isArray(input.attention) ? input.attention : [])
+                .filter(a => typeof a === 'string' && a.trim())
+                .map(a => a.trim().slice(0, 300))
+                .slice(0, 6),
+            generatedAt: new Date().toISOString(),
+            model: resolved.model
+        };
+
+        await writeJsonFile(req.profileFiles.reports, reports);
+        res.json({ summarised: true, report });
+    } catch (error) {
+        console.error('Report summary failed:', error);
+        res.status(500).json({ error: 'Failed to summarise report' });
     }
 });
 
@@ -1822,6 +2274,38 @@ app.get('/api/:profile/epics', resolveProfile, async (req, res) => {
     }
 });
 
+/**
+ * Validates an epic's context fields — the stakeholder, cadence and
+ * expectations that turn an epic from a topic into a silo you manage.
+ * All optional; empty string clears.
+ * @param {Object} data - Request body
+ * @returns {{valid: boolean, errors: string[]}}
+ */
+function validateEpicContext(data) {
+    const errors = [];
+    for (const field of ['stakeholder', 'cadence', 'expectations']) {
+        if (data[field] === undefined) continue;
+        if (typeof data[field] !== 'string') {
+            errors.push(`${field} must be a string`);
+        } else if (data[field].length > EPIC_CONTEXT_MAX_LENGTH) {
+            errors.push(`${field} must be ${EPIC_CONTEXT_MAX_LENGTH} characters or less`);
+        }
+    }
+    return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Applies epic context fields from a request body onto an epic in place.
+ * Shared by create and update so the two can't drift.
+ * @param {Object} epic
+ * @param {Object} data - Request body
+ */
+function applyEpicContext(epic, data) {
+    for (const field of ['stakeholder', 'cadence', 'expectations']) {
+        if (data[field] !== undefined) epic[field] = data[field].trim();
+    }
+}
+
 // POST create new epic
 app.post('/api/:profile/epics', resolveProfile, writeLimiter, async (req, res) => {
     try {
@@ -1857,14 +2341,25 @@ app.post('/api/:profile/epics', resolveProfile, writeLimiter, async (req, res) =
             return res.status(400).json({ error: `Color "${validColor.name}" is already used by epic "${colorTaken.name}"` });
         }
 
+        const contextValidation = validateEpicContext(req.body);
+        if (!contextValidation.valid) {
+            return res.status(400).json({ error: contextValidation.errors.join('; ') });
+        }
+
         const alias = toCamelCase(name.trim());
 
         const newEpic = {
             id: generateId(),
             name: name.trim(),
             color,
-            alias
+            alias,
+            // An epic is a silo you manage, not just a label: who asks about
+            // it, how often, and what they expect. All optional.
+            stakeholder: '',
+            cadence: '',
+            expectations: ''
         };
+        applyEpicContext(newEpic, req.body);
 
         epics.push(newEpic);
         await writeJsonFile(req.profileFiles.epics, epics);
@@ -1912,6 +2407,12 @@ app.put('/api/:profile/epics/:id', resolveProfile, writeLimiter, async (req, res
             }
             epics[epicIndex].color = color;
         }
+
+        const contextValidation = validateEpicContext(req.body);
+        if (!contextValidation.valid) {
+            return res.status(400).json({ error: contextValidation.errors.join('; ') });
+        }
+        applyEpicContext(epics[epicIndex], req.body);
 
         await writeJsonFile(req.profileFiles.epics, epics);
         res.json(epics[epicIndex]);
@@ -2343,7 +2844,7 @@ app.delete('/api/:profile/categories/:id', resolveProfile, writeLimiter, async (
  */
 const PROPOSE_TASKS_TOOL = {
     name: 'propose_tasks',
-    description: 'Propose structured task objects extracted from the conversation. Call this in every response, even with an empty tasks array when no tasks are being created.',
+    description: 'Propose structured task objects extracted from the conversation. Call this ONLY when the user is asking for tasks to be created. Do not call it when answering a question about the existing board — a question deserves an answer, not tickets.',
     input_schema: {
         type: 'object',
         properties: {
@@ -2368,7 +2869,823 @@ const PROPOSE_TASKS_TOOL = {
 };
 
 /**
- * Builds the AI system prompt, injecting current profile epics and categories.
+ * Tool for classifying a single captured line into board fields.
+ *
+ * Deliberately separate from PROPOSE_TASKS_TOOL: quick capture runs on every
+ * hallway note, so its prompt stays small (epics + categories + columns, no
+ * board snapshot) and it answers about exactly one task.
+ */
+const CLASSIFY_TASK_TOOL = {
+    name: 'classify_task',
+    description: 'Classify one captured note into board fields. Always call this exactly once.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            title:    { type: 'string',  description: 'A clean, actionable rewrite of the note (verb + object), max 200 chars. Omit if the original is already a good title.' },
+            epicId:   { type: 'string',  description: 'Epic ID from the provided list, only when the note clearly belongs to it. Omit otherwise.' },
+            category: { type: 'integer', description: 'Category ID from the provided list.' },
+            priority: { type: 'boolean', description: 'true only when the note says it is urgent or blocking.' },
+            points:   { type: 'integer', description: 'Rough size: 1 = minutes, 2 = under an hour, 3 = half a day, 5 = a day, 8 = nearly too big, 13 = one to two days, 21/34 = bigger, 100 = too big to size (split it). Omit when the note gives no idea of size.' },
+            columnId: { type: 'string',  description: 'Destination column ID from the provided list.' },
+            deadline: { type: 'string',  description: 'ISO 8601 datetime, only when a specific date or time is stated. Omit otherwise.' }
+        },
+        required: []
+    }
+};
+
+/**
+ * ===========================================
+ * The interview
+ * ===========================================
+ *
+ * The assistant knows the board but not the world around it — who Mikael is,
+ * what EUVIC do, what an abbreviation stands for. None of that is derivable
+ * from the data, so the only way to get it is to ask.
+ *
+ * The questions are grounded in a digest computed here, in code, across every
+ * task including the archive: recurring title prefixes, capitalised names that
+ * appear repeatedly, epics with no stakeholder recorded. Sending the archive
+ * itself would cost thousands of tokens to say what a hundred characters can.
+ *
+ * Computing it in code has a second benefit: the digest renders with the AI
+ * switched off, so the config page can always show what it would ask about.
+ */
+
+/** Ignored when scanning titles for names — common words that capitalise. */
+const NAME_STOPWORDS = new Set([
+    'the', 'and', 'for', 'with', 'from', 'new', 'add', 'fix', 'check', 'prod',
+    'test', 'todo', 'wip', 'plan', 'email', 'meeting', 'call', 'review', 'update',
+    'create', 'remove', 'delete', 'change', 'page', 'component', 'components',
+    'bug', 'issue', 'ticket', 'tickets', 'task', 'tasks', 'design', 'system',
+    'not', 'all', 'run', 'get', 'set', 'use', 'app', 'api', 'css', 'html', 'pdf',
+    'url', 'json', 'error', 'errors', 'file', 'files', 'list', 'link', 'links',
+    'this', 'that', 'have', 'has', 'was', 'why', 'how', 'what', 'when', 'who',
+    'jira', 'prod', 'dev', 'qa', 'uat', 'sit',
+    // Verbs and nouns that recur in titles and read as names to the scanner.
+    'follow', 'image', 'images', 'emails', 'mail', 'banner', 'search', 'print',
+    'deploy', 'release', 'wiki', 'account', 'message', 'messages', 'procedure',
+    'schedule', 'wait', 'done', 'draft', 'note', 'notes'
+]);
+
+/** How often a token must appear before it is worth asking about. */
+const DIGEST_MIN_OCCURRENCES = 3;
+
+/** Most items of any one kind to put in front of the model. */
+const DIGEST_MAX_PER_KIND = 12;
+
+/**
+ * Builds the list of things the assistant does not yet know about.
+ *
+ * @param {Object} input
+ * @param {Array<Object>} input.tasks - Live tasks.
+ * @param {Array<Object>} input.archived - Archived tasks; the richest source of
+ *        recurring names, since it holds most of the history.
+ * @param {Array<Object>} input.epics
+ * @param {Array<Object>} input.memories - Used to rule out what is already known.
+ * @returns {{prefixes: Array, names: Array, epicsMissingContext: Array,
+ *            totals: Object, hasGaps: boolean}}
+ */
+function buildInterviewDigest({ tasks = [], archived = [], epics = [], memories = [] }) {
+    const all = [...tasks, ...archived];
+
+    // Anything already named in an approved memory is not a gap. Matched
+    // case-insensitively on whole words so "SDS" in a memory rules out the SDS
+    // prefix without also ruling out every word containing those letters.
+    const knownText = memories
+        .filter(m => m.approved)
+        .map(m => m.text.toLowerCase())
+        .join(' | ');
+    const alreadyKnown = (token) =>
+        new RegExp(`\\b${token.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(knownText);
+
+    const prefixCounts = new Map();
+    const nameCounts = new Map();
+
+    for (const task of all) {
+        const title = typeof task.title === 'string' ? task.title.trim() : '';
+        if (!title) continue;
+
+        // A ticket-style prefix: leading capitals, optionally hyphenated, before
+        // a number or separator. ESB-593, LIT-LWC, PLAN:
+        const prefix = title.match(/^([A-Z][A-Z0-9]{1,7}(?:-[A-Z]{2,6})?)(?=[-:\s]|\d)/);
+        if (prefix) {
+            const key = prefix[1];
+            prefixCounts.set(key, (prefixCounts.get(key) || 0) + 1);
+        }
+
+        // Capitalised words that are not sentence-initial and not stopwords:
+        // the shape a person or vendor name takes in a task title.
+        for (const word of title.split(/[\s,./()[\]]+/).slice(1)) {
+            const clean = word.replace(/[^A-Za-z]/g, '');
+            if (clean.length < 3 || clean.length > 20) continue;
+            if (!/^[A-Z][a-z]+$|^[A-Z]{2,}$/.test(clean)) continue;
+            if (NAME_STOPWORDS.has(clean.toLowerCase())) continue;
+            nameCounts.set(clean, (nameCounts.get(clean) || 0) + 1);
+        }
+    }
+
+    const rank = (map) => [...map.entries()]
+        .filter(([token, count]) => count >= DIGEST_MIN_OCCURRENCES && !alreadyKnown(token))
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, DIGEST_MAX_PER_KIND)
+        .map(([token, count]) => ({ token, count }));
+
+    const epicsMissingContext = epics
+        .filter(e => !e.stakeholder && !e.cadence && !e.expectations)
+        .map(e => e.name);
+
+    const prefixes = rank(prefixCounts);
+    const names = rank(nameCounts);
+
+    return {
+        prefixes,
+        names,
+        epicsMissingContext,
+        totals: {
+            tasks: tasks.length,
+            archived: archived.length,
+            withoutEpic: all.filter(t => !t.epicId).length,
+            knownFacts: memories.filter(m => m.approved).length
+        },
+        hasGaps: prefixes.length > 0 || names.length > 0 || epicsMissingContext.length > 0
+    };
+}
+
+/**
+ * The system prompt for interview mode.
+ *
+ * Deliberately a different prompt rather than a skill: during an interview the
+ * assistant should not be proposing tasks or board changes at all, and the
+ * board snapshot it normally carries is just noise here.
+ */
+function buildInterviewPrompt(digest, memories) {
+    const known = renderMemoryForPrompt(memories);
+    const list = (items) => items.map(i => `${i.token} (${i.count}\u00d7)`).join(', ');
+
+    return `You are interviewing the owner of a personal kanban board to learn about them and their work, so that future conversations are grounded rather than generic.
+
+Your job in this conversation is to ASK, not to help with tasks. Do not propose tasks or board changes. Do not summarise their board back to them.
+
+Below is what came out of scanning all ${digest.totals.tasks + digest.totals.archived} of their tasks, including ${digest.totals.archived} archived ones. These are things that appear repeatedly and that you cannot explain from the data alone.
+
+${digest.names.length ? `Recurring names you do not recognise: ${list(digest.names)}` : ''}
+${digest.prefixes.length ? `Recurring title prefixes: ${list(digest.prefixes)}` : ''}
+${digest.epicsMissingContext.length ? `Epics with no stakeholder recorded: ${digest.epicsMissingContext.join(', ')}` : ''}
+
+${known ? `# What you already know — do not ask about any of this again\n${known}` : '# You know nothing about them yet.'}
+
+How to run the interview:
+- Ask at most THREE questions per message, numbered. Never more.
+- Ask about the highest-count unknowns first — those matter most.
+- A name might be a person, a vendor, a client or a system. Ask which; do not guess.
+- Accept short, messy answers. "mikael is my boss, euvic are external devs" is a complete answer to two questions.
+- After each answer, call propose_memory() with one entry per fact learned, choosing the right category.
+- ALWAYS write your next questions as ordinary text in the same reply as the tool call. A reply containing only a tool call shows the user a blank message.
+- If they decline a question or ask to skip it, drop it and move on. Never ask it again.
+- When you run out of genuine gaps, say so plainly and stop. Do not invent questions to fill space.
+
+Open by saying in one line what you scanned and what you are missing, then ask your first three questions.`;
+}
+
+/**
+ * ===========================================
+ * Skills
+ * ===========================================
+ *
+ * Reusable instruction blocks that shape *how* the assistant answers, as
+ * opposed to memories, which record *what* it knows. "Answer in three
+ * sentences" is a skill; "ESB- tickets belong to ECOM" is a memory.
+ *
+ * The split matters because the two have different lifetimes. A memory is a
+ * fact that should hold next month. A skill is a preference you switch on for
+ * one conversation and off for the next — writing tickets needs a different
+ * voice from talking through a board.
+ *
+ * `alwaysOn` skills apply to every conversation, which is what makes a
+ * standing preference like brevity actually stick. The rest are selected per
+ * conversation and travel with it, so reopening an old thread restores the
+ * voice it was written in.
+ *
+ * Unlike memories, the AI cannot propose these. Telling the model how to
+ * behave is the user's job.
+ */
+const MAX_SKILLS = 20;
+
+/** Long enough to name a voice, short enough to fit a chip in the dock. */
+const SKILL_NAME_MAX_LENGTH = 60;
+
+/** A skill is a short brief, not a document. */
+const SKILL_INSTRUCTIONS_MAX_LENGTH = 1000;
+
+/**
+ * Total skill characters allowed into the prompt. Skills ride along with the
+ * board snapshot and memories on every single message, so they need their own
+ * ceiling rather than trusting the per-skill limit times the maximum count.
+ */
+const SKILLS_PROMPT_BUDGET = 4000;
+
+/**
+ * Picks the skills that apply to a request: every always-on skill, plus the
+ * ones this conversation selected.
+ *
+ * @param {Array<Object>} skills - All defined skills.
+ * @param {Array<string>} selectedIds - Ids chosen for this conversation.
+ * @returns {Array<Object>} In definition order, no duplicates.
+ */
+function selectActiveSkills(skills, selectedIds = []) {
+    const chosen = new Set(Array.isArray(selectedIds) ? selectedIds : []);
+    return skills.filter(skill => skill.alwaysOn || chosen.has(skill.id));
+}
+
+/**
+ * Renders the applicable skills for the system prompt, within the budget.
+ * @param {Array<Object>} skills - Already filtered by selectActiveSkills().
+ * @returns {string} Empty string when nothing applies.
+ */
+function renderSkillsForPrompt(skills) {
+    const blocks = [];
+    let budget = SKILLS_PROMPT_BUDGET;
+    for (const skill of skills) {
+        const block = `## ${skill.name}\n${skill.instructions}`;
+        if (block.length > budget) break;
+        budget -= block.length;
+        blocks.push(block);
+    }
+    return blocks.join('\n\n');
+}
+
+/**
+ * Validates and normalises a skill from a request body.
+ * @param {Object} raw
+ * @param {Object} [existing] - The current record, when updating.
+ * @returns {{ok: true, skill: Object}|{ok: false, error: string}}
+ */
+function normaliseSkillInput(raw, existing = null) {
+    const has = (field) => raw && Object.prototype.hasOwnProperty.call(raw, field);
+
+    const name = has('name') ? raw.name : existing?.name;
+    if (typeof name !== 'string' || !name.trim()) {
+        return { ok: false, error: 'Skill name is required' };
+    }
+    if (name.trim().length > SKILL_NAME_MAX_LENGTH) {
+        return { ok: false, error: `Skill name must be ${SKILL_NAME_MAX_LENGTH} characters or less` };
+    }
+
+    const instructions = has('instructions') ? raw.instructions : existing?.instructions;
+    if (typeof instructions !== 'string' || !instructions.trim()) {
+        return { ok: false, error: 'Skill instructions are required' };
+    }
+    if (instructions.trim().length > SKILL_INSTRUCTIONS_MAX_LENGTH) {
+        return { ok: false, error: `Skill instructions must be ${SKILL_INSTRUCTIONS_MAX_LENGTH} characters or less` };
+    }
+
+    const alwaysOn = has('alwaysOn') ? raw.alwaysOn : (existing?.alwaysOn ?? false);
+    if (typeof alwaysOn !== 'boolean') {
+        return { ok: false, error: 'alwaysOn must be a boolean' };
+    }
+
+    return {
+        ok: true,
+        skill: {
+            id: existing?.id || generateId(),
+            name: name.trim(),
+            instructions: instructions.trim(),
+            alwaysOn,
+            createdAt: existing?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        }
+    };
+}
+
+/**
+ * ===========================================
+ * Long-term memory
+ * ===========================================
+ *
+ * A short, curated list of durable facts about how this person works —
+ * their sizing conventions, what an epic really means, which prefixes map to
+ * which work. Injected on every call, which is what lets story points and epic
+ * conventions compound instead of resetting each session.
+ *
+ * Deliberately a plain, hand-editable JSON list rather than an embedding
+ * store: "your data, your machine" has to mean a file you can read, edit and
+ * version — and a vector database would break the zero-dependency rule for a
+ * board this size.
+ *
+ * The AI may *propose* entries but never adds one. Unapproved entries are
+ * stored and shown for review; only approved entries reach the prompt.
+ */
+const MAX_MEMORIES = 40;
+
+/** Longest single memory entry. Long enough for a sentence, not a paragraph. */
+const MEMORY_TEXT_MAX_LENGTH = 300;
+
+/**
+ * Total approved-memory characters allowed into the prompt. Memory is sent on
+ * every message alongside the board snapshot, so it needs its own ceiling.
+ */
+const MEMORY_PROMPT_BUDGET = 4000;
+
+/**
+ * Tool the AI uses to propose something worth remembering.
+ *
+ * Nothing it proposes is used until the user approves it on the config page —
+ * the same propose-first rule the board changes follow.
+ */
+const PROPOSE_MEMORY_TOOL = {
+    name: 'propose_memory',
+    description: 'Propose a durable fact worth remembering across conversations: who someone is ("Mikael is my boss"), what a term or abbreviation means ("SDS is the design system"), what a project or epic covers, or how this person prefers to work. Only for things that will still be true next month; never for one-off details about a single task. Proposals are reviewed by the user before they are used.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            facts: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        text: { type: 'string', description: 'One sentence, stated as a fact. E.g. "ESB- prefixed tickets always belong to the ECOM epic."' },
+                        category: {
+                            type: 'string',
+                            enum: ['person', 'term', 'project', 'preference', 'other'],
+                            description: 'person = who someone is; term = what a word or abbreviation means; project = what an epic or project covers; preference = how they like to work.'
+                        }
+                    },
+                    required: ['text']
+                }
+            }
+        },
+        required: ['facts']
+    }
+};
+
+/**
+ * Normalises one raw memory entry from the model, or returns null.
+ * @param {Object} raw
+ * @returns {Object|null}
+ */
+function normaliseMemory(raw) {
+    const text = raw && typeof raw.text === 'string' ? raw.text.trim() : '';
+    if (!text) return null;
+    return {
+        id: generateId(),
+        text: text.slice(0, MEMORY_TEXT_MAX_LENGTH),
+        category: normaliseMemoryCategory(raw.category),
+        source: 'ai',
+        approved: false,
+        createdAt: new Date().toISOString()
+    };
+}
+
+/**
+ * Human-readable names for the pages the assistant can be opened from.
+ * Used to tell the model what the user is looking at, which is the difference
+ * between a generic answer and a useful one.
+ */
+const PAGE_LABELS = {
+    board:     'the board',
+    dashboard: 'the dashboard',
+    backlog:   'the backlog',
+    archive:   'the archive',
+    reports:   'the reports page',
+    ai:        'the AI page',
+    config:    'the configuration page'
+};
+
+/**
+ * Describes what the user is currently looking at.
+ *
+ * The assistant floats over every page, so "what did you mean by this?" has a
+ * different answer depending on where it was asked. An open card is the
+ * strongest signal — the question is almost certainly about that card.
+ *
+ * @param {{page?: string, taskId?: string}|null} context
+ * @param {Array<Object>} tasks
+ * @param {Array<Object>} columns
+ * @returns {string} Empty string when there is nothing useful to say.
+ */
+function renderChatContext(context, tasks, columns) {
+    if (!context || typeof context !== 'object') return '';
+
+    const lines = [];
+    const page = typeof context.page === 'string' ? context.page : '';
+    if (PAGE_LABELS[page]) lines.push(`They are on ${PAGE_LABELS[page]}.`);
+
+    if (typeof context.taskId === 'string') {
+        const task = tasks.find(t => t.id === context.taskId);
+        if (task) {
+            const column = columns.find(c => c.id === task.status);
+            lines.push(
+                `They have this task open: [${task.id}] "${task.title}"` +
+                `${column ? ` in ${column.name}` : ''}.` +
+                ' Unless they say otherwise, assume the conversation is about it.'
+            );
+        }
+    }
+
+    return lines.join('\n');
+}
+
+/**
+ * Renders approved memories for the system prompt, within the budget.
+ * @param {Array<Object>} memories
+ * @returns {string} Empty string when there is nothing approved.
+ */
+function renderMemoryForPrompt(memories) {
+    const LABELS = {
+        person: 'People',
+        term: 'Terms and abbreviations',
+        project: 'Projects and epics',
+        preference: 'How they like to work',
+        other: 'Other'
+    };
+    const byCategory = new Map(MEMORY_CATEGORIES.map(c => [c, []]));
+    let budget = MEMORY_PROMPT_BUDGET;
+
+    for (const memory of memories) {
+        if (!memory.approved) continue;
+        const line = `- ${memory.text}`;
+        if (line.length > budget) break;
+        budget -= line.length;
+        byCategory.get(normaliseMemoryCategory(memory.category)).push(line);
+    }
+
+    // Grouped rather than one flat list: a model reading "Mikael is my boss"
+    // under a People heading is far likelier to use it as such.
+    return MEMORY_CATEGORIES
+        .filter(c => byCategory.get(c).length)
+        .map(c => `${LABELS[c]}:\n${byCategory.get(c).join('\n')}`)
+        .join('\n\n');
+}
+
+/**
+ * Tool for turning a report's raw activity into something presentable.
+ *
+ * The grouping and counting are done in code — deterministic, free, and not
+ * something a model should be trusted with. What the model is for is the one
+ * thing code cannot do: ticket titles are not presentation bullets. Rewriting
+ * "ESB-767 - Shipping address not changes on order" into "Fixed shipping
+ * addresses not updating on orders", and merging several related tickets into
+ * a single line, is the manual work this replaces.
+ */
+const WRITE_REPORT_SUMMARY_TOOL = {
+    name: 'write_report_summary',
+    description: 'Summarise a period of work for a one-to-one with a manager. Call exactly once.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            tldr: { type: 'string', description: 'One or two sentences covering the period. Plain and factual; no filler, no adjectives like "successfully".' },
+            silos: {
+                type: 'array',
+                description: 'One entry per epic that saw activity, in the order given. Omit epics with nothing to report.',
+                items: {
+                    type: 'object',
+                    properties: {
+                        epic: { type: 'string', description: 'Epic name exactly as given' },
+                        bullets: {
+                            type: 'array',
+                            description: 'Presentation-ready lines. Past tense, start with a verb, no ticket ids, merge related tickets into one line.',
+                            items: { type: 'string' }
+                        }
+                    },
+                    required: ['epic', 'bullets']
+                }
+            },
+            attention: {
+                type: 'array',
+                description: 'Things to raise rather than report — blocked, overdue, or needing a decision from the manager. Empty array if none.',
+                items: { type: 'string' }
+            }
+        },
+        required: ['tldr', 'silos']
+    }
+};
+
+/**
+ * Builds the report-summary prompt from a report's activity.
+ *
+ * Deliberately does NOT carry the board snapshot: this is about one period,
+ * and sending the whole board would cost more and invite the model to talk
+ * about work that isn't in scope.
+ *
+ * @param {Object} report
+ * @param {Array<Object>} epics
+ * @param {Array<Object>} memories
+ * @returns {string}
+ */
+function buildReportSummaryPrompt(report, epics, memories) {
+    const epicByName = new Map(epics.map(e => [e.name, e]));
+    const memoryStr = renderMemoryForPrompt(memories);
+
+    /** Groups a task list by epic name, preserving "no epic" as its own bucket. */
+    const groupByEpic = (list) => {
+        const groups = new Map();
+        for (const task of list) {
+            const key = task.epicName || 'Unfiled';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(task);
+        }
+        return groups;
+    };
+
+    const renderGroup = (label, list) => {
+        if (!list.length) return `## ${label}\n  (nothing)`;
+        const lines = [`## ${label}`];
+        for (const [epicName, items] of groupByEpic(list)) {
+            const epic = epicByName.get(epicName);
+            const who = epic?.stakeholder ? ` — reported to: ${epic.stakeholder}` : '';
+            lines.push(`### ${epicName}${who}`);
+            for (const task of items) {
+                const detail = task.description ? ` — ${task.description.slice(0, 160)}` : '';
+                lines.push(`  - ${task.title}${detail}`);
+            }
+        }
+        return lines.join('\n');
+    };
+
+    const activity = report.activity || { completed: [], advanced: [], created: [], attention: [] };
+
+    return `You are writing the notes someone will take into a weekly one-to-one with their manager, and paste into a slide.
+
+Period: ${report.period?.start?.split('T')[0]} to ${report.period?.end?.split('T')[0]}.
+
+Call write_report_summary exactly once.
+
+Rules:
+- Bullets are for a presentation. Past tense, start with a verb, no ticket ids, no "worked on".
+- MERGE related tickets into one line. Three tickets about the same deploy are one bullet, not three.
+- Keep each epic to at most 4 bullets — pick what a manager would care about.
+- Use the epic names exactly as given below, and keep them in the same order.
+- Say nothing you cannot see in the data. If an epic had no activity, leave it out entirely rather than writing "no progress".
+- attention[] is for things to raise: blocked, overdue, or needing a decision. Leave it empty if there is nothing.
+${memoryStr ? `\n# What you know about how they work\n${memoryStr}\n` : ''}
+${renderGroup('Finished in this period', activity.completed)}
+
+${renderGroup('Moved forward but not finished', activity.advanced)}
+
+${renderGroup('Started in this period', activity.created)}
+
+${renderGroup('Open, overdue or untouched — candidates for attention', activity.attention)}
+${report.notes ? `\n## Their own notes for the period\n${report.notes.slice(0, 1500)}` : ''}`;
+}
+
+/**
+ * Proposal kinds the AI may put in the review buffer.
+ *
+ * Deliberately no 'create'. New tasks already have a reviewable flow — AI
+ * staging — where they can be edited, cloned and promoted before anything
+ * touches the board. A second creation path would be a worse experience, not
+ * a richer one. Proposals are for changes to tasks that already exist.
+ */
+const PROPOSAL_KINDS = ['update', 'move', 'delete'];
+
+/** Maximum proposals held in the review buffer at once. */
+const MAX_PROPOSALS = 50;
+
+/** Longest reason string stored with a proposal. */
+const PROPOSAL_REASON_MAX_LENGTH = 300;
+
+/**
+ * The assistant's second verb: propose changes to tasks that already exist.
+ *
+ * Nothing here reaches the board. Each entry lands in the review buffer and
+ * needs a human click to apply — see docs/design/AI_ASSISTANT.md § Principles.
+ */
+const PROPOSE_CHANGES_TOOL = {
+    name: 'propose_changes',
+    description: 'Propose changes to tasks that already exist on the board. Every proposal is reviewed by the user before it applies, so be specific and give a short reason. Use this when asked to reorganise, reschedule, re-file, tidy up or remove existing work. Do NOT use it to create new tasks.',
+    input_schema: {
+        type: 'object',
+        properties: {
+            changes: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        kind:   { type: 'string', enum: PROPOSAL_KINDS, description: 'update = change fields; move = change column; delete = remove the task' },
+                        taskId: { type: 'string', description: 'ID of the existing task, exactly as shown in the board listing' },
+                        reason: { type: 'string', description: 'One short line on why. Shown to the user next to the change.' },
+                        title:       { type: 'string',  description: 'update only — new title' },
+                        description: { type: 'string',  description: 'update only — new description' },
+                        priority:    { type: 'boolean', description: 'update only — new priority flag' },
+                        category:    { type: 'integer', description: 'update only — new category ID' },
+                        epicId:      { type: 'string',  description: 'update only — new epic ID, or empty string to clear' },
+                        points:      { type: 'integer', description: 'update only — new size (1, 2, 3, 5, 8, 13, 21, 34, 100)' },
+                        deadline:    { type: 'string',  description: 'update only — ISO 8601 datetime, or empty string to clear' },
+                        newStatus:   { type: 'string',  description: 'move only — destination column ID' }
+                    },
+                    required: ['kind', 'taskId', 'reason']
+                }
+            }
+        },
+        required: ['changes']
+    }
+};
+
+/**
+ * Builds the quick-capture classification prompt. Board-free by design — this
+ * runs on every captured note and must stay cheap.
+ * @param {Object} ctx
+ * @param {Array<Object>} ctx.epics
+ * @param {Array<Object>} ctx.categories
+ * @param {Array<Object>} ctx.columns
+ * @param {string} ctx.today - ISO date, so relative dates resolve correctly
+ * @returns {string}
+ */
+function buildClassifyPrompt({ epics, categories, columns, today }) {
+    const epicsStr = epics.length
+        ? epics.map(e => {
+            const bits = [e.stakeholder && `stakeholder: ${e.stakeholder}`].filter(Boolean);
+            return `  - "${e.name}" (id: "${e.id}")${bits.length ? ` — ${bits.join(', ')}` : ''}`;
+        }).join('\n')
+        : '  (none defined yet)';
+
+    // Done/in-progress columns are never a sensible destination for something
+    // that was captured seconds ago and not started.
+    const destinations = columns.filter(c => !c.hasArchive);
+    const colsStr = destinations
+        .map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' — use for someday/maybe items' : ''}`)
+        .join('\n');
+
+    return `You classify a single note that someone jotted down in a hurry — typically something a colleague asked them to do in passing.
+
+Today is ${today}.
+
+Call classify_task exactly once. Be decisive: a slightly wrong guess is fine, because the user reviews these later. Leaving everything blank is worse than guessing.
+
+# Epics
+${epicsStr}
+
+# Categories
+${categories.map(c => `  - "${c.name}" (id: ${c.id})`).join('\n')}
+
+# Destination columns
+${colsStr}
+
+Rules:
+- title: rewrite into a short actionable phrase (verb + object). Omit if the note already reads as one.
+- epicId: only when the note clearly belongs to that epic. Omit when unsure.
+- category: pick the closest; default ${DEFAULT_CATEGORY_ID} when nothing matches.
+- priority: true only when urgency is explicit.
+- points: one of ${STORY_POINTS.join(', ')}. 13 is one to two days; 100 means too big to size and should be split. Omit when the note gives no sense of size.
+- columnId: the default working column unless the note clearly says it is for later (then the backlog) or for today.
+- deadline: only when a specific date or time is stated.`;
+}
+
+/**
+ * Renders the board as a compact text table for the system prompt.
+ *
+ * Deliberately NOT raw JSON: field names repeated on every card cost several
+ * times what a positional table does, and the snapshot is re-sent on every
+ * message — it is the single largest cost driver in the feature.
+ *
+ * Scope is the live board plus backlog titles. Descriptions, activity logs,
+ * attachments and the archive are excluded; they are loaded on demand rather
+ * than carried in every request.
+ *
+ * @param {Array<Object>} columns - Profile columns, sorted by order
+ * @param {Array<Object>} tasks - Active tasks
+ * @param {Map<string, Object>} epicById
+ * @param {Map<number, Object>} categoryById
+ * @returns {string}
+ */
+function buildBoardSnapshot(columns, tasks, epicById, categoryById) {
+    const now = Date.now();
+    const dayseSince = (iso) => {
+        const t = Date.parse(iso || '');
+        return isNaN(t) ? '?' : Math.round((now - t) / 86400000);
+    };
+
+    // Only columns that actually exist can hold board cards. Tasks whose status
+    // matches no column are legacy rows (see AI_ASSISTANT.md § Known issue) —
+    // excluding them keeps the snapshot honest and small.
+    const columnById = new Map(columns.map(c => [c.id, c]));
+    const lines = [];
+
+    for (const col of columns) {
+        const colTasks = tasks
+            .filter(t => t.status === col.id)
+            .sort((a, b) => a.position - b.position);
+
+        lines.push(`## ${col.name}${col.isBacklog ? ' (backlog)' : ''} — ${colTasks.length}`);
+        if (colTasks.length === 0) {
+            lines.push('  (empty)');
+            continue;
+        }
+        for (const t of colTasks) {
+            const bits = [];
+            if (t.epicId && epicById.has(t.epicId)) bits.push(epicById.get(t.epicId).name);
+            const cat = categoryById.get(t.category);
+            if (cat && t.category !== DEFAULT_CATEGORY_ID) bits.push(cat.name);
+            if (t.points) bits.push(`${t.points}pt`);
+            if (t.priority) bits.push('priority');
+            if (t.deadline) bits.push(`due ${String(t.deadline).split('T')[0]}`);
+            bits.push(`${dayseSince(t.createdDate)}d old`);
+            if (Array.isArray(t.attachments) && t.attachments.length) {
+                bits.push(`${t.attachments.length} file${t.attachments.length === 1 ? '' : 's'}`);
+            }
+            lines.push(`  [${t.id}] ${t.title} — ${bits.join(', ')}`);
+        }
+    }
+
+    const orphaned = tasks.filter(t => !columnById.has(t.status)).length;
+    if (orphaned > 0) {
+        lines.push(`\n(${orphaned} legacy tasks with no matching column are excluded from this view.)`);
+    }
+
+    return lines.join('\n');
+}
+
+/**
+ * Builds the AI system prompt, injecting the current board plus the profile's
+ * epics and categories.
+ * @param {Object} ctx
+ * @param {Array<Object>} ctx.epics
+ * @param {Array<Object>} ctx.categories
+ * @param {Array<Object>} ctx.columns
+ * @param {Array<Object>} ctx.tasks
+ * @returns {string}
+ */
+function buildAiSystemPromptWithBoard({ epics, categories, columns, tasks, memories = [], skills = [], context = null }) {
+    const epicById = new Map(epics.map(e => [e.id, e]));
+    const categoryById = new Map(categories.map(c => [c.id, c]));
+
+    const epicsStr = epics.length
+        ? epics.map(e => {
+            // Context fields are optional and absent on older profiles, so
+            // they are only rendered when actually set. They are what let the
+            // model reason about stakeholders rather than just topics.
+            const ctxBits = [
+                e.stakeholder && `stakeholder: ${e.stakeholder}`,
+                e.cadence && `cadence: ${e.cadence}`,
+                e.expectations && `expects: ${e.expectations}`
+            ].filter(Boolean);
+            const suffix = ctxBits.length ? `\n      ${ctxBits.join(' | ')}` : '';
+            return `  - "${e.name}" (id: "${e.id}")${suffix}`;
+        }).join('\n')
+        : '  (none defined yet)';
+
+    const catsStr = categories.map(c => `  - "${c.name}" (id: ${c.id})`).join('\n');
+    const columnsStr = columns.map(c => `  - "${c.name}" (id: "${c.id}")${c.isBacklog ? ' [backlog]' : ''}`).join('\n');
+
+    const memoryStr = renderMemoryForPrompt(memories);
+    const skillsStr = renderSkillsForPrompt(skills);
+    const contextStr = renderChatContext(context, tasks, columns);
+
+    return `You are a task management assistant built into a personal kanban tool. You are talking to the single person who owns this board.
+
+You can see their whole board below. Use it. When they ask a question about their work, answer it from the board — do not invent tasks, and do not turn every conversation into ticket creation.
+
+You have two tools:
+- propose_tasks() — for NEW work the user wants captured (e.g. they paste meeting notes, or ask you to add something).
+- propose_changes() — for changes to tasks that ALREADY exist: re-filing, rescheduling, resizing, moving between columns, or removing duplicates. Reference tasks by the id shown in square brackets in the board listing below.
+
+Call neither when the user is simply asking a question — a question deserves a direct answer, not tickets.
+
+Nothing you propose is applied automatically. Every proposal is reviewed by the user first, so be specific and give a short reason for each change.
+
+If you notice something durable — who a person is, what a term means, what an epic really covers, how they size things — call propose_memory() so it is remembered next time. Only for things that will still be true next month, and never for details about one task.
+
+If something in their message refers to a person, system or abbreviation you do not know, and knowing it would change your answer, end with ONE short question asking what it is. One question at most, only when it genuinely matters, and never when you already answered from the board.
+
+Be concise. This is a personal tool, not a report generator.
+
+${skillsStr ? `# How the user wants you to respond
+
+These are the user's own standing instructions. They override the general
+guidance above, including anything about length or format. Follow them exactly.
+
+${skillsStr}
+` : ''}
+${contextStr ? `# Where they are right now
+${contextStr}
+` : ''}
+${memoryStr ? `# What you already know about how they work
+${memoryStr}
+` : ''}
+# Columns
+${columnsStr}
+
+# Epics
+${epicsStr}
+
+# Categories
+${catsStr}
+
+# Current board
+${buildBoardSnapshot(columns, tasks, epicById, categoryById)}
+
+# Task creation rules (when proposing tasks)
+- Set priority: true only for explicitly urgent or blocking tasks
+- Set epicId to the matching epic's id only if the content clearly relates to it
+- Set deadline only if a specific date or time is explicitly stated (ISO 8601)
+- Keep titles concise and actionable (verb + object, e.g. "Update API documentation")
+- Use description for details that do not fit in the title
+- Default category is ${DEFAULT_CATEGORY_ID} (Non categorized) when nothing matches`;
+}
+
+/**
+ * Legacy prompt builder — board-free. Kept for the quick-capture classification
+ * path, which only needs epics and categories and should stay cheap.
  * @param {Array<Object>} epics
  * @param {Array<Object>} categories
  * @returns {string}
@@ -2385,7 +3702,7 @@ function buildAiSystemPrompt(epics, categories) {
     return `You are a task management assistant for a personal kanban tool.
 Your job is to help the user extract actionable tasks from unstructured text (meeting notes, emails, brain dumps) and have natural conversations about their work.
 
-Always call propose_tasks() in your response — even when no tasks are being created (pass an empty array in that case).
+Call propose_tasks() with the tasks you extract. If the text contains nothing actionable, pass an empty array.
 
 Available epics for this profile:
 ${epicsStr}
@@ -2400,6 +3717,184 @@ Task creation rules:
 - Keep titles concise and actionable (verb + object, e.g. "Update API documentation")
 - Use description for details that do not fit in the title
 - Default category is 1 (Non categorized) when nothing matches`;
+}
+
+/**
+ * Validates and normalises one raw proposal from the model into a stored
+ * proposal, or null when it is unusable.
+ *
+ * Everything here is untrusted model output. A proposal that references a
+ * task, column, epic or category this profile doesn't have is dropped rather
+ * than stored — a review buffer full of un-appliable rows is worse than a
+ * shorter honest one.
+ *
+ * @param {Object} raw - One entry from the propose_changes tool call
+ * @param {Object} ctx
+ * @param {Set<string>} ctx.validTaskIds
+ * @param {Set<string>} ctx.validColumnIds
+ * @param {Set<string>} ctx.validEpicIds
+ * @param {Set<number>} ctx.validCategoryIds
+ * @returns {Object|null}
+ */
+function normaliseProposal(raw, { validTaskIds, validColumnIds, validEpicIds, validCategoryIds }) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (!PROPOSAL_KINDS.includes(raw.kind)) return null;
+    if (typeof raw.taskId !== 'string' || !validTaskIds.has(raw.taskId)) return null;
+
+    const reason = typeof raw.reason === 'string'
+        ? raw.reason.trim().slice(0, PROPOSAL_REASON_MAX_LENGTH)
+        : '';
+
+    const proposal = {
+        id: generateId(),
+        kind: raw.kind,
+        taskId: raw.taskId,
+        reason,
+        payload: {},
+        createdAt: new Date().toISOString()
+    };
+
+    if (raw.kind === 'move') {
+        if (typeof raw.newStatus !== 'string' || !validColumnIds.has(raw.newStatus)) return null;
+        proposal.payload.newStatus = raw.newStatus;
+        return proposal;
+    }
+
+    if (raw.kind === 'delete') {
+        return proposal;   // no payload
+    }
+
+    // update — keep only the fields that are present AND valid
+    const p = proposal.payload;
+    if (typeof raw.title === 'string' && raw.title.trim()) {
+        p.title = raw.title.trim().slice(0, VALIDATION.TITLE_MAX_LENGTH);
+    }
+    if (typeof raw.description === 'string') {
+        p.description = raw.description.slice(0, VALIDATION.DESCRIPTION_MAX_LENGTH);
+    }
+    if (typeof raw.priority === 'boolean') p.priority = raw.priority;
+    if (validCategoryIds.has(Number(raw.category))) p.category = Number(raw.category);
+    if (typeof raw.epicId === 'string') {
+        // Empty string is a deliberate "clear the epic", not a bad value.
+        if (raw.epicId === '') p.epicId = null;
+        else if (validEpicIds.has(raw.epicId)) p.epicId = raw.epicId;
+    }
+    if (STORY_POINTS.includes(Number(raw.points))) p.points = Number(raw.points);
+    if (typeof raw.deadline === 'string') {
+        if (raw.deadline === '') p.deadline = null;
+        else if (!isNaN(Date.parse(raw.deadline))) p.deadline = new Date(raw.deadline).toISOString();
+    }
+
+    // An update that changes nothing is noise in the review list.
+    if (Object.keys(p).length === 0) return null;
+    return proposal;
+}
+
+/**
+ * Applies one proposal to the task list, in place.
+ *
+ * Runs the same validators the equivalent hand-driven routes run
+ * (`validateTaskInput`, `validateMoveInput`) rather than trusting what was
+ * stored: the board's state may have moved on since the proposal was made, so
+ * a stored proposal is re-checked at apply time, not just at write time.
+ *
+ * @param {Array<Object>} tasks - Mutated in place
+ * @param {Object} proposal
+ * @param {Object} ctx
+ * @param {Array<Object>} ctx.columns
+ * @param {Set<number>} ctx.validCategoryIds
+ * @param {Map<number, string>} ctx.categoryNames
+ * @returns {{ok: true, task: Object|null} | {ok: false, error: string}}
+ */
+function applyProposal(tasks, proposal, { columns, validCategoryIds, categoryNames }) {
+    const index = tasks.findIndex(t => t.id === proposal.taskId);
+    if (index === -1) {
+        return { ok: false, error: 'That task no longer exists' };
+    }
+    const task = tasks[index];
+    const today = new Date().toISOString().split('T')[0];
+
+    if (proposal.kind === 'delete') {
+        tasks.splice(index, 1);
+        return { ok: true, task: null };
+    }
+
+    if (proposal.kind === 'move') {
+        const validColumnIds = new Set(columns.map(c => c.id));
+        const validation = validateMoveInput({ newStatus: proposal.payload.newStatus }, validColumnIds);
+        if (!validation.valid) return { ok: false, error: validation.errors.join('; ') };
+
+        const from = columns.find(c => c.id === task.status);
+        const to   = columns.find(c => c.id === proposal.payload.newStatus);
+        if (task.status === to.id) return { ok: false, error: 'Task is already in that column' };
+
+        for (const t of tasks) {
+            if (t.id !== task.id && t.status === to.id) t.position += 1;
+        }
+        task.status = to.id;
+        task.position = 0;
+        if (!task.log) task.log = [];
+        task.log.push({ date: today, action: `Moved from '${from ? from.name : '?'}' to '${to.name}'` });
+        return { ok: true, task };
+    }
+
+    // update
+    const validation = validateTaskInput(proposal.payload, { requireTitle: false, validCategoryIds });
+    if (!validation.valid) return { ok: false, error: validation.errors.join('; ') };
+
+    const p = proposal.payload;
+    if (p.title       !== undefined) task.title = p.title.trim();
+    if (p.description !== undefined) task.description = p.description.trim();
+    if (p.priority    !== undefined) task.priority = Boolean(p.priority);
+    if (p.epicId      !== undefined) task.epicId = p.epicId || null;
+    if (p.points      !== undefined) task.points = p.points;
+    if (p.deadline    !== undefined) task.deadline = p.deadline || null;
+    if (p.category    !== undefined) {
+        const newCategory = Number(p.category);
+        const oldCategory = task.category || DEFAULT_CATEGORY_ID;
+        // Same logging rule the hand-driven PUT route follows
+        if (newCategory !== oldCategory) {
+            if (!task.log) task.log = [];
+            task.log.push({
+                date: today,
+                action: `Category changed from ${categoryNames.get(oldCategory) || 'Non categorized'} to ${categoryNames.get(newCategory) || 'Non categorized'}`
+            });
+        }
+        task.category = newCategory;
+    }
+
+    return { ok: true, task };
+}
+
+/**
+ * Resolves the active AI configuration into everything a provider call needs.
+ * @returns {Promise<{ok: true, cfg: Object, providerMeta: Object, model: string,
+ *                     apiKey: string, baseUrl: string}
+ *                  | {ok: false, status: number, error: string}>}
+ */
+async function resolveActiveAiConfig() {
+    const aiConfig = migrateAiConfig(await readJsonFile(AI_CONFIG_FILE, {}));
+    const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
+    if (!cfg) {
+        return { ok: false, status: 400, error: 'No active AI configuration. Add one via Config → AI Configuration.' };
+    }
+    const providerMeta = AI_PROVIDERS[cfg.provider];
+    if (!providerMeta) {
+        return { ok: false, status: 400, error: 'Unknown AI provider in config.' };
+    }
+    if (providerMeta.requiresKey && !cfg.apiKey) {
+        return { ok: false, status: 400, error: 'API key not set for this provider. Configure it via Config → AI Configuration.' };
+    }
+    return {
+        ok: true,
+        cfg,
+        providerMeta,
+        model: cfg.model,
+        apiKey: cfg.apiKey || '',
+        // A stored baseUrl wins when the provider allows one (Custom, and Kimi
+        // for its China host); otherwise the registry default stands.
+        baseUrl: (providerMeta.allowsBaseUrl && cfg.baseUrl) ? cfg.baseUrl : providerMeta.baseUrl
+    };
 }
 
 /**
@@ -2430,10 +3925,91 @@ function extractTasksFromText(text) {
 }
 
 /**
+ * Incrementally splits a byte stream into complete SSE events.
+ *
+ * Server-sent events are newline-delimited and a network chunk can end
+ * anywhere — mid-line, mid-event, mid-UTF-8-character. This keeps the tail of
+ * an incomplete line in `buffer` until the rest arrives, which is the whole
+ * reason it exists as its own function: getting it wrong silently truncates
+ * the model's output.
+ *
+ * Source of truth: /public/js/utils.js — duplicated here because server.js
+ * runs in Node.js and cannot import ES modules from /public. Change both.
+ *
+ * @param {string} buffer - Leftover text from the previous chunk
+ * @param {string} chunk - Newly decoded text
+ * @returns {{events: Array<{event: string|null, data: string}>, buffer: string}}
+ */
+function parseSseChunk(buffer, chunk) {
+    const text = buffer + chunk;
+    // Events are separated by a blank line. Tolerate CRLF as well as LF.
+    const parts = text.split(/\r?\n\r?\n/);
+    const remainder = parts.pop();   // possibly incomplete — keep for next time
+
+    const events = [];
+    for (const part of parts) {
+        if (!part.trim()) continue;
+        let eventName = null;
+        const dataLines = [];
+        for (const line of part.split(/\r?\n/)) {
+            if (line.startsWith('event:')) eventName = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+            // Comment lines (":" prefixed) and unknown fields are ignored.
+        }
+        if (dataLines.length > 0) {
+            events.push({ event: eventName, data: dataLines.join('\n') });
+        }
+    }
+    return { events, buffer: remainder };
+}
+
+/**
+ * Accumulates streamed tool-call fragments into finished tool calls.
+ *
+ * Both providers stream a tool's JSON arguments as a series of string
+ * fragments, so nothing can be parsed until the stream ends. This collects
+ * them by index and parses once at the end — a fragment that never completes
+ * is dropped rather than throwing, so a truncated tool call can't take the
+ * whole reply with it.
+ */
+class ToolCallAccumulator {
+    constructor() {
+        /** @type {Map<number|string, {name: string, json: string}>} */
+        this._calls = new Map();
+    }
+
+    /**
+     * @param {number|string} index - Provider's block/tool index
+     * @param {string|null} name - Set on the first fragment
+     * @param {string} jsonFragment
+     */
+    push(index, name, jsonFragment = '') {
+        if (!this._calls.has(index)) this._calls.set(index, { name: name || '', json: '' });
+        const call = this._calls.get(index);
+        if (name) call.name = name;
+        call.json += jsonFragment;
+    }
+
+    /** @returns {Array<{name: string, input: Object}>} */
+    finish() {
+        const out = [];
+        for (const call of this._calls.values()) {
+            if (!call.name) continue;
+            try {
+                out.push({ name: call.name, input: call.json ? JSON.parse(call.json) : {} });
+            } catch {
+                // Incomplete or malformed arguments — skip this call, keep the rest.
+            }
+        }
+        return out;
+    }
+}
+
+/**
  * Calls the Anthropic Messages API.
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
-async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
+async function callAnthropicAi(apiKey, model, systemPrompt, messages, tools = [PROPOSE_TASKS_TOOL]) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -2446,7 +4022,7 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
             max_tokens: 4096,
             system: systemPrompt,
             messages,
-            tools: [PROPOSE_TASKS_TOOL]
+            tools
         })
     });
 
@@ -2458,12 +4034,21 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
     const data = await response.json();
     let narrative = '';
     let rawTasks = [];
+    // Every tool call the model made, in order: { name, input }. A single
+    // turn may legitimately both propose tasks and propose changes.
+    const toolCalls = [];
+    // Surfaced to the client so the cost of the board snapshot stays visible.
+    const usage = {
+        inputTokens:  data.usage?.input_tokens  ?? null,
+        outputTokens: data.usage?.output_tokens ?? null
+    };
 
     for (const block of (data.content || [])) {
         if (block.type === 'text') {
             narrative += (narrative ? '\n' : '') + block.text;
-        } else if (block.type === 'tool_use' && block.name === 'propose_tasks') {
-            rawTasks = block.input?.tasks || [];
+        } else if (block.type === 'tool_use') {
+            toolCalls.push({ name: block.name, input: block.input || {} });
+            if (block.name === PROPOSE_TASKS_TOOL.name) rawTasks = block.input?.tasks || [];
         }
     }
 
@@ -2471,23 +4056,176 @@ async function callAnthropicAi(apiKey, model, systemPrompt, messages) {
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative: narrative.trim(), rawTasks };
+    return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
+}
+
+/**
+ * Streaming Anthropic call. Narrative text is handed to `onText` as it
+ * arrives; tool calls are accumulated and returned once the stream ends,
+ * because their arguments are only valid JSON when complete.
+ *
+ * @param {Function} onText - Called with each text delta
+ * @returns {Promise<{narrative: string, rawTasks: Array, toolCalls: Array, usage: Object}>}
+ */
+async function streamAnthropicAi(apiKey, model, systemPrompt, messages, tools, onText) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({ model, max_tokens: 4096, system: systemPrompt, messages, tools, stream: true })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Anthropic API error ${response.status}`);
+    }
+
+    const accumulator = new ToolCallAccumulator();
+    const usage = { inputTokens: null, outputTokens: null };
+    let narrative = '';
+
+    await readSseStream(response, (event) => {
+        let payload;
+        try { payload = JSON.parse(event.data); } catch { return; }
+
+        switch (payload.type) {
+            case 'message_start':
+                usage.inputTokens = payload.message?.usage?.input_tokens ?? null;
+                break;
+            case 'content_block_start':
+                if (payload.content_block?.type === 'tool_use') {
+                    accumulator.push(payload.index, payload.content_block.name);
+                }
+                break;
+            case 'content_block_delta':
+                if (payload.delta?.type === 'text_delta') {
+                    narrative += payload.delta.text;
+                    onText(payload.delta.text);
+                } else if (payload.delta?.type === 'input_json_delta') {
+                    accumulator.push(payload.index, null, payload.delta.partial_json || '');
+                }
+                break;
+            case 'message_delta':
+                if (payload.usage?.output_tokens != null) usage.outputTokens = payload.usage.output_tokens;
+                break;
+        }
+    });
+
+    const toolCalls = accumulator.finish();
+    const proposeTasks = toolCalls.find(c => c.name === PROPOSE_TASKS_TOOL.name);
+    let rawTasks = proposeTasks?.input?.tasks || [];
+    if (!rawTasks.length && narrative) rawTasks = extractTasksFromText(narrative);
+
+    return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
+}
+
+/**
+ * Streaming OpenAI-compatible call. Same contract as the Anthropic version.
+ */
+async function streamOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, tools, onText) {
+    const openAiTools = tools.map(t => ({
+        type: 'function',
+        function: { name: t.name, description: t.description, parameters: t.input_schema }
+    }));
+
+    const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'authorization': `Bearer ${apiKey || 'none'}`,
+            'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+            model,
+            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            tools: openAiTools,
+            tool_choice: 'auto',
+            stream: true,
+            // Not every OpenAI-compatible server honours this; usage stays
+            // null when it doesn't, which the client renders as no counter.
+            stream_options: { include_usage: true }
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `AI provider error ${response.status}`);
+    }
+
+    const accumulator = new ToolCallAccumulator();
+    const usage = { inputTokens: null, outputTokens: null };
+    let narrative = '';
+
+    await readSseStream(response, (event) => {
+        if (event.data === '[DONE]') return;
+        let payload;
+        try { payload = JSON.parse(event.data); } catch { return; }
+
+        if (payload.usage) {
+            usage.inputTokens  = payload.usage.prompt_tokens     ?? usage.inputTokens;
+            usage.outputTokens = payload.usage.completion_tokens ?? usage.outputTokens;
+        }
+
+        const delta = payload.choices?.[0]?.delta;
+        if (!delta) return;
+
+        if (typeof delta.content === 'string' && delta.content) {
+            narrative += delta.content;
+            onText(delta.content);
+        }
+        for (const call of (delta.tool_calls || [])) {
+            accumulator.push(
+                call.index ?? 0,
+                call.function?.name || null,
+                call.function?.arguments || ''
+            );
+        }
+    });
+
+    const toolCalls = accumulator.finish();
+    const proposeTasks = toolCalls.find(c => c.name === PROPOSE_TASKS_TOOL.name);
+    let rawTasks = proposeTasks?.input?.tasks || [];
+    if (!rawTasks.length && narrative) rawTasks = extractTasksFromText(narrative);
+
+    return { narrative: narrative.trim(), rawTasks, toolCalls, usage };
+}
+
+/**
+ * Reads a fetch Response body as SSE, invoking `onEvent` per complete event.
+ * @param {Response} response
+ * @param {Function} onEvent
+ */
+async function readSseStream(response, onEvent) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // stream: true keeps multi-byte characters intact across chunks
+        const parsed = parseSseChunk(buffer, decoder.decode(value, { stream: true }));
+        buffer = parsed.buffer;
+        for (const event of parsed.events) onEvent(event);
+    }
 }
 
 /**
  * Calls any OpenAI-compatible API (OpenAI, Groq, LM Studio, Ollama /v1, etc.).
  * @returns {Promise<{ narrative: string, rawTasks: Array<Object> }>}
  */
-async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages) {
-    // Transform tool to OpenAI function-calling format
-    const tool = {
+async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages, tools = [PROPOSE_TASKS_TOOL]) {
+    // Transform tools to OpenAI function-calling format
+    const openAiTools = tools.map(t => ({
         type: 'function',
         function: {
-            name: PROPOSE_TASKS_TOOL.name,
-            description: PROPOSE_TASKS_TOOL.description,
-            parameters: PROPOSE_TASKS_TOOL.input_schema
+            name: t.name,
+            description: t.description,
+            parameters: t.input_schema
         }
-    };
+    }));
 
     const finalUrl = `${baseUrl.replace(/\/+$/, '')}/chat/completions`;
     const response = await fetch(finalUrl, {
@@ -2499,7 +4237,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         body: JSON.stringify({
             model,
             messages: [{ role: 'system', content: systemPrompt }, ...messages],
-            tools: [tool],
+            tools: openAiTools,
             tool_choice: 'auto'
         })
     });
@@ -2513,13 +4251,20 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
     const message = data.choices?.[0]?.message;
     let narrative = (message?.content || '').trim();
     let rawTasks = [];
+    const toolCalls = [];
+    const usage = {
+        inputTokens:  data.usage?.prompt_tokens     ?? null,
+        outputTokens: data.usage?.completion_tokens ?? null
+    };
 
-    if (message?.tool_calls?.length) {
+    for (const call of (message?.tool_calls || [])) {
         try {
-            const args = JSON.parse(message.tool_calls[0].function.arguments);
-            rawTasks = args.tasks || [];
+            const args = JSON.parse(call.function.arguments);
+            toolCalls.push({ name: call.function.name, input: args });
+            if (call.function.name === PROPOSE_TASKS_TOOL.name) rawTasks = args.tasks || [];
         } catch {
-            rawTasks = [];
+            // A malformed tool call is skipped, not fatal — the narrative and
+            // any well-formed calls in the same turn are still usable.
         }
     }
 
@@ -2527,7 +4272,7 @@ async function callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, mess
         rawTasks = extractTasksFromText(narrative);
     }
 
-    return { narrative, rawTasks };
+    return { narrative, rawTasks, toolCalls, usage };
 }
 
 /**
@@ -2730,6 +4475,71 @@ app.delete('/api/ai/config/entries/:id', writeLimiter, async (req, res) => {
     }
 });
 
+// GET /api/ai/config/entries/:id/models — list the models this provider offers.
+//
+// Model ids are provider trivia that change without notice, and a wrong one
+// fails at the worst moment: mid-conversation, as an opaque provider error.
+// This asks the provider directly, using the stored key. It is a read-only
+// call that sends NO board data — only the key travels, and only to the host
+// the entry already points at.
+app.get('/api/ai/config/entries/:id/models', async (req, res) => {
+    try {
+        const config = migrateAiConfig(await readJsonFile(AI_CONFIG_FILE, {}));
+        const cfg = (config.configs || []).find(c => c.id === req.params.id);
+        if (!cfg) return res.status(404).json({ error: 'Config entry not found' });
+
+        const providerMeta = AI_PROVIDERS[cfg.provider];
+        if (!providerMeta) return res.status(400).json({ error: 'Unknown AI provider in config.' });
+        if (providerMeta.requiresKey && !cfg.apiKey) {
+            return res.status(400).json({ error: 'Save an API key first, then fetch the model list.' });
+        }
+
+        const baseUrl = (providerMeta.allowsBaseUrl && cfg.baseUrl) ? cfg.baseUrl : providerMeta.baseUrl;
+        if (!baseUrl) return res.status(400).json({ error: 'Set a Base URL first.' });
+
+        const isAnthropic = providerMeta.format === 'anthropic';
+        const url = isAnthropic
+            ? `${baseUrl.replace(/\/+$/, '')}/v1/models`
+            : `${baseUrl.replace(/\/+$/, '')}/models`;
+        const headers = isAnthropic
+            ? { 'x-api-key': cfg.apiKey, 'anthropic-version': '2023-06-01' }
+            : { 'Authorization': `Bearer ${cfg.apiKey}` };
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        let response;
+        try {
+            response = await fetch(url, { headers, signal: controller.signal });
+        } finally {
+            clearTimeout(timeout);
+        }
+
+        if (!response.ok) {
+            const detail = (await response.text().catch(() => '')).slice(0, 300);
+            return res.status(502).json({
+                error: `Provider returned ${response.status}.`,
+                detail
+            });
+        }
+
+        // OpenAI-compatible and Anthropic both answer { data: [{ id, ... }] }.
+        const body = await response.json();
+        const models = (body.data || [])
+            .map(m => m.id)
+            .filter(Boolean)
+            .sort();
+
+        res.json({ models, endpoint: url });
+    } catch (error) {
+        // Never let a provider being unreachable read as a bug in the app.
+        res.status(502).json({
+            error: error.name === 'AbortError'
+                ? 'The provider did not answer within 15 seconds.'
+                : `Could not reach the provider: ${error.message}`
+        });
+    }
+});
+
 // PUT /api/ai/config/active — set the active config entry
 app.put('/api/ai/config/active', writeLimiter, async (req, res) => {
     try {
@@ -2756,6 +4566,911 @@ app.put('/api/ai/config/active', writeLimiter, async (req, res) => {
 // ===========================================
 
 // GET all staged tasks
+/**
+ * Maximum conversation turns kept on disk. Old turns fall off the front — the
+ * history is a convenience across restarts, not an archive.
+ */
+const MAX_CONVERSATION_MESSAGES = 200;
+
+// GET whether the AI is usable right now. The client calls this before
+// enabling chat so an unconfigured or key-less setup degrades to an
+// explanation instead of a failed request. Never returns the key itself.
+app.get('/api/ai/availability', async (req, res) => {
+    try {
+        const aiConfig = migrateAiConfig(await readJsonFile(AI_CONFIG_FILE, {}));
+        const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
+
+        if (!cfg) {
+            return res.json({ available: false, reason: 'no-config', message: 'No AI configuration yet.' });
+        }
+        const providerMeta = AI_PROVIDERS[cfg.provider];
+        if (!providerMeta) {
+            return res.json({ available: false, reason: 'unknown-provider', message: 'This configuration names an unknown provider.' });
+        }
+        if (providerMeta.requiresKey && !cfg.apiKey) {
+            return res.json({ available: false, reason: 'no-key', message: `No API key set for ${providerMeta.label}.` });
+        }
+        res.json({ available: true, provider: cfg.provider, model: cfg.model, name: cfg.name });
+    } catch (error) {
+        // Availability itself must never throw the UI into an error state
+        res.json({ available: false, reason: 'error', message: 'Could not read AI configuration.' });
+    }
+});
+
+// Test-only: return the system prompt that would be sent for this profile, so
+// the board snapshot can be asserted without a live AI provider. Registered
+// only when RATE_LIMIT_DISABLED=1, matching /api/_test/reset-rate-limit.
+if (RATE_LIMIT_DISABLED) {
+    // Test-only: the receipt shown when a model answers with a tool call and no
+    // text. Reachable without a provider, since provoking a silent reply from a
+    // live model on demand is not something a test can rely on.
+    app.get('/api/:profile/ai/_test/outcome', resolveProfile, (req, res) => {
+        const count = (key) => Array.from({ length: Number(req.query[key]) || 0 }, () => ({}));
+        res.json({
+            narrative: describeToolOutcome({
+                tasks: count('tasks'),
+                proposals: count('proposals'),
+                memories: count('memories')
+            })
+        });
+    });
+
+    app.get('/api/:profile/ai/_test/prompt', resolveProfile, async (req, res) => {
+        // ?page= and ?taskId= mirror the `context` a real chat request sends,
+        // so context rendering can be asserted without a live provider.
+        try {
+            // Must load exactly what the chat handler loads, or this endpoint
+            // reports a prompt the model never actually sees.
+            const [epics, categories, tasks, memories, skills, archived] = await Promise.all([
+                readJsonFile(req.profileFiles.epics, []),
+                readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
+                readJsonFile(req.profileFiles.tasks, []),
+                readJsonFile(req.profileFiles.aiMemory, []),
+                readJsonFile(req.profileFiles.aiSkills, []),
+                readJsonFile(req.profileFiles.archived, [])
+            ]);
+
+            // ?mode=interview mirrors an interview chat request, so the very
+            // different prompt it sends can be asserted without a provider.
+            if (req.query.mode === 'interview') {
+                const digest = buildInterviewDigest({ tasks, archived, epics, memories });
+                const interviewPrompt = buildInterviewPrompt(digest, memories);
+                return res.json({ prompt: interviewPrompt, chars: interviewPrompt.length });
+            }
+            // ?skillIds=a,b mirrors the per-conversation selection a real chat
+            // request sends, on top of the always-on ones.
+            const selectedSkillIds = (req.query.skillIds || '').split(',').filter(Boolean);
+            const prompt = buildAiSystemPromptWithBoard({
+                epics, categories, columns: req.columns, tasks, memories,
+                skills: selectActiveSkills(skills, selectedSkillIds),
+                context: (req.query.page || req.query.taskId)
+                    ? { page: req.query.page, taskId: req.query.taskId }
+                    : null
+            });
+            res.json({ prompt, chars: prompt.length });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to build prompt' });
+        }
+    });
+}
+
+/**
+ * Validates a chat request and assembles everything a provider call needs.
+ *
+ * Shared by the buffered and streaming chat routes so the two can't drift on
+ * validation, prompt construction or which tools are offered.
+ *
+ * @param {Object} req
+ * @returns {Promise<{ok: true, resolved: Object, systemPrompt: string, tools: Array,
+ *                     epics: Array, categories: Array, messages: Array}
+ *                  | {ok: false, status: number, error: string}>}
+ */
+async function prepareAiChat(req) {
+    const { messages } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+        return { ok: false, status: 400, error: 'messages must be a non-empty array' };
+    }
+    for (const m of messages) {
+        if (!m || typeof m.role !== 'string' || typeof m.content !== 'string') {
+            return { ok: false, status: 400, error: 'Each message must have role and content strings' };
+        }
+        if (m.role !== 'user' && m.role !== 'assistant') {
+            return { ok: false, status: 400, error: 'Message role must be "user" or "assistant"' };
+        }
+    }
+
+    const resolved = await resolveActiveAiConfig();
+    if (!resolved.ok) return resolved;
+
+    const isInterview = req.body.mode === 'interview';
+
+    const [epics, categories, tasks, memories, skills, archived] = await Promise.all([
+        readJsonFile(req.profileFiles.epics, []),
+        readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES),
+        readJsonFile(req.profileFiles.tasks, []),
+        readJsonFile(req.profileFiles.aiMemory, []),
+        readJsonFile(req.profileFiles.aiSkills, []),
+        // Only the interview reads the archive: it is the richest source of
+        // recurring names, and nothing else needs it on every message.
+        isInterview ? readJsonFile(req.profileFiles.archived, []) : Promise.resolve([])
+    ]);
+
+    if (isInterview) {
+        const digest = buildInterviewDigest({ tasks, archived, epics, memories });
+        return {
+            ok: true,
+            resolved,
+            messages,
+            epics,
+            categories,
+            systemPrompt: buildInterviewPrompt(digest, memories),
+            // One verb only. An interview that quietly filed tickets would be
+            // a different feature than the one the user agreed to.
+            tools: [PROPOSE_MEMORY_TOOL]
+        };
+    }
+
+    return {
+        ok: true,
+        resolved,
+        messages,
+        epics,
+        categories,
+        systemPrompt: buildAiSystemPromptWithBoard({
+            epics, categories, columns: req.columns, tasks, memories,
+            // Always-on skills plus whatever this conversation selected.
+            skills: selectActiveSkills(skills, req.body.skillIds),
+            // Untrusted client hint about where the user is; every field is
+            // re-checked against real data before it reaches the prompt.
+            context: req.body.context || null
+        }),
+        // Three verbs: create new work, change existing work, remember a fact.
+        tools: [PROPOSE_TASKS_TOOL, PROPOSE_CHANGES_TOOL, PROPOSE_MEMORY_TOOL]
+    };
+}
+
+/**
+ * Turns a model's tool output into stored staged tasks, proposals and memory
+ * suggestions. Nothing here touches the board — every output is a reviewable
+ * buffer entry.
+ *
+ * Shared by both chat routes.
+ *
+ * @param {Object} req
+ * @param {{rawTasks: Array, toolCalls: Array, epics: Array, categories: Array}} input
+ * @returns {Promise<{tasks: Array, proposals: Array, memories: Array}>}
+ */
+/**
+ * A plain description of what a reply did, for when the model says nothing.
+ *
+ * Models routinely answer a tool-use turn with the tool call alone and no
+ * accompanying text. Passing that through renders an empty message bubble: the
+ * work happened, and the transcript shows a blank. Observed live on Kimi K3
+ * answering an interview question.
+ *
+ * Deliberately flat and factual — it is a receipt, not the model pretending to
+ * have spoken.
+ *
+ * @param {{tasks: Array, proposals: Array, memories: Array}} stored
+ * @returns {string} Empty when nothing happened, so a genuinely empty reply
+ *          still reads as one.
+ */
+function describeToolOutcome(stored) {
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    const parts = [];
+    if (stored.tasks?.length) parts.push(`staged ${plural(stored.tasks.length, 'task')}`);
+    if (stored.proposals?.length) parts.push(`proposed ${plural(stored.proposals.length, 'change')}`);
+    if (stored.memories?.length) parts.push(`noted ${plural(stored.memories.length, 'thing')} to remember`);
+    if (!parts.length) return '';
+
+    const sentence = parts.join(', ');
+    return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
+}
+
+async function persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories }) {
+    const validEpicIds     = new Set(epics.map(e => e.id));
+    const validCategoryIds = new Set(categories.map(c => c.id));
+
+    // --- New tasks → AI staging ---
+    const newStagedTasks = [];
+    for (const raw of (rawTasks || [])) {
+        const task = normaliseStagedTask(raw, generateId(), validEpicIds, validCategoryIds);
+        if (task) newStagedTasks.push(task);
+    }
+    if (newStagedTasks.length > 0) {
+        const existing = await readJsonFile(req.profileFiles.aiStaged, []);
+        await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
+    }
+
+    // --- Changes to existing tasks → the review buffer ---
+    const rawChanges = (toolCalls || [])
+        .filter(c => c.name === PROPOSE_CHANGES_TOOL.name)
+        .flatMap(c => Array.isArray(c.input?.changes) ? c.input.changes : []);
+
+    let newProposals = [];
+    if (rawChanges.length > 0) {
+        const boardTasks = await readJsonFile(req.profileFiles.tasks, []);
+        newProposals = rawChanges
+            .map(raw => normaliseProposal(raw, {
+                validTaskIds: new Set(boardTasks.map(t => t.id)),
+                validColumnIds: new Set(req.columns.map(c => c.id)),
+                validEpicIds,
+                validCategoryIds
+            }))
+            .filter(Boolean);
+
+        if (newProposals.length > 0) {
+            const existing = await readJsonFile(req.profileFiles.aiProposals, []);
+            // Newest first, capped — an unbounded review list stops being
+            // reviewable, which defeats the point of the buffer.
+            await writeJsonFile(
+                req.profileFiles.aiProposals,
+                [...newProposals, ...existing].slice(0, MAX_PROPOSALS)
+            );
+        }
+    }
+
+    // --- Durable facts → memory, unapproved ---
+    const rawFacts = (toolCalls || [])
+        .filter(c => c.name === PROPOSE_MEMORY_TOOL.name)
+        .flatMap(c => Array.isArray(c.input?.facts) ? c.input.facts : []);
+
+    let newMemories = [];
+    if (rawFacts.length > 0) {
+        const existing = await readJsonFile(req.profileFiles.aiMemory, []);
+        const seen = new Set(existing.map(m => m.text.toLowerCase()));
+        newMemories = rawFacts
+            .map(normaliseMemory)
+            .filter(m => m && !seen.has(m.text.toLowerCase()));
+
+        if (newMemories.length > 0 && existing.length < MAX_MEMORIES) {
+            newMemories = newMemories.slice(0, MAX_MEMORIES - existing.length);
+            await writeJsonFile(req.profileFiles.aiMemory, [...existing, ...newMemories]);
+        } else {
+            newMemories = [];
+        }
+    }
+
+    return { tasks: newStagedTasks, proposals: newProposals, memories: newMemories };
+}
+
+// ===========================================
+// AI Memory
+// ===========================================
+
+/**
+ * Validates memory text from a request body.
+ * @param {*} text
+ * @returns {{valid: boolean, error?: string, text?: string}}
+ */
+/**
+ * What a memory is *about*.
+ *
+ * The flat list worked while memory only held working conventions, but "Mikael
+ * is my boss" and "a 13 is two days" are different kinds of fact and read badly
+ * interleaved. Categories are what turn the list into a profile you can skim.
+ */
+const MEMORY_CATEGORIES = ['person', 'term', 'project', 'preference', 'other'];
+
+/** @param {string} value @returns {string} A valid category, defaulting to 'other'. */
+function normaliseMemoryCategory(value) {
+    return MEMORY_CATEGORIES.includes(value) ? value : 'other';
+}
+
+function validateMemoryText(text) {
+    if (typeof text !== 'string' || text.trim() === '') {
+        return { valid: false, error: 'Memory text is required' };
+    }
+    if (text.trim().length > MEMORY_TEXT_MAX_LENGTH) {
+        return { valid: false, error: `Memory must be ${MEMORY_TEXT_MAX_LENGTH} characters or less` };
+    }
+    return { valid: true, text: text.trim() };
+}
+
+// GET all memories (approved and awaiting review)
+app.get('/api/:profile/ai/memory', resolveProfile, async (req, res) => {
+    try {
+        res.json(await readJsonFile(req.profileFiles.aiMemory, []));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read memory' });
+    }
+});
+
+// POST add a memory by hand — approved immediately, since the user wrote it
+app.post('/api/:profile/ai/memory', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const validation = validateMemoryText(req.body.text);
+        if (!validation.valid) return res.status(400).json({ error: validation.error });
+
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        if (memories.length >= MAX_MEMORIES) {
+            return res.status(400).json({ error: `Maximum of ${MAX_MEMORIES} memories` });
+        }
+
+        const memory = {
+            id: generateId(),
+            text: validation.text,
+            category: normaliseMemoryCategory(req.body.category),
+            source: 'user',
+            approved: true,
+            createdAt: new Date().toISOString()
+        };
+        memories.push(memory);
+        await writeJsonFile(req.profileFiles.aiMemory, memories);
+        res.status(201).json(memory);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save memory' });
+    }
+});
+
+// PUT edit text and/or approve. Approving an AI proposal is what lets it
+// reach a prompt — until then it is stored but unused.
+app.put('/api/:profile/ai/memory/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        const memory = memories.find(m => m.id === req.params.id);
+        if (!memory) return res.status(404).json({ error: 'Memory not found' });
+
+        if (req.body.text !== undefined) {
+            const validation = validateMemoryText(req.body.text);
+            if (!validation.valid) return res.status(400).json({ error: validation.error });
+            memory.text = validation.text;
+        }
+        if (req.body.approved !== undefined) {
+            if (typeof req.body.approved !== 'boolean') {
+                return res.status(400).json({ error: 'approved must be a boolean' });
+            }
+            memory.approved = req.body.approved;
+        }
+        if (req.body.category !== undefined) {
+            memory.category = normaliseMemoryCategory(req.body.category);
+        }
+
+        await writeJsonFile(req.profileFiles.aiMemory, memories);
+        res.json(memory);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update memory' });
+    }
+});
+
+// DELETE one memory
+app.delete('/api/:profile/ai/memory/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        const index = memories.findIndex(m => m.id === req.params.id);
+        if (index === -1) return res.status(404).json({ error: 'Memory not found' });
+
+        memories.splice(index, 1);
+        await writeJsonFile(req.profileFiles.aiMemory, memories);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete memory' });
+    }
+});
+
+// ===========================================
+// AI Proposed Changes (review buffer)
+// ===========================================
+
+/**
+ * Loads everything applyProposal needs to re-validate against the profile's
+ * current state. Shared by the single-apply and apply-all routes.
+ * @param {Object} req
+ * @returns {Promise<Object>} ctx for applyProposal
+ */
+async function loadProposalContext(req) {
+    const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
+    return {
+        columns: req.columns,
+        validCategoryIds: new Set(categories.map(c => c.id)),
+        categoryNames: new Map(categories.map(c => [c.id, c.name]))
+    };
+}
+
+// GET all pending proposals
+app.get('/api/:profile/ai/proposals', resolveProfile, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        res.json(proposals);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read proposals' });
+    }
+});
+
+// POST apply one proposal — the only path from the buffer to the board
+app.post('/api/:profile/ai/proposals/:id/apply', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        const index = proposals.findIndex(p => p.id === req.params.id);
+        if (index === -1) return res.status(404).json({ error: 'Proposal not found' });
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const ctx = await loadProposalContext(req);
+        const result = applyProposal(tasks, proposals[index], ctx);
+
+        if (!result.ok) {
+            // The board moved on since the proposal was made. Drop the stale
+            // row rather than leaving something un-appliable in the list.
+            proposals.splice(index, 1);
+            await writeJsonFile(req.profileFiles.aiProposals, proposals);
+            return res.status(409).json({ error: result.error, discarded: true });
+        }
+
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        proposals.splice(index, 1);
+        await writeJsonFile(req.profileFiles.aiProposals, proposals);
+
+        res.json({ ok: true, task: result.task });
+    } catch (error) {
+        console.error('Failed to apply proposal:', error);
+        res.status(500).json({ error: 'Failed to apply proposal' });
+    }
+});
+
+// POST apply every pending proposal, in order
+app.post('/api/:profile/ai/proposals/apply-all', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        if (proposals.length === 0) return res.json({ ok: true, applied: 0, failed: [] });
+
+        const tasks = await readJsonFile(req.profileFiles.tasks, []);
+        const ctx = await loadProposalContext(req);
+
+        // One proposal failing must not abort the rest — they are independent
+        // decisions the user already made. Failures are reported, not thrown.
+        let applied = 0;
+        const failed = [];
+        for (const proposal of proposals) {
+            const result = applyProposal(tasks, proposal, ctx);
+            if (result.ok) applied += 1;
+            else failed.push({ id: proposal.id, reason: result.error });
+        }
+
+        await writeJsonFile(req.profileFiles.tasks, tasks);
+        // The whole batch is consumed either way: a proposal that couldn't
+        // apply is stale, and re-offering it would just fail again.
+        await writeJsonFile(req.profileFiles.aiProposals, []);
+
+        res.json({ ok: true, applied, failed });
+    } catch (error) {
+        console.error('Failed to apply proposals:', error);
+        res.status(500).json({ error: 'Failed to apply proposals' });
+    }
+});
+
+// DELETE reject one proposal
+app.delete('/api/:profile/ai/proposals/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const proposals = await readJsonFile(req.profileFiles.aiProposals, []);
+        const index = proposals.findIndex(p => p.id === req.params.id);
+        if (index === -1) return res.status(404).json({ error: 'Proposal not found' });
+
+        proposals.splice(index, 1);
+        await writeJsonFile(req.profileFiles.aiProposals, proposals);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reject proposal' });
+    }
+});
+
+// DELETE reject all pending proposals
+app.delete('/api/:profile/ai/proposals', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        await writeJsonFile(req.profileFiles.aiProposals, []);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to clear proposals' });
+    }
+});
+
+// ===========================================
+// Interview Routes (profile-scoped)
+// ===========================================
+
+// GET what the assistant does not know yet. Computed in code across every
+// task including the archive, so it answers with the AI switched off — the
+// config page uses it to show whether an interview is worth running.
+app.get('/api/:profile/ai/interview/digest', resolveProfile, async (req, res) => {
+    try {
+        const [tasks, archived, epics, memories] = await Promise.all([
+            readJsonFile(req.profileFiles.tasks, []),
+            readJsonFile(req.profileFiles.archived, []),
+            readJsonFile(req.profileFiles.epics, []),
+            readJsonFile(req.profileFiles.aiMemory, [])
+        ]);
+        res.json(buildInterviewDigest({ tasks, archived, epics, memories }));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to build interview digest' });
+    }
+});
+
+// GET everything the assistant knows, as Markdown.
+//
+// The JSON file is the source of truth, but a profile is something you read to
+// check it is right, and a list of quoted strings is not that.
+app.get('/api/:profile/ai/memory/markdown', resolveProfile, async (req, res) => {
+    try {
+        const memories = await readJsonFile(req.profileFiles.aiMemory, []);
+        const LABELS = {
+            person: 'People', term: 'Terms and abbreviations',
+            project: 'Projects and epics', preference: 'How I like to work', other: 'Other'
+        };
+        const approved = memories.filter(m => m.approved);
+
+        let md = `# What the assistant knows about me\n\n`;
+        if (approved.length === 0) {
+            md += '_Nothing yet. Run the interview to fill this in._\n';
+        } else {
+            for (const category of MEMORY_CATEGORIES) {
+                const items = approved.filter(m => normaliseMemoryCategory(m.category) === category);
+                if (!items.length) continue;
+                md += `## ${LABELS[category]}\n\n${items.map(m => `- ${m.text}`).join('\n')}\n\n`;
+            }
+        }
+        const pending = memories.filter(m => !m.approved);
+        if (pending.length) {
+            md += `## Awaiting your approval\n\n${pending.map(m => `- ${m.text}`).join('\n')}\n`;
+        }
+        // res.type() is Express-only; the shim exposes setHeader + send.
+        res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+        res.send(md);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to render memory' });
+    }
+});
+
+// ===========================================
+// AI Skills Routes (profile-scoped)
+// ===========================================
+
+// GET all skills
+app.get('/api/:profile/ai/skills', resolveProfile, async (req, res) => {
+    try {
+        res.json(await readJsonFile(req.profileFiles.aiSkills, []));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read skills' });
+    }
+});
+
+// POST a new skill
+app.post('/api/:profile/ai/skills', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const skills = await readJsonFile(req.profileFiles.aiSkills, []);
+        if (skills.length >= MAX_SKILLS) {
+            return res.status(400).json({ error: `Maximum ${MAX_SKILLS} skills reached` });
+        }
+        const result = normaliseSkillInput(req.body);
+        if (!result.ok) return res.status(400).json({ error: result.error });
+
+        skills.push(result.skill);
+        await writeJsonFile(req.profileFiles.aiSkills, skills);
+        res.status(201).json(result.skill);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create skill' });
+    }
+});
+
+// PUT update a skill
+app.put('/api/:profile/ai/skills/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const skills = await readJsonFile(req.profileFiles.aiSkills, []);
+        const idx = skills.findIndex(sk => sk.id === req.params.id);
+        if (idx === -1) return res.status(404).json({ error: 'Skill not found' });
+
+        const result = normaliseSkillInput(req.body, skills[idx]);
+        if (!result.ok) return res.status(400).json({ error: result.error });
+
+        skills[idx] = result.skill;
+        await writeJsonFile(req.profileFiles.aiSkills, skills);
+        res.json(result.skill);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update skill' });
+    }
+});
+
+// DELETE a skill
+app.delete('/api/:profile/ai/skills/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const skills = await readJsonFile(req.profileFiles.aiSkills, []);
+        const remaining = skills.filter(sk => sk.id !== req.params.id);
+        if (remaining.length === skills.length) {
+            return res.status(404).json({ error: 'Skill not found' });
+        }
+        await writeJsonFile(req.profileFiles.aiSkills, remaining);
+
+        // A deleted skill must also stop applying to conversations that
+        // selected it, or reopening an old thread would silently send an id
+        // that no longer resolves.
+        const store = await readConversationStore(req);
+        let touched = false;
+        for (const convo of store.conversations) {
+            const kept = (convo.skillIds || []).filter(id => id !== req.params.id);
+            if (kept.length !== (convo.skillIds || []).length) {
+                convo.skillIds = kept;
+                touched = true;
+            }
+        }
+        if (touched) await writeConversationStore(req, store);
+
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete skill' });
+    }
+});
+
+/**
+ * Maximum saved conversations per profile. Old threads fall off by least
+ * recently touched — this is a history you can return to, not an archive.
+ */
+const MAX_CONVERSATIONS = 50;
+
+/** Longest auto-derived conversation title. */
+const CONVERSATION_TITLE_MAX_LENGTH = 60;
+
+/**
+ * Derives a thread's title from its first user message, so a saved
+ * conversation is recognisable in a list without asking the model to name it
+ * (which would cost a call, and fail when the AI is offline).
+ * @param {Array<Object>} messages
+ * @returns {string}
+ */
+function deriveConversationTitle(messages) {
+    const first = messages.find(m => m.role === 'user');
+    if (!first) return 'New conversation';
+    const flat = first.content.replace(/\s+/g, ' ').trim();
+    if (!flat) return 'New conversation';
+    return flat.length > CONVERSATION_TITLE_MAX_LENGTH
+        ? `${flat.slice(0, CONVERSATION_TITLE_MAX_LENGTH - 1)}\u2026`
+        : flat;
+}
+
+/** @returns {Object} A fresh, empty conversation. */
+function newConversation() {
+    const now = new Date().toISOString();
+    return { id: generateId(), title: 'New conversation', createdAt: now, updatedAt: now, skillIds: [], mode: 'chat', messages: [] };
+}
+
+/**
+ * Reads the conversation store, migrating the pre-v2.58 single-transcript
+ * shape (`{ messages: [] }`) into the multi-thread one.
+ *
+ * The old file held exactly one conversation with nowhere to put a second, so
+ * "clear" was the only way to start a new topic and it destroyed the previous
+ * one. Migration keeps that transcript as the first saved thread rather than
+ * discarding history on upgrade.
+ *
+ * @param {Object} req
+ * @returns {Promise<{activeId: string, conversations: Array<Object>}>}
+ */
+async function readConversationStore(req) {
+    const raw = await readJsonFile(req.profileFiles.aiConversation, {});
+
+    if (Array.isArray(raw.conversations)) {
+        const conversations = raw.conversations.filter(c => c && typeof c.id === 'string');
+        if (conversations.length === 0) {
+            const fresh = newConversation();
+            return { activeId: fresh.id, conversations: [fresh] };
+        }
+        const activeId = conversations.some(c => c.id === raw.activeId)
+            ? raw.activeId
+            : conversations[0].id;
+        return { activeId, conversations };
+    }
+
+    // Legacy shape, or an absent/empty file.
+    const legacy = Array.isArray(raw.messages) ? raw.messages : [];
+    const convo = newConversation();
+    if (legacy.length) {
+        convo.messages = legacy;
+        convo.title = deriveConversationTitle(legacy);
+        convo.createdAt = legacy[0]?.at || convo.createdAt;
+        convo.updatedAt = legacy[legacy.length - 1]?.at || convo.updatedAt;
+    }
+    return { activeId: convo.id, conversations: [convo] };
+}
+
+/** Sanitises a transcript from the client and bounds its length. */
+function cleanMessages(messages) {
+    return messages
+        .filter(m => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'))
+        .slice(-MAX_CONVERSATION_MESSAGES)
+        .map(m => ({ role: m.role, content: m.content, at: m.at || new Date().toISOString() }));
+}
+
+/** Persists the store, dropping the least recently touched threads over the cap. */
+async function writeConversationStore(req, store) {
+    const ordered = [...store.conversations].sort(
+        (a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0)
+    );
+    const kept = ordered.slice(0, MAX_CONVERSATIONS);
+    const activeId = kept.some(c => c.id === store.activeId) ? store.activeId : kept[0]?.id || null;
+    await writeJsonFile(req.profileFiles.aiConversation, { activeId, conversations: kept });
+    return { activeId, conversations: kept };
+}
+
+/** Strips transcripts — the list view only needs enough to pick a thread. */
+const toConversationSummary = (c) => ({
+    id: c.id,
+    title: c.title,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+    skillIds: c.skillIds || [],
+    mode: c.mode || 'chat',
+    messageCount: (c.messages || []).length
+});
+
+// GET the active conversation, with its transcript
+app.get('/api/:profile/ai/conversation', resolveProfile, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+        res.json({
+            id: active.id,
+            title: active.title,
+            skillIds: active.skillIds || [],
+            mode: active.mode || 'chat',
+            messages: active.messages || []
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read conversation' });
+    }
+});
+
+// PUT replace the active conversation's transcript. The client owns the
+// transcript and writes it back after each exchange; the server bounds its
+// length and keeps the title in step with the opening message.
+app.put('/api/:profile/ai/conversation', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const { messages, skillIds } = req.body;
+        if (!Array.isArray(messages)) {
+            return res.status(400).json({ error: 'messages must be an array' });
+        }
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+
+        active.messages = cleanMessages(messages);
+        active.updatedAt = new Date().toISOString();
+        if (Array.isArray(skillIds)) active.skillIds = skillIds.filter(id => typeof id === 'string');
+        // Retitle only while the thread is still unnamed, so a user's own
+        // rename is never overwritten by a later edit to the first message.
+        if (active.title === 'New conversation') active.title = deriveConversationTitle(active.messages);
+
+        await writeConversationStore(req, store);
+        res.json({ ok: true, count: active.messages.length, title: active.title });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save conversation' });
+    }
+});
+
+// DELETE clear the active conversation's messages, keeping the thread itself
+app.delete('/api/:profile/ai/conversation', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+        active.messages = [];
+        active.title = 'New conversation';
+        active.updatedAt = new Date().toISOString();
+        await writeConversationStore(req, store);
+        res.json({ ok: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to clear conversation' });
+    }
+});
+
+// GET the list of saved conversations, newest first, without transcripts
+app.get('/api/:profile/ai/conversations', resolveProfile, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const conversations = [...store.conversations]
+            .sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0))
+            .map(toConversationSummary);
+        res.json({ activeId: store.activeId, conversations });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to read conversations' });
+    }
+});
+
+// POST start a new conversation and make it active
+app.post('/api/:profile/ai/conversations', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const active = store.conversations.find(c => c.id === store.activeId);
+
+        const mode = req.body?.mode === 'interview' ? 'interview' : 'chat';
+
+        // Starting a new thread from an untouched one would leave a trail of
+        // empty "New conversation" rows, so reuse it instead — unless the mode
+        // differs, since a thread's mode is fixed once it has one.
+        if (active && (active.messages || []).length === 0 && (active.mode || 'chat') === mode) {
+            if (Array.isArray(req.body?.skillIds)) {
+                active.skillIds = req.body.skillIds.filter(id => typeof id === 'string');
+                await writeConversationStore(req, store);
+            }
+            return res.status(200).json(active);
+        }
+
+        const convo = newConversation();
+        convo.mode = mode;
+        convo.title = mode === 'interview'
+            ? `Interview — ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+            : convo.title;
+        // A new thread inherits the current one's skills: switching topic is
+        // not usually a request to change voice. An interview takes none —
+        // its prompt is its own, and a voice skill would fight it.
+        convo.skillIds = mode === 'interview' ? [] : (Array.isArray(req.body?.skillIds)
+            ? req.body.skillIds.filter(id => typeof id === 'string')
+            : (active?.skillIds || []));
+        store.conversations.push(convo);
+        store.activeId = convo.id;
+        await writeConversationStore(req, store);
+        res.status(201).json(convo);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create conversation' });
+    }
+});
+
+// PUT switch to a saved conversation, returning its transcript
+app.put('/api/:profile/ai/conversations/:id/activate', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const target = store.conversations.find(c => c.id === req.params.id);
+        if (!target) return res.status(404).json({ error: 'Conversation not found' });
+
+        store.activeId = target.id;
+        await writeConversationStore(req, store);
+        res.json(target);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to switch conversation' });
+    }
+});
+
+// PUT rename a conversation
+app.put('/api/:profile/ai/conversations/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+        if (!title) return res.status(400).json({ error: 'Title is required' });
+        if (title.length > CONVERSATION_TITLE_MAX_LENGTH) {
+            return res.status(400).json({ error: `Title must be ${CONVERSATION_TITLE_MAX_LENGTH} characters or less` });
+        }
+
+        const store = await readConversationStore(req);
+        const target = store.conversations.find(c => c.id === req.params.id);
+        if (!target) return res.status(404).json({ error: 'Conversation not found' });
+
+        target.title = title;
+        await writeConversationStore(req, store);
+        res.json(toConversationSummary(target));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to rename conversation' });
+    }
+});
+
+// DELETE one saved conversation
+app.delete('/api/:profile/ai/conversations/:id', resolveProfile, writeLimiter, async (req, res) => {
+    try {
+        const store = await readConversationStore(req);
+        const remaining = store.conversations.filter(c => c.id !== req.params.id);
+        if (remaining.length === store.conversations.length) {
+            return res.status(404).json({ error: 'Conversation not found' });
+        }
+
+        // Never leave the assistant with no thread to write into: deleting the
+        // last one starts a fresh empty thread rather than an absent active id.
+        store.conversations = remaining.length ? remaining : [newConversation()];
+        if (!store.conversations.some(c => c.id === store.activeId)) {
+            const newest = [...store.conversations].sort(
+                (a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0)
+            )[0];
+            store.activeId = newest.id;
+        }
+        const saved = await writeConversationStore(req, store);
+        res.json({ ok: true, activeId: saved.activeId });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete conversation' });
+    }
+});
+
 app.get('/api/:profile/ai/staged', resolveProfile, async (req, res) => {
     try {
         const staged = await readJsonFile(req.profileFiles.aiStaged, []);
@@ -2950,77 +5665,99 @@ app.post('/api/:profile/ai/staged/:id/promote/board', resolveProfile, writeLimit
 // POST send a message to the AI; returns { narrative, tasks }
 app.post('/api/:profile/ai/chat', resolveProfile, aiLimiter, async (req, res) => {
     try {
-        const { messages } = req.body;
+        const prep = await prepareAiChat(req);
+        if (!prep.ok) return res.status(prep.status).json({ error: prep.error });
 
-        if (!Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ error: 'messages must be a non-empty array' });
-        }
-        for (const m of messages) {
-            if (!m || typeof m.role !== 'string' || typeof m.content !== 'string') {
-                return res.status(400).json({ error: 'Each message must have role and content strings' });
-            }
-            if (m.role !== 'user' && m.role !== 'assistant') {
-                return res.status(400).json({ error: 'Message role must be "user" or "assistant"' });
-            }
-        }
+        const { resolved, systemPrompt, tools, messages, epics, categories } = prep;
 
-        // Load AI config
-        const rawConfig = await readJsonFile(AI_CONFIG_FILE, {});
-        const aiConfig  = migrateAiConfig(rawConfig);
-        const cfg = (aiConfig.configs || []).find(c => c.id === aiConfig.activeConfigId);
-        if (!cfg) {
-            return res.status(400).json({ error: 'No active AI configuration. Add one via Config → AI Configuration.' });
-        }
-
-        const providerMeta = AI_PROVIDERS[cfg.provider];
-        if (!providerMeta) {
-            return res.status(400).json({ error: 'Unknown AI provider in config.' });
-        }
-
-        if (providerMeta.requiresKey && !cfg.apiKey) {
-            return res.status(400).json({ error: 'API key not set for this provider. Configure it via Config → AI Configuration.' });
-        }
-
-        const model   = cfg.model;
-        const apiKey  = cfg.apiKey || '';
-        const baseUrl = cfg.provider === 'custom' ? cfg.baseUrl : providerMeta.baseUrl;
-
-        // Build system prompt with current profile epics + categories
-        const epics      = await readJsonFile(req.profileFiles.epics, []);
-        const categories = await readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES);
-        const systemPrompt = buildAiSystemPrompt(epics, categories);
-
-        // Call the AI
-        let narrative, rawTasks;
+        let narrative, rawTasks, toolCalls, usage;
         try {
-            if (providerMeta.format === 'anthropic') {
-                ({ narrative, rawTasks } = await callAnthropicAi(apiKey, model, systemPrompt, messages));
-            } else {
-                ({ narrative, rawTasks } = await callOpenAiCompatibleAi(baseUrl, apiKey, model, systemPrompt, messages));
-            }
+            const call = resolved.providerMeta.format === 'anthropic'
+                ? await callAnthropicAi(resolved.apiKey, resolved.model, systemPrompt, messages, tools)
+                : await callOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt, messages, tools);
+            ({ narrative, rawTasks, toolCalls, usage } = call);
         } catch (aiErr) {
             return res.status(502).json({ error: 'AI provider error: ' + aiErr.message });
         }
 
-        // Validate and normalise raw tasks
-        const validEpicIds     = new Set(epics.map(e => e.id));
-        const validCategoryIds = new Set(categories.map(c => c.id));
-        const newStagedTasks   = [];
+        const stored = await persistAiToolOutput(req, { rawTasks, toolCalls, epics, categories });
 
-        for (const raw of rawTasks) {
-            const task = normaliseStagedTask(raw, generateId(), validEpicIds, validCategoryIds);
-            if (task) newStagedTasks.push(task);
-        }
-
-        // Persist new staged tasks
-        if (newStagedTasks.length > 0) {
-            const existing = await readJsonFile(req.profileFiles.aiStaged, []);
-            await writeJsonFile(req.profileFiles.aiStaged, [...existing, ...newStagedTasks]);
-        }
-
-        res.json({ narrative, tasks: newStagedTasks });
+        res.json({
+            narrative: narrative || describeToolOutcome(stored),
+            tasks: stored.tasks,
+            proposals: stored.proposals,
+            memories: stored.memories,
+            usage: usage || null
+        });
     } catch (error) {
         res.status(500).json({ error: 'AI chat failed' });
+    }
+});
+
+/**
+ * Streaming chat. Same inputs and same stored outputs as the buffered route
+ * above — the only difference is that narrative text arrives as it is written.
+ *
+ * Kept as a SEPARATE endpoint rather than a flag on the existing one, so the
+ * buffered path stays intact as a fallback: not every OpenAI-compatible server
+ * streams correctly, and a client that fails to stream can simply retry
+ * against /ai/chat.
+ *
+ * Wire format (server-sent events):
+ *   event: text   data: {"delta":"..."}   — narrative, token by token
+ *   event: done   data: {tasks, proposals, memories, usage}
+ *   event: error  data: {"error":"..."}
+ *
+ * Tool calls are NOT streamed: their arguments are only valid JSON once
+ * complete, so they are accumulated and processed before `done` is sent.
+ */
+app.post('/api/:profile/ai/chat/stream', resolveProfile, aiLimiter, async (req, res) => {
+    const prep = await prepareAiChat(req);
+    if (!prep.ok) return res.status(prep.status).json({ error: prep.error });
+
+    const { resolved, systemPrompt, tools, messages, epics, categories } = prep;
+
+    res.set('Content-Type', 'text/event-stream; charset=utf-8');
+    // no-cache and no-transform keep proxies from buffering the stream, which
+    // would defeat the point entirely.
+    res.set('Cache-Control', 'no-cache, no-transform');
+    res.set('Connection', 'keep-alive');
+    res.set('X-Accel-Buffering', 'no');
+
+    const send = (event, payload) => {
+        if (res.writableEnded) return;
+        res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    try {
+        const call = resolved.providerMeta.format === 'anthropic'
+            ? await streamAnthropicAi(resolved.apiKey, resolved.model, systemPrompt, messages, tools,
+                (delta) => send('text', { delta }))
+            : await streamOpenAiCompatibleAi(resolved.baseUrl, resolved.apiKey, resolved.model, systemPrompt, messages, tools,
+                (delta) => send('text', { delta }));
+
+        const stored = await persistAiToolOutput(req, {
+            rawTasks: call.rawTasks, toolCalls: call.toolCalls, epics, categories
+        });
+
+        // Nothing was streamed and the model only called tools — the client has
+        // an empty bubble on screen, so give it something true to show.
+        const fallback = call.narrative ? '' : describeToolOutcome(stored);
+        if (fallback) send('text', { delta: fallback });
+
+        send('done', {
+            narrative: call.narrative || fallback,
+            tasks: stored.tasks,
+            proposals: stored.proposals,
+            memories: stored.memories,
+            usage: call.usage || null
+        });
+        res.end();
+    } catch (error) {
+        // Headers are already sent, so a status code is no longer available —
+        // the failure has to travel as an event the client can act on.
+        send('error', { error: error.message || 'AI provider error' });
+        res.end();
     }
 });
 
@@ -3046,6 +5783,16 @@ app.get('/', async (req, res) => {
 
 // Sub-page URLs: /:alias/dashboard, /:alias/backlog, /:alias/archive, /:alias/reports, /:alias/ai
 // Serves the same app shell as /:alias — client-side JS reads pathname to render the correct view.
+/**
+ * The AI page was removed in v2.55.0 — chat moved to the floating assistant
+ * and staging moved onto the backlog page. Old links and bookmarks would
+ * otherwise land silently on the board (unknown pages fall back to it), so
+ * they are pointed at where the feature actually went.
+ */
+app.get('/:alias/ai', (req, res) => {
+    res.redirect(301, `/${req.params.alias}/backlog`);
+});
+
 app.get('/:alias/:page', async (req, res) => {
     const { alias } = req.params;
 

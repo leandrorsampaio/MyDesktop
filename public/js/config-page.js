@@ -4,11 +4,12 @@
  */
 
 import {
-    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, EPIC_COLORS,
+    MAX_COLUMNS, MAX_EPICS, MAX_CATEGORIES, MAX_PROFILES, MAX_SKILLS, EPIC_COLORS,
     DEFAULT_CATEGORY_ID, DEFAULT_CHECKLIST_ITEMS,
     DEFAULT_DEADLINE_URGENT_HOURS, DEFAULT_DEADLINE_WARNING_HOURS, THEMES
 } from './constants.js';
 import { escapeHtml, toCamelCase, getStoredTheme, setStoredTheme } from './utils.js';
+import { openMarkdownModal } from './modals.js';
 import {
     columns, setColumns, epics, setEpics, categories, setCategories, tasks,
     profiles, setProfiles, activeProfile, setActiveProfile
@@ -18,8 +19,12 @@ import {
     fetchEpicsApi, createEpicApi, updateEpicApi, deleteEpicApi,
     fetchCategoriesApi, createCategoryApi, updateCategoryApi, deleteCategoryApi,
     fetchAiConfigApi, createAiConfigEntryApi, updateAiConfigEntryApi, deleteAiConfigEntryApi,
+    setActiveAiConfigApi,
     fetchProfilesApi, createProfileApi, updateProfileApi, deleteProfileApi,
-    fetchProfileExportApi
+    fetchProfileExportApi,
+    fetchMemoriesApi, createMemoryApi, updateMemoryApi, deleteMemoryApi,
+    fetchAiSkillsApi, createAiSkillApi, updateAiSkillApi, deleteAiSkillApi,
+    fetchInterviewDigestApi, fetchMemoryMarkdownApi
 } from './api.js';
 
 const AI_PROVIDER_DEFAULTS = {
@@ -27,7 +32,8 @@ const AI_PROVIDER_DEFAULTS = {
     openai:    { label: 'OpenAI',                              defaultModel: 'gpt-4o-mini',              requiresKey: true  },
     groq:      { label: 'Groq',                               defaultModel: 'llama-3.3-70b-versatile',  requiresKey: true  },
     google:    { label: 'Google AI Studio (Gemini)',           defaultModel: 'gemini-2.0-flash',         requiresKey: true  },
-    custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false }
+    kimi:      { label: 'Kimi (Moonshot)',                     defaultModel: 'kimi-k3',                  requiresKey: true,  allowsBaseUrl: true },
+    custom:    { label: 'Custom / Local (LM Studio, Ollama…)', defaultModel: '',                         requiresKey: false, allowsBaseUrl: true }
 };
 
 /**
@@ -217,17 +223,23 @@ export async function initConfigPage(pageViewEl, { elements }) {
                                     <option value="openai">OpenAI</option>
                                     <option value="groq">Groq</option>
                                     <option value="google">Google AI Studio (Gemini)</option>
+                                    <option value="kimi">Kimi (Moonshot)</option>
                                     <option value="custom">Custom / Local (LM Studio, Ollama…)</option>
                                 </select>
                             </div>
                             <div class="aiConfig__group js-cfg-aiCustomUrlGroup" style="display:none;">
                                 <label class="aiConfig__label">Base URL</label>
                                 <input type="text" class="aiConfig__input js-cfg-aiCustomUrl" placeholder="http://localhost:1234/v1" />
-                                <p class="aiConfig__fieldHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
+                                <p class="aiConfig__fieldHint js-cfg-aiUrlHint">OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.</p>
                             </div>
                             <div class="aiConfig__group">
                                 <label class="aiConfig__label">Model</label>
-                                <input type="text" class="aiConfig__input js-cfg-aiModelInput" placeholder="Enter model name" />
+                                <div class="aiConfig__inputRow">
+                                    <input type="text" class="aiConfig__input js-cfg-aiModelInput" placeholder="Enter model name" list="cfgAiModelList" />
+                                    <button type="button" class="btn --sm js-cfg-aiFetchModels" disabled>Fetch models</button>
+                                </div>
+                                <datalist id="cfgAiModelList"></datalist>
+                                <p class="aiConfig__fieldHint js-cfg-aiModelHint">Model ids change without notice. Save the entry, then fetch the list the provider actually offers.</p>
                             </div>
                             <div class="aiConfig__group">
                                 <label class="aiConfig__label">API Key</label>
@@ -240,6 +252,55 @@ export async function initConfigPage(pageViewEl, { elements }) {
                                 <button type="button" class="btn --save js-cfg-aiSave">Save</button>
                             </div>
                         </div>
+                    </div>
+
+                    <h3 class="configPage__panelTitle configPage__panelTitle--spaced">Skills</h3>
+                    <p class="configPage__panelHint">Reusable instructions that shape <em>how</em> the assistant answers — its voice, length and format. Memories below record what it knows; skills tell it how to behave. Turn one <strong>always on</strong> to apply it to every conversation, or leave it off and switch it on per conversation from the assistant panel. Maximum ${MAX_SKILLS}.</p>
+                    <div class="skillsEditor">
+                        <div class="skillsEditor__list js-cfg-skillsList"></div>
+                        <div class="skillsEditor__form js-cfg-skillForm" hidden>
+                            <input type="text" class="aiConfig__input js-cfg-skillName" placeholder="Skill name, e.g. Be brief" maxlength="60" />
+                            <textarea class="aiConfig__input skillsEditor__textarea js-cfg-skillInstructions" rows="4" maxlength="1000" placeholder="Answer in at most 3 sentences unless I ask you to expand. No preamble."></textarea>
+                            <label class="skillsEditor__checkLabel">
+                                <input type="checkbox" class="js-cfg-skillAlwaysOn" />
+                                <span>Always on — apply to every conversation</span>
+                            </label>
+                            <div class="aiConfig__error js-cfg-skillError" style="display:none;"></div>
+                            <div class="configPage__actions">
+                                <button type="button" class="btn --cancel js-cfg-skillCancel">Cancel</button>
+                                <button type="button" class="btn --save js-cfg-skillSave">Save</button>
+                            </div>
+                        </div>
+                        <button type="button" class="aiConfig__addBtn js-cfg-skillAddBtn">+ Add skill</button>
+                    </div>
+
+                    <h3 class="configPage__panelTitle configPage__panelTitle--spaced">What the assistant remembers</h3>
+                    <p class="configPage__panelHint">Durable facts about you and your work, sent with every message — so they survive restarts, new conversations, and switching to a different model. The assistant can suggest entries, but only ones you approve are used. Stored in <code>ai-memory.json</code> — plain text you can edit or delete at any time.</p>
+
+                    <!-- What the assistant does not know yet. Computed from every
+                         task including the archive, so it renders with the AI off. -->
+                    <div class="interviewCard js-cfg-interviewCard">
+                        <div class="interviewCard__body">
+                            <span class="interviewCard__title">Let the assistant interview you</span>
+                            <span class="interviewCard__hint js-cfg-interviewHint">Checking what it already knows…</span>
+                        </div>
+                        <button type="button" class="btn --primary js-cfg-interviewBtn" disabled>Interview me</button>
+                    </div>
+
+                    <div class="memoryEditor">
+                        <div class="memoryEditor__addRow">
+                            <input type="text" class="memoryEditor__input js-cfg-memoryInput" placeholder="e.g. Mikael is my boss" maxlength="300" />
+                            <select class="aiConfig__select memoryEditor__categorySelect js-cfg-memoryCategory">
+                                <option value="other">Other</option>
+                                <option value="person">Person</option>
+                                <option value="term">Term</option>
+                                <option value="project">Project</option>
+                                <option value="preference">Preference</option>
+                            </select>
+                            <button type="button" class="btn --primary js-cfg-memoryAddBtn">Add</button>
+                        </div>
+                        <div class="memoryEditor__list js-cfg-memoryList"></div>
+                        <button type="button" class="aiConfig__addBtn js-cfg-memoryMarkdownBtn">View as Markdown</button>
                     </div>
                 </div>
 
@@ -532,17 +593,61 @@ export async function initConfigPage(pageViewEl, { elements }) {
             return;
         }
 
+        // An epic is a silo you manage, not just a label — who asks about it,
+        // how often, and what they expect. The context row is what turns
+        // "topics" into something the assistant can reason about, and it is
+        // useful on its own with the AI switched off.
         epicsList.innerHTML = epics.map(epic => `
             <div class="epicsEditor__item" data-epic-id="${epic.id}">
-                <div class="epicsEditor__itemColor" style="background-color: ${epic.color};"></div>
-                <div class="epicsEditor__itemInfo">
-                    <input type="text" class="epicsEditor__itemName js-epicItemName" value="${escapeHtml(epic.name)}" data-epic-id="${epic.id}" />
-                    <span class="epicsEditor__itemAlias">Alias: ${escapeHtml(epic.alias)}</span>
+                <div class="epicsEditor__itemMain">
+                    <div class="epicsEditor__itemColor" style="background-color: ${epic.color};"></div>
+                    <div class="epicsEditor__itemInfo">
+                        <input type="text" class="epicsEditor__itemName js-epicItemName" value="${escapeHtml(epic.name)}" data-epic-id="${epic.id}" />
+                        <span class="epicsEditor__itemAlias">Alias: ${escapeHtml(epic.alias)}</span>
+                    </div>
+                    <span class="js-epicItemColorSlot" data-epic-id="${epic.id}"></span>
+                    <button class="epicsEditor__deleteBtn js-epicDeleteBtn" data-epic-id="${epic.id}" title="Delete epic">&times;</button>
                 </div>
-                <span class="js-epicItemColorSlot" data-epic-id="${epic.id}"></span>
-                <button class="epicsEditor__deleteBtn js-epicDeleteBtn" data-epic-id="${epic.id}" title="Delete epic">&times;</button>
+                <div class="epicsEditor__itemContext">
+                    <label class="epicsEditor__contextField">
+                        <span>Stakeholder</span>
+                        <input type="text" class="js-epicContext" data-field="stakeholder" data-epic-id="${epic.id}"
+                               value="${escapeHtml(epic.stakeholder || '')}" placeholder="Who asks about this?" />
+                    </label>
+                    <label class="epicsEditor__contextField">
+                        <span>Cadence</span>
+                        <input type="text" class="js-epicContext" data-field="cadence" data-epic-id="${epic.id}"
+                               value="${escapeHtml(epic.cadence || '')}" placeholder="How often?" />
+                    </label>
+                    <label class="epicsEditor__contextField epicsEditor__contextField--wide">
+                        <span>Expectations</span>
+                        <input type="text" class="js-epicContext" data-field="expectations" data-epic-id="${epic.id}"
+                               value="${escapeHtml(epic.expectations || '')}" placeholder="What do they need, and when?" />
+                    </label>
+                </div>
             </div>
         `).join('');
+
+        // Context fields auto-save on blur, matching the other CRUD sections.
+        // A failure reverts the input rather than leaving the field showing a
+        // value the server never accepted.
+        epicsList.querySelectorAll('.js-epicContext').forEach(input => {
+            input.addEventListener('blur', async () => {
+                const epic = epics.find(e => e.id === input.dataset.epicId);
+                if (!epic) return;
+                const field = input.dataset.field;
+                const value = input.value.trim();
+                if (value === (epic[field] || '')) return;   // nothing changed
+
+                const result = await updateEpicApi(epic.id, { [field]: value });
+                if (result.ok) {
+                    epic[field] = value;
+                } else {
+                    toaster.error(result.error || 'Failed to save');
+                    input.value = epic[field] || '';
+                }
+            });
+        });
 
         // Color pickers
         epicsList.querySelectorAll('.js-epicItemColorSlot').forEach(slot => {
@@ -927,6 +1032,8 @@ export async function initConfigPage(pageViewEl, { elements }) {
     const aiCustomUrlGrp = $('.js-cfg-aiCustomUrlGroup');
     const aiCustomUrl   = $('.js-cfg-aiCustomUrl');
     const aiModelInput  = $('.js-cfg-aiModelInput');
+    const aiFetchModelsBtn = $('.js-cfg-aiFetchModels');
+    const aiModelList   = $('#cfgAiModelList');
     const aiKeyInput    = $('.js-cfg-aiKeyInput');
     const aiKeyHint     = $('.js-cfg-aiKeyHint');
     const aiError       = $('.js-cfg-aiError');
@@ -969,6 +1076,31 @@ export async function initConfigPage(pageViewEl, { elements }) {
 
             const actions = document.createElement('div');
             actions.className = 'aiConfig__entryActions';
+
+            // The dot alone showed which config was in use but gave no way to
+            // change it, leaving the server's active-config route unreachable.
+            // The active row states its status rather than offering a no-op.
+            if (isActive) {
+                const activeTag = document.createElement('span');
+                activeTag.className = 'aiConfig__entryActive';
+                activeTag.textContent = 'Active';
+                actions.appendChild(activeTag);
+            } else {
+                const useBtn = document.createElement('button');
+                useBtn.type = 'button';
+                useBtn.className = 'aiConfig__entryBtn aiConfig__entryBtn--use';
+                useBtn.textContent = 'Use';
+                useBtn.title = `Make ${cfg.name} the active configuration`;
+                useBtn.addEventListener('click', async () => {
+                    const result = await setActiveAiConfigApi(cfg.id);
+                    if (!result.ok) { toaster.error(result.error || 'Failed to switch configuration'); return; }
+                    aiConfigState.activeConfigId = cfg.id;
+                    toaster.success(`Now using ${cfg.name}`);
+                    aiRenderList();
+                });
+                actions.appendChild(useBtn);
+            }
+
             const editBtn = document.createElement('button');
             editBtn.type = 'button';
             editBtn.className = 'aiConfig__entryBtn';
@@ -998,6 +1130,26 @@ export async function initConfigPage(pageViewEl, { elements }) {
         }
     }
 
+    /**
+     * Shows or hides the provider-dependent fields.
+     *
+     * The Base URL field is no longer Custom-only: Kimi runs two regional
+     * hosts, and switching between them shouldn't cost you the provider's
+     * defaults by forcing a drop to Custom.
+     */
+    function syncProviderFields() {
+        const provider = aiProviderSel.value;
+        const meta = AI_PROVIDER_DEFAULTS[provider];
+        const urlHint = $('.js-cfg-aiUrlHint');
+
+        aiCustomUrlGrp.style.display = meta?.allowsBaseUrl ? '' : 'none';
+
+        if (!urlHint) return;
+        urlHint.textContent = provider === 'kimi'
+            ? 'Defaults to the international host (api.moonshot.ai/v1). Use https://api.moonshot.cn/v1 for the China platform. Leave blank for the default.'
+            : 'OpenAI-compatible endpoint. Works with LM Studio, Ollama, Jan, and similar tools.';
+    }
+
     function aiShowForm(entry) {
         const isEdit = !!entry;
         aiListPanel.style.display = 'none';
@@ -1009,8 +1161,13 @@ export async function initConfigPage(pageViewEl, { elements }) {
         aiKeyInput.value    = '';
         aiKeyHint.textContent = isEdit && entry.hasKey ? 'Key saved — leave blank to keep current' : '';
         aiError.style.display = 'none';
-        aiCustomUrlGrp.style.display = aiProviderSel.value === 'custom' ? '' : 'none';
+        syncProviderFields();
         aiSaveBtn.dataset.editId = isEdit ? entry.id : '';
+        // Fetching asks the provider with the *stored* key, so it needs a saved
+        // entry. A new one has nothing to authenticate with yet.
+        aiFetchModelsBtn.disabled = !isEdit;
+        aiFetchModelsBtn.title = isEdit ? '' : 'Save this configuration first';
+        aiModelList.innerHTML = '';
         aiNameInput.focus();
     }
 
@@ -1018,7 +1175,37 @@ export async function initConfigPage(pageViewEl, { elements }) {
         const def = AI_PROVIDER_DEFAULTS[aiProviderSel.value];
         const isDefaultOfOther = Object.values(AI_PROVIDER_DEFAULTS).some(d => d !== def && d.defaultModel && d.defaultModel === aiModelInput.value);
         if (isDefaultOfOther || !aiModelInput.value.trim()) aiModelInput.value = def?.defaultModel || '';
-        aiCustomUrlGrp.style.display = aiProviderSel.value === 'custom' ? '' : 'none';
+        syncProviderFields();
+    });
+
+    aiFetchModelsBtn.addEventListener('click', async () => {
+        const editId = aiSaveBtn.dataset.editId;
+        if (!editId) return;
+
+        const original = aiFetchModelsBtn.textContent;
+        aiFetchModelsBtn.disabled = true;
+        aiFetchModelsBtn.textContent = 'Fetching…';
+        try {
+            const res = await fetch(`/api/ai/config/entries/${editId}/models`);
+            const data = await res.json();
+            if (!res.ok) {
+                toaster.error(data.error || 'Could not fetch models');
+                return;
+            }
+            aiModelList.innerHTML = data.models
+                .map(id => `<option value="${escapeHtml(id)}"></option>`).join('');
+            if (data.models.length === 0) {
+                toaster.warning('The provider listed no models.');
+            } else {
+                toaster.success(`${data.models.length} model${data.models.length === 1 ? '' : 's'} available — click the Model field to pick one.`);
+                aiModelInput.focus();
+            }
+        } catch {
+            toaster.error('Could not reach the server');
+        } finally {
+            aiFetchModelsBtn.disabled = false;
+            aiFetchModelsBtn.textContent = original;
+        }
     });
 
     aiAddBtn.addEventListener('click', () => aiShowForm(null));
@@ -1054,6 +1241,293 @@ export async function initConfigPage(pageViewEl, { elements }) {
     });
 
     aiShowList();
+
+    // ==========================================
+    // Section: Skills
+    // ==========================================
+    const skillsList        = $('.js-cfg-skillsList');
+    const skillForm         = $('.js-cfg-skillForm');
+    const skillNameInput    = $('.js-cfg-skillName');
+    const skillInstrInput   = $('.js-cfg-skillInstructions');
+    const skillAlwaysOnBox  = $('.js-cfg-skillAlwaysOn');
+    const skillError        = $('.js-cfg-skillError');
+    const skillSaveBtn      = $('.js-cfg-skillSave');
+    const skillCancelBtn    = $('.js-cfg-skillCancel');
+    const skillAddBtn       = $('.js-cfg-skillAddBtn');
+
+    /** @type {Array<Object>} Mirror of ai-skills.json */
+    let skills = [];
+
+    function renderSkills() {
+        if (skills.length === 0) {
+            skillsList.innerHTML = '<div class="emptyState">No skills yet. Add one to control how the assistant writes.</div>';
+            return;
+        }
+        skillsList.innerHTML = skills.map(skill => `
+            <div class="skillsEditor__item">
+                <div class="skillsEditor__itemInfo">
+                    <span class="skillsEditor__itemName">
+                        ${escapeHtml(skill.name)}
+                        ${skill.alwaysOn ? '<span class="skillsEditor__badge">always on</span>' : ''}
+                    </span>
+                    <span class="skillsEditor__itemInstructions">${escapeHtml(skill.instructions)}</span>
+                </div>
+                <div class="skillsEditor__itemActions">
+                    <button type="button" class="aiConfig__entryBtn js-skillEdit" data-id="${escapeHtml(skill.id)}">Edit</button>
+                    <button type="button" class="aiConfig__entryBtn aiConfig__entryBtn--delete js-skillDelete" data-id="${escapeHtml(skill.id)}" title="Delete">&times;</button>
+                </div>
+            </div>
+        `).join('');
+
+        skillsList.querySelectorAll('.js-skillEdit').forEach(btn => {
+            btn.addEventListener('click', () => showSkillForm(skills.find(sk => sk.id === btn.dataset.id)));
+        });
+        skillsList.querySelectorAll('.js-skillDelete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await deleteAiSkillApi(btn.dataset.id);
+                    skills = skills.filter(sk => sk.id !== btn.dataset.id);
+                    renderSkills();
+                    toaster.success('Skill deleted');
+                } catch {
+                    toaster.error('Could not delete skill');
+                }
+            });
+        });
+    }
+
+    /** @param {Object} [skill] - Omit to add a new one. */
+    function showSkillForm(skill) {
+        skillForm.hidden = false;
+        skillAddBtn.hidden = true;
+        skillError.style.display = 'none';
+        skillNameInput.value = skill ? skill.name : '';
+        skillInstrInput.value = skill ? skill.instructions : '';
+        skillAlwaysOnBox.checked = skill ? skill.alwaysOn : false;
+        skillSaveBtn.dataset.editId = skill ? skill.id : '';
+        skillNameInput.focus();
+    }
+
+    function hideSkillForm() {
+        skillForm.hidden = true;
+        skillAddBtn.hidden = false;
+        skillSaveBtn.dataset.editId = '';
+    }
+
+    skillAddBtn.addEventListener('click', () => {
+        if (skills.length >= MAX_SKILLS) { toaster.warning(`Maximum of ${MAX_SKILLS} skills allowed`); return; }
+        showSkillForm(null);
+    });
+    skillCancelBtn.addEventListener('click', hideSkillForm);
+
+    skillSaveBtn.addEventListener('click', async () => {
+        skillError.style.display = 'none';
+        const payload = {
+            name: skillNameInput.value.trim(),
+            instructions: skillInstrInput.value.trim(),
+            alwaysOn: skillAlwaysOnBox.checked
+        };
+        if (!payload.name) { skillError.textContent = 'Name is required'; skillError.style.display = ''; return; }
+        if (!payload.instructions) { skillError.textContent = 'Instructions are required'; skillError.style.display = ''; return; }
+
+        const editId = skillSaveBtn.dataset.editId;
+        try {
+            const saved = editId
+                ? await updateAiSkillApi(editId, payload)
+                : await createAiSkillApi(payload);
+            if (editId) {
+                const idx = skills.findIndex(sk => sk.id === editId);
+                if (idx !== -1) skills[idx] = saved;
+            } else {
+                skills.push(saved);
+            }
+            hideSkillForm();
+            renderSkills();
+            toaster.success(editId ? 'Skill updated' : 'Skill added');
+        } catch (error) {
+            skillError.textContent = error.message || 'Could not save skill';
+            skillError.style.display = '';
+        }
+    });
+
+    // Loaded after the page renders, like memory — the config page must not
+    // wait on the assistant's data to become usable.
+    fetchAiSkillsApi()
+        .then(fetched => { skills = fetched; renderSkills(); })
+        .catch(() => { skillsList.innerHTML = '<div class="emptyState">Could not load skills</div>'; });
+
+    // ==========================================
+    // Section: Assistant Memory
+    // ==========================================
+    const memoryInput  = $('.js-cfg-memoryInput');
+    const memoryAddBtn = $('.js-cfg-memoryAddBtn');
+    const memoryList   = $('.js-cfg-memoryList');
+    const memoryCategorySelect = $('.js-cfg-memoryCategory');
+    const memoryMarkdownBtn    = $('.js-cfg-memoryMarkdownBtn');
+    const interviewBtn  = $('.js-cfg-interviewBtn');
+    const interviewHint = $('.js-cfg-interviewHint');
+
+    /** @type {Array<Object>} Mirror of ai-memory.json */
+    let memories = [];
+
+    /**
+     * Renders the memory list, unapproved AI suggestions first.
+     *
+     * Everything the assistant proposes lands here unapproved and unused —
+     * approving is what lets an entry into a prompt, which is the same
+     * propose-first rule the board changes follow.
+     */
+    function renderMemories() {
+        if (memories.length === 0) {
+            memoryList.innerHTML = '<div class="emptyState">Nothing remembered yet</div>';
+            return;
+        }
+
+        const ordered = [...memories].sort((a, b) => Number(a.approved) - Number(b.approved));
+        memoryList.innerHTML = ordered.map(memory => `
+            <div class="memoryEditor__item ${memory.approved ? '' : '--pending'}" data-memory-id="${memory.id}">
+                <input type="text" class="memoryEditor__itemText js-memoryText"
+                       value="${escapeHtml(memory.text)}" maxlength="300" data-memory-id="${memory.id}" />
+                <div class="memoryEditor__itemActions">
+                    <select class="memoryEditor__categorySelect js-memoryCategory" data-memory-id="${memory.id}">
+                        ${['other','person','term','project','preference'].map(c =>
+                            `<option value="${c}"${(memory.category || 'other') === c ? ' selected' : ''}>${c[0].toUpperCase() + c.slice(1)}</option>`).join('')}
+                    </select>
+                    ${memory.approved
+                        ? `<span class="memoryEditor__source">${memory.source === 'ai' ? 'suggested' : 'yours'}</span>`
+                        : `<button type="button" class="btn --primary --sm js-memoryApprove" data-memory-id="${memory.id}">Remember this</button>`}
+                    <button type="button" class="memoryEditor__deleteBtn js-memoryDelete" data-memory-id="${memory.id}" title="Forget">&times;</button>
+                </div>
+            </div>
+        `).join('');
+
+        // Edit on blur, matching the other CRUD sections here.
+        memoryList.querySelectorAll('.js-memoryText').forEach(input => {
+            input.addEventListener('blur', async () => {
+                const memory = memories.find(m => m.id === input.dataset.memoryId);
+                if (!memory) return;
+                const text = input.value.trim();
+                if (!text || text === memory.text) {
+                    input.value = memory.text;
+                    return;
+                }
+                try {
+                    const updated = await updateMemoryApi(memory.id, { text });
+                    Object.assign(memory, updated);
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to save');
+                    input.value = memory.text;
+                }
+            });
+        });
+
+        memoryList.querySelectorAll('.js-memoryCategory').forEach(select => {
+            select.addEventListener('change', async () => {
+                const memory = memories.find(m => m.id === select.dataset.memoryId);
+                if (!memory) return;
+                try {
+                    Object.assign(memory, await updateMemoryApi(memory.id, { category: select.value }));
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to save');
+                    select.value = memory.category || 'other';
+                }
+            });
+        });
+
+        memoryList.querySelectorAll('.js-memoryApprove').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const memory = memories.find(m => m.id === btn.dataset.memoryId);
+                if (!memory) return;
+                try {
+                    Object.assign(memory, await updateMemoryApi(memory.id, { approved: true }));
+                    renderMemories();
+                    toaster.success('The assistant will remember that');
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to approve');
+                }
+            });
+        });
+
+        memoryList.querySelectorAll('.js-memoryDelete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.memoryId;
+                memories = memories.filter(m => m.id !== id);
+                renderMemories();
+                try {
+                    await deleteMemoryApi(id);
+                } catch (error) {
+                    toaster.error(error.message || 'Failed to delete');
+                }
+            });
+        });
+    }
+
+    async function addMemory() {
+        const text = memoryInput.value.trim();
+        if (!text) return;
+        try {
+            memories.push(await createMemoryApi(text, memoryCategorySelect.value));
+            memoryInput.value = '';
+            memoryCategorySelect.value = 'other';
+            renderMemories();
+        } catch (error) {
+            toaster.error(error.message || 'Failed to add');
+        }
+    }
+
+    memoryAddBtn.addEventListener('click', addMemory);
+    memoryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addMemory();
+        }
+    });
+
+    /**
+     * Describes what the assistant is missing, in plain terms.
+     *
+     * Runs whether or not an AI is configured — the gaps are computed from the
+     * board, so the card is honest about what an interview would cover even
+     * when the assistant itself is unavailable.
+     */
+    fetchInterviewDigestApi()
+        .then(digest => {
+            const bits = [];
+            if (digest.names.length) bits.push(`${digest.names.length} recurring name${digest.names.length === 1 ? '' : 's'} it doesn't recognise`);
+            if (digest.prefixes.length) bits.push(`${digest.prefixes.length} title prefix${digest.prefixes.length === 1 ? '' : 'es'}`);
+            if (digest.epicsMissingContext.length) bits.push(`${digest.epicsMissingContext.length} epic${digest.epicsMissingContext.length === 1 ? '' : 's'} with no stakeholder`);
+
+            interviewHint.textContent = digest.hasGaps
+                ? `It read all ${digest.totals.tasks + digest.totals.archived} of your tasks, archive included, and found ${bits.join(', ')}. Run this again any time — after switching model, for instance.`
+                : `Nothing obvious left to ask about. Run it again after the board has moved on.`;
+            interviewBtn.disabled = false;
+        })
+        .catch(() => {
+            interviewHint.textContent = 'Could not check what it knows.';
+        });
+
+    interviewBtn.addEventListener('click', async () => {
+        const dock = document.querySelector('assistant-dock');
+        if (!dock) { toaster.error('Assistant is not available on this page'); return; }
+        // The dock reports its own failures — the conversation lands there, so
+        // that is where an explanation has to appear.
+        await dock.startInterview();
+    });
+
+    memoryMarkdownBtn.addEventListener('click', async () => {
+        try {
+            const md = await fetchMemoryMarkdownApi();
+            openMarkdownModal(elements, 'What the assistant knows about me', md);
+        } catch {
+            toaster.error('Could not render memory');
+        }
+    });
+
+    // Loaded after the page renders — memory is not something the config page
+    // should wait on to become usable.
+    fetchMemoriesApi()
+        .then(fetched => { memories = fetched; renderMemories(); })
+        .catch(() => { memoryList.innerHTML = '<div class="emptyState">Could not load memory</div>'; });
 
     // ==========================================
     // Section: Profiles

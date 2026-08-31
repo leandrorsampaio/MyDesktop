@@ -27,7 +27,6 @@ const GO_PAGES = {
     l: 'backlog',
     a: 'archive',
     r: 'reports',
-    i: 'ai',
     c: 'config'
 };
 
@@ -104,6 +103,19 @@ function _handleKeydown(e, state) {
                 e.preventDefault();
                 state.board.quickAdd();
             }
+            return;
+        case 'c':
+            // Capture works on every page, not just the board — the whole
+            // point is that it is reachable the moment someone tells you
+            // something, wherever you happen to be.
+            e.preventDefault();
+            document.querySelector('.js-quickCapture')?.open();
+            return;
+        case 'a':
+            // Assistant dock. Also global: it carries the context of whatever
+            // page you are on, so it should be reachable from all of them.
+            e.preventDefault();
+            document.querySelector('.js-assistantDock')?.toggle();
             return;
         case 'j': case 'ArrowDown':
             if (state.board) { e.preventDefault(); _navigateCards('down'); }
