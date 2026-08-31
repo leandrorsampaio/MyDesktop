@@ -1121,6 +1121,23 @@ All CRUD editors (categories, epics, profiles, columns, checklist, AI config, ge
 
 ---
 
+## Module layout
+
+`server.js` holds the routes and the profile plumbing. One layer has been
+lifted out so far:
+
+- `lib/ai-providers.js` — the Anthropic and OpenAI-compatible dialects,
+  buffered and streaming, plus the SSE reader and tool-call accumulator. It is
+  a factory taking `parseSseChunk`, `extractTasksFromText`, `fetchWithTimeout`
+  and the default tool schema, so the dependency runs one way only.
+
+The remaining seams a review identified — the prompt/tool layer and the
+`/api/:profile/ai/*` routes — are **not** clean cuts today: the prompt builders
+sit interleaved with validators the routes call (`normaliseSkillInput`,
+`normaliseMemory`, `normaliseProposal`), so separating them is a decision about
+where those belong, not a move. Worth doing when a change next forces a
+large-scale edit there.
+
 ## Concurrency
 
 Every store is a whole-file JSON document, so nearly every mutation is a
