@@ -1123,20 +1123,27 @@ All CRUD editors (categories, epics, profiles, columns, checklist, AI config, ge
 
 ## Module layout
 
-`server.js` holds the routes and the profile plumbing. One layer has been
-lifted out so far:
+`server.js` holds the routes, the profile plumbing and the middleware. Five
+layers sit in `lib/`, each a factory taking exactly what it needs, so the
+dependency runs one way and nothing in `lib/` requires `server.js` back.
 
-- `lib/ai-providers.js` — the Anthropic and OpenAI-compatible dialects,
-  buffered and streaming, plus the SSE reader and tool-call accumulator. It is
-  a factory taking `parseSseChunk`, `extractTasksFromText`, `fetchWithTimeout`
-  and the default tool schema, so the dependency runs one way only.
+| Module | What it owns |
+|---|---|
+| `lib/attachments.js` | The bytes, and every path built to reach them. Nothing a user typed reaches the filesystem. |
+| `lib/ai-schemas.js` | The five tool schemas — the shapes the model is asked to emit. |
+| `lib/ai-prompts.js` | Everything the model is told. Pure: same board in, same string out. |
+| `lib/ai-providers.js` | The only code that knows an HTTP wire format (Anthropic + OpenAI-compatible, buffered + streaming). |
+| `lib/ai-validators.js` | Turning what the model said into records worth storing. The layer that makes propose-first mean something. |
 
-The remaining seams a review identified — the prompt/tool layer and the
-`/api/:profile/ai/*` routes — are **not** clean cuts today: the prompt builders
-sit interleaved with validators the routes call (`normaliseSkillInput`,
-`normaliseMemory`, `normaliseProposal`), so separating them is a decision about
-where those belong, not a move. Worth doing when a change next forces a
-large-scale edit there.
+The split follows the direction of a request: **schemas** say what may come
+back, **prompts** ask for it, **providers** carry it, **validators** decide
+what to keep. A new AI capability usually touches one of the four, not
+`server.js`.
+
+Constants two layers share (`STORY_POINTS`, `MEMORY_CATEGORIES`,
+`PROPOSAL_KINDS`, `DEFAULT_CATEGORY_ID`) live near the top of `server.js` and
+are passed in — they are declared above the `require` calls because a `const`
+is not hoisted into one.
 
 ## Concurrency
 

@@ -8,8 +8,8 @@
 
 A self-hosted personal kanban tracker. Runs locally as a browser homepage. Vanilla JS + Web Components (Shadow DOM) + Node (built-in `http` module, no Express). **No framework, no build step, no bundler, zero npm dependencies.** Edit a file, refresh the page.
 
-- **Current version:** 2.60.1
-- `lib/ai-providers.js` — the only code that knows an LLM wire format (Anthropic + OpenAI-compatible, buffered + streaming). A factory taking its dependencies, so it requires nothing back from `server.js`. (see [CHANGELOG.md](CHANGELOG.md))
+- **Current version:** 2.61.0
+- `lib/` — five layers lifted out of `server.js`, each a factory taking its dependencies so nothing requires `server.js` back: `attachments.js` (bytes and paths), `ai-schemas.js` (tool shapes), `ai-prompts.js` (what the model is told; pure), `ai-providers.js` (the only code that knows a wire format), `ai-validators.js` (what comes back, treated as untrusted). See SPEC.md § Module layout. (see [CHANGELOG.md](CHANGELOG.md))
 - **Today's date for this session:** check the user's environment header
 - **Single user, local only.** Multi-profile (Work, Personal, …) via URL-scoped data folders.
 
