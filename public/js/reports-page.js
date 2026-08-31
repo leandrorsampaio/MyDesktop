@@ -21,20 +21,19 @@ export async function initReportsPage(pageViewEl, { elements }) {
             <div class="reportsPage__header">
                 <h2 class="reportsPage__title">Reports</h2>
                 <span class="reportsPage__count js-reportsCount">Loading…</span>
+                <button type="button" class="btn --primary --sm js-generateReportBtn">Generate report</button>
             </div>
             <div class="reportsPage__tableWrap js-reportsTableWrap">
                 <list-header class="js-listHeader"></list-header>
                 <div class="reportsPage__rows js-reportsRows"></div>
             </div>
-            <page-fab label="Generate report" icon="+"></page-fab>
         </div>
     `;
 
     // Dynamically import components
     await Promise.all([
         import('/components/list-header/list-header.js'),
-        import('/components/report-row/report-row.js'),
-        import('/components/page-fab/page-fab.js')
+        import('/components/report-row/report-row.js')
     ]);
 
     let reports = [];
@@ -192,7 +191,7 @@ export async function initReportsPage(pageViewEl, { elements }) {
         }
     });
 
-    pageViewEl.querySelector('page-fab').addEventListener('fab-click', async () => {
+    pageViewEl.querySelector('.js-generateReportBtn').addEventListener('click', async () => {
         const confirmed = await openConfirmDialog({
             title: 'Generate Report',
             message: 'Generate a report snapshot of the current board and notes? '

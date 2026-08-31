@@ -240,3 +240,21 @@ All eight phases have shipped (v2.46.0 – v2.53.0). Implementation detail now l
 ## Known issue found while scoping
 
 `data/work/tasks.json` holds 186 tasks, of which **152 carry `status: "archived"`** — a status with no matching column. They are invisible on the board but loaded on every fetch, and would bloat the AI snapshot for no benefit. Almost certainly a migration leftover from before `archived-tasks.json` existed. Worth resolving on its own, independently of this feature.
+
+## Live-model verification
+
+All five tools exercised end-to-end against **Kimi K3** (2026-08-30/31). This
+matters more than usual: only `propose_tasks` has a text fallback, so the other
+four fail *silently* on a model with weak tool support.
+
+| Tool | Result |
+|---|---|
+| `propose_memory` | Called; correct category; `approved: false` held |
+| `propose_tasks` | Called; 3 tasks staged, epics routed correctly |
+| `classify_task` | Called; routed `ESB-` → ECOM from memory, estimated 2pt |
+| `propose_changes` | Called; applied the user's own poker scale from memory |
+| `write_report_summary` | Called; TLDR + bullets grouped by silo + attention |
+
+Bugs this found, fixed in v2.59.1: empty message bubbles on tool-only replies,
+missing memory outcomes in the dock, and raw Markdown asterisks.
+

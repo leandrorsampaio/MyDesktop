@@ -2754,6 +2754,12 @@ body.--snoozeTransparent .js-snoozeToggleBtn {
     margin-bottom: var(--space-20);
 }
 
+/* Pushes the generate action to the right end of the header row, matching the
+   backlog page's AI staging toggle. */
+.reportsPage__header .js-generateReportBtn {
+    margin-left: auto;
+}
+
 .reportsPage__title {
     font-size: 20px;
     font-weight: var(--font-weight-semibold);
