@@ -1576,7 +1576,7 @@ app.post('/api/:profile/tasks/:id/classify', resolveProfile, aiLimiter, async (r
             readJsonFile(req.profileFiles.categories, DEFAULT_CATEGORIES)
         ]);
 
-        const task = tasks[taskIndex];
+        let task = tasks[taskIndex];
         const noteText = task.description || task.title;
         const systemPrompt = buildClassifyPrompt({
             epics, categories, columns: req.columns,
@@ -1598,6 +1598,21 @@ app.post('/api/:profile/tasks/:id/classify', resolveProfile, aiLimiter, async (r
         if (!toolInput || typeof toolInput !== 'object') {
             return res.status(200).json({ classified: false, reason: 'Model returned no classification', task });
         }
+
+        // Re-read after the provider call, which takes seconds. The array read
+        // before it is now stale: anything the user did meanwhile — capturing
+        // another note, or hitting Undo on this one — is already on disk, and
+        // writing the old array back would silently revert it.
+        const freshTasks = await readJsonFile(req.profileFiles.tasks, []);
+        const freshIndex = freshTasks.findIndex(t => t.id === req.params.id);
+        if (freshIndex === -1) {
+            // Undone or deleted while the model was thinking. Filing it again
+            // would resurrect a task the user deliberately removed.
+            return res.status(200).json({ classified: false, reason: 'Task no longer exists', task: null });
+        }
+        tasks.length = 0;
+        tasks.push(...freshTasks);
+        task = tasks[freshIndex];
 
         // Everything below is advisory input from a model — validate each field
         // against what this profile actually has before writing any of it.
@@ -2147,8 +2162,18 @@ app.post('/api/:profile/reports/:id/summarise', resolveProfile, aiLimiter, async
             model: resolved.model
         };
 
-        await writeJsonFile(req.profileFiles.reports, reports);
-        res.json({ summarised: true, report });
+        // Same re-read as classify: the reports array was read before a
+        // provider call that takes seconds, so writing it back wholesale would
+        // revert any report generated or deleted meanwhile.
+        const freshReports = await readJsonFile(req.profileFiles.reports, []);
+        const freshIndex = freshReports.findIndex(r => r.id === req.params.id);
+        if (freshIndex === -1) {
+            return res.json({ summarised: false, reason: 'Report was deleted while summarising' });
+        }
+        freshReports[freshIndex].summary = report.summary;
+
+        await writeJsonFile(req.profileFiles.reports, freshReports);
+        res.json({ summarised: true, report: freshReports[freshIndex] });
     } catch (error) {
         console.error('Report summary failed:', error);
         res.status(500).json({ error: 'Failed to summarise report' });
@@ -2946,7 +2971,13 @@ const DIGEST_MAX_PER_KIND = 12;
  *            totals: Object, hasGaps: boolean}}
  */
 function buildInterviewDigest({ tasks = [], archived = [], epics = [], memories = [] }) {
-    const all = [...tasks, ...archived];
+    // Deduped by id: a task can legitimately appear in both stores (the
+    // archive flow writes the new file before pruning the old, and older data
+    // carries the residue of that). Counting those twice halves the effective
+    // occurrence threshold and manufactures phantom "unknowns" that crowd out
+    // the real ones — on the live board it inflated a 13x name to 22x.
+    const all = [...new Map([...tasks, ...archived].map(t => [t.id, t])).values()];
+    const archivedIds = new Set(archived.map(t => t.id));
 
     // Anything already named in an approved memory is not a gap. Matched
     // case-insensitively on whole words so "SDS" in a memory rules out the SDS
@@ -3002,8 +3033,13 @@ function buildInterviewDigest({ tasks = [], archived = [], epics = [], memories 
         names,
         epicsMissingContext,
         totals: {
-            tasks: tasks.length,
-            archived: archived.length,
+            // Deduped, like `all` — the interview prompt quotes these numbers
+            // back to the user ("I scanned all N of your tasks"), and on the
+            // live board the raw counts overstated it by 60%. Counted by which
+            // store a record came from, not by its status field: an archived
+            // task does not reliably carry status 'archived'.
+            tasks: all.filter(t => !archivedIds.has(t.id)).length,
+            archived: all.filter(t => archivedIds.has(t.id)).length,
             withoutEpic: all.filter(t => !t.epicId).length,
             knownFacts: memories.filter(m => m.approved).length
         },
@@ -3816,7 +3852,9 @@ function applyProposal(tasks, proposal, { columns, validCategoryIds, categoryNam
 
     if (proposal.kind === 'delete') {
         tasks.splice(index, 1);
-        return { ok: true, task: null };
+        // The caller removes the attachments: doing it here would leave this
+        // function with a side effect outside the tasks array it was handed.
+        return { ok: true, task: null, deletedTaskId: proposal.taskId };
     }
 
     if (proposal.kind === 'move') {
@@ -5001,6 +5039,13 @@ app.post('/api/:profile/ai/proposals/:id/apply', resolveProfile, writeLimiter, a
         proposals.splice(index, 1);
         await writeJsonFile(req.profileFiles.aiProposals, proposals);
 
+        // An applied delete must take its attachments with it, exactly as the
+        // hand-driven DELETE /tasks/:id does — otherwise the files stay on disk
+        // unreachable, still counting against the profile's storage budget.
+        if (result.deletedTaskId) {
+            await removeTaskAttachments(req.params.profile, result.deletedTaskId);
+        }
+
         res.json({ ok: true, task: result.task });
     } catch (error) {
         console.error('Failed to apply proposal:', error);
@@ -5021,13 +5066,22 @@ app.post('/api/:profile/ai/proposals/apply-all', resolveProfile, writeLimiter, a
         // decisions the user already made. Failures are reported, not thrown.
         let applied = 0;
         const failed = [];
+        const deletedTaskIds = [];
         for (const proposal of proposals) {
             const result = applyProposal(tasks, proposal, ctx);
-            if (result.ok) applied += 1;
-            else failed.push({ id: proposal.id, reason: result.error });
+            if (result.ok) {
+                applied += 1;
+                if (result.deletedTaskId) deletedTaskIds.push(result.deletedTaskId);
+            } else {
+                failed.push({ id: proposal.id, reason: result.error });
+            }
         }
 
         await writeJsonFile(req.profileFiles.tasks, tasks);
+        // Attachments follow their tasks out, as on the hand-driven delete.
+        for (const taskId of deletedTaskIds) {
+            await removeTaskAttachments(req.params.profile, taskId);
+        }
         // The whole batch is consumed either way: a proposal that couldn't
         // apply is stale, and re-offering it would just fail again.
         await writeJsonFile(req.profileFiles.aiProposals, []);

@@ -1158,7 +1158,20 @@ export async function sendAiChatStreamApi(messages, onDelta, context = null, ski
     let streamError = null;
 
     while (true) {
-        const { done, value } = await reader.read();
+        // reader.read() REJECTS when the connection drops mid-stream — laptop
+        // sleeps, wifi blips, server restarts. Letting that escape breaks this
+        // function's stated contract of reporting failure rather than throwing,
+        // and strands the caller with a permanently disabled composer.
+        let chunk;
+        try {
+            chunk = await reader.read();
+        } catch {
+            // A partial reply is still worth keeping: the caller has already
+            // rendered it, and silently deleting it is more alarming than
+            // saying the connection dropped.
+            return { ok: false, error: 'The connection dropped mid-reply', partial: true };
+        }
+        const { done, value } = chunk;
         if (done) break;
         // stream: true keeps multi-byte characters intact across chunks
         const parsed = parseSseChunk(buffer, decoder.decode(value, { stream: true }));

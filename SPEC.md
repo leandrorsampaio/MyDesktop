@@ -324,7 +324,7 @@ GET    /:alias/:page  - Serve index.html for sub-pages (dashboard, backlog, arch
                             // the first file is attached. See § Attachments.
   needsFiling: boolean,     // optional. true on a quick-captured task until the AI classifies it.
                             // Drives the "unfiled" chip. See § Quick capture.
-  points: number|null       // optional. One of 1, 2, 3, 5, 8, 13. null = unestimated.
+  points: number|null       // optional. One of 1, 2, 3, 5, 8, 13, 21, 34, 100. null = unestimated.
                             // See § Story points.
 }
 ```
@@ -647,7 +647,7 @@ Files attached to tasks. Metadata lives on the task object (`attachments[]`), by
 - `<report-row>` component: `setReport(report)`, dispatches `view-report` + `delete-report`.
 - **View report**: clicking a row opens the existing `reportsModal` (`<modal-dialog class="js-reportsModal">`) with `renderReportView()` from `modals.js` — supports both new format (`content.columns`) and legacy format.
 - **Delete report**: calls `deleteReportApi()`, removes from local array, re-renders rows, toast success.
-- **Generate report**: `<page-fab>` at bottom-left calls `generateReportApi()`, reloads list on success.
+- **Generate report**: a `btn --primary --sm` in the page header (right-aligned, matching the backlog page's *Extract tasks*) calls `generateReportApi()`, reloads list on success.
 - **"Generate Report" removed from sidebar Config submenu** — report generation now lives exclusively on the reports page via the FAB button. The `generateReportConfirmModal` has been removed from `index.html`.
 
 ### Streaming replies (v2.53.0)
@@ -707,7 +707,7 @@ The rail's lightning icon and the `g i` chord are gone; the assistant is the flo
 
 ### Assistant panel (v2.51.0, reworked v2.54.0)
 
-A permanent **AI** button, bottom-left, on every page. Clicking it grows a panel out of the button; `a` still toggles it.
+A permanent **AI** button, bottom-right, on every page. Clicking it grows a panel out of the button; `a` still toggles it.
 
 **Floats over everything.** `position: fixed`, `z-index: 1500` — above modals (1000), below toasts (2000) so feedback stays visible with the panel open. It takes no layout track and reserves no space.
 

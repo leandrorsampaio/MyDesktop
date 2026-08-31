@@ -53,7 +53,7 @@ Every phase must satisfy this. It is not a nice-to-have; it is the acceptance cr
 ### Task — story points
 
 ```js
-points: number|null   // one of 1, 2, 3, 5, 8, 13. null = unestimated
+points: number|null   // one of 1, 2, 3, 5, 8, 13, 21, 34, 100. null = unestimated
 ```
 
 Scale is fixed and deliberately short:
@@ -65,9 +65,11 @@ Scale is fixed and deliberately short:
 | 3 | Half a day |
 | 5 | A day |
 | 8 | Approaching too big |
-| 13 | One to two days — the ceiling |
+| 13 | One to two days — the point at which work should be split |
+| 21, 34 | Above the split threshold; recorded, but a prompt to break it down |
+| 100 | Stands for infinity — too big to size at all |
 
-**Anything bigger than 13 is not a number, it's a split.** Points exist for splitting and sequencing, not velocity. No burndown, no charts, no per-week reporting — that is team ceremony and this is a single-user tool.
+**Anything bigger than 13 is not really an estimate, it's a split.** Points exist for splitting and sequencing, not velocity. No burndown, no charts, no per-week reporting — that is team ceremony and this is a single-user tool.
 
 ### Epic — context, not just a topic
 
@@ -107,7 +109,7 @@ A short, curated list of durable facts, injected on every call:
 [
   { "id": "...", "text": "Solenis = bureaucratic compliance work. Low priority, hard deadlines." },
   { "id": "...", "text": "\"ESB-\" prefix = ecommerce ticket, always epic ECOM." },
-  { "id": "...", "text": "My 5 is one focused day. A 13 is the ceiling — bigger gets split." }
+  { "id": "...", "text": "My 5 is one focused day. A 13 is one to two days — bigger gets split." }
 ]
 ```
 
@@ -144,7 +146,7 @@ The snapshot is re-sent every message — that is the main cost driver, and the 
 
 **Shipped as a right-hand dock in v2.51.0 and reworked in v2.54.0** — the dock was the wrong shape. It was a layout feature reachable only by keyboard, with a separate per-card button. What it should be, and now is:
 
-A permanent **AI button, bottom-left, on every page**, growing a panel out of itself on click. It floats over everything including modals, and lives in the bottom band of the screen so the top half — where the work is — is never covered.
+A permanent **AI button, bottom-right, on every page**, growing a panel out of itself on click. It floats over everything including modals, and lives in the bottom band of the screen so the top half — where the work is — is never covered.
 
 **Context is implicit.** No per-card button: open the panel with a card on screen and the conversation is about that card; open it on the archive and it is about the archive. The panel says which, so the user can see what it assumed.
 

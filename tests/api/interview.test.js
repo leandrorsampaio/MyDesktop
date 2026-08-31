@@ -173,6 +173,33 @@ describe('The interview', () => {
         });
     });
 
+    describe('Duplicated records', () => {
+
+        it('counts a task once even when it sits in both stores', async () => {
+            // A task can legitimately appear in both files (the archive flow
+            // writes the new store before pruning the old), and older data
+            // carries the residue. Counting twice halves the effective
+            // threshold: on the live board it inflated a 13x name to 22x.
+            const shared = repeat('Sync with Mikael', 2).map((t, i) => ({ ...t, id: `dup${i}` }));
+            await fs.writeFile(TASKS_FILE, JSON.stringify(shared));
+            await fs.writeFile(ARCHIVED_FILE, JSON.stringify(shared));
+
+            const res = await get(api('/ai/interview/digest'));
+            assert.deepStrictEqual(res.body.names, [], 'a 2x name reached the 3x threshold by double-counting');
+            assert.strictEqual(res.body.totals.tasks + res.body.totals.archived, 2,
+                'totals double-counted, so the prompt would overstate what it scanned');
+        });
+
+        it('reports the deduped count to the model', async () => {
+            const shared = repeat('Review with Balzac', 3).map((t, i) => ({ ...t, id: `d${i}` }));
+            await fs.writeFile(TASKS_FILE, JSON.stringify(shared));
+            await fs.writeFile(ARCHIVED_FILE, JSON.stringify(shared));
+
+            const res = await get(api('/ai/_test/prompt?mode=interview'));
+            assert.match(res.body.prompt, /Balzac \(3×\)/, 'name count was inflated by duplicates');
+        });
+    });
+
     describe('The interview prompt', () => {
 
         it('asks about what the digest found, not generalities', async () => {

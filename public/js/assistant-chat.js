@@ -383,6 +383,11 @@ export async function send(text) {
     busy = false;
 
     if (!result.ok) {
+        // Keep what did arrive. Watching a paragraph appear and then vanish is
+        // more alarming than the error itself, and the text was really written.
+        if (streamed.trim()) {
+            history.push({ role: 'assistant', content: `${streamed}\n\n[interrupted]` });
+        }
         emit();
         return { ok: false, error: result.error || 'AI request failed' };
     }

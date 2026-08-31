@@ -1,7 +1,7 @@
 /**
  * assistant-dock — the assistant as a permanent floating panel.
  *
- * One button, bottom-left, present on every page and above everything else
+ * One button, bottom-right, present on every page and above everything else
  * including modals (z-index 1500; toasts stay above at 2000). Clicking it
  * grows a panel out of the button into the bottom band of the screen — the
  * top half is where the real work is, so the assistant never covers it.
